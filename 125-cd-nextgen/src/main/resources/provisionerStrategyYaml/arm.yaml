@@ -1,0 +1,15 @@
+provisioner:
+  steps:
+    - step:
+        type: AzureCreateARMResource
+        name: Azure Create ARM Resource
+        identifier: dfe51017-d346-5323-be6f-c55cbb699cc5
+        spec: {}
+        timeout: 10m
+  rollbackSteps:
+    - step:
+        type: AzureARMRollback
+        name: Azure ARM Rollback
+        identifier: dfe51017-d346-5323-be6f-c55cbb699ff5
+        spec: {}
+        timeout: 10m

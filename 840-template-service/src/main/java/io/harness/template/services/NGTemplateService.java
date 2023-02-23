@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
+import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
@@ -20,6 +23,7 @@ import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.beans.TemplateListRepoResponse;
+import io.harness.template.beans.TemplateMoveConfigResponse;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -48,14 +52,14 @@ public interface NGTemplateService {
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
 
-  TemplateWithInputsResponseDTO getTemplateWithInputs(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
+  TemplateWithInputsResponseDTO getTemplateWithInputs(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean loadFromCache);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
-      String versionLabel, Long version, String comments);
+      String versionLabel, Long version, String comments, boolean forceDelete);
 
   boolean deleteTemplates(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
-      Set<String> templateVersions, String comments);
+      Set<String> templateVersions, String comments, boolean forceDelete);
 
   Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
@@ -92,4 +96,11 @@ public interface NGTemplateService {
 
   TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean includeAllTemplatesAccessibleAtScope);
+
+  PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
+      boolean isStableTemplate);
+
+  TemplateMoveConfigResponse moveTemplateStoreTypeConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, TemplateMoveConfigRequestDTO templateMoveConfigRequestDTO);
 }

@@ -46,6 +46,9 @@ public class CompositeSLORecordsCleanupSideKickExecutor
       long endTime = TimeUnit.MILLISECONDS.toMinutes(clock.millis());
       for (long startTime = afterStartTime; startTime <= endTime;) {
         long currentEndTime = startTime + getBatchSizeForDeletion();
+        if (currentEndTime > endTime) {
+          currentEndTime = endTime;
+        }
         hPersistence.delete(hPersistence.createQuery(CompositeSLORecord.class)
                                 .filter(CompositeSLORecordKeys.sloId, compositeSLOId)
                                 .filter(CompositeSLORecordKeys.sloVersion, sloVersion)

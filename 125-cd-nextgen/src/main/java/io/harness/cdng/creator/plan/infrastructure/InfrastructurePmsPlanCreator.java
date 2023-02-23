@@ -18,7 +18,7 @@ import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
-import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
@@ -121,7 +121,7 @@ public class InfrastructurePmsPlanCreator {
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
-        .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
+        .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)

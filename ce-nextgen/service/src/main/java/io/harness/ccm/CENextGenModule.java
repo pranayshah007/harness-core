@@ -48,6 +48,9 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -100,7 +103,9 @@ import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
@@ -114,12 +119,14 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
+import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
 import io.harness.ccm.views.service.impl.GovernanceRuleServiceImpl;
 import io.harness.ccm.views.service.impl.RuleEnforcementServiceImpl;
 import io.harness.ccm.views.service.impl.RuleExecutionServiceImpl;
 import io.harness.ccm.views.service.impl.RuleSetServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
+import io.harness.configuration.DeployMode;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -172,7 +179,10 @@ import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -184,6 +194,8 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
+import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -193,7 +205,6 @@ import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.jooq.ExecuteListener;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -267,6 +278,27 @@ public class CENextGenModule extends AbstractModule {
       GcpConfig gcpConfig() {
         return configuration.getGcpConfig();
       }
+
+      @Provides
+      @Singleton
+      @Named("clickHouseConfig")
+      ClickHouseConfig clickHouseConfig() {
+        return configuration.getClickHouseConfig();
+      }
+
+      @Provides
+      @Singleton
+      @Named("deployMode")
+      DeployMode deployMode() {
+        return configuration.getDeployMode();
+      }
+
+      @Provides
+      @Singleton
+      @Named("isClickHouseEnabled")
+      boolean isClickHouseEnabled() {
+        return configuration.isClickHouseEnabled();
+      }
     });
 
     // Bind Services
@@ -276,6 +308,7 @@ public class CENextGenModule extends AbstractModule {
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
     bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
 
     install(new CENextGenPersistenceModule());
@@ -329,6 +362,7 @@ public class CENextGenModule extends AbstractModule {
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
+    install(YamlSdkModule.getInstance());
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -336,7 +370,6 @@ public class CENextGenModule extends AbstractModule {
     bind(CEGcpServiceAccountService.class).to(CEGcpServiceAccountServiceImpl.class);
     bind(GcpServiceAccountService.class).to(GcpServiceAccountServiceImpl.class);
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
-    bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
@@ -364,6 +397,14 @@ public class CENextGenModule extends AbstractModule {
     bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+
+    if (configuration.isClickHouseEnabled()) {
+      bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
+    } else {
+      bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
+    }
+
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -487,5 +528,26 @@ public class CENextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(CONNECTOR_ENTITY + ENTITY_CRUD))
         .to(ConnectorEntityCRUDStreamListener.class);
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder().addAll(CENextGenModuleRegistrars.yamlSchemaRegistrars).build();
+  }
+
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    CENextGenApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
+
+  @Provides
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapperWithoutNamed() {
+    return Jackson.newObjectMapper();
   }
 }

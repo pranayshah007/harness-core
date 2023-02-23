@@ -34,6 +34,12 @@ public class UnresolvedExpressionsException extends WingsException {
     super.param(EXPRESSIONS_ARG, prepareExpressionsString(expressions));
   }
 
+  public UnresolvedExpressionsException(String key, List<String> expressions) {
+    super(String.format("Unresolved expressions: %s", prepareExpressionsAndFieldsString(key, expressions)), null,
+        UNRESOLVED_EXPRESSIONS_ERROR, Level.ERROR, null, null);
+    super.param(EXPRESSIONS_ARG, prepareExpressionsAndFieldsString(key, expressions));
+  }
+
   public Collection<String> fetchExpressions() {
     String expressionsParam = ((String) getParams().get(EXPRESSIONS_ARG)).trim();
     if (EmptyPredicate.isEmpty(expressionsParam) || expressionsParam.equals(NULL_STR)) {
@@ -48,5 +54,12 @@ public class UnresolvedExpressionsException extends WingsException {
   private static String prepareExpressionsString(List<String> expressions) {
     return expressions == null ? NULL_STR
                                : expressions.stream().filter(Objects::nonNull).collect(Collectors.joining(", "));
+  }
+
+  // This function also includes the field name in the error message
+  private static String prepareExpressionsAndFieldsString(String key, List<String> expressions) {
+    return expressions == null
+        ? NULL_STR
+        : "'" + key + "': " + expressions.stream().filter(Objects::nonNull).collect(Collectors.joining(", "));
   }
 }

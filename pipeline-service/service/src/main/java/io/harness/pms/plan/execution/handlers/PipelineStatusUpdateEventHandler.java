@@ -76,6 +76,15 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+
+    performActionOnTerminalStatus(status.getEngineStatus(), planExecutionId);
+  }
+
+  private void performActionOnTerminalStatus(Status status, String planExecutionId) {
+    if (StatusUtils.isFinalStatus(status)) {
+      // This is required to notify parent pipeline in Pipeline chaining
+      waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());
+    }
   }
 
   @Override
@@ -100,13 +109,6 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
                 pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
                 pipelineExecutionSummaryUpdatedEntity.getEndTs()));
       }
-
-      // Todo (sahil): Commenting this as this might cause issues, will fix it next week.
-      // Wait notify is for Pipeline Chain Parent Node.
-      waitNotifyEngine.doneWith(pipelineExecutionSummaryUpdatedEntity.getPlanExecutionId(),
-          PipelineStageResponseData.builder()
-              .status(pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus())
-              .build());
     }
   }
 

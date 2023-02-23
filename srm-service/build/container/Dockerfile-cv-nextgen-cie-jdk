@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 cv-nextgen-capsule.jar /opt/harness/
@@ -15,6 +15,8 @@ COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 

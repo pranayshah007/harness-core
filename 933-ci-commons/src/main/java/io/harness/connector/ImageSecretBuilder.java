@@ -206,11 +206,8 @@ public class ImageSecretBuilder {
 
     String registryUrl = imageParts[0];
     GcpConnectorDTO gcpConnectorConfig = (GcpConnectorDTO) connectorDetails.getConnectorConfig();
-    if (gcpConnectorConfig.getCredential().getGcpCredentialType() != GcpCredentialType.MANUAL_CREDENTIALS) {
-      throw new InvalidArgumentsException(
-          format("Unsupported auth type: %s for GCP connector: %s to pull image",
-              gcpConnectorConfig.getCredential().getGcpCredentialType().toString(), connectorDetails.getIdentifier()),
-          WingsException.USER);
+    if (gcpConnectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
+      return null;
     }
     log.info("Decrypting GCP config for connector id:[{}], type:[{}]", connectorDetails.getIdentifier(),
         connectorDetails.getConnectorType());

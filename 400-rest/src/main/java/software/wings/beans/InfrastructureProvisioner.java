@@ -9,6 +9,8 @@ package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
@@ -26,13 +28,17 @@ import io.harness.persistence.NameAccess;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Data;
@@ -41,7 +47,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 @OwnedBy(CDP)
 @Data
@@ -61,7 +66,7 @@ import org.mongodb.morphia.annotations.Entity;
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "InfrastructureProvisionerKeys")
 public abstract class InfrastructureProvisioner
-    extends Base implements NameAccess, TagAware, AccountAccess, ApplicationAccess {
+    extends Base implements NameAccess, TagAware, AccountAccess, ApplicationAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -85,6 +90,23 @@ public abstract class InfrastructureProvisioner
   @Valid List<InfrastructureMappingBlueprint> mappingBlueprints;
   private String accountId;
   private transient List<HarnessTagLink> tagLinks;
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(INFRA_PROVISIONER)
+        .accountId(getAccountId())
+        .build();
+  }
 
   public InfrastructureProvisioner(String name, String description, String infrastructureProvisionerType,
       List<NameValuePair> variables, List<InfrastructureMappingBlueprint> mappingBlueprints, String accountId,

@@ -13,12 +13,15 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingRollbackBaseStepInfo.K8sRollingRollbackBaseStepInfoKeys;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -31,7 +34,6 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -55,7 +57,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 
 @OwnedBy(CDP)
-public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8sDeployResponse> {
+public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_ROLLBACK_ROLLING.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -134,6 +136,10 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
       rollbackRequestBuilder.releaseName(releaseOutput.getName());
     }
 
+    ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
+    cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
+    ManifestOutcome k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
+
     rollbackRequestBuilder.commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)
         .taskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
         .timeoutIntervalInMin(
@@ -141,6 +147,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
         .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
         .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
         .pruningEnabled(pruningEnabled)
+        .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
         .build();
 
     return k8sStepHelper

@@ -15,11 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
+import dev.morphia.annotations.Entity;
 import java.util.Date;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Entity;
 
 @OwnedBy(CDC)
 @Value

@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.VerificationApplication;
+import io.harness.cvng.migration.beans.SRMCoreSchema;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.persistence.PersistentEntity;
@@ -36,7 +37,8 @@ public class CVNGMorphiaRegistrarTest extends CvNextGenTestBase {
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
   public void testMorphiaRegistrar() {
-    Set<Class> excludedClasses = Sets.newHashSet(PersistentIterable.class, PersistentRegularIterable.class);
+    Set<Class> excludedClasses =
+        Sets.newHashSet(PersistentIterable.class, PersistentRegularIterable.class, SRMCoreSchema.class);
     Set<Class> registeredClasses = new HashSet<>();
     cvNextGenMorphiaRegister.registerClasses(registeredClasses);
     Set<Class<? extends PersistentEntity>> cvngEntityClasses =

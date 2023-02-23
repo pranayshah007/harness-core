@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
+import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
 import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
@@ -27,12 +28,12 @@ import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.TaskType.HELM_COMMAND_TASK;
 import static software.wings.beans.appmanifest.AppManifestKind.HELM_CHART_OVERRIDE;
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.appmanifest.StoreType.CUSTOM;
 import static software.wings.beans.appmanifest.StoreType.HelmChartRepo;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.sm.ExecutionContextImpl.PHASE_PARAM;
 import static software.wings.sm.StateType.HELM_DEPLOY;
@@ -106,7 +107,6 @@ import software.wings.beans.GitFetchFilesTaskParams;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.KubernetesClusterConfig;
-import software.wings.beans.Log;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
@@ -121,6 +121,7 @@ import software.wings.beans.command.HelmDummyCommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
 import software.wings.beans.container.ContainerTaskCommons;
 import software.wings.beans.container.HelmChartSpecification;
+import software.wings.beans.dto.Log;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
 import software.wings.common.TemplateExpressionProcessor;
@@ -390,7 +391,7 @@ public class HelmDeployState extends State {
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new EnumMap<>(K8sValuesLocation.class);
     HelmDeployStateExecutionData stateExecutionData = (HelmDeployStateExecutionData) context.getStateExecutionData();
@@ -587,7 +588,7 @@ public class HelmDeployState extends State {
 
     HelmCommandExecutionResponse helmCommandExecutionResponse;
     appendDelegateTaskDetails(context, delegateTask);
-    DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+    DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
     if (notifyResponseData instanceof HelmCommandExecutionResponse) {
       helmCommandExecutionResponse = (HelmCommandExecutionResponse) notifyResponseData;
     } else {
@@ -1032,6 +1033,8 @@ public class HelmDeployState extends State {
                                .encryptedDataDetails(fetchEncryptedDataDetail(context, sourceRepoGitConfig))
                                .manifestStoreTypes(StoreType.HelmSourceRepo)
                                .helmCommandFlag(helmCommandFlag)
+                               .skipApplyHelmDefaultValues(featureFlagService.isEnabled(
+                                   CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()))
                                .build();
 
           break;
@@ -1069,6 +1072,8 @@ public class HelmDeployState extends State {
                                  .helmChartConfigParams(helmChartConfigTaskParams)
                                  .manifestStoreTypes(HelmChartRepo)
                                  .helmCommandFlag(helmCommandFlag)
+                                 .skipApplyHelmDefaultValues(featureFlagService.isEnabled(
+                                     CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()))
                                  .build();
           }
           break;
@@ -1199,7 +1204,7 @@ public class HelmDeployState extends State {
         expressionEvaluator.substitute(commandRequest.getCommandFlags(), Collections.emptyMap()));
 
     appendDelegateTaskDetails(context, delegateTask);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .correlationIds(singletonList(activityId))
@@ -1303,7 +1308,7 @@ public class HelmDeployState extends State {
     renderDelegateTask(context, delegateTask, stateExecutionContext);
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     Map<K8sValuesLocation, Collection<String>> valuesFiles = new EnumMap<>(K8sValuesLocation.class);
     HelmDeployStateExecutionData stateExecutionData = (HelmDeployStateExecutionData) context.getStateExecutionData();
@@ -1553,7 +1558,7 @@ public class HelmDeployState extends State {
         expressionEvaluator.substitute(helmValuesFetchTaskParameters.getHelmCommandFlags(), Collections.emptyMap()));
 
     appendDelegateTaskDetails(context, delegateTask);
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
 
     return ExecutionResponse.builder()
         .async(true)

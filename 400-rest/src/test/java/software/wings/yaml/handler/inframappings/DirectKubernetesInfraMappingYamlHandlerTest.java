@@ -59,13 +59,13 @@ import software.wings.utils.ArtifactType;
 import software.wings.yaml.handler.YamlHandlerTestBase;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(HarnessTeam.CDP)
 public class DirectKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTestBase {
@@ -116,7 +116,7 @@ public class DirectKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTest
     when(appService.getAppByName(anyString(), anyString())).thenReturn(getApplication());
     when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(getEnvironment());
     when(containerService.validate(anyObject(), anyBoolean())).thenReturn(true);
-    when(delegateProxyFactory.get(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
     when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(getService());
     when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(getService());
     when(serviceTemplateService.getTemplateRefKeysByService(anyString(), anyString(), anyString()))

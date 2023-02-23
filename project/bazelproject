@@ -35,3 +35,4 @@ import_run_configurations:
   project/run-configurations/TemplateService.xml
   project/run-configurations/DashboardApplication.xml
   project/run-configurations/MigratorApp.xml
+  project/run-configurations/IDPService.xml

@@ -286,7 +286,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
 
   public Criteria createCriteriaFromConnectorFilter(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType connectorType, ConnectorCategory category,
-      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled) {
+      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled, String version) {
     Criteria criteria = new Criteria();
     criteria.and(ConnectorKeys.accountIdentifier).is(accountIdentifier);
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
@@ -310,6 +310,11 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
           where(NGCommonEntityConstants.IDENTIFIER_KEY).regex(searchTerm, "i"),
           where(NGCommonEntityConstants.TAGS_KEY).regex(searchTerm, "i"));
       criteria.andOperator(seachCriteria);
+    }
+    if (connectorType == ConnectorType.NEXUS && version != null) {
+      if (version.equals("2.x") || version.equals("3.x")) {
+        criteria.and("nexusVersion").is(version);
+      }
     }
     return criteria;
   }

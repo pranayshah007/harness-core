@@ -10,6 +10,7 @@ package io.harness.pms.approval.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
@@ -47,6 +48,7 @@ import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -75,7 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService {
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   private final ConnectorResourceClient connectorResourceClient;
-  private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final SecretNGManagerClient secretManagerClient;
   private final WaitNotifyEngine waitNotifyEngine;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -84,14 +86,15 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
   @Inject
   public JiraApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-      ConnectorResourceClient connectorResourceClient, KryoSerializer kryoSerializer,
+      ConnectorResourceClient connectorResourceClient,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, WaitNotifyEngine waitNotifyEngine,
       LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
       JiraStepHelperService jiraStepHelperService) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
     this.connectorResourceClient = connectorResourceClient;
-    this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.secretManagerClient = secretManagerClient;
     this.waitNotifyEngine = waitNotifyEngine;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
@@ -161,8 +164,16 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
                                     .projectIdentifier(projectIdentifier)
                                     .build();
 
-    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer =
-        NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
+    NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer;
+    if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
+      ngAccessWithEncryptionConsumer = NGAccessWithEncryptionConsumer.builder()
+                                           .ngAccess(baseNGAccess)
+                                           .decryptableEntity(jiraConnectorDTO.getAuth().getCredentials())
+                                           .build();
+    } else {
+      ngAccessWithEncryptionConsumer =
+          NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(jiraConnectorDTO).build();
+    }
     List<EncryptedDataDetail> encryptionDataDetails = NGRestUtils.getResponse(
         secretManagerClient.getEncryptionDetails(accountIdentifier, ngAccessWithEncryptionConsumer));
 
@@ -187,9 +198,10 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   private TaskRequest prepareJiraTaskRequest(Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters) {
     TaskDetails taskDetails =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(jiraTaskNGParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(jiraTaskNGParameters)))
+            .setKryoParameters(
+                ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(jiraTaskNGParameters) == null
+                        ? new byte[] {}
+                        : referenceFalseKryoSerializer.asDeflatedBytes(jiraTaskNGParameters)))
             .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
             .setMode(TaskMode.ASYNC)
             .setParked(false)
@@ -201,7 +213,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
                                        .map(s -> TaskSelector.newBuilder().setSelector(s).build())
                                        .collect(Collectors.toList());
 
-    return StepUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, null, false);
   }
 
   @Override

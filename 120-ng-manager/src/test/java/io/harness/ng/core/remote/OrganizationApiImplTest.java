@@ -7,8 +7,7 @@
 
 package io.harness.ng.core.remote;
 
-import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
+import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
@@ -18,7 +17,6 @@ import static io.harness.utils.PageTestUtils.getPage;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -63,7 +61,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   private Validator validator;
 
   String account = randomAlphabetic(10);
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
 
   @Before
@@ -87,7 +85,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   public void testCreate() {
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(slug);
+    org.setIdentifier(identifier);
     org.setName(name);
     organizationRequest.setOrg(org);
 
@@ -102,7 +100,7 @@ public class OrganizationApiImplTest extends CategoryTest {
 
     assertEquals(organization.getVersion().toString(), response.getEntityTag().getValue());
     OrganizationResponse entity = (OrganizationResponse) response.getEntity();
-    assertEquals(slug, entity.getOrg().getSlug());
+    assertEquals(identifier, entity.getOrg().getIdentifier());
   }
 
   @Test
@@ -111,7 +109,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   public void testCreateForDefaultOrg() {
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(DEFAULT_ORG_IDENTIFIER);
+    org.setIdentifier(DEFAULT_ORG_IDENTIFIER);
     org.setName(name);
     organizationRequest.setOrg(org);
 
@@ -122,24 +120,24 @@ public class OrganizationApiImplTest extends CategoryTest {
     Throwable thrown = catchThrowableOfType(
         () -> organizationApi.createOrganization(organizationRequest, account), InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(String.format("%s cannot be used as org slug", DEFAULT_ORG_IDENTIFIER));
+    assertThat(thrown).hasMessage(String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER));
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGet() {
-    OrganizationDTO organizationDTO = getOrganizationDTO(slug, name);
+    OrganizationDTO organizationDTO = getOrganizationDTO(identifier, name);
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 
-    when(organizationService.get(account, slug)).thenReturn(Optional.of(organization));
+    when(organizationService.get(account, identifier)).thenReturn(Optional.of(organization));
 
-    Response response = organizationApi.getOrganization(slug, account);
+    Response response = organizationApi.getOrganization(identifier, account);
 
     assertEquals(organization.getVersion().toString(), response.getEntityTag().getValue());
     OrganizationResponse entity = (OrganizationResponse) response.getEntity();
-    assertEquals(slug, entity.getOrg().getSlug());
+    assertEquals(identifier, entity.getOrg().getIdentifier());
   }
 
   @Test
@@ -147,9 +145,9 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetOrgNotFoundException() {
     Throwable thrown =
-        catchThrowableOfType(() -> organizationApi.getOrganization(slug, account), NotFoundException.class);
+        catchThrowableOfType(() -> organizationApi.getOrganization(identifier, account), NotFoundException.class);
 
-    assertThat(thrown).hasMessage(String.format("Organization with slug [%s] not found", slug));
+    assertThat(thrown).hasMessage(String.format("Organization with identifier [%s] not found", identifier));
   }
 
   @Test
@@ -161,7 +159,7 @@ public class OrganizationApiImplTest extends CategoryTest {
     CreateOrganizationRequest organizationRequest = new CreateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
     organizationRequest.setOrg(org);
-    org.setSlug(slug);
+    org.setIdentifier(identifier);
     org.setName(name);
 
     OrganizationDTO organizationDTO = organizationApiUtils.getOrganizationDto(organizationRequest);
@@ -179,10 +177,9 @@ public class OrganizationApiImplTest extends CategoryTest {
     OrganizationFilterDTO organizationFilterDTO = argumentCaptor.getValue();
 
     assertEquals(searchTerm, organizationFilterDTO.getSearchTerm());
-    assertEquals(1, response.getLinks().size());
-    assertNotNull(response.getLink(SELF_REL));
+    assertEquals(3, response.getHeaders().size());
     List<OrganizationResponse> entity = (List<OrganizationResponse>) response.getEntity();
-    assertEquals(slug, entity.get(0).getOrg().getSlug());
+    assertEquals(identifier, entity.get(0).getOrg().getIdentifier());
   }
 
   @Test
@@ -191,7 +188,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   public void testUpdate() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(slug);
+    org.setIdentifier(identifier);
     org.setName("updated_name");
     request.setOrg(org);
 
@@ -199,13 +196,13 @@ public class OrganizationApiImplTest extends CategoryTest {
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 
-    when(organizationService.update(account, slug, organizationDTO)).thenReturn(organization);
+    when(organizationService.update(account, identifier, organizationDTO)).thenReturn(organization);
 
-    Response response = organizationApi.updateOrganization(request, slug, account);
+    Response response = organizationApi.updateOrganization(request, identifier, account);
 
     OrganizationResponse entity = (OrganizationResponse) response.getEntity();
 
-    assertEquals(slug, entity.getOrg().getSlug());
+    assertEquals(identifier, entity.getOrg().getIdentifier());
     assertEquals("updated_name", entity.getOrg().getName());
   }
 
@@ -215,7 +212,7 @@ public class OrganizationApiImplTest extends CategoryTest {
   public void testUpdateForDefaultOrg() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(DEFAULT_ORG_IDENTIFIER);
+    org.setIdentifier(DEFAULT_ORG_IDENTIFIER);
     org.setName("updated_name");
     request.setOrg(org);
 
@@ -224,8 +221,8 @@ public class OrganizationApiImplTest extends CategoryTest {
                                  -> organizationApi.updateOrganization(request, DEFAULT_ORG_IDENTIFIER, account),
             InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(
-        String.format("Update operation not supported for Default Organization (slug: [%s])", DEFAULT_ORG_IDENTIFIER));
+    assertThat(thrown).hasMessage(String.format(
+        "Update operation not supported for Default Organization (identifier: [%s])", DEFAULT_ORG_IDENTIFIER));
   }
 
   @Test
@@ -234,32 +231,32 @@ public class OrganizationApiImplTest extends CategoryTest {
   public void testUpdateForInvalidRequest() {
     UpdateOrganizationRequest request = new UpdateOrganizationRequest();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(DEFAULT_ORG_IDENTIFIER);
+    org.setIdentifier(DEFAULT_ORG_IDENTIFIER);
     org.setName("updated_name");
     request.setOrg(org);
 
     Throwable thrown = catchThrowableOfType(
-        () -> organizationApi.updateOrganization(request, slug, account), InvalidRequestException.class);
+        () -> organizationApi.updateOrganization(request, identifier, account), InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM);
+    assertThat(thrown).hasMessage(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM);
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDelete() {
-    OrganizationDTO organizationDTO = getOrganizationDTO(slug, name);
+    OrganizationDTO organizationDTO = getOrganizationDTO(identifier, name);
     Organization organization = toOrganization(organizationDTO);
     organization.setVersion(0L);
 
-    when(organizationService.get(account, slug)).thenReturn(Optional.of(organization));
-    when(organizationService.delete(account, slug, null)).thenReturn(true);
+    when(organizationService.get(account, identifier)).thenReturn(Optional.of(organization));
+    when(organizationService.delete(account, identifier, null)).thenReturn(true);
 
-    Response response = organizationApi.deleteOrganization(slug, account);
+    Response response = organizationApi.deleteOrganization(identifier, account);
 
     OrganizationResponse entity = (OrganizationResponse) response.getEntity();
 
-    assertEquals(slug, entity.getOrg().getSlug());
+    assertEquals(identifier, entity.getOrg().getIdentifier());
     assertEquals(organization.getVersion().toString(), response.getEntityTag().getValue());
   }
 
@@ -270,8 +267,8 @@ public class OrganizationApiImplTest extends CategoryTest {
     Throwable thrown = catchThrowableOfType(
         () -> organizationApi.deleteOrganization(DEFAULT_ORG_IDENTIFIER, account), InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(
-        String.format("Delete operation not supported for Default Organization (slug: [%s])", DEFAULT_ORG_IDENTIFIER));
+    assertThat(thrown).hasMessage(String.format(
+        "Delete operation not supported for Default Organization (identifier: [%s])", DEFAULT_ORG_IDENTIFIER));
   }
 
   @Test
@@ -279,8 +276,8 @@ public class OrganizationApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteOrgNotFoundException() {
     Throwable thrown =
-        catchThrowableOfType(() -> organizationApi.deleteOrganization(slug, account), NotFoundException.class);
+        catchThrowableOfType(() -> organizationApi.deleteOrganization(identifier, account), NotFoundException.class);
 
-    assertThat(thrown).hasMessage(String.format("Organization with slug [%s] not found", slug));
+    assertThat(thrown).hasMessage(String.format("Organization with identifier [%s] not found", identifier));
   }
 }

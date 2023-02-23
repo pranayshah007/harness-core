@@ -103,6 +103,7 @@ public class RoleAssignmentDTOMapper {
             .roleIdentifier(object.getRoleIdentifier())
             .disabled(object.isDisabled())
             .managed(managed)
+            .internal(object.isInternal())
             .scopeIdentifier(scope.toString())
             .scopeLevel(scope.getLevel().toString());
     return roleAssignmentBuilder.build();

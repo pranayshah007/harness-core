@@ -10,6 +10,7 @@ package io.harness.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -33,6 +34,9 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -50,14 +54,12 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 @Data
 @Builder
 @EqualsAndHashCode(exclude = {"uuid", "createdAt", "lastUpdatedAt", "validUntil"})
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "delegateTasks", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @FieldNameConstants(innerTypeName = "DelegateTaskKeys")
@@ -90,6 +92,12 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
                  .field(DelegateTaskKeys.status)
                  .field(DelegateTaskKeys.delegateId)
                  .field(DelegateTaskKeys.nextBroadcast)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("taskcountperaccount")
+                 .field(DelegateTaskKeys.accountId)
+                 .field(DelegateTaskKeys.delegateId)
+                 .field(DelegateTaskKeys.status)
                  .build())
         .build();
   }

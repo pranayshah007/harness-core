@@ -7,7 +7,9 @@
 
 package io.harness.cdng.gitops;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,7 +23,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
-import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -107,7 +108,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
     doReturn(optionalSweepingOutput)
         .when(executionSweepingOutputService)
-        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT)));
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
 
     Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables);
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_NAME/CLUSTER_NAME");
@@ -180,7 +181,7 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
         OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
     doReturn(optionalSweepingOutput)
         .when(executionSweepingOutputService)
-        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT)));
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
 
     Map<String, Map<String, String>> map = step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, variables);
     Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");
@@ -201,5 +202,52 @@ public class UpdateReleaseRepoStepTest extends CategoryTest {
     verify(engineExpressionService)
         .renderExpression(
             ambiance, "ENV_NAME2/<+variable.foo>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testBuildFilePathsToVariablesMapForClusterVar() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    doAnswer(invocation -> invocation.getArgument(1, String.class))
+        .when(engineExpressionService)
+        .renderExpression(eq(ambiance), any(), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("config1", ParameterField.builder().value("VALUE1").build());
+    variables.put("config2", "VALUE2");
+    GithubStore githubStore = GithubStore.builder()
+                                  .paths(ParameterField.<List<String>>builder()
+                                             .value(List.of("FILE_PATH/<+envgroup.name>/<+env.name>/<+cluster.name>"))
+                                             .build())
+                                  .build();
+    ManifestOutcome manifestOutcome = K8sManifestOutcome.builder().store(githubStore).build();
+
+    GitopsClustersOutcome.ClusterData cluster1 = GitopsClustersOutcome.ClusterData.builder()
+                                                     .envId("IDENTIFIER")
+                                                     .envName("ENV_NAME")
+                                                     .envGroupId("ENVGROUP_ID")
+                                                     .envGroupName("ENV_GROUP")
+                                                     .clusterName("CLUSTER_NAME")
+                                                     .clusterId("CLUSTER_ID")
+                                                     .scope("SCOPE")
+                                                     .variables(variables)
+                                                     .build();
+
+    List<GitopsClustersOutcome.ClusterData> clusterDataList = List.of(cluster1);
+
+    GitopsClustersOutcome gitopsClustersOutcome = new GitopsClustersOutcome(clusterDataList);
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().output(gitopsClustersOutcome).found(true).build();
+    doReturn(optionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT)));
+
+    Map<String, Map<String, String>> map =
+        step.buildFilePathsToVariablesMap(manifestOutcome, ambiance, new HashMap<>());
+    Map<String, String> fileVariables = map.get("FILE_PATH/ENV_GROUP/ENV_NAME/CLUSTER_NAME");
+    assertThat(fileVariables).isNotNull();
+    assertThat(fileVariables.get("config1")).isEqualTo("VALUE1");
+    assertThat(fileVariables.get("config2")).isEqualTo("VALUE2");
   }
 }

@@ -7,31 +7,29 @@
 
 package io.harness.cvng.cdng.services.impl;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
-import io.harness.cvng.client.NextGenClient;
+import io.harness.cvng.client.NextGenPrivilegedClient;
 import io.harness.cvng.client.RequestExecutor;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
-import io.harness.ng.core.dto.CDStageMetaDataDTO.ServiceEnvRef;
 import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 
-import com.esotericsoftware.minlog.Log;
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
+@Slf4j
 public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
-  @Inject private NextGenClient nextGenClient;
+  @Inject private NextGenPrivilegedClient nextGenPrivilegedClient;
   @Inject private RequestExecutor requestExecutor;
 
   @Override
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(YamlNode stageLevelYamlNode) {
     YamlNode pipelineYamlNode = getPipelineYamlNode(stageLevelYamlNode);
     if (Objects.isNull(pipelineYamlNode)) {
-      Log.error("Pipeline not found in given Yaml, By passing validation check");
+      log.error("Pipeline not found in given Yaml, By passing validation check");
       return null;
     }
     return getServiceAndEnvironmentRef(stageLevelYamlNode.getIdentifier(), pipelineYamlNode.toString());
@@ -39,33 +37,46 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
 
   @Override
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(String stageIdentifier, String pipelineYaml) {
-    ResponseDTO<CDStageMetaDataDTO> responseDTO;
+    ResponseDTO<CDStageMetaDataDTO> responseDTO = getCdStageMetaDataResponse(stageIdentifier, pipelineYaml);
+    if (isInvalidResponse(responseDTO)) {
+      log.error("Invalid Response for Service Ref and Environment Ref in pipeline: " + pipelineYaml);
+      return null;
+    }
+    if (CollectionUtils.isEmpty(responseDTO.getData().getServiceEnvRefList())) {
+      setServiceEnvRef(responseDTO);
+    }
+    return responseDTO;
+  }
+
+  private void setServiceEnvRef(ResponseDTO<CDStageMetaDataDTO> responseDTO) {
+    responseDTO.setData(CDStageMetaDataDTO.builder()
+                            .environmentRef(responseDTO.getData().getEnvironmentRef())
+                            .serviceRef(responseDTO.getData().getServiceRef())
+                            .serviceEnvRef(CDStageMetaDataDTO.ServiceEnvRef.builder()
+                                               .environmentRef(responseDTO.getData().getEnvironmentRef())
+                                               .serviceRef(responseDTO.getData().getServiceRef())
+                                               .build())
+                            .build());
+  }
+
+  private ResponseDTO<CDStageMetaDataDTO> getCdStageMetaDataResponse(String stageIdentifier, String pipelineYaml) {
+    ResponseDTO<CDStageMetaDataDTO> responseDTO = null;
     try {
-      responseDTO = requestExecutor.execute(nextGenClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
+      responseDTO =
+          requestExecutor.execute(nextGenPrivilegedClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
                                                                                  .stageIdentifier(stageIdentifier)
                                                                                  .pipelineYaml(pipelineYaml)
                                                                                  .build()));
     } catch (Exception e) {
-      Log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
-      return null;
-    }
-    if (Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData().getServiceRef())
-        || Objects.isNull(responseDTO.getData().getEnvironmentRef())) {
-      Log.error("Invalid Response for Service Ref and Environment Ref in pipeline: " + pipelineYaml);
-    } else {
-      if (isEmpty(responseDTO.getData().getServiceEnvRefList())) {
-        responseDTO.setData(CDStageMetaDataDTO.builder()
-                                .environmentRef(responseDTO.getData().getEnvironmentRef())
-                                .serviceRef(responseDTO.getData().getServiceRef())
-                                .serviceEnvRefList(Collections.singletonList(
-                                    ServiceEnvRef.builder()
-                                        .environmentRef(responseDTO.getData().getEnvironmentRef())
-                                        .serviceRef(responseDTO.getData().getServiceRef())
-                                        .build()))
-                                .build());
-      }
+      log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
     }
     return responseDTO;
+  }
+
+  private static boolean isInvalidResponse(ResponseDTO<CDStageMetaDataDTO> responseDTO) {
+    return Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData())
+        || Objects.isNull(responseDTO.getData().getServiceRef())
+        || Objects.isNull(responseDTO.getData().getEnvironmentRef());
   }
 
   private YamlNode getPipelineYamlNode(YamlNode yamlNode) {

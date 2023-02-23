@@ -7,9 +7,16 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.beans.StepOutput;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.expressions.step.ApprovalFunctor;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -19,6 +26,7 @@ import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
 import io.harness.steps.approval.step.beans.JexlCriteriaSpec;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpec;
 import io.harness.steps.approval.step.beans.Operator;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 import io.harness.steps.approval.step.custom.CustomApprovalStepInfo;
 import io.harness.steps.approval.step.custom.CustomApprovalStepNode;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepInfo;
@@ -36,22 +44,34 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.PipelineStage.PipelineStageElement;
+import software.wings.beans.WorkflowPhase;
+import software.wings.beans.approval.ConditionalOperator;
+import software.wings.beans.approval.Criteria;
 import software.wings.beans.approval.JiraApprovalParams;
 import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.approval.ShellScriptApprovalParams;
-import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.ApprovalState;
-import software.wings.yaml.workflow.StepYaml;
 
+import com.google.common.collect.Lists;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-public class ApprovalStepMapperImpl implements StepMapper {
+@OwnedBy(HarnessTeam.CDC)
+public class ApprovalStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     ApprovalState state = (ApprovalState) getState(stepYaml);
     switch (state.getApprovalStateType()) {
       case JIRA:
@@ -67,18 +87,14 @@ public class ApprovalStepMapperImpl implements StepMapper {
     }
   }
 
-  @Override
-  public State getState(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
-    ApprovalState state = new ApprovalState(stepYaml.getName());
+  public AbstractStepNode getSpec(PipelineStageElement pipelineStageElement) {
+    Map<String, Object> properties = CollectionUtils.emptyIfNull(pipelineStageElement.getProperties());
+    ApprovalState state = new ApprovalState(pipelineStageElement.getName());
     state.parseProperties(properties);
-    return state;
+    return getSpec(state);
   }
 
-  @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    ApprovalState state = (ApprovalState) getState(stepYaml);
-
+  private AbstractStepNode getSpec(ApprovalState state) {
     switch (state.getApprovalStateType()) {
       case JIRA:
         return buildJiraApproval(state);
@@ -94,11 +110,45 @@ public class ApprovalStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public State getState(GraphNode stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
+    ApprovalState state = new ApprovalState(stepYaml.getName());
+    state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    ApprovalState state = (ApprovalState) getState(graphNode);
+    return getSpec(state);
+  }
+
+  @Override
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     ApprovalState state1 = (ApprovalState) getState(stepYaml1);
     ApprovalState state2 = (ApprovalState) getState(stepYaml2);
     // As long as the types match we can call them similar. Because it is easy to create step templates & customize
     return state1.getApprovalStateType() == state2.getApprovalStateType();
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .expression(exp)
+                   .build())
+        .map(ApprovalFunctor::new)
+        .collect(Collectors.toList());
   }
 
   private HarnessApprovalStepNode buildHarnessApproval(ApprovalState state) {
@@ -160,21 +210,52 @@ public class ApprovalStepMapperImpl implements StepMapper {
     return stepNode;
   }
 
+  private CriteriaSpecWrapper getServiceNowCriteriaSpecWrapper(Criteria criteria) {
+    if (criteria == null) {
+      return null;
+    }
+    CriteriaSpecWrapper criteriaSpecWrapper = new CriteriaSpecWrapper();
+    criteriaSpecWrapper.setType(CriteriaSpecType.KEY_VALUES);
+    List<Condition> conditions =
+        criteria.fetchConditions()
+            .entrySet()
+            .stream()
+            .map(entry
+                -> Condition.builder()
+                       .key(entry.getKey())
+                       .operator(Operator.IN)
+                       .value(ParameterField.createValueField(String.join(",", entry.getValue())))
+                       .build())
+            .collect(Collectors.toList());
+    KeyValuesCriteriaSpec spec =
+        KeyValuesCriteriaSpec.builder()
+            .matchAnyCondition(ParameterField.createValueField(ConditionalOperator.OR.equals(criteria.getOperator())))
+            .conditions(conditions)
+            .build();
+    criteriaSpecWrapper.setCriteriaSpec(spec);
+    return criteriaSpecWrapper;
+  }
+
   private ServiceNowApprovalStepNode buildServiceNowApproval(ApprovalState state) {
     ServiceNowApprovalStepNode stepNode = new ServiceNowApprovalStepNode();
     baseSetup(state, stepNode);
-
     ServiceNowApprovalParams approvalParams = state.getApprovalStateParams().getServiceNowApprovalParams();
-
+    ServiceNowChangeWindowSpec changeWindow = null;
+    if (approvalParams.isChangeWindowPresent()) {
+      changeWindow = ServiceNowChangeWindowSpec.builder()
+                         .startField(ParameterField.createValueField(approvalParams.getChangeWindowStartField()))
+                         .endField(ParameterField.createValueField(approvalParams.getChangeWindowEndField()))
+                         .build();
+    }
     ServiceNowApprovalStepInfo stepInfo =
         ServiceNowApprovalStepInfo.builder()
             .connectorRef(MigratorUtility.RUNTIME_INPUT)
             .delegateSelectors(null)
             .ticketNumber(ParameterField.createValueField(approvalParams.getIssueNumber()))
             .ticketType(ParameterField.createValueField(approvalParams.getTicketType().getDisplayName()))
-            .changeWindow(null)
-            .approvalCriteria(null)
-            .rejectionCriteria(null)
+            .changeWindow(changeWindow)
+            .approvalCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getApproval()))
+            .rejectionCriteria(getServiceNowCriteriaSpecWrapper(approvalParams.getRejection()))
             .build();
     stepNode.setServiceNowApprovalStepInfo(stepInfo);
     return stepNode;
@@ -198,8 +279,7 @@ public class ApprovalStepMapperImpl implements StepMapper {
                         .type("Inline")
                         .build())
             .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
-            .retryInterval(ParameterField.createValueField(
-                Timeout.builder().timeoutInMillis(approvalParams.getRetryInterval()).build()))
+            .retryInterval(MigratorUtility.getTimeout(approvalParams.getRetryInterval()))
             .outputVariables(Collections.emptyList())
             .environmentVariables(Collections.emptyList())
             .shell(ShellType.Bash)

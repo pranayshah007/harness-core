@@ -37,6 +37,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
@@ -55,6 +56,7 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   @VariableExpression(skipInnerObjectTraversal = true)
+  @NotNull
   ParameterField<Timeout> duration;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -108,10 +110,12 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
     stepBuilder.description(stepElementConfig.getDescription());
     stepBuilder.skipCondition(stepElementConfig.getSkipCondition());
-    stepBuilder.failureStrategies(stepElementConfig.getFailureStrategies());
-    stepBuilder.when(stepElementConfig.getWhen());
+    stepBuilder.when(stepElementConfig.getWhen() != null ? stepElementConfig.getWhen().getValue() : null);
+    stepBuilder.failureStrategies(
+        stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
+    stepBuilder.enforce(stepElementConfig.getEnforce());
 
     return stepBuilder;
   }

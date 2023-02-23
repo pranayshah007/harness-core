@@ -10,6 +10,8 @@ package io.harness.batch.processing.pricing.gcp.bigquery;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.text.SimpleDateFormat;
+
 @OwnedBy(HarnessTeam.CE)
 public class BQConst {
   private BQConst() {}
@@ -72,6 +74,17 @@ public class BQConst {
       + " INSERT INTO `%s` (cloudProviderId, entityId, entityType, entityName, labels, updatedAt) "
       + " VALUES ('%s', '%s', '%s', '%s', %s, '%s');";
 
+  public static final String ADD_COLUMN = "ALTER TABLE `%s` ADD COLUMN %s %s"; // tableName, columnName, columnDataType
+
+  public static final String COST_CATEGORY_DATA_TYPE = "ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>";
+
+  public static final String COST_CATEGORY_REMOVE = "UPDATE `%s` SET %s = [] "
+      + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
+
+  public static final String COST_CATEGORY_UPDATE = "UPDATE `%s` "
+      + "SET %s = %s "
+      + "WHERE startTime >= '%s' AND startTime <= '%s' AND %s IN %s";
+
   public static final String CLOUD_PROVIDER_ENTITY_TAGS_TABLE_NAME = "cloudProviderEntityTags";
 
   public static final String cost = "cost";
@@ -100,4 +113,10 @@ public class BQConst {
   public static final String gcpResourceName = "gcpResourceName";
   public static final String azureVMMeterCategory = "Virtual Machines";
   public static final String gcpComputeService = "Compute Engine";
+  public static final String costCategory = "costCategory";
+  public static final String awsUsageAccountId = "awsUsageaccountid";
+  public static final String gcpBillingAccountId = "gcpBillingAccountId";
+  public static final String azureSubscriptionGuid = "azureSubscriptionGuid";
+
+  public static final String BIG_QUERY_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss zz";
 }

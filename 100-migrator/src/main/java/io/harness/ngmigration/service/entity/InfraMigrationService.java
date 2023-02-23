@@ -7,9 +7,13 @@
 
 package io.harness.ngmigration.service.entity;
 
-import static software.wings.api.CloudProviderType.KUBERNETES_CLUSTER;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -17,23 +21,24 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.cdng.infra.InfrastructureDef;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
-import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.infrastructure.InfrastructureResourceClient;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
+import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -43,16 +48,17 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.infra.InfraDefMapper;
 import io.harness.ngmigration.service.infra.InfraMapperFactory;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
-import software.wings.infra.DirectKubernetesInfrastructure;
+import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -60,7 +66,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 
 import com.google.inject.Inject;
@@ -80,6 +85,8 @@ import retrofit2.Response;
 @Slf4j
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
+  @Inject InfrastructureResourceClient infrastructureResourceClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -92,7 +99,7 @@ public class InfraMigrationService extends NgMigrationService {
         .appId(basicInfo.getAppId())
         .accountId(basicInfo.getAccountId())
         .cgEntityId(basicInfo.getId())
-        .entityType(NGMigrationEntityType.ENVIRONMENT.name())
+        .entityType(NGMigrationEntityType.INFRA.name())
         .accountIdentifier(basicInfo.getAccountId())
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
@@ -139,39 +146,39 @@ public class InfraMigrationService extends NgMigrationService {
     children.add(CgEntityId.builder().id(infra.getInfrastructure().getCloudProviderId()).type(CONNECTOR).build());
 
     List<String> connectorIds = InfraMapperFactory.getInfraDefMapper(infra).getConnectorIds(infra);
-    if (EmptyPredicate.isNotEmpty(connectorIds)) {
+    if (isNotEmpty(connectorIds)) {
       children.addAll(connectorIds.stream()
                           .filter(StringUtils::isNotBlank)
                           .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
                           .collect(Collectors.toList()));
     }
+
+    if (isNotEmpty(infra.getProvisionerId())) {
+      children.add(
+          CgEntityId.builder().id(infra.getProvisionerId()).type(NGMigrationEntityType.INFRA_PROVISIONER).build());
+    }
+
+    if (infra.getCloudProviderType() == AWS) {
+      // AMI
+      if (infra.getInfrastructure() instanceof AwsAmiInfrastructure) {
+        AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
+        if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
+          children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+        }
+      }
+      // To Add for Traditional Deployments
+    }
+
+    if (infra.getDeploymentType() == DeploymentType.CUSTOM) {
+      children.add(CgEntityId.builder().id(infra.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(infrastructureDefinitionService.get(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    InfrastructureDefinition infra = (InfrastructureDefinition) entity;
-    if (infra.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(
-              Collections.singletonList(String.format("%s infra with cloud provider %s is not supported with migration",
-                  infra.getName(), infra.getCloudProviderType())))
-          .build();
-    }
-    if (!(infra.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(String.format(
-              "Issue With %s infra. We currently support only Direct Infra with migration", infra.getName())))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override
@@ -207,10 +214,10 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(infra, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
@@ -218,9 +225,24 @@ public class InfraMigrationService extends NgMigrationService {
     InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
-    Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
+    Set<CgEntityId> infraSpecIds = graph.get(entityId)
+                                       .stream()
+                                       .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
+                                       .collect(Collectors.toSet());
+    List<ElastigroupConfiguration> elastigroupConfigurations =
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+
+    Infrastructure infraSpec =
+        infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
     if (infraSpec == null) {
-      return Collections.emptyList();
+      log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
+      return YamlGenerationDetails.builder()
+          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
+                                                     .type(entityId.getType())
+                                                     .cgBasicInfo(infra.getCgBasicInfo())
+                                                     .reason("Unknown infra type or Failed to migrate the infra")
+                                                     .build()))
+          .build();
     }
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
@@ -259,11 +281,24 @@ public class InfraMigrationService extends NgMigrationService {
             .build();
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
-    return files;
+    return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    try {
+      InfrastructureDefinition entity = (InfrastructureDefinition) cgEntityNode.getEntity();
+      String envId = entity.getEnvId();
+      CgEntityId env = CgEntityId.builder().id(envId).type(ENVIRONMENT).build();
+      if (!migratedEntities.containsKey(env)) {
+        return null;
+      }
+      String envIdentifier = migratedEntities.get(env).getNgEntityDetail().getIdentifier();
+      return getInfra(accountIdentifier, ngEntityDetail, envIdentifier);
+    } catch (Exception ex) {
+      log.warn("Failed to retrieve the infra. ", ex);
+    }
     return null;
   }
 
@@ -272,39 +307,23 @@ public class InfraMigrationService extends NgMigrationService {
     return true;
   }
 
-  public InfrastructureDef getInfraDef(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(infrastructureDefinition, inputDTO.getCustomExpressions());
-
-    if (infrastructureDefinition.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      throw new InvalidRequestException("Only support K8s deployment");
-    }
-    if (!(infrastructureDefinition.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      throw new InvalidRequestException("Only support Direct Infra");
-    }
-    DirectKubernetesInfrastructure k8sInfra =
-        (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
-
-    NgEntityDetail connector = migratedEntities
-                                   .get(CgEntityId.builder()
-                                            .type(CONNECTOR)
-                                            .id(infrastructureDefinition.getInfrastructure().getCloudProviderId())
-                                            .build())
-                                   .getNgEntityDetail();
-    // TODO: Fix Release Name. release-${infra.kubernetes.infraId} -> release-<+INFRA_KEY>
-    return InfrastructureDef.builder()
-        .type(InfrastructureType.KUBERNETES_DIRECT)
-        .spec(K8SDirectInfrastructure.builder()
-                  .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-                  .namespace(ParameterField.createValueField(k8sInfra.getNamespace()))
-                  .releaseName(ParameterField.createValueField(k8sInfra.getReleaseName()))
-                  .build())
-        .build();
-  }
-
   @Override
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean migrateAll) {
     return migrateAll || root.getType().equals(NGMigrationEntityType.ENVIRONMENT);
+  }
+
+  private YamlDTO getInfra(String accountId, NgEntityDetail ngEntityDetail, String envIdentifier) {
+    try {
+      InfrastructureResponse response =
+          NGRestUtils.getResponse(infrastructureResourceClient.getInfra(ngEntityDetail.getIdentifier(), accountId,
+              ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier(), envIdentifier));
+      if (response == null || StringUtils.isBlank(response.getInfrastructure().getYaml())) {
+        return null;
+      }
+      return YamlUtils.read(response.getInfrastructure().getYaml(), InfrastructureConfig.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting infra - ", ex);
+      return null;
+    }
   }
 }

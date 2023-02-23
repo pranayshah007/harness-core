@@ -140,6 +140,15 @@ public class HintException extends WingsException {
   public static final String HINT_AZURE_AUTHENTICATION_ISSUE =
       "Please check if you Azure credentials are valid and correct";
   public static final String HINT_AZURE_GENERIC_ISSUE = "Please check if you Azure configuration is valid and correct";
+  public static final String HINT_NEXUS_ISSUE = "Please ensure version exist for given classifier/extension";
+  public static final String HINT_AZURE_ARTIFACT_NOT_FOUND_FOR_PACKAGE =
+      "Please check the artifact data (package name, project, package type, feed, version...)";
+  public static final String HINT_AZURE_ARTIFACT_DOWNLOAD_FAILED =
+      "Please check the artifact data (package name, project, package type, feed, version...) and credentials.";
+  public static final String HINT_DECRYPTED_SECRET_VALUE = "Please ensure secret with identifier %s exist.";
+
+  public static final String HINT_INPUT_SET_ACCOUNT_SETTING =
+      "1) Please check if account level setting is expected to be enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

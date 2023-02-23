@@ -13,14 +13,14 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/ubi-base:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-base:8.7
 
 USER root
 
-RUN curl -O https://dl.google.com/go/go1.18.linux-amd64.tar.gz \
-    && tar -xvf go1.18.linux-amd64.tar.gz \
+RUN curl -OL https://go.dev/dl/go1.19.4.linux-amd64.tar.gz \
+    && tar -xvf go1.19.4.linux-amd64.tar.gz \
     && mv go/ /usr/local/ \
-    && rm -rf go1.18.linux-amd64.tar.gz
+    && rm -rf go1.19.4.linux-amd64.tar.gz
 
 ENV PATH ${PATH}:/opt/gsutil:/usr/local/go/bin
 

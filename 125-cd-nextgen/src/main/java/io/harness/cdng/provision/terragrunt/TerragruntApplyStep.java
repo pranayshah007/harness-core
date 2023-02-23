@@ -17,7 +17,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -33,7 +33,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -46,10 +45,12 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -59,14 +60,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TerragruntApplyStep extends TaskExecutableWithRollbackAndRbac<TerragruntApplyTaskResponse> {
+public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskResponse> {
   public static final StepType STEP_TYPE =
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_APPLY.getYamlType());
 
   @Inject private TerragruntStepHelper helper;
 
-  @Inject private KryoSerializer kryoSerializer;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
 
@@ -144,6 +144,9 @@ public class TerragruntApplyStep extends TaskExecutableWithRollbackAndRbac<Terra
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
 
+    builder.tgModuleSourceInheritSSH(
+        helper.isExportCredentialForSourceModule(spec.getConfigFiles(), stepElementParameters.getType()));
+
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
@@ -176,11 +179,18 @@ public class TerragruntApplyStep extends TaskExecutableWithRollbackAndRbac<Terra
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.APPLY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
+    }
+
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
@@ -283,7 +293,7 @@ public class TerragruntApplyStep extends TaskExecutableWithRollbackAndRbac<Terra
     commandUnitsList.add(FETCH_CONFIG_FILES);
     commandUnitsList.add(APPLY);
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         TERRAGRUNT_APPLY_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

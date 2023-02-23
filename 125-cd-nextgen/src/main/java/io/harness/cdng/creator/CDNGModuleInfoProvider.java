@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
 
@@ -39,10 +40,10 @@ import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
-import io.harness.cdng.service.steps.ServiceConfigStep;
-import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
@@ -85,6 +86,10 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     ArtifactsOutcome artifactsOutcome = artifactsOutcomeOptional.get();
     if (artifactsOutcome.getPrimary() != null) {
       artifactsSummaryBuilder.primary(artifactsOutcome.getPrimary().getArtifactSummary());
+      if (artifactsOutcome.getPrimary().getArtifactSummary() != null) {
+        artifactsSummaryBuilder.artifactDisplayName(
+            artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName());
+      }
     }
 
     if (isNotEmpty(artifactsOutcome.getSidecars())) {
@@ -117,6 +122,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     return Optional.ofNullable((FreezeOutcome) optionalOutcome.getOutcome());
   }
 
+  private Optional<ArtifactsOutcome> getArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (!optionalOutcome.isFound()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
+  }
+
   private Optional<ArtifactsOutcome> getArtifactsOutcome(OrchestrationEvent event) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
@@ -136,9 +150,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
-    return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceStepV3.STEP_TYPE))
+    return (Objects.equals(stepType, ServiceConfigStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceSectionStepConstants.STEP_TYPE)
+               || Objects.equals(stepType, ServiceStepV3Constants.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 
@@ -180,6 +194,12 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       serviceOutcome.ifPresent(outcome
           -> cdPipelineModuleInfoBuilder.serviceDefinitionType(outcome.getServiceDefinitionType())
                  .serviceIdentifier(outcome.getIdentifier()));
+      Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
+      artifactsOutcome.ifPresent(outcome -> {
+        if (outcome.getPrimary() != null && outcome.getPrimary().getArtifactSummary() != null) {
+          cdPipelineModuleInfoBuilder.artifactDisplayName(outcome.getPrimary().getArtifactSummary().getDisplayName());
+        }
+      });
     }
     if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome infraOptionalOutcome = outcomeService.resolveOptional(
@@ -196,8 +216,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         }
       }
     } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
-      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+      OptionalOutcome optionalOutcome =
+          outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
         GitopsClustersOutcome gitOpsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         gitOpsOutcome.getClustersData()
@@ -285,7 +305,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       });
     } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
         GitopsClustersOutcome clustersOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         final Map<String, List<GitopsClustersOutcome.ClusterData>> clusterData = groupGitOpsClusters(optionalOutcome);
@@ -338,6 +358,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                                    .envGroupName(clustersDatum.getEnvGroupName())
                                                                    .envGroupId(clustersDatum.getEnvGroupId())
                                                                    .envId(clustersDatum.getEnvId())
+                                                                   .agentId(clustersDatum.getAgentId())
+                                                                   .scope(clustersDatum.getScope())
                                                                    .build())
                                                         .collect(Collectors.toList());
     gitOpsExecutionSummary.setClusters(clusters);

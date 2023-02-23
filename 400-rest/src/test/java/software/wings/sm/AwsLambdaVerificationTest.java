@@ -34,6 +34,7 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -67,6 +68,8 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
   @Mock private SecretManager secretManager;
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
+
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsLambdaVerification awsLambdaVerification;
@@ -105,7 +108,7 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
 
     awsLambdaVerification.execute(context);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(APP_ID);

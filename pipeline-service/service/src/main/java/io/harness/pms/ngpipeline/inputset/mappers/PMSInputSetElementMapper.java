@@ -22,6 +22,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
@@ -32,7 +33,12 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.utils.IdentifierGeneratorUtils;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
@@ -133,6 +139,58 @@ public class PMSInputSetElementMapper {
     }
   }
 
+  public InputSetEntity toInputSetEntityV1(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String yaml, InputSetEntityType inputSetEntityType) {
+    JsonNode inputSetNode;
+    try {
+      // validating the duplicate fields in yaml fields
+      inputSetNode = YamlUtils.readTree(yaml, true).getNode().getCurrJsonNode();
+    } catch (IOException exception) {
+      throw new InvalidRequestException("Invalid input set yaml provided");
+    }
+    String name = JsonNodeUtils.getString(inputSetNode, "name");
+    if (EmptyPredicate.isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
+      throw new InvalidRequestException("Input Set name cannot be empty or a runtime input");
+    }
+    String identifier = IdentifierGeneratorUtils.getId(name);
+    return InputSetEntity.builder()
+        .accountId(accountId)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .pipelineIdentifier(pipelineIdentifier)
+        .identifier(identifier)
+        .name(name)
+        .inputSetEntityType(inputSetEntityType)
+        .yaml(yaml)
+        .harnessVersion(PipelineVersion.V1)
+        .build();
+  }
+
+  public InputSetEntity toInputSetEntityV1(InputSetRequestInfoDTO requestInfoDTO, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    String identifier = requestInfoDTO.getIdentifier();
+    if (EmptyPredicate.isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
+      throw new InvalidRequestException("Input Set Identifier cannot be empty or a runtime input");
+    }
+    String name = requestInfoDTO.getName();
+    if (NGExpressionUtils.isRuntimeOrExpressionField(name)) {
+      throw new InvalidRequestException("Input Set Name cannot a runtime input");
+    }
+    return InputSetEntity.builder()
+        .accountId(accountId)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .pipelineIdentifier(pipelineIdentifier)
+        .identifier(identifier)
+        .name(name)
+        .description(requestInfoDTO.getDescription())
+        .tags(TagMapper.convertToList(requestInfoDTO.getTags()))
+        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+        .yaml(requestInfoDTO.getYaml())
+        .harnessVersion(PipelineVersion.V1)
+        .build();
+  }
+
   public InputSetEntity toInputSetEntityForOverlay(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
     return InputSetEntity.builder()
@@ -169,7 +227,6 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -192,7 +249,6 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build())
         .inputSetErrorWrapper(errorWrapperDTO)
         .isErrorResponse(true)
@@ -222,7 +278,6 @@ public class PMSInputSetElementMapper {
         .isErrorResponse(isError)
         .invalidInputSetReferences(invalidReferences)
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid() || isNotEmpty(invalidReferences)
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -251,7 +306,6 @@ public class PMSInputSetElementMapper {
         .gitDetails(entityGitDetails)
         .createdAt(entity.getCreatedAt())
         .lastUpdatedAt(entity.getLastUpdatedAt())
-        .isOutdated(entity.getIsInvalid())
         .inputSetErrorDetails(inputSetErrorDetails)
         .overlaySetErrorDetails(overlaySetErrorDetails)
         .entityValidityDetails(entity.isEntityInvalid()
@@ -278,5 +332,31 @@ public class PMSInputSetElementMapper {
                        .identifier(entity.getIdentifier())
                        .build())
         .build();
+  }
+
+  public InputSetEntity toInputSetEntityFromVersion(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetYaml, String inputSetVersion, InputSetEntityType inputSetEntityType) {
+    switch (inputSetVersion) {
+      case PipelineVersion.V1:
+        return toInputSetEntityV1(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml, inputSetEntityType);
+      case PipelineVersion.V0:
+        return toInputSetEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml);
+      default:
+        throw new IllegalStateException("version not supported");
+    }
+  }
+
+  public InputSetEntity toInputSetEntityFromVersion(InputSetRequestInfoDTO requestInfoDTO, String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetVersion) {
+    switch (inputSetVersion) {
+      case PipelineVersion.V1:
+        return toInputSetEntityV1(requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      case PipelineVersion.V0:
+        return toInputSetEntity(
+            requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, requestInfoDTO.getYaml());
+      default:
+        throw new IllegalStateException("version not supported");
+    }
   }
 }

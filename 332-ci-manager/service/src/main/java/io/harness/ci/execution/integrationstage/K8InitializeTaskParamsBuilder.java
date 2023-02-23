@@ -8,6 +8,7 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
@@ -37,6 +38,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -58,6 +60,7 @@ import io.harness.delegate.beans.ci.pod.CIK8PodParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
+import io.harness.delegate.beans.ci.pod.HostAliasParams;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
@@ -193,6 +196,12 @@ public class K8InitializeTaskParamsBuilder {
     String serviceAccountName = resolveStringParameter("serviceAccountName", "K8InitializeStep", "stageSetup",
         k8sDirectInfraYaml.getSpec().getServiceAccountName(), false);
 
+    List<String> hostNames = resolveListParameter(
+        "hostNames", "K8InitializeStep", "stageSetup", k8sDirectInfraYaml.getSpec().getHostNames(), false);
+    List<HostAliasParams> hostAliasParamsList = new ArrayList<>();
+    if (isNotEmpty(hostNames)) {
+      hostAliasParamsList.add(HostAliasParams.builder().ipAddress("127.0.0.1").hostnameList(hostNames).build());
+    }
     if (isNotEmpty(labels)) {
       buildLabels.putAll(labels);
     }
@@ -221,6 +230,7 @@ public class K8InitializeTaskParamsBuilder {
         .initContainerParamsList(singletonList(podContainers.getLeft()))
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
+        .hostAliasParamsList(hostAliasParamsList)
         .build();
   }
 
@@ -400,12 +410,16 @@ public class K8InitializeTaskParamsBuilder {
             .type(IntegrationStageNode.StepType.CI)
             .identifier(initializeStepInfo.getStageIdentifier())
             .variables(initializeStepInfo.getVariables())
+            .pipelineVariables(initializeStepInfo.getPipelineVariables())
             .integrationStageConfig((IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig())
             .build();
-    CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
-                                          .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-                                          .executionSource(initializeStepInfo.getExecutionSource())
-                                          .build();
+    StageDetails stageDetails = getStageDetails(ambiance);
+    CIExecutionArgs ciExecutionArgs =
+        CIExecutionArgs.builder()
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
+            .executionSource(initializeStepInfo.getExecutionSource() != null ? initializeStepInfo.getExecutionSource()
+                                                                             : stageDetails.getExecutionSource())
+            .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
@@ -452,5 +466,14 @@ public class K8InitializeTaskParamsBuilder {
       }
     }
     return k8InitializeTaskUtils.generatePodName(stageId);
+  }
+
+  private StageDetails getStageDetails(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    return (StageDetails) optionalSweepingOutput.getOutput();
   }
 }

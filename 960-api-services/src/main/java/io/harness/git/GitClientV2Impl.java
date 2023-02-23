@@ -149,6 +149,7 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
+  private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -1114,7 +1115,7 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String commitReference = checkoutFiles(request);
         String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
 
         FileIo.createDirectoryIfDoesNotExist(request.getDestinationDirectory());
@@ -1143,11 +1144,6 @@ public class GitClientV2Impl implements GitClientV2 {
                 .branch(request.getBranch())
                 .build();
           }
-        }
-
-        String commitReference = null;
-        if (request.isTrackCommitReference()) {
-          commitReference = getLatestCommitReference(repoPath);
         }
 
         resetWorkingDir(request);
@@ -1238,7 +1234,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   // use this method wrapped in inter process file lock to handle multiple delegate version
-  private void checkoutFiles(FetchFilesByPathRequest request) {
+  private String checkoutFiles(FetchFilesByPathRequest request) {
     synchronized (gitClientHelper.getLockObject(request.getConnectorId())) {
       log.info(new StringBuilder(128)
                    .append(" Processing Git command: FETCH_FILES ")
@@ -1258,11 +1254,13 @@ public class GitClientV2Impl implements GitClientV2 {
       cloneRepoForFilePathCheckout(request);
 
       // if useBranch is set, use it to checkout latest, else checkout given commitId
+      String commitId = request.getCommitId();
       if (request.useBranch()) {
-        checkoutBranchForPath(request);
+        commitId = checkoutBranchForPath(request);
       } else {
         checkoutGivenCommitForPath(request);
       }
+      return commitId;
     }
   }
 
@@ -1285,7 +1283,7 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
-  private void checkoutBranchForPath(FetchFilesByPathRequest request) {
+  private String checkoutBranchForPath(FetchFilesByPathRequest request) {
     try (Git git = openGit(
              new File(gitClientHelper.getFileDownloadRepoDirectory(request)), request.getDisableUserGitConfig())) {
       log.info("Checking out Branch: " + request.getBranch());
@@ -1299,6 +1297,7 @@ public class GitClientV2Impl implements GitClientV2 {
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
       checkoutCommand.call();
       log.info("Successfully Checked out Branch: " + request.getBranch());
+      return getCommitId(git, request.getBranch());
     } catch (Exception ex) {
       log.error(GIT_YAML_LOG_PREFIX + EXCEPTION_STRING, ex);
       throw JGitRuntimeException.builder()
@@ -1307,6 +1306,19 @@ public class GitClientV2Impl implements GitClientV2 {
           .branch(request.getBranch())
           .build();
     }
+  }
+
+  private String getCommitId(Git git, String branch) {
+    String commitId = null;
+    try {
+      Ref ref = git.getRepository().getAllRefs().get("refs/remotes/origin/" + branch);
+      if (ref != null && ref.getObjectId() != null) {
+        commitId = ref.getObjectId().name();
+      }
+    } catch (Exception e) {
+      log.error("Failed to get commit id: {}", e.getMessage());
+    }
+    return commitId;
   }
 
   private void setPathsForCheckout(List<String> filePaths, CheckoutCommand checkoutCommand) {
@@ -1411,6 +1423,14 @@ public class GitClientV2Impl implements GitClientV2 {
       gitCommand.setTransportConfigCallback(transport -> {
         if (transport instanceof TransportHttp) {
           TransportHttp http = (TransportHttp) transport;
+          // Without proper timeout socket can get hang (ref: java.net.SocketInputStream.socketRead0) indefinitely
+          // during packet loss. In some scenarios even if connection is established back this may still remain stuck.
+          // Since socketRead0 ignores the thread interruptions, the original task thread will remain in running state
+          // forever. As all of our operations are synchronized stuck thread will block other git tasks to execute
+          // This timeout is used for setting connection and read timeout based on current implementation. A better
+          // option for further improvements is to have a custom connection factory where will use a more granular
+          // configuration of these timeouts parameters
+          http.setTimeout(SOCKET_CONNECTION_READ_TIMEOUT_SECONDS);
           http.setHttpConnectionFactory(connectionFactory);
         }
       });

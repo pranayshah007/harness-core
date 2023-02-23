@@ -19,14 +19,15 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.AwsCallTracker;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 
@@ -100,9 +101,13 @@ public class AMIRegistryServiceImpl implements AMIRegistryService {
 
     DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest().withFilters(filterList);
 
-    DescribeImagesResult describeImagesResult;
+    DescribeImagesResult describeImagesResult = null;
 
-    describeImagesResult = describeEc2Images(awsInternalConfig, region, describeImagesRequest);
+    try {
+      describeImagesResult = describeEc2Images(awsInternalConfig, region, describeImagesRequest);
+    } catch (Exception e) {
+      throw new InvalidRequestException("Failed to list versions for the AMI");
+    }
 
     Collections.sort(
         describeImagesResult.getImages(), Collections.reverseOrder(Comparator.comparing(Image::getCreationDate)));

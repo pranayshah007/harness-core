@@ -12,10 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.Instance;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceGroupedByPipelineExecution;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -54,7 +60,9 @@ public interface InstanceRepositoryCustom {
   AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
       String buildIdentifier);
-
+  AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String serviceIdentifier, String displayName, boolean isGitOps);
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
@@ -62,12 +70,24 @@ public interface InstanceRepositoryCustom {
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
       String buildIdentifier);
 
+  AggregationResults<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean isGitOps);
+
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId);
+  AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
+      boolean isGitOps);
+
   List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, String envId, String infraId, String clusterIdentifier, String pipelineExecutionId,
       String buildId, int limit);
+
+  AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName);
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
@@ -85,4 +105,9 @@ public interface InstanceRepositoryCustom {
 
   long countDistinctActiveServicesDeployedInInterval(
       String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  UpdateResult updateMany(Criteria criteria, Update update);
+
+  List<Instance> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, String agentIdentifier);
 }

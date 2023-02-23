@@ -22,6 +22,8 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -30,8 +32,6 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -64,10 +64,25 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
         .costTargets(getCostTargets())
         .sharedCosts(getSharedCosts())
         .unallocatedCost(getUnallocatedCost())
+        .dataSources(getDataSources())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())
         .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
+
+  public static BusinessMapping fromHistory(BusinessMappingHistory businessMappingHistory) {
+    return BusinessMapping.builder()
+        .uuid(businessMappingHistory.getBusinessMappingId())
+        .name(businessMappingHistory.getName())
+        .accountId(businessMappingHistory.getAccountId())
+        .costTargets(businessMappingHistory.getCostTargets())
+        .sharedCosts(businessMappingHistory.getSharedCosts())
+        .unallocatedCost(businessMappingHistory.getUnallocatedCost())
+        .dataSources(businessMappingHistory.getDataSources())
+        .createdAt(businessMappingHistory.getCreatedAt())
+        .lastUpdatedAt(businessMappingHistory.getLastUpdatedAt())
         .build();
   }
 }

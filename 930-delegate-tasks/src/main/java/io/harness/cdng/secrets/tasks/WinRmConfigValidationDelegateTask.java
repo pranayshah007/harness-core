@@ -8,6 +8,7 @@
 package io.harness.cdng.secrets.tasks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.utils.SecretUtils.validateDecryptedValue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -83,13 +84,16 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
     NTLMConfigDTO decryptedNTLMConfigDTO =
         (NTLMConfigDTO) secretDecryptionService.decrypt(ntlmConfigDTO, encryptionDetails);
 
+    char[] decryptedValue = decryptedNTLMConfigDTO.getPassword().getDecryptedValue();
+    validateDecryptedValue(decryptedValue, decryptedNTLMConfigDTO.getPassword().getIdentifier());
+
     builder.authenticationScheme(AuthenticationScheme.NTLM)
         .domain(ntlmConfigDTO.getDomain())
         .username(ntlmConfigDTO.getUsername())
         .useSSL(ntlmConfigDTO.isUseSSL())
         .useNoProfile(ntlmConfigDTO.isUseNoProfile())
         .skipCertChecks(ntlmConfigDTO.isSkipCertChecks())
-        .password(String.valueOf(decryptedNTLMConfigDTO.getPassword().getDecryptedValue()));
+        .password(String.valueOf(decryptedValue));
 
     return builder.build();
   }
@@ -107,7 +111,9 @@ public class WinRmConfigValidationDelegateTask extends AbstractDelegateRunnableT
           TGTPasswordSpecDTO passwordSpecDTO =
               (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
 
-          password = String.valueOf(passwordSpecDTO.getPassword().getDecryptedValue());
+          char[] decryptedValue = passwordSpecDTO.getPassword().getDecryptedValue();
+          validateDecryptedValue(decryptedValue, passwordSpecDTO.getPassword().getIdentifier());
+          password = String.valueOf(decryptedValue);
           break;
 
         case KeyTabFilePath:

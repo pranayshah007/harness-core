@@ -23,6 +23,7 @@ import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class AddPipelinesReferenceToUserGroups implements Migration {

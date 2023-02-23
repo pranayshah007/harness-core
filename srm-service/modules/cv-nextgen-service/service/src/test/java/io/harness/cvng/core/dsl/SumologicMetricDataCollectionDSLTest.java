@@ -105,7 +105,7 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
     name = "metric-1";
     String groupName = "g1";
     String query = "metric=Mem_UsedPercent";
-    String identifier = "m1";
+    identifier = "m1";
     String serviceInstancePath = "_sourceHost";
     List<SumologicMetricDataCollectionInfo.MetricCollectionInfo> metricInfoDTOs = new ArrayList<>();
     SumologicMetricDataCollectionInfo.MetricCollectionInfo infoDTO1 =

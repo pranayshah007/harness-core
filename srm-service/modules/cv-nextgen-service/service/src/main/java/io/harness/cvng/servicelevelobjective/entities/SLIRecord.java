@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.analysis.entities.VerificationTaskBase;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -21,6 +22,9 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Version;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -35,9 +39,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Version;
 
 @Data
 @Builder(buildMethodName = "unsafeBuild")
@@ -78,7 +79,8 @@ public class SLIRecord extends VerificationTaskBase implements PersistentEntity,
   private long runningGoodCount; // // prevMinuteRecord.runningGoodCount + sliState == GOOD ? 1 : 0
 
   private int sliVersion;
-  public enum SLIState { NO_DATA, GOOD, BAD }
+  public enum SLIState { NO_DATA, GOOD, BAD, SKIP_DATA }
+
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
   @Data
   @Builder

@@ -9,7 +9,7 @@ features:
     restrictions:
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 10000
+        limit: 30
         clientName: chaos
       TEAM:
         restrictionType: LICENSE_STATIC_LIMIT
@@ -24,7 +24,7 @@ features:
     restrictions:
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 1000
+        limit: 2
         clientName: chaos
       TEAM:
         restrictionType: LICENSE_STATIC_LIMIT

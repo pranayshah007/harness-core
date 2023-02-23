@@ -24,10 +24,10 @@ import software.wings.service.intfc.trigger.TriggerExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.EnumSet;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton

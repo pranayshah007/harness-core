@@ -28,14 +28,17 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -110,12 +113,14 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -136,13 +141,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected OutcomeService outcomeService;
   @Inject protected CDStepHelper cdStepHelper;
   @Inject protected ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
-  @Inject protected InfrastructureMapper infrastructureMapper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
+  @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Data
   @AllArgsConstructor
@@ -182,7 +187,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
@@ -492,7 +497,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .map(TaskSelectorYaml::new)
             .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
     return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
@@ -537,7 +542,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
                                                       .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
 
@@ -622,6 +627,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       }
     }
 
+    if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.GCP.name()));
+      }
+    }
+
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
@@ -651,6 +664,29 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     }
 
     if (InfrastructureKind.ASG.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AWS.name()));
+    }
+
+    if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())
         && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
@@ -763,11 +799,26 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         infrastructureStepHelper.validateExpression(
             ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
         break;
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
+            googleFunctionsInfrastructure.getRegion(), googleFunctionsInfrastructure.getProject());
+        break;
       case InfrastructureKind.TAS:
         TanzuApplicationServiceInfrastructure tasInfrastructure =
             (TanzuApplicationServiceInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
+        break;
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
+        break;
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

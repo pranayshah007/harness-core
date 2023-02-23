@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.git;
+
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -29,6 +30,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -43,10 +45,12 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
+import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.helper.BitbucketHelper;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -72,6 +76,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -83,11 +88,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jooq.tools.StringUtils;
 import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
@@ -106,6 +114,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject private BitbucketApiClient bitbucketApiClient;
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -176,6 +185,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         case AZURE_REPO:
           responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
           break;
+        case BITBUCKET:
+          responseData = (GitApiTaskResponse) bitbucketApiClient.mergePR(taskParams);
+          break;
 
         default:
           String errorMsg = "Failed to execute MergePR step. Connector not supported";
@@ -218,7 +230,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       throws IOException, ParseException {
     try {
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, true);
+          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, false);
+      updateFilesNotFoundWithEmptyContent(
+          fetchFilesResult, gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths());
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
@@ -245,6 +259,21 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       }
       throw e;
     }
+  }
+
+  @VisibleForTesting
+  void updateFilesNotFoundWithEmptyContent(@Nonnull FetchFilesResult fetchFilesResult, @Nonnull List<String> paths) {
+    List<GitFile> updatedGitFiles = new ArrayList<>();
+    for (String path : paths) {
+      Optional<GitFile> gitfile =
+          fetchFilesResult.getFiles().stream().filter(gitFile -> gitFile.getFilePath().equals(path)).findFirst();
+      if (!gitfile.isPresent()) {
+        updatedGitFiles.add(GitFile.builder().fileContent("").filePath(path).build());
+      } else {
+        updatedGitFiles.add(gitfile.get());
+      }
+    }
+    fetchFilesResult.setFiles(updatedGitFiles);
   }
 
   public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
@@ -284,8 +313,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(sb.toString(), INFO);
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
+      String prTitle = (StringUtils.isEmpty(gitOpsTaskParams.getPrTitle())) ? PR_TITLE : gitOpsTaskParams.getPrTitle();
+
       CreatePRResponse createPRResponse =
-          createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
+          createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
 
       String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 
@@ -313,7 +344,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
-      // TODO: BITBUCKET
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
         return "https://github.com"
@@ -326,6 +356,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
         return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
+      case BITBUCKET:
+        return BitbucketHelper.getBitbucketPRLink((BitbucketConnectorDTO) scmConnector, prNumber);
       default:
         return "";
     }
@@ -465,10 +497,14 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
       stringObjectMap.forEach(
           (k, v) -> logCallback.saveExecutionLog(format("%s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
-      if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
-        updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
+      if (StringUtils.isEmpty(gitFile.getFileContent())) {
+        updatedFiles.add(gson.toJson(stringObjectMap));
       } else {
-        updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
+        if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
+          updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
+        } else {
+          updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
+        }
       }
     }
 

@@ -10,6 +10,7 @@ package io.harness.perpetualtask.internal;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
@@ -29,6 +30,8 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -38,8 +41,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -48,6 +49,7 @@ import org.mongodb.morphia.annotations.Id;
 @FieldNameConstants(innerTypeName = "PerpetualTaskRecordKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.HARNESS)
+@SecondaryStoreIn(DbAliases.DMS)
 @Entity(value = "perpetualTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
 @Slf4j
@@ -74,11 +76,17 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.assignIteration)
                  .field(PerpetualTaskRecordKeys.assignAfterMs)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("assigned_delegate")
+                 .field(PerpetualTaskRecordKeys.accountId)
+                 .field(PerpetualTaskRecordKeys.state)
+                 .field(PerpetualTaskRecordKeys.delegateId)
+                 .build())
         .build();
   }
 
   @Id String uuid;
-  @FdIndex String accountId;
+  String accountId;
   String perpetualTaskType;
   PerpetualTaskClientContext clientContext;
   long intervalSeconds;

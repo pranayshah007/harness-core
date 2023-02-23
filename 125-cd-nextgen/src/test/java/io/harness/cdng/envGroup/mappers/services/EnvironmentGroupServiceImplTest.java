@@ -151,8 +151,9 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
         .listAllEntityUsage(
             0, 10, entity.getAccountId(), identifierRef.getFullyQualifiedName(), EntityType.ENVIRONMENT_GROUP, "");
     EnvironmentGroupEntity deletedEntity = entity.withDeleted(true);
-    doReturn(true).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
-    EnvironmentGroupEntity isDeletedEntity = environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null);
+    doReturn(true).when(environmentGroupRepository).deleteEnvGroup(deletedEntity, false);
+    EnvironmentGroupEntity isDeletedEntity =
+        environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null, false);
 
     assertThat(isDeletedEntity.getDeleted()).isTrue();
 
@@ -163,13 +164,13 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
         .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
             ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, true);
     // making version equal to 20L which is not equal to 10L  in entityWithVersion
-    assertThatThrownBy(() -> environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, 20L))
+    assertThatThrownBy(() -> environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, 20L, false))
         .isInstanceOf(InvalidRequestException.class);
 
     // case3: version is same as that in entity. Here entity fetched having deleted as false and should throw error
     EnvironmentGroupEntity nonDeletedEntity = entity.withDeleted(false);
-    doReturn(false).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
-    assertThatThrownBy(() -> environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, 10L))
+    doReturn(false).when(environmentGroupRepository).deleteEnvGroup(deletedEntity, false);
+    assertThatThrownBy(() -> environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, 10L, false))
         .isInstanceOf(InvalidRequestException.class);
   }
 

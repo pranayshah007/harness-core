@@ -121,6 +121,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Account Template
       description: Deletes particular version of Template at Account scope.
@@ -247,6 +248,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Org Template
       description: Deletes particular version of Template at Organization scope.
@@ -377,6 +379,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Project Template
       description: Deletes particular version of Template at Project scope.
@@ -415,7 +418,7 @@ components:
           account: example_account
           org: example_organization
           project: example_project
-          slug: example_template
+          identifier: example_template
           name: Example_template
           description: string
           tags:
@@ -471,27 +474,27 @@ components:
         org:
           type: string
           description: Organization identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
-        slug:
+          maxLength: 128
+        identifier:
           type: string
           description: Template identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Template description
@@ -555,7 +558,7 @@ components:
           description: True if this version is stable version of Template
       required:
         - account
-        - slug
+        - identifier
         - name
         - yaml
     TemplateMetadataSummaryResponse:
@@ -568,7 +571,7 @@ components:
           account: example_account
           org: example_organization
           project: example_project
-          slug: example_template
+          identifier: example_template
           name: Example_template
           description: string
           tags:
@@ -599,27 +602,27 @@ components:
         org:
           type: string
           description: Organization identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
-        slug:
+          maxLength: 128
+        identifier:
           type: string
           description: Template identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Template Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           description: Template description
@@ -689,7 +692,7 @@ components:
             account: example_account
             org: example_organization
             project: example_project
-            slug: example_template
+            identifier: example_template
             name: Example_template
             description: string
             tags:
@@ -758,7 +761,7 @@ components:
           - account: example_account
             org: example_organization
             project: example_project
-            slug: example_template
+            identifier: example_template
             name: Example_template
             description: string
             tags:
@@ -1104,7 +1107,7 @@ components:
       in: header
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Comments:
       name: comments
       in: query
@@ -1112,6 +1115,13 @@ components:
       schema:
         type: string
       description: 'Specify comment with respect to changes  '
+    ForceDelete:
+      name: forceDelete
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Enable this field to force delete a template
     Limit:
       name: limit
       in: query
@@ -1137,7 +1147,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - updated
       description: Parameter on the basis of which sorting is done.
@@ -1496,7 +1506,7 @@ components:
                 account: example_account
                 org: example_organization
                 project: example_project
-                slug: example_template
+                identifier: example_template
                 name: Example_template
                 description: string
                 tags:
@@ -1554,7 +1564,7 @@ components:
                 account: example_account
                 org: example_organization
                 project: example_project
-                slug: example_template
+                identifier: example_template
                 name: Example_template
                 description: string
                 tags:
@@ -1616,7 +1626,7 @@ components:
                   account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1676,7 +1686,7 @@ components:
                   account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1738,7 +1748,7 @@ components:
                 - account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1770,7 +1780,7 @@ components:
                 - account: example_account
                   org: example_organization
                   project: example_project
-                  slug: example_template
+                  identifier: example_template
                   name: Example_template
                   description: string
                   tags:
@@ -1793,6 +1803,19 @@ components:
                   store_type: INLINE
                   connector_ref: example_connector_ref
                   stable_template: true
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     TemplateUpdateStableResponse:
       description: Template stable version update Response
       content:

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CommitDetails;
 import io.harness.beans.ContentType;
 import io.harness.beans.FileGitDetails;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.HookEventType;
 import io.harness.beans.Repository;
 import io.harness.beans.WebhookGitUser;
@@ -58,5 +59,6 @@ public class ScmJavaClientKryoRegistrar implements KryoRegistrar {
     kryo.register(ListFilesInCommitResponse.class, 955017);
     kryo.register(FileGitDetails.class, 955018);
     kryo.register(ContentType.class, 955019);
+    kryo.register(GetBatchFileRequestIdentifier.class, 955021);
   }
 }

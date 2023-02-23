@@ -18,6 +18,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,6 @@ import lombok.Data;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -43,7 +43,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @OwnedBy(PIPELINE)
 public class WebhookEvent implements PersistentEntity, UuidAccess, PersistentRegularIterable {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   String payload;
   List<HeaderConfig> headers;
   String accountId;

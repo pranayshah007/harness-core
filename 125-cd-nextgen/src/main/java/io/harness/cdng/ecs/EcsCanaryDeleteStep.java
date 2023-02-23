@@ -16,6 +16,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteDataOutcome;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -30,7 +31,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -51,12 +51,14 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class EcsCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<EcsCommandResponse> {
+public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ECS_CANARY_DELETE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -183,7 +185,8 @@ public class EcsCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<EcsCo
 
     return ecsStepCommonHelper
         .queueEcsTask(stepElementParameters, ecsCanaryDeleteRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 

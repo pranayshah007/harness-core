@@ -8,6 +8,7 @@
 package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -162,6 +163,23 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     assertThat(response.getUser().getEmail()).isEqualTo(userEmail);
   }
 
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testCgLDAPBasedAuthenticationNoLdapSSO() {
+    Account account = getTestAccount(true);
+    User user = getUserWithEmailAndAccount(account);
+
+    when(authenticationUtils.getUser(anyString())).thenReturn(user);
+    when(userService.getUserByEmail(userEmail)).thenReturn(user);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
+    when(ssoSettingService.getLdapSettingsByAccountId(testAccountId)).thenReturn(null);
+
+    assertThatThrownBy(() -> ldapBasedAuthHandler.authenticate(userEmail, userPwd))
+        .isInstanceOf(WingsException.class)
+        .hasMessage(INVALID_CREDENTIAL.name());
+  }
+
   private Account getTestAccount(boolean isNGEnabled) {
     Account account = new Account();
     account.setUuid("testAccountId");
@@ -190,7 +208,7 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     when(authenticationUtils.getUser(anyString())).thenReturn(user);
     when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
     LdapDelegateService ldapDelegateService = mock(LdapDelegateService.class);
-    when(delegateProxyFactory.get(eq(LdapDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(LdapDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(ldapDelegateService);
 
     doReturn(encryptedDataDetail).when(spyLdapSettings).getEncryptedDataDetails(any());

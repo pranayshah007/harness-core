@@ -63,6 +63,8 @@ cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh 
 cp -R ../../srm-service/build/container/scripts/ .
 
 cp ../../protocol.info .
+cp ../../srm-service/config/jfr/default.jfc .
+cp ../../srm-service/config/jfr/profile.jfc .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
 if [ ! -z ${PURPOSE} ]
@@ -281,6 +283,8 @@ cp ../../840-template-service/keystore.jks .
 cp ../../840-template-service/key.pem .
 cp ../../840-template-service/cert.pem .
 cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
+cp ../../840-template-service/src/main/resources/jfr/default.jfc .
+cp ../../840-template-service/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/template-service/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
@@ -320,7 +324,6 @@ mkdir -p dist/migrator ;
 cd dist/migrator
 
 cp ${BAZEL_BIN}/100-migrator/module_deploy.jar migrator-capsule.jar
-cp ../../400-rest/src/main/resources/hazelcast.xml .
 cp ../../keystore.jks .
 cp ../../360-cg-manager/key.pem .
 cp ../../360-cg-manager/cert.pem .

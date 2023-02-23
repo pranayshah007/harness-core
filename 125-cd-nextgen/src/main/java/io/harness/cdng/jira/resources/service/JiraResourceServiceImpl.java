@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
@@ -30,9 +32,13 @@ import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HarnessJiraException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.jira.JiraActionNG;
 import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldTypeNG;
@@ -57,9 +63,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Singleton
+@Slf4j
 public class JiraResourceServiceImpl implements JiraResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
@@ -170,7 +178,13 @@ public class JiraResourceServiceImpl implements JiraResourceService {
                                               .build();
 
     final DelegateTaskRequest delegateTaskRequest = createDelegateTaskRequest(baseNGAccess, taskParameters);
-    DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData responseData;
+    try {
+      responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+    } catch (DelegateServiceDriverException ex) {
+      log.warn("Exception while executing jira task", ex);
+      throw buildDelegateNotAvailableHintException("Delegates are not available for performing jira operation.");
+    }
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
       throw new HarnessJiraException(errorNotifyResponseData.getErrorMessage(), WingsException.USER);
@@ -214,6 +228,9 @@ public class JiraResourceServiceImpl implements JiraResourceService {
   }
 
   private List<EncryptedDataDetail> getEncryptionDetails(JiraConnectorDTO jiraConnectorDTO, NGAccess ngAccess) {
+    if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
+      return secretManagerClientService.getEncryptionDetails(ngAccess, jiraConnectorDTO.getAuth().getCredentials());
+    }
     return secretManagerClientService.getEncryptionDetails(ngAccess, jiraConnectorDTO);
   }
 
@@ -230,5 +247,11 @@ public class JiraResourceServiceImpl implements JiraResourceService {
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();
+  }
+
+  private HintException buildDelegateNotAvailableHintException(String delegateDownErrorMessage) {
+    return new HintException(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+        new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
   }
 }

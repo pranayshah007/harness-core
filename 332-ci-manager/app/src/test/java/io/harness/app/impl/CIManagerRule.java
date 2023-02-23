@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
-import io.harness.beans.execution.QueueServiceClient;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -35,7 +35,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -67,6 +67,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -77,7 +78,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -176,11 +176,12 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .ciExecutionServiceConfig(
                 CIExecutionServiceConfig.builder()
                     .addonImageTag("v1.4-alpha")
-                    .queueServiceClient(
-                        QueueServiceClient.builder()
-                            .queueServiceConfig(
+                    .queueServiceClientConfig(
+                        QueueServiceClientConfig.builder()
+                            .httpClientConfig(
                                 ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
-                            .authToken("tokrn")
+                            .queueServiceSecret("tokrn")
+                            .envNamespace("localhost")
                             .build())
                     .defaultCPULimit(200)
                     .defaultInternalImageConnector("account.harnessimage")

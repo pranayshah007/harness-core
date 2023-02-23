@@ -17,6 +17,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutput;
 import io.harness.connector.ConnectorInfoDTO;
@@ -34,7 +35,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -49,12 +49,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,13 +64,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class CloudformationDeleteStackStep extends TaskExecutableWithRollbackAndRbac<CloudformationTaskNGResponse> {
+public class CloudformationDeleteStackStep extends CdTaskExecutable<CloudformationTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.CLOUDFORMATION_DELETE_STACK.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private CloudformationStepHelper cloudFormationStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject private CloudformationConfigDAL cloudformationConfigDAL;
@@ -183,7 +185,7 @@ public class CloudformationDeleteStackStep extends TaskExecutableWithRollbackAnd
             .parameters(new Object[] {builder.build()})
             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(CloudformationCommandUnit.DeleteStack.name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(parameters.getDelegateSelectors()))),

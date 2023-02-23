@@ -439,7 +439,36 @@ public enum TaskType {
   AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback"),
   TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
   TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
-  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2");
+  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2"),
+
+  TAS_ROLLING_DEPLOY(TaskGroup.TAS, "Tas Rolling Deploy task"),
+  TAS_ROLLING_ROLLBACK(TaskGroup.TAS, "Tas Rolling Rollback task"),
+  K8S_DRY_RUN_MANIFEST_TASK_NG(TaskGroup.K8S_NG, "K8s Dry Run Manifest Task"),
+
+  COMMAND_TASK_NG_WITH_AZURE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Swap Service"),
+
+  AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data"),
+  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Deploy"),
+  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Rollback"),
+  SCM_BATCH_GET_FILE_TASK(TaskGroup.GIT, "SCM Batch Get File Task"),
+  TERRAFORM_CLOUD_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Task NG", true),
+  GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task"),
+  GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Storage Artifact Task"),
+  GOOGLE_FUNCTION_COMMAND_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Task"),
+  GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Source Artifact Task"),
+  GCP_PROJECTS_TASK_NG(TaskGroup.GCP, "Gcp List Projects Task"),
+  GCS_BUCKETS_TASK_NG(TaskGroup.GCP, "Gcs List Buckets per Project Task"),
+  AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Deploy Task NG"),
+  GOOGLE_FUNCTION_DEPLOY_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Task"),
+  GOOGLE_FUNCTION_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
+  GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
+  GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Without Traffic Task"),
+  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task"),
+  ECS_TASK_ARN_ROLLING_DEPLOY_NG(TaskGroup.ECS, "ECS Rolling Task"),
+  ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
+  ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task");
+
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

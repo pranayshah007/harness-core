@@ -177,7 +177,8 @@ public class ApprovalStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.spec.approvalMessage",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.description",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.spec.includePipelineExecutionHistory",
-            "pipeline.stages.stage1.spec.execution.steps.harness_approval.name");
+            "pipeline.stages.stage1.spec.execution.steps.harness_approval.name",
+            "pipeline.stages.stage1.spec.execution.steps.harness_approval.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -190,8 +191,7 @@ public class ApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.harness_approval.identifier",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.type",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.harness_approval.endTs",
-            "pipeline.stages.stage1.spec.execution.steps.harness_approval.when");
+            "pipeline.stages.stage1.spec.execution.steps.harness_approval.endTs");
 
     // yaml output properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

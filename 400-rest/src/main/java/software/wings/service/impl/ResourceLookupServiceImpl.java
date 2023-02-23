@@ -55,6 +55,7 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.UuidAware;
 
@@ -85,6 +86,10 @@ import software.wings.service.intfc.yaml.YamlResourceService;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -95,10 +100,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * Audit Service Implementation class.
@@ -175,7 +176,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     Map<String, ResourceLookup> resourceLookupMap = new HashMap<>();
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "resourceIdResourceLookupIndex");
+    findOptions.hint(BasicDBUtils.getIndexObject(ResourceLookup.mongoIndexes(), "resourceIdResourceLookupIndex"));
 
     try (HIterator<ResourceLookup> iterator = new HIterator<>(query.fetch(findOptions))) {
       while (iterator.hasNext()) {
@@ -341,11 +342,11 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
   public PageResponse<ResourceLookup> listResourceLookupRecordsWithTags(
       String accountId, String filter, String limit, String offset) {
     return listResourceLookupRecordsWithTagsInternal(
-        accountId, filter, limit, offset, supportedTagEntityTypes.toArray());
+        accountId, filter, limit, offset, supportedTagEntityTypes.toArray(), false);
   }
 
   private PageResponse<ResourceLookup> listResourceLookupRecordsWithTagsInternal(
-      String accountId, String filter, String limit, String offset, Object[] entityTypes) {
+      String accountId, String filter, String limit, String offset, Object[] entityTypes, boolean hitSecondary) {
     PageRequest<ResourceLookup> pageRequest = new PageRequest<>();
 
     pageRequest.addFilter(ResourceLookupKeys.accountId, EQ, accountId);
@@ -354,8 +355,12 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     pageRequest.addFilter(ResourceLookupKeys.resourceType, IN, entityTypes);
     pageRequest.addOrder(ResourceLookupKeys.resourceName, ASC);
     resourceLookupFilterHelper.addResourceLookupFiltersToPageRequest(pageRequest, filter);
-
-    PageResponse<ResourceLookup> pageResponse = wingsPersistence.query(ResourceLookup.class, pageRequest);
+    PageResponse<ResourceLookup> pageResponse;
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
+      pageResponse = wingsPersistence.querySecondary(ResourceLookup.class, pageRequest);
+    } else {
+      pageResponse = wingsPersistence.query(ResourceLookup.class, pageRequest);
+    }
     List<ResourceLookup> filteredResourceLookups = applyAuthFilters(pageResponse.getResponse());
 
     List<ResourceLookup> response;
@@ -406,13 +411,13 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
 
   @Override
   public <T> PageResponse<T> listWithTagFilters(
-      PageRequest<T> request, String filter, EntityType entityType, boolean withTags) {
+      PageRequest<T> request, String filter, EntityType entityType, boolean withTags, boolean hitSecondary) {
     if (isNotBlank(filter)) {
       String accountId = getAccountIdFromPageRequest(request);
 
       if (isNotBlank(accountId)) {
         PageResponse<ResourceLookup> resourceLookupPageResponse = listResourceLookupRecordsWithTagsInternal(
-            accountId, filter, String.valueOf(Integer.MAX_VALUE), "0", new Object[] {entityType});
+            accountId, filter, String.valueOf(Integer.MAX_VALUE), "0", new Object[] {entityType}, hitSecondary);
 
         List<ResourceLookup> response = resourceLookupPageResponse.getResponse();
         if (isEmpty(response)) {

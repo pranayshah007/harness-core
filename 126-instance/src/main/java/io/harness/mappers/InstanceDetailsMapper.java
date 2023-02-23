@@ -10,18 +10,21 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
+import io.harness.entities.ArtifactDetails;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
@@ -40,25 +43,26 @@ import org.apache.commons.lang3.StringUtils;
 public class InstanceDetailsMapper {
   private final InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
 
-  public List<InstanceDetailsDTO> toInstanceDetailsDTOList(List<InstanceDTO> instanceDTOList) {
+  public List<InstanceDetailsDTO> toInstanceDetailsDTOList(List<InstanceDTO> instanceDTOList, Boolean isGitops) {
     if (instanceDTOList == null) {
       return new ArrayList<>();
     }
     List<InstanceDetailsDTO> instanceDetailsDTOList = new ArrayList<>();
-    instanceDTOList.forEach(instanceDTO -> instanceDetailsDTOList.add(toInstanceDetailsDTO(instanceDTO)));
+    instanceDTOList.forEach(instanceDTO -> instanceDetailsDTOList.add(toInstanceDetailsDTO(instanceDTO, isGitops)));
     return instanceDetailsDTOList;
   }
 
-  private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO) {
+  private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO, Boolean isGitops) {
     AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
-    String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
-    String artifactName =
-        StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : instanceDTO.getPrimaryArtifact().getTag();
+    ArtifactDetails primaryArtifact = instanceDTO.getPrimaryArtifact();
+    String artifactDisplayName = primaryArtifact == null ? null : primaryArtifact.getDisplayName();
+    String tag = primaryArtifact == null ? null : primaryArtifact.getTag();
+    String artifactName = StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : tag;
     return InstanceDetailsDTO.builder()
         .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())
-        .deployedAt(instanceDTO.getLastDeployedAt())
+        .deployedAt(isGitops ? instanceDTO.getPodCreatedAt() : instanceDTO.getLastDeployedAt())
         .deployedById(instanceDTO.getLastDeployedById())
         .deployedByName(instanceDTO.getLastDeployedByName())
         .infrastructureDetails(instanceSyncHandler.getInfrastructureDetails(instanceDTO.getInstanceInfoDTO()))
@@ -94,6 +98,10 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.TAS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof SpotInstanceInfoDTO) {
       return ServiceSpecType.ELASTIGROUP;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AsgInstanceInfoDTO) {
+      return ServiceSpecType.ASG;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof GoogleFunctionInstanceInfoDTO) {
+      return ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
     }
     return null;
   }

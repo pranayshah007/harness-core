@@ -85,7 +85,8 @@ public class GCSRestoreCacheStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.spec.archiveFormat",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.spec.key",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.spec.connectorRef",
-            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.spec.runAsUser");
+            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.spec.runAsUser",
+            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -97,7 +98,6 @@ public class GCSRestoreCacheStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.type",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.identifier",
-            "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.when",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.startTs",
             "pipeline.stages.gcs_restore_cache.spec.execution.steps.restoreCacheTar.endTs");
 

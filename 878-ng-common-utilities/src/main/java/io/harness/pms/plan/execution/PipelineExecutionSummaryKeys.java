@@ -43,4 +43,5 @@ public class PipelineExecutionSummaryKeys {
   public final String avatar = "avatar";
   public final String event = "event";
   public final String executionTriggerInfoIdentifier = "identifier";
+  public final String tags = "tags";
 }

@@ -44,6 +44,9 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,9 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -226,7 +226,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
     HelmChart helmChart = helmCollectChartResponse == null || isEmpty(helmCollectChartResponse.getHelmCharts())
         ? null
-        : helmCollectChartResponse.getHelmCharts().get(0);
+        : HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
 
     if (helmChart != null) {
       addCollectedHelmCharts(accountId, appManifestId, Collections.singletonList(helmChart));
@@ -249,7 +249,7 @@ public class HelmChartServiceImpl implements HelmChartService {
     if (helmCollectChartResponse == null) {
       return Collections.emptyList();
     }
-    return helmCollectChartResponse.getHelmCharts();
+    return HelmChart.fromDtos(helmCollectChartResponse.getHelmCharts());
   }
 
   @Override
@@ -300,7 +300,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
     HelmCollectChartResponse helmCollectChartResponse = null;
     try {
-      helmCollectChartResponse = delegateService.executeTask(delegateTask);
+      helmCollectChartResponse = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       log.error("Delegate Service execute task : fetchChartVersion" + e);
     }

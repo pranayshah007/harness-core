@@ -80,7 +80,7 @@ public class NotificationHelper {
     }
   }
 
-  private Map<String, String> constructTemplateData(FreezeEventType freezeEventType, FreezeInfoConfig freezeInfoConfig,
+  public Map<String, String> constructTemplateData(FreezeEventType freezeEventType, FreezeInfoConfig freezeInfoConfig,
       Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze) {
     Map<String, String> data = new ArrayMap<>();
     if (globalFreeze) {
@@ -103,9 +103,12 @@ public class NotificationHelper {
         firstWindowEndTime =
             LocalDateTime.parse(freezeInfoConfig.getWindows().get(0).getEndTime(), FreezeTimeUtils.dtf);
       }
-      Pair<LocalDateTime, LocalDateTime> windowTimes =
-          FreezeTimeUtils.setCurrWindowStartAndEndTime(firstWindowStartTime, firstWindowEndTime,
-              freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType(), timeZone);
+      Pair<LocalDateTime, LocalDateTime> windowTimes = Pair.of(firstWindowStartTime, firstWindowEndTime);
+      if (freezeInfoConfig.getWindows().get(0).getRecurrence() != null
+          && freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType() != null) {
+        windowTimes = FreezeTimeUtils.setCurrWindowStartAndEndTime(firstWindowStartTime, firstWindowEndTime,
+            freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType(), timeZone);
+      }
       data.put("START_TIME", windowTimes.getLeft().toString());
       data.put("END_TIME", windowTimes.getRight().toString());
       data.put("ACCOUNT_ID", accountId);
@@ -149,7 +152,7 @@ public class NotificationHelper {
     }
   }
 
-  private String getManualFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
+  public String getManualFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
     String freezeUrl = "";
     if (freezeInfoConfig != null) {
       String orgId = freezeInfoConfig.getOrgIdentifier();
@@ -170,7 +173,7 @@ public class NotificationHelper {
     return freezeUrl;
   }
 
-  private String getGlobalFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
+  public String getGlobalFreezeUrl(String baseUrl, FreezeInfoConfig freezeInfoConfig, String accountId) {
     String freezeUrl = "";
     if (freezeInfoConfig != null) {
       String orgId = freezeInfoConfig.getOrgIdentifier();

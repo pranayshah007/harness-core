@@ -21,14 +21,15 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.FeatureName;
 import io.harness.beans.ScopeLevel;
-import io.harness.common.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
@@ -51,6 +52,8 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -180,9 +183,22 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void applyAdfsAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
+      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
+      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      if (!isNull(serviceNowConnectorDTO.getAuth())
+          && ServiceNowAuthType.ADFS.equals(serviceNowConnectorDTO.getAuth().getAuthType())
+          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_ADFS_AUTH)) {
+        throw new InvalidRequestException("Unsupported servicenow auth type provided : ADFS");
+      }
+    }
+  }
+
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
+    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -287,6 +303,7 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
+    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =
@@ -478,7 +495,7 @@ public class ConnectorServiceImpl implements ConnectorService {
     int page = 0;
     int size = 2;
     Page<ConnectorResponseDTO> connectorResponseDTOList =
-        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null);
+        list(page, size, accountIdentifier, null, null, null, null, SECRET_MANAGER, null, null);
     if (connectorResponseDTOList.getContent().size() == 1) {
       throw new InvalidRequestException(
           String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
@@ -749,9 +766,9 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
-      ConnectorCategory sourceCategory) {
-    return defaultConnectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory);
+      ConnectorCategory sourceCategory, String version) {
+    return defaultConnectorService.list(page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        type, category, sourceCategory, version);
   }
 
   @Override

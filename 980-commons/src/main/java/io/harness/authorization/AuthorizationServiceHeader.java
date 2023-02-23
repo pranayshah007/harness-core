@@ -18,6 +18,7 @@ public enum AuthorizationServiceHeader {
   MANAGER("Manager"),
   NG_MANAGER("NextGenManager"),
   BATCH_PROCESSING("BatchProcessing"),
+  AUDIT_EVENT_STREAMING("AuditEventStreaming"),
   CI_MANAGER("CIManager"),
 
   STO_MANAGER("STOManager"),
@@ -43,7 +44,8 @@ public enum AuthorizationServiceHeader {
   CHAOS_SERVICE("ChaosService"),
   CODE("Code"),
   IACM_MANAGER("IACMManager"),
-  MIGRATOR("MigratorService");
+  MIGRATOR("MigratorService"),
+  IDP_SERVICE("IDPService");
 
   private final String serviceId;
 

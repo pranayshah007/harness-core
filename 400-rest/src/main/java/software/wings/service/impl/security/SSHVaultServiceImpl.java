@@ -51,14 +51,14 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @Singleton
@@ -161,7 +161,7 @@ public class SSHVaultServiceImpl extends BaseVaultServiceImpl implements SSHVaul
                 .ngTask(isNgTask(sshVaultConfig.getOrgIdentifier(), sshVaultConfig.getProjectIdentifier()))
                 .build();
 
-        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+        return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
             .validateSSHVault(sshVaultConfig);
       } catch (WingsException e) {
         failedAttempts++;

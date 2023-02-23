@@ -33,6 +33,7 @@ import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -41,6 +42,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Api("/delegate-token/ng")
 @Path("/delegate-token/ng")
@@ -98,6 +100,8 @@ public class DelegateNgTokenInternalResource {
   @ExceptionMetered
   @InternalApi
   public RestResponse<List<DelegateTokenDetails>> getDelegateTokens(
+      @Parameter(description = "Name of Delegate Token (ACTIVE or REVOKED).") @QueryParam(
+          "tokenName") String delegateTokenName,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -108,7 +112,13 @@ public class DelegateNgTokenInternalResource {
               + "If left empty both active and revoked tokens will be retrieved") @QueryParam("status")
       DelegateTokenStatus status) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
-    return new RestResponse<>(delegateTokenService.getDelegateTokens(accountIdentifier, owner, status));
+    if (StringUtils.isBlank(delegateTokenName)) {
+      return new RestResponse<>(delegateTokenService.getDelegateTokens(accountIdentifier, owner, status));
+    } else {
+      final DelegateTokenDetails tokenDetails =
+          delegateTokenService.getDelegateToken(accountIdentifier, delegateTokenName, true);
+      return new RestResponse<>(Objects.isNull(tokenDetails) ? List.of() : List.of(tokenDetails));
+    }
   }
 
   @GET

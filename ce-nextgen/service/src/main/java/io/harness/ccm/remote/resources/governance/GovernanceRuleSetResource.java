@@ -40,7 +40,9 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.GovernanceConfig;
 import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -84,8 +86,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Path("governance")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-//@NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
 @Service
 @OwnedBy(CE)
 @Slf4j
@@ -113,20 +114,25 @@ public class GovernanceRuleSetResource {
   private final RuleSetService ruleSetService;
   private final GovernanceRuleService ruleService;
   private final TelemetryReporter telemetryReporter;
-  @Inject CENextGenConfiguration configuration;
-  @Inject private OutboxService outboxService;
-  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  private final CENextGenConfiguration configuration;
+  private final OutboxService outboxService;
+  private final TransactionTemplate transactionTemplate;
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
 
   @Inject
-  public GovernanceRuleSetResource(
-      RuleSetService ruleSetService, GovernanceRuleService ruleService, TelemetryReporter telemetryReporter) {
+  public GovernanceRuleSetResource(RuleSetService ruleSetService, GovernanceRuleService ruleService,
+      TelemetryReporter telemetryReporter, OutboxService outboxService,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      CENextGenConfiguration configuration) {
     //    this rbacHelper  rbacHelper
     this.ruleSetService = ruleSetService;
     this.ruleService = ruleService;
     this.telemetryReporter = telemetryReporter;
+    this.outboxService = outboxService;
+    this.transactionTemplate = transactionTemplate;
+    this.configuration = configuration;
   }
 
   @POST
@@ -148,22 +154,25 @@ public class GovernanceRuleSetResource {
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
+
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     if (ruleSetService.fetchByName(accountId, ruleSet.getName(), true) != null) {
       throw new InvalidRequestException("Rule Set with this name already exits");
     }
     if (!ruleSet.getIsOOTB()) {
       ruleSet.setAccountId(accountId);
-    } else {
+      ruleService.check(accountId, ruleSet.getRulesIdentifier());
+    } else if (ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+      ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
-    if (ruleSet.getRulesIdentifier().size() > configuration.getGovernanceConfig().getPoliciesInPack()) {
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
-    ruleService.check(accountId, ruleSet.getRulesIdentifier());
-    if (!ruleSetService.save(ruleSet)) {
-      throw new InvalidRequestException("Rule set wasn't created");
-    }
+    ruleSetService.save(ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
@@ -198,10 +207,14 @@ public class GovernanceRuleSetResource {
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
-    ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    if (oldRuleSet.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB Rule Set is not allowed");
+    }
     ruleService.check(accountId, ruleSet.getRulesIdentifier());
-    if (ruleSet.getRulesIdentifier().size() > configuration.getGovernanceConfig().getPoliciesInPack()) {
-      throw new InvalidRequestException("Limit of Rules In a Set is exceeded ");
+    GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
+    if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
+      throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
     ruleSetService.update(accountId, ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
@@ -210,7 +223,7 @@ public class GovernanceRuleSetResource {
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleSetUpdateEvent(accountId, ruleSet.toDTO()));
+      outboxService.save(new RuleSetUpdateEvent(accountId, ruleSet.toDTO(), oldRuleSet.toDTO()));
       return ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
     })));
   }
@@ -230,27 +243,27 @@ public class GovernanceRuleSetResource {
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<RuleSet>
-  updateRuleOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  updateRuleSetOOTB(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
     //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule pack is not allowed");
-    }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
     ruleSet.toDTO();
-    ruleSet.setAccountId(GLOBAL_ACCOUNT_ID);
+    if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule set is not allowed");
+    }
     ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false);
     if (ruleSet.getRulesIdentifier().size() > configuration.getGovernanceConfig().getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules In a Set is exceeded ");
     }
     ruleService.check(GLOBAL_ACCOUNT_ID, ruleSet.getRulesIdentifier());
     ruleSetService.update(GLOBAL_ACCOUNT_ID, ruleSet);
-    return ResponseDTO.newResponse(ruleSet);
+    return ResponseDTO.newResponse(ruleSetService.fetchById(GLOBAL_ACCOUNT_ID, ruleSet.getUuid(), false));
   }
 
   @POST
@@ -322,13 +335,14 @@ public class GovernanceRuleSetResource {
       @PathParam("ruleSetId") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
     // rbacHelper checkRuleSetDeletePermission(accountId, null, null)
+    RuleSet ruleSet = ruleSetService.fetchById(accountId, uuid, false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_SET_NAME, ruleSetService.fetchById(accountId, uuid, false).getName());
+    properties.put(RULE_SET_NAME, ruleSet.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleSetDeleteEvent(accountId, ruleSetService.fetchById(accountId, uuid, false)));
+      outboxService.save(new RuleSetDeleteEvent(accountId, ruleSet.toDTO()));
       return ruleSetService.delete(accountId, uuid);
     })));
   }

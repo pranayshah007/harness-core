@@ -20,6 +20,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.services.AccountService;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
@@ -32,12 +33,14 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.GlobalFreezeBannerDetailsResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
+import io.harness.freeze.entity.FreezeConstants;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -54,7 +57,9 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.List;
@@ -119,6 +124,7 @@ public class FreezeCRUDResource {
   private final FreezeConfigRepository freezeConfigRepository;
   private final NotificationHelper notificationHelper;
   private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
+  @Inject private AccountService accountService;
 
   @POST
   @ApiOperation(value = "Creates a Freeze", nickname = "createFreeze")
@@ -137,7 +143,10 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+      @RequestBody(required = true, description = "Freeze YAML", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Freeze YAML",
+                     value = FreezeConstants.CREATE_API_YAML, description = "Sample Freeze YAML"))
+      }) @NotNull String freezeYaml) {
     FreezeRBACHelper.checkAccess(accountId, projectId, orgId, freezeYaml, accessControlClient);
     return ResponseDTO.newResponse(freezeCRUDService.createFreezeConfig(freezeYaml, accountId, orgId, projectId));
   }
@@ -183,8 +192,12 @@ public class FreezeCRUDResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = "Freeze Identifier.") @PathParam("freezeIdentifier")
-      @ResourceIdentifier String freezeIdentifier, @Parameter(description = "Freeze YAML") @NotNull String freezeYaml) {
+      @Parameter(description = "Freeze Identifier.") @PathParam(
+          "freezeIdentifier") @ResourceIdentifier String freezeIdentifier,
+      @RequestBody(required = true, description = "Freeze YAML", content = {
+        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Update Freeze YAML",
+                     value = FreezeConstants.UPDATE_API_YAML, description = "Sample Freeze YAML"))
+      }) @NotNull String freezeYaml) {
     return ResponseDTO.newResponse(
         freezeCRUDService.updateFreezeConfig(freezeYaml, accountId, orgId, projectId, freezeIdentifier));
   }
@@ -365,6 +378,11 @@ public class FreezeCRUDResource {
         activeOrUpcomingGlobalFreezes.stream()
             .filter(activeOrUpcomingParentGlobalFreeze -> activeOrUpcomingParentGlobalFreeze.getWindow() != null)
             .collect(Collectors.toList());
+    AccountDTO accountDTO = accountService.getAccount(accountId);
+    if (accountDTO != null && accountDTO.getName() != null && activeOrUpcomingGlobalFreezes.size() > 0) {
+      activeOrUpcomingGlobalFreezes.forEach(
+          freezeBannerDetails -> freezeBannerDetails.setAccountName(accountDTO.getName()));
+    }
     GlobalFreezeBannerDetailsResponseDTO globalFreezeBannerDetailsResponseDTO =
         GlobalFreezeBannerDetailsResponseDTO.builder()
             .activeOrUpcomingGlobalFreezes(activeOrUpcomingGlobalFreezes)

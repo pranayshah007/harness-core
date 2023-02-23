@@ -31,6 +31,8 @@ import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -39,8 +41,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -165,7 +165,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   }
 
   @Getter(lazy = true)
-  private final byte[] timeoutMessage = kryoSerializer.asDeflatedBytes(
+  private final byte[] timeoutMessage = referenceFalseKryoSerializer.asDeflatedBytes(
       ErrorNotifyResponseData.builder()
           .errorMessage("Delegate service did not provide response and the task time-outed")
           .build());
@@ -178,7 +178,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             .setOnInsert(DelegateAsyncTaskResponseKeys.responseData, getTimeoutMessage())
             .setOnInsert(DelegateAsyncTaskResponseKeys.processAfter, expiry)
             .setOnInsert(DelegateAsyncTaskResponseKeys.validUntil, Date.from(validUntilInstant))
-            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, false)
+            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, true)
             .set(DelegateAsyncTaskResponseKeys.holdUntil, holdUntil);
 
     Query<DelegateAsyncTaskResponse> upsertQuery =

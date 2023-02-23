@@ -28,7 +28,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
-import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
@@ -83,14 +82,14 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, CfCommandUnitConstants.Upsize, true, commandUnitsProgress);
     executionLogCallback.saveExecutionLog(color("--------- Starting Rollback deployment", White, Bold));
-    List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
+
     CfRollbackCommandResult cfRollbackCommandResult = CfRollbackCommandResult.builder().build();
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfRollbackCommandRequestNG) cfCommandRequestNG;
 
     File workingDirectory = null;
-    Exception exception;
+
     try {
       // This will be CF_HOME for any cli related operations
       workingDirectory = cfCommandTaskHelperNG.generateWorkingDirectoryForDeployment();
@@ -128,9 +127,8 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // Downsizing
       executionLogCallback =
           tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
-      cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfServiceDataUpdated,
-          cfRequestConfig, cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG,
-          autoscalarRequestData);
+      cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfRequestConfig,
+          cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG, autoscalarRequestData);
       cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 

@@ -10,6 +10,7 @@ package io.harness.accesscontrol.acl.api;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.security.dto.PrincipalType.SERVICE;
 
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -21,14 +22,17 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
 public class AccessControlResourceUtils {
-  public static boolean serviceContextAndNoPrincipalInBody(
-      io.harness.security.dto.Principal principalInContext, Principal principalToCheckPermissions) {
+  public static boolean serviceContextAndOnlyServicePrincipalInBody(
+      io.harness.security.dto.Principal principalInContext, Principal principalToCheckPermissions,
+      boolean allowDifferentPrincipalInTokenAndBody) {
     Optional<io.harness.security.dto.Principal> serviceCall =
         Optional.ofNullable(principalInContext).filter(x -> SERVICE.equals(x.getType()));
 
     return serviceCall.isPresent()
         && (principalToCheckPermissions == null
-            || Objects.equals(serviceCall.get().getName(), principalToCheckPermissions.getPrincipalIdentifier()));
+            || Objects.equals(serviceCall.get().getName(), principalToCheckPermissions.getPrincipalIdentifier())
+            || (allowDifferentPrincipalInTokenAndBody
+                && PrincipalType.SERVICE.equals(principalToCheckPermissions.getPrincipalType())));
   }
 
   private static boolean userContextAndDifferentPrincipalInBody(
@@ -57,13 +61,14 @@ public class AccessControlResourceUtils {
         .build();
   }
 
-  public static boolean checkPreconditions(
-      io.harness.security.dto.Principal contextPrincipal, Principal principalToCheckPermissionsFor) {
+  public static boolean checkPreconditions(io.harness.security.dto.Principal contextPrincipal,
+      Principal principalToCheckPermissionsFor, boolean allowDifferentPrincipalInTokenAndBody) {
     boolean validContext = checkForValidContext(contextPrincipal);
     if (!validContext) {
       return false;
     }
-    if (serviceContextAndNoPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
+    if (serviceContextAndOnlyServicePrincipalInBody(
+            contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody)) {
       return true;
     }
     if (userContextAndDifferentPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {

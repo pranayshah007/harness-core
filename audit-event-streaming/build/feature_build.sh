@@ -39,4 +39,3 @@ audit-event-streaming/build/build_dist.sh || true
 
 echo "INFO: list the jars built"
 find . -name "*.jar"
-

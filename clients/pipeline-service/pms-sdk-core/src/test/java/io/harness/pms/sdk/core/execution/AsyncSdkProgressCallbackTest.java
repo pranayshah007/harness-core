@@ -8,6 +8,7 @@
 package io.harness.pms.sdk.core.execution;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,11 +18,13 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.AmbianceTestUtils;
 import io.harness.pms.sdk.core.DummyExecutionStrategy;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
+import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -73,6 +76,21 @@ public class AsyncSdkProgressCallbackTest extends PmsSdkCoreTestBase {
                                                     .executableProcessorFactory(executableProcessorFactory)
                                                     .build();
     progressCallback.notify(generateUuid(), CommandUnitsProgress.builder().build());
+    Mockito.verify(executableProcessorFactory).obtainProcessor(ExecutionMode.CHILD);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testNotifyWithAsyncProgressData() {
+    AsyncSdkProgressCallback progressCallback = AsyncSdkProgressCallback.builder()
+                                                    .ambianceBytes(ambiance.toByteArray())
+                                                    .stepParameters(new byte[] {})
+                                                    .mode(ExecutionMode.CHILD)
+                                                    .executableProcessorFactory(executableProcessorFactory)
+                                                    .build();
+    AsyncProgressData asyncProgressData = AsyncProgressData.builder().status(Status.SUCCEEDED).build();
+    progressCallback.notify(generateUuid(), asyncProgressData);
     Mockito.verify(executableProcessorFactory).obtainProcessor(ExecutionMode.CHILD);
   }
 }

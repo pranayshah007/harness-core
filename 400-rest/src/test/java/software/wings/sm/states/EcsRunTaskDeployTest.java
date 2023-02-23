@@ -38,6 +38,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -103,6 +104,7 @@ public class EcsRunTaskDeployTest extends WingsBaseTest {
   @Mock private GitConfigHelperService mockGitConfigHelperService;
   @Mock private FeatureFlagService mockFeatureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceTemplateService serviceTemplateService;
@@ -168,7 +170,7 @@ public class EcsRunTaskDeployTest extends WingsBaseTest {
     doReturn(phaseElement).when(mockContext).getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
     doReturn(APP_ID).when(mockContext).getAppId();
     doReturn(application).when(mockAppService).get(APP_ID);
-    doReturn("SUCCESS").when(mockDelegateService).queueTask(any());
+    doReturn("SUCCESS").when(mockDelegateService).queueTaskV2(any());
     doReturn(anEnvironment().environmentType(EnvironmentType.PROD).build())
         .when(mockContext)
         .fetchRequiredEnvironment();
@@ -309,7 +311,7 @@ public class EcsRunTaskDeployTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().build();
     doReturn(gitConfig).when(mockSettingsService).fetchGitConfigFromConnectorId(gitFileConfig.getConnectorId());
     doNothing().when(mockGitConfigHelperService).convertToRepoGitConfig(any(), any());
-    doReturn("SUCCESS").when(mockDelegateService).queueTask(any());
+    doReturn("SUCCESS").when(mockDelegateService).queueTaskV2(any());
     doReturn(true)
         .when(mockFeatureFlagService)
         .isEnabled(FeatureName.BIND_FETCH_FILES_TASK_TO_DELEGATE, application.getAccountId());
@@ -317,7 +319,7 @@ public class EcsRunTaskDeployTest extends WingsBaseTest {
 
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     assertThat(delegateTask).isNotNull();

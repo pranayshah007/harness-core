@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.validation.async.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
@@ -54,6 +55,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
             .action(action)
             .params(ValidationParams.builder().pipelineEntity(entity).build())
             .result(ValidationResult.builder().build())
+            .startTs(System.currentTimeMillis())
             .build();
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);
@@ -68,6 +70,23 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
   }
 
   @Override
+  public PipelineValidationEvent createRecordForSuccessfulSyncValidation(
+      PipelineEntity pipelineEntity, String branch, GovernanceMetadata governanceMetadata, Action action) {
+    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branch);
+    PipelineValidationEvent pipelineValidationEvent =
+        PipelineValidationEvent.builder()
+            .status(ValidationStatus.SUCCESS)
+            .fqn(fqn)
+            .action(action)
+            .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
+            .result(ValidationResult.builder().governanceMetadata(governanceMetadata).build())
+            .startTs(System.currentTimeMillis())
+            .endTs(System.currentTimeMillis())
+            .build();
+    return pipelineValidationEventRepository.save(pipelineValidationEvent);
+  }
+
+  @Override
   public PipelineValidationEvent updateEvent(String uuid, ValidationStatus status, ValidationResult result) {
     Criteria criteria = PipelineAsyncValidationHelper.getCriteriaForUpdate(uuid);
     Update updateOperations = PipelineAsyncValidationHelper.getUpdateOperations(status, result);
@@ -76,7 +95,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
 
   @Override
   public Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, Action action) {
-    return pipelineValidationEventRepository.findByFqnAndAction(fqn, action);
+    return pipelineValidationEventRepository.findLatestValidEvent(fqn, action);
   }
 
   @Override

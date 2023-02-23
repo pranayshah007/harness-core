@@ -10,7 +10,6 @@ package io.harness.mongo.index;
 import static java.lang.String.format;
 
 import io.harness.mongo.IndexCreator.IndexCreatorBuilder;
-import io.harness.mongo.IndexManagerInspectException;
 
 import com.mongodb.BasicDBObject;
 import java.util.List;
@@ -27,6 +26,7 @@ public interface MongoIndex {
   boolean isUnique();
   boolean isSparse();
   List<String> getFields();
+  BasicDBObject getHint();
 
   default void checks(Logger log) {
     getFields().forEach(a -> {
@@ -40,10 +40,6 @@ public interface MongoIndex {
     BasicDBObject keys = new BasicDBObject();
 
     for (String field : getFields()) {
-      if (field.equals(id)) {
-        throw new IndexManagerInspectException("There is no point of having collection key in a composite index."
-            + "\nIf in the query there is a unique value it will always fetch exactly one item");
-      }
       keys.append(field, IndexType.ASC.toIndexValue());
     }
     return keys;

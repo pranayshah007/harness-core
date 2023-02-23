@@ -17,11 +17,13 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.template.entity.TemplateEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableMap;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -64,10 +66,14 @@ public class TemplateUpdateEvent implements Event {
   @JsonIgnore
   @Override
   public Resource getResource() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, newTemplateEntity.getName());
+    labels.put("versionLabel", newTemplateEntity.getVersionLabel());
+    labels.put("templateEntityType", newTemplateEntity.getTemplateEntityType().toString());
     return Resource.builder()
         .identifier(newTemplateEntity.getIdentifier())
         .type(ResourceTypeConstants.TEMPLATE)
-        .labels(ImmutableMap.<String, String>builder().put("versionLabel", newTemplateEntity.getVersionLabel()).build())
+        .labels(labels)
         .build();
   }
 

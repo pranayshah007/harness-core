@@ -1,10 +1,10 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 9
+version : 13
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
-    category: CORE
+    category: PMS
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
@@ -14,14 +14,14 @@ settings :
       - PROJECT
   - identifier: disable_harness_built_in_secret_manager
     name: Disable Harness Built-In Secret Manager
-    category : CORE
+    category : CONNECTORS
     defaultValue: false
     valueType : BOOLEAN
     allowedScopes :
       - ACCOUNT
   - identifier: mandate_custom_webhook_authorization
     name: Mandate Authorization for Custom Webhook Triggers
-    category: CORE
+    category: PMS
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
@@ -69,6 +69,14 @@ settings :
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
+  - identifier: same_repo_for_pipeline_and_input_sets
+    name: Enforce same repo for Pipeline and InputSets
+    category: GIT_EXPERIENCE
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+        - ACCOUNT
   - identifier: enable_force_delete
     name: Enable Force Delete of Harness Resources
     category: CORE
@@ -76,3 +84,78 @@ settings :
     valueType: BOOLEAN
     allowedScopes:
       - ACCOUNT
+  - identifier: pipeline_timeout
+    name: Pipeline Timeout
+    category: PMS
+    defaultValue: 1h
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 1h
+        editable: true
+      TEAM:
+        defaultValue: 24h
+        editable: true
+      ENTERPRISE:
+        defaultValue: 24h
+        editable: true
+  - identifier: stage_timeout
+    name: Stage Timeout
+    category: PMS
+    defaultValue: 30m
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 30m
+        editable: true
+      TEAM:
+        defaultValue: 24h
+        editable: true
+      ENTERPRISE:
+        defaultValue: 24h
+        editable: true
+  - identifier: step_timeout
+    name: Step Timeout
+    category: PMS
+    defaultValue: 30m
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 30m
+        editable: true
+      TEAM:
+        defaultValue: 10h
+        editable: true
+      ENTERPRISE:
+        defaultValue: 52w
+        editable: true
+  - identifier: concurrent_active_pipeline_executions
+    name: Concurrent Active Pipeline Executions
+    category: PMS
+    defaultValue: 2
+    valueType: NUMBER
+    allowedScopes:
+      - ACCOUNT
+    allowedPlans:
+      FREE:
+        defaultValue: 2
+        editable: false
+      TEAM:
+        # 500 for now. Will make it 200 once the previous execution entries are cleared.
+        defaultValue: 500
+        editable: false
+      ENTERPRISE:
+        defaultValue: 500
+        editable: true

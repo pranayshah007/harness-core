@@ -17,12 +17,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 public class MergePRStepParams extends MergePRBaseStepInfo implements GitOpsSpecParameters {
-  @Getter ParameterField<Map<String, Object>> variables;
+  @Getter Map<String, Object> variables;
   @Builder(builderMethodName = "infoBuilder")
   public MergePRStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> deleteSourceBranch, Map<String, Object> variables) {
     super(delegateSelectors, deleteSourceBranch);
-    this.variables = ParameterField.createValueField(variables);
+    this.variables = variables;
   }
 
   @Override

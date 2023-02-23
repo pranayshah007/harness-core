@@ -142,83 +142,6 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testPipelineUpdateCriteria() {
-    Update update = new Update();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
-                            .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
-                            .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .status(Status.FAILED)
-            .endTs(System.currentTimeMillis())
-            .ambiance(ambiance)
-            .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage(TESTING)
-                             .addFailureData(FailureData.newBuilder()
-                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
-                                                 .setLevel(Level.ERROR.name())
-                                                 .setCode(GENERAL_ERROR.name())
-                                                 .setMessage(TESTING)
-                                                 .build())
-                             .build())
-
-            .build();
-    ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution);
-    Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
-    assertThat(stringSet).hasSize(5);
-    assertThat(stringSet).containsOnly(PlanExecutionSummaryKeys.internalStatus, PlanExecutionSummaryKeys.status,
-        PlanExecutionSummaryKeys.endTs, PlanExecutionSummaryKeys.executionErrorInfo,
-        PlanExecutionSummaryKeys.failureInfo);
-
-    // nodeExecution where status is not failed
-    NodeExecution expiredNodeExecution =
-        NodeExecution.builder()
-            .status(Status.EXPIRED)
-            .endTs(System.currentTimeMillis())
-            .ambiance(ambiance)
-            .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage(TESTING)
-                             .addFailureData(FailureData.newBuilder()
-                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
-                                                 .setLevel(Level.ERROR.name())
-                                                 .setCode(GENERAL_ERROR.name())
-                                                 .setMessage(TESTING)
-                                                 .build())
-                             .build())
-            .build();
-    update = new Update();
-    ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, expiredNodeExecution);
-    stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
-    assertThat(stringSet).hasSize(3);
-    assertThat(stringSet).containsOnly(
-        PlanExecutionSummaryKeys.internalStatus, PlanExecutionSummaryKeys.status, PlanExecutionSummaryKeys.endTs);
-
-    // if its not a pipeline node
-    PlanNode stepPlanNode =
-        PlanNode.builder()
-            .uuid(generateUuid())
-            .name("step")
-            .stepType(StepType.newBuilder().setType("STEP").setStepCategory(StepCategory.STEP).build())
-            .identifier("step")
-            .skipExpressionChain(false)
-            .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
-                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STEP_VALUE).build()))))
-            .group("STEP")
-            .build();
-    Ambiance stepAmbiance = Ambiance.newBuilder()
-                                .setPlanExecutionId(generateUuid())
-                                .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
-                                .build();
-    NodeExecution stepNodeExecution = NodeExecution.builder().status(Status.EXPIRED).ambiance(stepAmbiance).build();
-    update = new Update();
-    ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, stepNodeExecution);
-    assertThat(update.getUpdateObject().keySet().size()).isEqualTo(0);
-  }
-
-  @Test
-  @Owner(developers = ARCHIT)
-  @Category(UnitTests.class)
   public void testStageUpdateCriteriaForBarrierStep() {
     PlanNode stepPlanNode =
         PlanNode.builder()
@@ -300,42 +223,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
         prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
-        prefixLayoutNodeMap + ".executionInputConfigured");
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void testStageUpdateCriteriaStrategyNode() {
-    Ambiance stageAmbiance = Ambiance.newBuilder()
-                                 .setPlanExecutionId(generateUuid())
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode))
-                                 .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .status(Status.FAILED)
-            .planNode(strategyPlanNode)
-            .endTs(System.currentTimeMillis())
-            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
-            .ambiance(stageAmbiance)
-            .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage(TESTING)
-                             .addFailureData(FailureData.newBuilder()
-                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
-                                                 .setLevel(Level.ERROR.name())
-                                                 .setCode(GENERAL_ERROR.name())
-                                                 .setMessage(TESTING)
-                                                 .build())
-                             .build())
-            .build();
-    Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
-    String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyPlanNode.getUuid();
-    Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
-    assertThat(stringSet).containsOnly(
-        prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".moduleInfo.stepParameters");
+        prefixLayoutNodeMap + ".executionInputConfigured", prefixLayoutNodeMap + ".name",
+        prefixLayoutNodeMap + ".nodeIdentifier", prefixLayoutNodeMap + ".isRollbackStageNode");
   }
 
   @Test
@@ -408,7 +297,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
         prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
         prefixLayoutNodeMap + ".executionInputConfigured", prefixLayoutNodeMap + ".nodeIdentifier",
-        prefixLayoutNodeMap + ".name", prefixLayoutNodeMap + ".strategyMetadata");
+        prefixLayoutNodeMap + ".name", prefixLayoutNodeMap + ".strategyMetadata",
+        prefixLayoutNodeMap + ".isRollbackStageNode");
   }
 
   @Data

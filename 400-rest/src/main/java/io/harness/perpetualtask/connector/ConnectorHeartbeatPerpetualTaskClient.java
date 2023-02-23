@@ -30,10 +30,10 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.UnexpectedException;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
-import io.harness.serializer.KryoSerializer;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.TaskType;
 
@@ -55,12 +55,12 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
-public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServiceClient {
-  private KryoSerializer kryoSerializer;
+public class ConnectorHeartbeatPerpetualTaskClient
+    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   private ConnectorResourceClient connectorResourceClient;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     Map<String, String> clientParams = clientContext.getClientParams();
     String accountIdentifier = clientParams.get(ACCOUNT_KEY);
     String orgIdentifier = clientParams.get(ORG_KEY);
@@ -69,7 +69,7 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
     final ConnectorValidationParameterResponse connectorValidationParameterResponse =
         getConnectorValidationParameterResponse(clientParams);
     ByteString connectorValidatorBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams.Builder connectorHeartbeatTaskParamsBuilder =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier(accountIdentifier)
@@ -125,7 +125,7 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
     String projectIdentifier = clientParams.get(PROJECT_KEY);
     String connectorIdentifier = clientParams.get(CONNECTOR_IDENTIFIER_KEY);
     ConnectorValidationParameterResponse connectorValidationParameterResponse =
-        RestCallToNGManagerClientUtils.execute(connectorResourceClient.getConnectorValidationParams(
+        NGRestUtils.getResponse(connectorResourceClient.getConnectorValidationParams(
             connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
     if (connectorValidationParameterResponse == null) {
       log.info(

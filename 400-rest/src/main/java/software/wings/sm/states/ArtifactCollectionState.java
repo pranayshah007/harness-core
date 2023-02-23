@@ -96,6 +96,7 @@ import software.wings.utils.MappingUtils;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,7 +106,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -303,9 +303,8 @@ public class ArtifactCollectionState extends State {
     String waitId = generateUuid();
 
     // if collection enabled and buildno is empty, get last collected artifact from db and return.
-    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isBlank(evaluatedBuildNo)) {
-      Artifact lastCollectedArtifact =
-          artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(artifactStream);
+    if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && (isBlank(evaluatedBuildNo) || isRegex())) {
+      Artifact lastCollectedArtifact = fetchCollectedArtifact(artifactStream, evaluatedBuildNo);
       if (lastCollectedArtifact != null) {
         return prepareResponseForLastCollectedArtifact(context, artifactStream, lastCollectedArtifact);
       }
@@ -382,7 +381,7 @@ public class ArtifactCollectionState extends State {
                                           .build());
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
         ArtifactCollectionExecutionData.builder()
@@ -523,7 +522,7 @@ public class ArtifactCollectionState extends State {
                       .timeout(timeout)
                       .build());
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     AppManifestCollectionExecutionData appManifestCollectionExecutionData =
         AppManifestCollectionExecutionData.builder()
@@ -569,6 +568,18 @@ public class ArtifactCollectionState extends State {
       resolveArtifactStreamId(context);
     }
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
+    if (artifactStream == null) {
+      artifactStream = artifactStreamService.fetchByArtifactSourceVariableValue(context.getAppId(), artifactStreamId);
+      if (artifactStream != null && artifactStream.isArtifactStreamParameterized()
+          && isNotEmpty(getTemplateExpressions())) {
+        log.info("Artifact Stream {} is Parameterized", artifactStreamId);
+        return ExecutionResponse.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("Parameterized Artifact Source " + artifactStream.getName()
+                + " cannot be used as a value for templatized artifact variable")
+            .build();
+      }
+    }
     notNullCheck("ArtifactStream was deleted", artifactStream);
 
     String evaluatedBuildNo = getEvaluatedBuildNo(context);
@@ -765,7 +776,7 @@ public class ArtifactCollectionState extends State {
       HelmCollectChartResponse helmCollectChartResponse = (HelmCollectChartResponse) notifyResponseData;
       if (CommandExecutionStatus.SUCCESS.equals(helmCollectChartResponse.getCommandExecutionStatus())
           && isNotEmpty(helmCollectChartResponse.getHelmCharts())) {
-        HelmChart helmChart = helmCollectChartResponse.getHelmCharts().get(0);
+        HelmChart helmChart = HelmChart.fromDto(helmCollectChartResponse.getHelmCharts().get(0));
         HelmChart savedHelmChart = helmChartService.createOrUpdateAppVersion(helmChart);
         AppManifestCollectionExecutionData appManifestCollectionExecutionData =
             AppManifestCollectionExecutionData.builder()

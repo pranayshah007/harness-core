@@ -15,7 +15,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.AcrArtifactStream;
@@ -38,7 +38,6 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.ACR)
         .spec(AcrArtifactConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .subscriptionId(ParameterField.createValueField(acrArtifactStream.getSubscriptionId()))
                   .registry(ParameterField.createValueField(acrArtifactStream.getRegistryName()))

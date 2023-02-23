@@ -17,13 +17,14 @@ import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("NEXTGEN_LOG")
 @Data
@@ -33,8 +34,12 @@ import org.mongodb.morphia.query.UpdateOperations;
 @EqualsAndHashCode(callSuper = true)
 public class NextGenLogCVConfig extends LogCVConfig {
   @NotNull String queryIdentifier;
+
+  HealthSourceParams healthSourceParams;
   QueryParams queryParams;
   @NotNull DataSourceType dataSourceType;
+
+  @NotNull String groupName;
 
   @Override
   protected void validateParams() {
@@ -58,6 +63,7 @@ public class NextGenLogCVConfig extends LogCVConfig {
     throw new NotImplementedForHealthSourceException("Not implemented");
   }
 
+  @Singleton
   public static class ConfigUpdatableEntity extends LogCVConfigUpdatableEntity<NextGenLogCVConfig, NextGenLogCVConfig> {
     @Override
     public void setUpdateOperations(

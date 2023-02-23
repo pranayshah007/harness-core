@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
+import static io.harness.provision.TerraformConstants.SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN;
 import static io.harness.provision.TerragruntConstants.TARGET_FORMAT;
 import static io.harness.provision.TerragruntConstants.VAR_FILE_FORMAT;
 
@@ -85,8 +86,8 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse workspace(@NotNull TerragruntWorkspaceCliRequest request, @NotNull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    CliResponse workspaceListResponse = executeCliCommand(
-        TerragruntCommandUtils.workspaceList(), request, logCallback, new LogCallbackOutputStream(logCallback));
+    CliResponse workspaceListResponse = executeCliCommand(TerragruntCommandUtils.workspaceList(request.getRunType()),
+        request, logCallback, new LogCallbackOutputStream(logCallback));
     if (CommandExecutionStatus.SUCCESS != workspaceListResponse.getCommandExecutionStatus()) {
       return workspaceListResponse;
     }
@@ -232,7 +233,7 @@ public class TerragruntClientImpl implements TerragruntClient {
     logCallback.saveExecutionLog(color(command, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
     return cliHelper.executeCliCommand(command, cliRequest.getTimeoutInMillis(), cliRequest.getEnvVars(),
         cliRequest.getWorkingDirectory(), logCallback, command, outputStream,
-        new TerraformCliErrorLogOutputStream(logCallback));
+        new TerraformCliErrorLogOutputStream(logCallback), SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN);
   }
 
   private Set<String> parseWorkspaceList(String workspaceOutput) {

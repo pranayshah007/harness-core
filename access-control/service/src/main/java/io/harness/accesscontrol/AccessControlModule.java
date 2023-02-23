@@ -106,6 +106,7 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
@@ -318,7 +319,7 @@ public class AccessControlModule extends AbstractModule {
         return config.getSegmentConfiguration();
       }
     });
-
+    install(FeatureFlagModule.getInstance());
     if (config.getAggregatorConfiguration().isEnabled()) {
       install(AggregatorModule.getInstance(config.getAggregatorConfiguration()));
       bind(ChangeEventFailureHandler.class).to(AccessControlChangeEventFailureHandler.class);

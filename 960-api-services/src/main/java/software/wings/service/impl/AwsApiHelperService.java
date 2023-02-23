@@ -25,11 +25,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
-import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
-import io.harness.aws.AwsCallTracker;
-import io.harness.aws.CloseableAmazonWebServiceClient;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
@@ -46,6 +45,7 @@ import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -71,6 +71,8 @@ import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecr.model.AmazonECRException;
 import com.amazonaws.services.ecr.model.BatchGetImageRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.Image;
@@ -88,7 +90,6 @@ import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -98,14 +99,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -174,6 +168,12 @@ public class AwsApiHelperService {
       AwsInternalConfig awsConfig, String region, ListImagesRequest listImagesRequest) {
     return getAmazonEcrClient(awsConfig, region).listImages(listImagesRequest);
   }
+
+  public DescribeImagesResult describeEcrImages(
+      AwsInternalConfig awsConfig, String region, DescribeImagesRequest describeImagesRequest) {
+    return getAmazonEcrClient(awsConfig, region).describeImages(describeImagesRequest);
+  }
+
   public DescribeRepositoriesResult listRepositories(
       AwsInternalConfig awsConfig, DescribeRepositoriesRequest describeRepositoriesRequest, String region) {
     try {
@@ -234,15 +234,14 @@ public class AwsApiHelperService {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Put Audit Batch to S3 Bucket");
-      String key = getKey(auditBatch.getStartTime(), auditBatch.getEndTime());
-      InputStream inputStream = getInputStream(auditBatch.getAuditRecords());
-      ObjectMetadata objectMetadata = getObjectMetadata(inputStream);
-
-      return convertToPutObjectResultResponse(closeableAmazonS3Client.getClient().putObject(
-          new PutObjectRequest(bucketName, key, inputStream, objectMetadata)));
+      String key = getKey(auditBatch);
+      String messageJson = JsonUtils.asJson(auditBatch.getOutgoingAuditMessages());
+      return convertToPutObjectResultResponse(
+          closeableAmazonS3Client.getClient().putObject(bucketName, key, messageJson));
     } catch (AmazonServiceException amazonServiceException) {
       if (amazonServiceException.getStatusCode() == 403) {
-        throw new InvalidRequestException("Please provide the correct region corresponding to the AWS access key.");
+        throw new InvalidRequestException(
+            String.format("Unable to write to S3 bucket [%s]. Please check the credentials.", bucketName));
       }
 
       handleAmazonServiceException(amazonServiceException);
@@ -267,29 +266,11 @@ public class AwsApiHelperService {
         .build();
   }
 
-  private String getKey(Long startTime, Long endTime) {
-    SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
-
-    return "audits from " + sdf.format(new Timestamp(startTime)) + " to " + sdf.format(new Timestamp(endTime));
-  }
-
-  private InputStream getInputStream(List<AuditRecordDTO> auditRecords) throws IOException {
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(auditRecords));
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-    objectOutputStream.writeObject(bytes);
-
-    objectOutputStream.flush();
-    objectOutputStream.close();
-
-    return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-  }
-
-  private ObjectMetadata getObjectMetadata(InputStream inputStream) {
-    ObjectMetadata objectMetadata = new ObjectMetadata();
-    objectMetadata.setContentLength(inputStream.toString().length());
-
-    return objectMetadata;
+  private String getKey(AuditBatchDTO auditBatchDTO) {
+    List<OutgoingAuditMessage> outgoingMessages = auditBatchDTO.getOutgoingAuditMessages();
+    Long startTime = outgoingMessages.get(0).getAuditEventTime().toEpochMilli();
+    Long endTime = outgoingMessages.get(outgoingMessages.size() - 1).getAuditEventTime().toEpochMilli();
+    return String.format("%s_%s_%s", startTime, endTime, Instant.now().toEpochMilli());
   }
 
   public List<BuildDetails> listBuilds(
@@ -341,7 +322,6 @@ public class AwsApiHelperService {
       return buildDetailsList;
 
     } catch (WingsException e) {
-      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
     } catch (RuntimeException e) {
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
@@ -528,6 +508,7 @@ public class AwsApiHelperService {
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))
         .flatMap(batchGetImageResult -> batchGetImageResult.getImages().stream())
         .map(Image::getImageManifest)
+        .filter(imageManifest -> (JsonUtils.asObject(imageManifest, HashMap.class).get("history")) != null)
         .flatMap(imageManifest
             -> ((List<Map<String, Object>>) JsonUtils.asObject(imageManifest, HashMap.class).get("history"))
                    .stream()

@@ -33,6 +33,8 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
+import io.harness.ci.validation.CIAccountValidationService;
+import io.harness.ci.validation.CIAccountValidationServiceImpl;
 import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.ci.validation.CIYAMLSanitizationServiceImpl;
 import io.harness.cistatus.service.GithubService;
@@ -104,9 +106,9 @@ import org.reflections.Reflections;
 @Slf4j
 @OwnedBy(HarnessTeam.STO)
 public class STOManagerServiceModule extends AbstractModule {
-  private final STOManagerConfiguration stoManagerConfiguration;
+  private final CIManagerConfiguration stoManagerConfiguration;
 
-  public STOManagerServiceModule(STOManagerConfiguration stoManagerConfiguration) {
+  public STOManagerServiceModule(CIManagerConfiguration stoManagerConfiguration) {
     this.stoManagerConfiguration = stoManagerConfiguration;
   }
 
@@ -137,14 +139,13 @@ public class STOManagerServiceModule extends AbstractModule {
   }
 
   private DelegateCallbackToken getDelegateCallbackToken(
-      DelegateServiceGrpcClient delegateServiceClient, STOManagerConfiguration appConfig) {
+      DelegateServiceGrpcClient delegateServiceClient, CIManagerConfiguration appConfig) {
     log.info("Generating Delegate callback token");
+    String connectionUri = STOManagerConfiguration.getHarnessSTOMongo(appConfig.getHarnessCIMongo()).getUri();
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
         DelegateCallback.newBuilder()
-            .setMongoDatabase(MongoDatabase.newBuilder()
-                                  .setCollectionNamePrefix("stoManager")
-                                  .setConnection(appConfig.getHarnessSTOMongo().getUri())
-                                  .build())
+            .setMongoDatabase(
+                MongoDatabase.newBuilder().setCollectionNamePrefix("stoManager").setConnection(connectionUri).build())
             .build());
     log.info("Delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
@@ -199,7 +200,6 @@ public class STOManagerServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
-    bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
@@ -212,6 +212,7 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
+    bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)

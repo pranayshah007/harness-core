@@ -41,6 +41,7 @@ import com.google.cloud.datastore.Blob;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Key;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,7 +54,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by rsingh on 6/20/17.
@@ -176,7 +176,7 @@ public class LogDataRecord extends Base implements GoogleDataStoreAware, Account
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(this.getUuid() != null ? this.getUuid() : generateUuid());
 
     com.google.cloud.datastore.Entity.Builder dataStoreRecordBuilder =

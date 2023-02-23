@@ -7,12 +7,23 @@
 
 package io.harness.audit.remote.v1.api.streaming;
 
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.DELETE_STREAMING_DESTINATION_PERMISSION;
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.EDIT_STREAMING_DESTINATION_PERMISSION;
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.VIEW_STREAMING_DESTINATION_PERMISSION;
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationResourceTypes.STREAMING_DESTINATION;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.spec.server.audit.v1.StreamingDestinationsApi;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationAggregateDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.utils.ApiUtils;
@@ -33,10 +44,15 @@ import org.springframework.data.domain.Pageable;
 @Slf4j
 public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
   private final StreamingService streamingService;
+  private final AggregateStreamingService aggregateStreamingService;
   private final StreamingDestinationsApiUtils streamingDestinationsApiUtils;
+  private final AccessControlClient accessControlClient;
 
   @Override
   public Response createStreamingDestinations(@Valid StreamingDestinationDTO body, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, null), EDIT_STREAMING_DESTINATION_PERMISSION);
+
     StreamingDestination streamingDestination = streamingService.create(harnessAccount, body);
 
     log.info(String.format(
@@ -48,6 +64,9 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
 
   @Override
   public Response deleteDisabledStreamingDestination(String streamingDestinationIdentifier, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, streamingDestinationIdentifier), DELETE_STREAMING_DESTINATION_PERMISSION);
+
     streamingService.delete(harnessAccount, streamingDestinationIdentifier);
 
     log.info(String.format(
@@ -57,6 +76,9 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
 
   @Override
   public Response getStreamingDestination(String streamingDestinationIdentifier, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, streamingDestinationIdentifier), VIEW_STREAMING_DESTINATION_PERMISSION);
+
     StreamingDestination streamingDestination =
         streamingService.getStreamingDestination(harnessAccount, streamingDestinationIdentifier);
 
@@ -77,15 +99,39 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
         streamingDestinationPage.map(streamingDestinationsApiUtils::getStreamingDestinationResponse);
     List<StreamingDestinationResponse> streamingDestinations = streamingDestinationResponsePage.getContent();
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, "v1/streaming-destinations", streamingDestinations.size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinationPage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(streamingDestinations).build();
   }
 
   @Override
+  public Response getStreamingDestinationsAggregate(String harnessAccount, Integer page, @Max(100L) Integer limit,
+      String sort, String order, String searchTerm, String status) {
+    StreamingDestinationFilterProperties streamingDestinationFilterProperties =
+        streamingDestinationsApiUtils.getFilterProperties(searchTerm, status);
+    Pageable pageable = streamingDestinationsApiUtils.getPageRequest(page, limit, sort, order);
+    Page<StreamingDestinationAggregateDTO> streamingDestinations =
+        aggregateStreamingService.getAggregatedList(harnessAccount, pageable, streamingDestinationFilterProperties);
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, streamingDestinations.getTotalElements(), page, limit);
+
+    return responseBuilderWithLinks.entity(streamingDestinations.getContent()).build();
+  }
+
+  public Response getStreamingDestinationsCards(String harnessAccount) {
+    StreamingDestinationCards cards = aggregateStreamingService.getStreamingDestinationCards(harnessAccount);
+    return Response.ok().entity(cards).build();
+  }
+
+  @Override
   public Response updateStreamingDestination(String streamingDestinationIdentifier,
       @Valid StreamingDestinationDTO streamingDestinationDTO, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, streamingDestinationIdentifier), EDIT_STREAMING_DESTINATION_PERMISSION);
+
     StreamingDestination streamingDestination =
         streamingService.update(streamingDestinationIdentifier, streamingDestinationDTO, harnessAccount);
 
@@ -94,5 +140,12 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
     return Response.status(Response.Status.OK)
         .entity(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
         .build();
+  }
+
+  @Override
+  public Response validateUniqueIdentifier(String streamingDestination, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, null), EDIT_STREAMING_DESTINATION_PERMISSION);
+    return Response.ok().entity(streamingService.validateUniqueness(harnessAccount, streamingDestination)).build();
   }
 }

@@ -12,10 +12,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -29,5 +29,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.license.entities.module.CIModuleLicense")
 public class CIModuleLicense extends ModuleLicense {
   private Integer numberOfCommitters;
+  private Long cacheAllowance;
   private Integer hostingCredits;
 }

@@ -13,8 +13,6 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,7 +21,6 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
@@ -53,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,7 +79,6 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.ENV_GROUP));
   }
 
   private EnvironmentGroupEntity getEntity() {
@@ -143,8 +140,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     // case2: get function returns empty object
     Optional<EnvironmentGroupEntity> optional = Optional.empty();
     doReturn(optional).when(environmentGroupService).get(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, false);
-    responseDTO = environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null);
-    assertThat(responseDTO).isNull();
+    assertThatThrownBy(() -> environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessage("Environment Group with identifier [newEnvGroup] in project [proId], org [orgId] not found");
   }
 
   @Test
@@ -183,9 +181,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete() {
     EnvironmentGroupEntity entity = getEntity();
-    doReturn(entity).when(environmentGroupService).delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null);
+    doReturn(entity).when(environmentGroupService).delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null, false);
     ResponseDTO<EnvironmentGroupDeleteResponse> deleteDTO =
-        environmentGroupResource.delete(null, ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, null);
+        environmentGroupResource.delete(null, ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, null, false);
     assertThat(deleteDTO).isNotNull();
     assertThat(deleteDTO.getData().getDeleted()).isEqualTo(entity.getDeleted());
     assertThat(deleteDTO.getData().getIdentifier()).isEqualTo(ENV_GROUP_ID);

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl.sidekickexecutors;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,17 +27,19 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -52,10 +55,11 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private VerificationTaskCleanupSideKickExecutor sideKickExecutor;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private CVConfigService cvConfigService;
 
+  @Inject private Clock clock;
   private CVConfig cvConfig;
   private ServiceLevelIndicator sli;
   private String verificationTaskIdsForSli;
@@ -66,13 +70,22 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Before
   public void setup() {
     this.builderFactory = BuilderFactory.getDefault();
+    this.clock = FIXED_TIME_FOR_TESTS;
     this.cvConfig = createCVConfig();
     cvConfigService.save(cvConfig);
     this.sli = createSLI();
-    this.verificationTaskIdsForSli =
-        verificationTaskService.getSLIVerificationTaskId(builderFactory.getContext().getAccountId(), sli.getUuid());
-    this.verificationTaskId = verificationTaskService.getServiceGuardVerificationTaskId(
-        builderFactory.getContext().getAccountId(), cvConfig.getUuid());
+
+    VerificationTask slitask =
+        verificationTaskService.getSLITask(builderFactory.getContext().getAccountId(), sli.getUuid());
+    slitask.setCreatedAt(clock.millis());
+    hPersistence.save(slitask);
+    this.verificationTaskIdsForSli = slitask.getUuid();
+
+    VerificationTask serviceGuardtask =
+        verificationTaskService.getLiveMonitoringTask(builderFactory.getContext().getAccountId(), cvConfig.getUuid());
+    serviceGuardtask.setCreatedAt(clock.millis());
+    hPersistence.save(serviceGuardtask);
+    this.verificationTaskId = serviceGuardtask.getUuid();
   }
 
   @Test
@@ -185,17 +198,20 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   }
 
   private ServiceLevelIndicator createSLI() {
-    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
+    ServiceLevelObjectiveV2DTO sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     createMonitoredService();
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(builderFactory.getContext().getAccountId())
                                       .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
                                       .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
                                       .build();
-    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
-        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     String identifier =
-        serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getServiceLevelIndicators().get(0).getIdentifier();
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO().getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier();
     return hPersistence.createQuery(ServiceLevelIndicator.class)
         .filter(ServiceLevelIndicatorKeys.accountId, projectParams.getAccountIdentifier())
         .filter(ServiceLevelIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())

@@ -17,7 +17,9 @@ import static java.lang.reflect.Modifier.isAbstract;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
+import io.harness.event.timeseries.processor.TimescaleDataCleanup;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.checker.rate.UsageBucket;
 import io.harness.limits.checker.rate.UsageBucket.UsageBucketKeys;
@@ -39,6 +41,8 @@ import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext.SegmentGroupEventJobContextKeys;
+import software.wings.service.impl.ChurnedAuditFilesAndChunksCleanup;
+import software.wings.service.impl.ChurnedConfigFilesAndChunksCleanup;
 import software.wings.service.impl.SSOSettingServiceImpl;
 import software.wings.service.impl.ServiceClassLocator;
 import software.wings.service.intfc.DelegateService;
@@ -48,15 +52,15 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.Morphia;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 
@@ -79,9 +83,14 @@ public class DeleteAccountHelper {
   @Inject private HPersistence hPersistence;
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler persistentScheduler;
   @Inject private PerpetualTaskService perpetualTaskService;
+
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateService delegateService;
   @Inject private DelegateNgTokenService delegateNgTokenService;
+  @Inject private ChurnedAuditFilesAndChunksCleanup churnedAuditFilesAndChunksCleanup;
+
+  @Inject private ChurnedConfigFilesAndChunksCleanup churnedConfigFilesAndChunksCleanup;
+  @Inject private TimescaleDataCleanup timescaleDataCleanup;
 
   public List<String> deleteAllEntities(String accountId) {
     List<String> entitiesRemainingForDeletion = new ArrayList<>();
@@ -194,7 +203,11 @@ public class DeleteAccountHelper {
     });
     List<User> users = userService.getUsersOfAccount(accountId);
     if (!users.isEmpty()) {
-      users.forEach(user -> userService.delete(accountId, user.getUuid()));
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+        users.forEach(user -> userService.forceDelete(accountId, user.getUuid()));
+      } else {
+        users.forEach(user -> userService.delete(accountId, user.getUuid()));
+      }
     }
     ssoSettingService.deleteByAccountId(accountId);
     return hPersistence.delete(Account.class, accountId);
@@ -233,6 +246,9 @@ public class DeleteAccountHelper {
     delegateService.deleteByAccountId(accountId);
     List<String> entitiesRemainingForDeletion = deleteAllEntities(accountId);
     delegateNgTokenService.deleteByAccountId(accountId);
+    churnedAuditFilesAndChunksCleanup.deleteAuditFilesAndChunks(accountId);
+    churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
+    timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
       log.info("Deleting account entry {}", accountId);
       hPersistence.delete(Account.class, accountId);

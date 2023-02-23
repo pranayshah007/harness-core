@@ -68,4 +68,7 @@ public class ResourceTypeConstants {
   public static final String CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT = "CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT";
   public static final String FEATURE_FLAG = "FEATURE_FLAG";
   public static final String TARGET_GROUP = "TARGET_GROUP";
+  public static final String DOWNTIME = "DOWNTIME";
+  public static final String STREAMING_DESTINATION = "STREAMING_DESTINATION";
+  public static final String NG_ACCOUNT_DETAILS = "NG_ACCOUNT_DETAILS";
 }

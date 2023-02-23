@@ -69,6 +69,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -130,6 +131,7 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import dev.morphia.Key;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +142,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDP)
 public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
@@ -165,6 +166,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
   @Mock private AwsAmiServiceStateHelper awsAmiServiceStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsAmiServiceDeployState state = new AwsAmiServiceDeployState("stateName");
@@ -278,7 +280,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     doReturn(0).when(mockAwsStateHelper).fetchRequiredAsgCapacity(anyMap(), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService, times(1)).queueTask(captor.capture());
+    verify(mockDelegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -303,7 +305,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     doReturn(mockParams).when(mockContext).getContextElement(any());
     response = state.execute(mockContext);
     captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService, times(2)).queueTask(captor.capture());
+    verify(mockDelegateService, times(2)).queueTaskV2(captor.capture());
     delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();

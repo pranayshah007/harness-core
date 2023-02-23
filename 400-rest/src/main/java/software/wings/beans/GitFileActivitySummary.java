@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -23,6 +24,9 @@ import io.harness.validation.Update;
 import software.wings.yaml.gitSync.GitFileProcessingSummary;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -31,9 +35,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by deepak 5/09/20
@@ -60,6 +61,12 @@ public class GitFileActivitySummary
                  .field(GitFileActivitySummaryKeys.accountId)
                  .field(GitFileActivitySummaryKeys.createdAt)
                  .field(GitFileActivitySummaryKeys.gitToHarness)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_appId_createdAt")
+                 .field(GitFileActivitySummaryKeys.accountId)
+                 .field(GitFileActivitySummaryKeys.appId)
+                 .descSortField(GitFileActivitySummaryKeys.createdAt)
                  .build())
         .build();
   }

@@ -41,6 +41,7 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -88,6 +89,8 @@ import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -99,8 +102,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -118,7 +119,8 @@ public class ArtifactCollectionUtilsTest extends WingsBaseTest {
 
   @Before
   public void setUp() {
-    when(artifactService.prepareArtifactWithMetadataQuery(any(ArtifactStream.class))).thenReturn(artifactQuery);
+    when(artifactService.prepareArtifactWithMetadataQuery(any(ArtifactStream.class), anyBoolean()))
+        .thenReturn(artifactQuery);
     when(artifactQuery.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(anArtifact().build());

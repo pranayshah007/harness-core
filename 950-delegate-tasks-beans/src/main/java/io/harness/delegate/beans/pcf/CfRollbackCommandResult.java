@@ -23,4 +23,5 @@ public class CfRollbackCommandResult {
   private CfInBuiltVariablesUpdateValues updatedValues;
   private List<String> inActiveAppAttachedRoutes;
   private List<String> activeAppAttachedRoutes;
+  private List<CfInternalInstanceElement> newAppInstances;
 }

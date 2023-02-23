@@ -12,6 +12,7 @@ import static io.harness.govern.Switch.unhandled;
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.iterator.PersistentIterable;
+import io.harness.mongo.iterator.BulkWriteOpsResults;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.persistence.HPersistence;
@@ -19,12 +20,20 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.BulkWriteResult;
+import com.mongodb.DBCollection;
+import dev.morphia.query.FilterOperator;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOpsImpl;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import org.mongodb.morphia.query.FilterOperator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import org.bson.types.ObjectId;
 
 @Singleton
 public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
@@ -63,8 +72,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
-      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
-      boolean unsorted) {
+      SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
+      boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
     UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
@@ -85,7 +94,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander) {
+  public T findInstance(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander,
+      boolean isDelegateTaskMigrationEnabled) {
     Query<T> resultQuery = createQuery(clazz, fieldName, filterExpander, false).project(fieldName, true);
     return resultQuery.get();
   }
@@ -96,5 +106,64 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
         persistence.createUpdateOperations(clazz).unset(fieldName));
     persistence.update(persistence.createQuery(clazz).field(fieldName).sizeEq(0),
         persistence.createUpdateOperations(clazz).unset(fieldName));
+  }
+
+  @Override
+  public MorphiaIterator<T, T> obtainNextInstances(
+      Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, int limit) {
+    long now = currentTimeMillis();
+    Query<T> query = createQuery(now, clazz, fieldName, filterExpander, false);
+
+    return query.fetch(new FindOptions().limit(limit));
+  }
+
+  @Override
+  public BulkWriteOpsResults bulkWriteDocumentsMatchingIds(
+      Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval) {
+    // 1. Create an update operation to set the given field with given value
+    UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz);
+    updateOperations.set(fieldName, base + targetInterval.toMillis());
+
+    // 2. Initialize an unordered bulk operation
+    DBCollection collection = persistence.getCollection(clazz);
+    BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
+
+    // 3. Create find query.
+    /* The Mongo documents will have '_id' field of type ObjectId if Mongo assigned the id.
+       It will have '_id' field of type String if the document was inserted manually.
+       Thus, check if the given id is of type ObjectId or String and prepare find queries accordingly.
+     */
+    List<String> stringIds = new ArrayList<>();
+    List<ObjectId> objectIds = new ArrayList<>();
+
+    for (String id : ids) {
+      if (ObjectId.isValid(id)) {
+        objectIds.add(new ObjectId(id));
+      } else {
+        stringIds.add(id);
+      }
+    }
+
+    // 3a. Create a find query to match String Ids
+    if (!stringIds.isEmpty()) {
+      Query<T> findQuery = persistence.createQuery(clazz);
+      findQuery.criteria("_id").in(stringIds);
+      bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) updateOperations).getOps());
+    }
+
+    // 3b. Create a find query to match Object Ids
+    if (!objectIds.isEmpty()) {
+      Query<T> findQuery = persistence.createQuery(clazz);
+      findQuery.criteria("_id").in(objectIds);
+      bulkWriteOperation.find(findQuery.getQueryObject()).update(((UpdateOpsImpl) updateOperations).getOps());
+    }
+
+    // 4. Execute the Bulk write operation and return the results.
+    BulkWriteResult bulkWriteResult = bulkWriteOperation.execute();
+    return BulkWriteOpsResults.builder()
+        .operationAcknowledged(bulkWriteResult.isAcknowledged())
+        .matchedCount(bulkWriteResult.getMatchedCount())
+        .modifiedCount(bulkWriteResult.getModifiedCount())
+        .build();
   }
 }

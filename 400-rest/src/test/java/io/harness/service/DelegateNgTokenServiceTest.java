@@ -7,6 +7,7 @@
 
 package io.harness.service;
 
+import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,7 +120,7 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     DelegateTokenDetails delegateTokenDetails = delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1);
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName2);
     String result = delegateNgTokenService.getDelegateTokenValue(TEST_ACCOUNT_ID, tokenName1);
-    assertThat(result).isEqualTo(delegateTokenDetails.getValue());
+    assertThat(result).isEqualTo(decodeBase64ToString(delegateTokenDetails.getValue()));
   }
 
   @Test

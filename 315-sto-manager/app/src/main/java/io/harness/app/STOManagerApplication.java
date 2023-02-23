@@ -37,8 +37,8 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
-import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -72,7 +72,6 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.sto.GenerateOpenApiSpecCommand;
 import io.harness.sto.plan.creator.STOPipelineServiceInfoProvider;
 import io.harness.sto.registrars.STOExecutionRegistrar;
 import io.harness.token.remote.TokenClient;
@@ -100,6 +99,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -112,7 +112,6 @@ import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,14 +129,13 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.LogManager;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
 @OwnedBy(STO)
-public class STOManagerApplication extends Application<STOManagerConfiguration> {
+public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESS_STORE = Store.builder().name("harness").build();
   private static final String APP_NAME = "STO Manager Service Application";
@@ -172,7 +170,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   }
 
   @Override
-  public void run(STOManagerConfiguration configuration, Environment environment) {
+  public void run(CIManagerConfiguration configuration, Environment environment) {
     log.info("Starting sto manager app ...");
 
     log.info("Entering startup maintenance mode");
@@ -231,7 +229,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Singleton
       @Named("dbAliases")
       public List<String> getDbAliases() {
-        return Collections.EMPTY_LIST;
+        return configuration.getDbAliases();
       }
     });
 
@@ -257,7 +255,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       MongoConfig mongoConfig() {
-        return configuration.getHarnessSTOMongo();
+        return STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo());
       }
     });
 
@@ -268,7 +266,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       }
     });
 
-    modules.add(new STOPersistenceModule());
+    modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig()));
@@ -301,9 +299,10 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     LogManager.shutdown();
   }
 
-  private void registerOasResource(STOManagerConfiguration appConfig, Environment environment, Injector injector) {
+  private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
-    openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
+    openApiResource.setOpenApiConfiguration(
+        STOManagerConfiguration.getOasConfig(appConfig.getHostname(), appConfig.getBasePathPrefix()));
     environment.jersey().register(openApiResource);
   }
 
@@ -314,7 +313,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   }
 
   @Override
-  public void initialize(Bootstrap<STOManagerConfiguration> bootstrap) {
+  public void initialize(Bootstrap<CIManagerConfiguration> bootstrap) {
     initializeLogging();
     log.info("bootstrapping ...");
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
@@ -323,10 +322,10 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
 
     configureObjectMapper(bootstrap.getObjectMapper());
-    bootstrap.addBundle(new SwaggerBundle<STOManagerConfiguration>() {
+    bootstrap.addBundle(new SwaggerBundle<CIManagerConfiguration>() {
       @Override
-      protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(STOManagerConfiguration appConfig) {
-        return appConfig.getSwaggerBundleConfiguration();
+      protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(CIManagerConfiguration appConfig) {
+        return STOManagerConfiguration.getSwaggerBundleConfiguration(appConfig.getSwaggerBundleConfiguration());
       }
     });
     log.info("bootstrapping done.");
@@ -341,7 +340,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
   }
 
-  private void registerPMSSDK(STOManagerConfiguration config, Injector injector) {
+  private void registerPMSSDK(CIManagerConfiguration config, Injector injector) {
     PmsSdkConfiguration stoSDKConfig = getPmsSdkConfiguration(
         config, ModuleType.STO, STOExecutionRegistrar.getEngineSteps(), STOPipelineServiceInfoProvider.class);
     if (stoSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
@@ -353,7 +352,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     }
   }
 
-  private PmsSdkConfiguration getPmsSdkConfiguration(STOManagerConfiguration config, ModuleType moduleType,
+  private PmsSdkConfiguration getPmsSdkConfiguration(CIManagerConfiguration config, ModuleType moduleType,
       Map<StepType, Class<? extends Step>> engineSteps,
       Class<? extends io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider>
           pipelineServiceInfoProviderClass) {
@@ -385,7 +384,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     return new ArrayList<>();
   }
 
-  private void scheduleJobs(Injector injector, STOManagerConfiguration config) {
+  private void scheduleJobs(Injector injector, CIManagerConfiguration config) {
     injector.getInstance(NotifierScheduledExecutorService.class)
         .scheduleWithFixedDelay(
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
@@ -445,7 +444,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
         NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
   }
 
-  private void registerAuthFilters(STOManagerConfiguration configuration, Environment environment, Injector injector) {
+  private void registerAuthFilters(CIManagerConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.isEnableAuth()) {
       Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
           -> resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null

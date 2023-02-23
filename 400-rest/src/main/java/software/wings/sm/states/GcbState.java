@@ -82,6 +82,7 @@ import software.wings.stencils.DefaultValue;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -97,7 +98,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.annotations.Transient;
 
 @Slf4j
 @OwnedBy(CDC)
@@ -234,7 +234,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
       gcbTaskParams.setStartTs(System.currentTimeMillis());
     }
     DelegateTask delegateTask = delegateTaskOf(activityId, context, infrastructureMappingService, gcbTaskParams);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
 
     GcbExecutionData gcbExecutionData = GcbExecutionData.builder().activityId(activityId).build();
     gcbExecutionData.setTemplateVariable(templateUtils.processTemplateVariables(context, getTemplateVariables()));
@@ -319,7 +319,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     parameters.setType(POLL);
     final String waitId = UUIDGenerator.generateUuid();
     DelegateTask delegateTask = delegateTaskOf(waitId, context, infrastructureMappingService, parameters);
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(context, delegateTask);
     final GcbExecutionData gcbExecutionData = context.getStateExecutionData();
     return ExecutionResponse.builder()
@@ -353,7 +353,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
               .build();
       GcbDelegateResponse delegateResponse = null;
       try {
-        delegateResponse = delegateService.executeTask(
+        delegateResponse = delegateService.executeTaskV2(
             delegateTaskOf(((GcbExecutionData) context.getStateExecutionData()).getActivityId(), context,
                 infrastructureMappingService, params));
       } catch (InterruptedException e) {

@@ -48,7 +48,7 @@ public class PcfFileTypeChecker {
     try {
       map = mapper.readValue(content, Map.class);
     } catch (Exception e) {
-      log.warn(getParseErrorMessage(fileName), e);
+      log.warn(getParseErrorMessage(fileName, e.getMessage()));
       logCallback.saveExecutionLog(getParseErrorMessage(fileName), LogLevel.WARN);
       logCallback.saveExecutionLog("Error: " + e.getMessage(), LogLevel.WARN);
       return null;
@@ -73,6 +73,10 @@ public class PcfFileTypeChecker {
 
   private String getParseErrorMessage(String fileName) {
     return "Failed to parse file" + (isNotEmpty(fileName) ? " " + fileName : "") + ".";
+  }
+
+  private String getParseErrorMessage(String fileName, String errorMessage) {
+    return String.format("Failed to parse file [%s]. Error - [%s]", isEmpty(fileName) ? "" : fileName, errorMessage);
   }
 
   private boolean isAutoscalarManifest(Map<String, Object> map) {

@@ -62,6 +62,8 @@ import software.wings.sm.StateType;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,8 +74,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -331,7 +331,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                         .timeout(defaultIfNullTimeout(DEFAULT_ASYNC_CALL_TIMEOUT))
                         .build())
               .build();
-      String delegateTaskId = delegateService.queueTask(delegateTask);
+      String delegateTaskId = delegateService.queueTaskV2(delegateTask);
       return ExecutionResponse.builder()
           .async(true)
           .correlationIds(Collections.singletonList(activityId))
@@ -461,7 +461,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
                         .build())
               .build();
     }
-    String delegateTaskId = delegateService.queueTask(delegateTask);
+    String delegateTaskId = delegateService.queueTaskV2(delegateTask);
     return ExecutionResponse.builder()
         .async(true)
         .correlationIds(Collections.singletonList(activityId))

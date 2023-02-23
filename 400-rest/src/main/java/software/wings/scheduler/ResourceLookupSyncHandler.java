@@ -37,6 +37,8 @@ import software.wings.service.intfc.ResourceLookupService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,11 +48,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class ResourceLookupSyncHandler extends IteratorPumpModeHandler implements Handler<Account> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(120);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(5);
+
   @Inject private ResourceLookupService resourceLookupService;
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -68,13 +71,30 @@ public class ResourceLookupSyncHandler extends IteratorPumpModeHandler implement
                            .clazz(Account.class)
                            .fieldName(AccountKeys.resourceLookupSyncIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(120))
-                           .acceptableExecutionTime(ofMinutes(5))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .handler(this)
                            .entityProcessController(new AccountLevelEntityProcessController(accountService))
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       ResourceLookupSyncHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.resourceLookupSyncIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

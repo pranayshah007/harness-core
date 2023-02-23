@@ -31,6 +31,8 @@ import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
 
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +40,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final String ACCOUNT_ID = "acc";

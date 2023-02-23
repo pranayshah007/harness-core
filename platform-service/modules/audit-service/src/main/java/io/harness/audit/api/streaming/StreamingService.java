@@ -26,4 +26,6 @@ public interface StreamingService {
 
   StreamingDestination update(
       String streamingDestinationIdentifier, StreamingDestinationDTO streamingDestinationDTO, String accountIdentifier);
+
+  boolean validateUniqueness(String accountIdentifier, String identifier);
 }

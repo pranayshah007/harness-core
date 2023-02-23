@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -62,8 +63,8 @@ import org.springframework.stereotype.Service;
 @Path("governance")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-// @NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
+
 @Service
 @OwnedBy(CE)
 @Slf4j

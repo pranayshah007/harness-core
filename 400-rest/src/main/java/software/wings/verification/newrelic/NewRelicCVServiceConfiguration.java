@@ -7,7 +7,7 @@
 
 package software.wings.verification.newrelic;
 
-import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
+import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.newrelic.NewRelicDataCollectionInfoV2;

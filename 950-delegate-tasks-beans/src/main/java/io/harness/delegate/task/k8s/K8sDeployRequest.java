@@ -53,6 +53,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
   ManifestDelegateConfig getManifestDelegateConfig();
   Integer getTimeoutIntervalInMin();
   CommandUnitsProgress getCommandUnitsProgress();
+  String getReleaseName();
   boolean isUseLatestKustomizeVersion();
   boolean isUseNewKubectlVersion();
 

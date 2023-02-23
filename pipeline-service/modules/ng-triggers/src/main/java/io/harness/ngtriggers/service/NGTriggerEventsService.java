@@ -20,4 +20,10 @@ public interface NGTriggerEventsService {
       String searchTerm, List<ExecutionStatus> statusList);
 
   Page<TriggerEventHistory> getEventHistory(Criteria criteria, Pageable pageable);
+
+  void deleteAllForPipeline(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  void deleteTriggerEventHistory(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String triggerIdentifier);
 }

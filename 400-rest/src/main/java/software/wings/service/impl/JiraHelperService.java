@@ -52,10 +52,10 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * All Jira apis should be accessed via this object.
@@ -111,7 +111,7 @@ public class JiraHelperService {
                                     .build();
 
     try {
-      DelegateResponseData responseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
       if (responseData instanceof RemoteMethodReturnValueData) {
         RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
         if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
@@ -258,7 +258,7 @@ public class JiraHelperService {
                                                 .timeout(Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
                                                 .build())
                                       .build();
-      DelegateResponseData responseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
 
       if (jiraTaskParameters.getJiraAction() == CHECK_APPROVAL && delegateTask != null) {
         log.info("Delegate task Id = {}, for Polling Jira Approval for IssueId {}", delegateTask.getUuid(),

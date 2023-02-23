@@ -10,6 +10,7 @@ package io.harness.cdng.jira.resources.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
@@ -30,13 +32,22 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.task.jira.JiraSearchUserData;
 import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HarnessJiraException;
+import io.harness.exception.HintException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
 import io.harness.rule.Owner;
@@ -81,7 +92,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector()));
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(false)));
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(EncryptedDataDetail.builder().build()));
   }
@@ -90,7 +101,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentials() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(JiraTaskNGResponse.builder().build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(JiraTaskNGResponse.builder().build());
     assertThat(jiraResourceService.validateCredentials(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isTrue();
   }
 
@@ -98,7 +109,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentialsDelegateError() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage("exception").build());
     assertThatThrownBy(() -> jiraResourceService.validateCredentials(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(HarnessJiraException.class);
@@ -109,9 +120,43 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetProjects() {
     List<JiraProjectBasicNG> projects = Collections.emptyList();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
     assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraConnectorDTO).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetProjectsWithUpdatedConnectorFlow() {
+    List<JiraProjectBasicNG> projects = Collections.emptyList();
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof JiraAuthCredentialsDTO).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetProjectsWhenDelegatesNotAvailable() {
+    List<JiraProjectBasicNG> projects = Collections.emptyList();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new DelegateServiceDriverException("delegates not available"));
+    assertThatThrownBy(() -> jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK))
+        .hasCause(new DelegateNotAvailableException(
+            "Delegates are not available for performing jira operation.", WingsException.USER));
   }
 
   @Test
@@ -119,7 +164,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetIssueCreateMeta() {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build());
     assertThat(jiraResourceService.getIssueCreateMetadata(
                    identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, null, false, false))
@@ -140,7 +185,7 @@ public class JiraResourceServiceTest extends CategoryTest {
 
     JiraSearchUserData jiraSearchUserData = JiraSearchUserData.builder().build();
     JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().jiraSearchUserData(jiraSearchUserData).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(jiraTaskNGResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(jiraTaskNGResponse);
     jiraResourceService.searchUser(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, connectorId, defaultSyncTimeout, "search", offset);
 
@@ -148,7 +193,26 @@ public class JiraResourceServiceTest extends CategoryTest {
     assertThat(captor.getValue().build().getJiraSearchUserParams()).isEqualTo(jiraSearchUserParams);
   }
 
-  private ConnectorResponseDTO getConnector() {
+  private ConnectorResponseDTO getConnector(boolean updatedYaml) {
+    if (updatedYaml) {
+      ConnectorInfoDTO connectorInfoDTO =
+          ConnectorInfoDTO.builder()
+              .connectorType(ConnectorType.JIRA)
+              .connectorConfig(JiraConnectorDTO.builder()
+                                   .jiraUrl("url")
+                                   .username("username")
+                                   .passwordRef(SecretRefData.builder().build())
+                                   .auth(JiraAuthenticationDTO.builder()
+                                             .authType(JiraAuthType.USER_PASSWORD)
+                                             .credentials(JiraUserNamePasswordDTO.builder()
+                                                              .username("username")
+                                                              .passwordRef(SecretRefData.builder().build())
+                                                              .build())
+                                             .build())
+                                   .build())
+              .build();
+      return ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    }
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                             .connectorType(ConnectorType.JIRA)
                                             .connectorConfig(JiraConnectorDTO.builder()

@@ -16,15 +16,9 @@ Parameters:
   RoleName:
     Type: String
     Default: HarnessCERole
-    Description: "Must begin with Harness e.g., HarnessCERole, HarnessManagedRole"
-    AllowedPattern: "^Harness(.*)$"
-    ConstraintDescription: "Malformed input-Parameter RoleName must begin with Harness, e.g., HarnessCERole"
   LambdaExecutionRoleName:
     Type: String
     Default: HarnessCELambdaExecutionRole
-    Description: "Must begin with Harness e.g., HarnessCELambdaExecutionRole"
-    AllowedPattern: "^Harness(.*)$"
-    ConstraintDescription: "Malformed input-Parameter RoleName must be of the pattern /^Harness(.*)$/ , e.g., HarnessCELambdaExecutionRole"
   BillingEnabled:
     Description: Whether CostAndUsage Report feature is enabled or not.
     Default: false
@@ -38,6 +32,10 @@ Parameters:
     Default: false
     Type: String
     AllowedValues: [true, false]
+  GovernanceEnabled:
+    Default: false
+    Type: String
+    AllowedValues: [true, false]
 Conditions:
   CreatingHarnessBillingMonitoringPolicy: !Equals 
     - !Ref BillingEnabled
@@ -47,6 +45,9 @@ Conditions:
     - true
   CreateHarnessOptimisationPolicy: !Equals 
     - !Ref OptimizationEnabled
+    - true
+  CreateHarnessGovernancePolicy: !Equals 
+    - !Ref GovernanceEnabled
     - true
 Resources:
   HarnessCloudFormationRole:
@@ -257,6 +258,42 @@ Resources:
                   - s3:ListAllMyBuckets
                   - s3:GetBucketLocation
                   - secretsmanager:GetSecretValue
+                Resource: "*"
+      Roles:
+        - !Ref HarnessCloudFormationRole
+  HarnessGovernancePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: CreateHarnessGovernancePolicy
+    Properties:
+      Description: Policy granting Harness Access to Enable policy execution
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - ec2:DeleteSnapshot
+                  - ec2:DeleteVolume
+                  - ec2:Get*
+                  - ec2:ListImagesInRecycleBin
+                  - ec2:ListSnapshotsInRecycleBin
+                  - elasticbeanstalk:Check*
+                  - elasticbeanstalk:Describe*
+                  - elasticbeanstalk:List*
+                  - elasticbeanstalk:Request*
+                  - elasticbeanstalk:Retrieve*
+                  - elasticbeanstalk:Validate*
+                  - elasticloadbalancing:Describe*
+                  - rds:Describe*
+                  - rds:Download*
+                  - rds:List*
+                  - autoscaling-plans:Describe*
+                  - autoscaling-plans:GetScalingPlanResourceForecastData
+                  - autoscaling:Describe*
+                  - autoscaling:GetPredictiveScalingForecast
+                  - s3:DescribeJob
+                  - s3:Get*
+                  - s3:List* 
                 Resource: "*"
       Roles:
         - !Ref HarnessCloudFormationRole

@@ -74,6 +74,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.ecs.EcsContainerDetails;
 import io.harness.exception.InvalidRequestException;
@@ -169,6 +170,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject @InjectMocks private EcsStateHelper helper;
 
@@ -293,7 +295,7 @@ public class EcsStateHelperTest extends CategoryTest {
     helper.queueDelegateTaskForEcsListenerUpdate(application, awsConfig, mockService, mapping, ACTIVITY_ID, environment,
         "CommandName", configData, emptyList(), 10, false, null);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockService).queueTask(captor.capture());
+    verify(mockService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -542,7 +544,7 @@ public class EcsStateHelperTest extends CategoryTest {
     helper.createAndQueueDelegateTaskForEcsServiceSetUp(EcsServiceSetupRequest.builder().build(), bag,
         Activity.builder().uuid(ACTIVITY_ID).build(), mockDelegateService, false);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -598,7 +600,7 @@ public class EcsStateHelperTest extends CategoryTest {
         activityId, mockDelegateService, false);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -760,7 +762,7 @@ public class EcsStateHelperTest extends CategoryTest {
     helper.createAndQueueDelegateTaskForEcsServiceDeploy(bag, EcsServiceDeployRequest.builder().build(),
         Activity.builder().uuid(ACTIVITY_ID).build(), mockDelegateService, false);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).queueTask(captor.capture());
+    verify(mockDelegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
@@ -924,7 +926,7 @@ public class EcsStateHelperTest extends CategoryTest {
     ExecutionContext mockContext = mock(ExecutionContext.class);
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
     EcsResizeParams ecsResizeParams = mock(EcsResizeParams.class);
-    doThrow(new InterruptedException()).when(mockDelegateService).executeTask(any());
+    doThrow(new InterruptedException()).when(mockDelegateService).executeTaskV2(any());
 
     assertThatThrownBy(()
                            -> helper.createSweepingOutputForRollback(
@@ -963,7 +965,7 @@ public class EcsStateHelperTest extends CategoryTest {
                  .ecsCommandResponse(EcsDeployRollbackDataFetchResponse.builder().build())
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
 
     doNothing().when(sweepingOutputService).ensure(any());
     doReturn("").when(mockContext).appendStateExecutionId(any());
@@ -981,7 +983,7 @@ public class EcsStateHelperTest extends CategoryTest {
     helper.createSweepingOutputForRollback(bag, activity, mockDelegateService, ecsResizeParams, mockContext, false);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockDelegateService).executeTask(captor.capture());
+    verify(mockDelegateService).executeTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
 

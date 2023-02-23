@@ -7,38 +7,43 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.steps.StepSpecTypeConstants;
 
-import software.wings.ngmigration.CgEntityId;
+import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 import software.wings.sm.states.BarrierState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
-public class BarrierStepMapperImpl implements StepMapper {
+public class BarrierStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.BARRIER;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
+  public State getState(GraphNode stepYaml) {
+    Map<String, Object> properties = getProperties(stepYaml);
     BarrierState state = new BarrierState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    BarrierState state = (BarrierState) getState(stepYaml);
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    BarrierState state = (BarrierState) getState(graphNode);
     BarrierStepNode barrierStepNode = new BarrierStepNode();
-    baseSetup(stepYaml, barrierStepNode);
+    baseSetup(graphNode, barrierStepNode);
     BarrierStepInfo barrierStepInfo =
         BarrierStepInfo.builder().name(state.getName()).identifier(state.getIdentifier()).build();
     barrierStepNode.setBarrierStepInfo(barrierStepInfo);
@@ -46,7 +51,7 @@ public class BarrierStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // Barrier steps are pretty much same across.
     return true;
   }

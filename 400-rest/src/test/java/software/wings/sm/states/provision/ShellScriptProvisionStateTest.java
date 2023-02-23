@@ -53,6 +53,7 @@ import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -108,7 +109,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock protected FeatureFlagService featureFlagService;
   @Mock protected ManagerExecutionLogCallback logCallback;
-
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @Inject private KryoSerializer kryoSerializer;
 
   @InjectMocks
@@ -200,7 +201,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     ShellScriptProvisionParameters populatedParameters =
         (ShellScriptProvisionParameters) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
     assertThat(populatedParameters.getWorkflowExecutionId()).isEqualTo("workflow-execution-id");
@@ -301,7 +302,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     verify(activityService, times(1)).save(activityCaptor.capture());
     assertCreatedActivity(activityCaptor.getValue(), GLOBAL_ENV_ID, GLOBAL_ENV_ID, ALL);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue().getData().getExpressionFunctorToken()).isNotNull();
 
     // When OrchestrationWorkflowType is other than BUILD
@@ -340,7 +341,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     ShellScriptProvisionParameters populatedParameters =
         (ShellScriptProvisionParameters) delegateTaskArgumentCaptor.getValue().getData().getParameters()[0];
     assertThat(populatedParameters.getDelegateSelectors()).isEqualTo(Collections.singletonList(runTimeValueAbc));

@@ -191,7 +191,7 @@ public class GitBuildStatusUtility {
                                                   .taskDescription("CI git build status task")
                                                   .build();
 
-    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
     log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
         stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
         ciBuildStatusPushParameters.getState(), taskId);
@@ -230,9 +230,14 @@ public class GitBuildStatusUtility {
     String ownerName = GitClientHelper.getGitOwner(url, false);
 
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
+
+    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    String detailsUrl = getBuildDetailsUrl(ngAccess, ambiance.getMetadata().getPipelineIdentifier(),
+        ambiance.getMetadata().getExecutionUuid(), stageSetupId, stageExecutionId);
+
     return CIBuildStatusPushParameters.builder()
-        .detailsUrl(getBuildDetailsUrl(
-            ngAccess, ambiance.getMetadata().getPipelineIdentifier(), ambiance.getMetadata().getExecutionUuid()))
+        .detailsUrl(detailsUrl)
         .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getMetadata().getExecutionUuid(),
             buildStatusUpdateParameter.getName(), status.name()))
         .sha(commitSha)
@@ -383,16 +388,23 @@ public class GitBuildStatusUtility {
       StageElementParameters stageElementParameters = (StageElementParameters) stepParameters;
       IntegrationStageStepParametersPMS integrationStageStepParameters =
           (IntegrationStageStepParametersPMS) stageElementParameters.getSpecConfig();
-      return integrationStageStepParameters.getBuildStatusUpdateParameter();
+      return integrationStageStepParameters.getBuildStatusUpdateParameter() != null
+          ? integrationStageStepParameters.getBuildStatusUpdateParameter()
+          : fetchBuildStatusUpdateParameterFromStageDetails(ambiance);
     } else if (stepParameters instanceof CodeBaseTaskStepParameters) {
-      OptionalSweepingOutput optionalSweepingOutputStageDetails = executionSweepingOutputResolver.resolveOptional(
-          ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
-      if (optionalSweepingOutputStageDetails.isFound()) {
-        StageDetails stageDetails = (StageDetails) optionalSweepingOutputStageDetails.getOutput();
-        return stageDetails.getBuildStatusUpdateParameter();
-      }
+      return fetchBuildStatusUpdateParameterFromStageDetails(ambiance);
     }
 
+    return null;
+  }
+
+  private BuildStatusUpdateParameter fetchBuildStatusUpdateParameterFromStageDetails(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutputStageDetails = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (optionalSweepingOutputStageDetails.isFound()) {
+      StageDetails stageDetails = (StageDetails) optionalSweepingOutputStageDetails.getOutput();
+      return stageDetails.getBuildStatusUpdateParameter();
+    }
     return null;
   }
 
@@ -400,9 +412,10 @@ public class GitBuildStatusUtility {
     return connectorUtils.getConnectorDetails(ngAccess, connectorRef);
   }
 
-  private String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId) {
+  private String getBuildDetailsUrl(
+      NGAccess ngAccess, String pipelineId, String executionId, String stageSetupId, String stageExecutionId) {
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
-    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl);
+    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 
   private String getVanityUrl(String accountID) {

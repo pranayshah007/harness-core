@@ -11,16 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
-import static org.mongodb.morphia.query.Sort.ascending;
-import static org.mongodb.morphia.query.Sort.descending;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
+import static dev.morphia.query.Sort.ascending;
+import static dev.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -51,6 +52,8 @@ import software.wings.service.impl.instance.FlatEntitySummaryStats;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,8 +62,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(DX)
 @Slf4j
@@ -72,6 +73,7 @@ public class InstanceStatsDataFetcher
   @Inject private InstanceQueryHelper instanceMongoHelper;
   @Inject private TagHelper tagHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject LongerDataRetentionService longerDataRetentionService;
 
   @Override
   protected QLInstanceTagAggregation getTagAggregation(QLInstanceAggregation groupBy) {
@@ -148,7 +150,7 @@ public class InstanceStatsDataFetcher
         }
       }
 
-      Query<Instance> query = wingsPersistence.createQuery(Instance.class);
+      Query<Instance> query = wingsPersistence.createAnalyticsQuery(Instance.class);
       query.filter("accountId", accountId);
       query.filter("isDeleted", false);
 
@@ -161,7 +163,7 @@ public class InstanceStatsDataFetcher
           String entityNameColumn = getNameField(firstLevelAggregation);
           List<QLDataPoint> dataPoints = new ArrayList<>();
 
-          wingsPersistence.getDatastore(Instance.class)
+          wingsPersistence.getDefaultAnalyticsDatastore(Instance.class)
               .createAggregation(Instance.class)
               .match(query)
               .group(Group.id(grouping(entityIdColumn)), grouping("count", accumulator("$sum", 1)),
@@ -186,7 +188,7 @@ public class InstanceStatsDataFetcher
           String secondLevelEntityNameColumn = getNameField(secondLevelAggregation);
 
           List<TwoLevelAggregatedData> aggregatedDataList = new ArrayList<>();
-          wingsPersistence.getDatastore(query.getEntityClass())
+          wingsPersistence.getDefaultAnalyticsDatastore(query.getEntityClass())
               .createAggregation(Instance.class)
               .match(query)
               .group(Group.id(grouping(entityIdColumn), grouping(secondLevelEntityIdColumn)),

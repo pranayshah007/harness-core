@@ -44,6 +44,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -83,6 +84,7 @@ public class AwsAmiTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest {
   @Mock private ActivityService activityService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private final List<LbDetailsForAlbTrafficShift> lbDetails = getLbDetailsForAlbTrafficShifts();
   @InjectMocks
@@ -236,14 +238,14 @@ public class AwsAmiTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest {
         .when(spotinstStateHelper)
         .createActivity(eq(mockContext), eq(null), anyString(), anyString(), any(), any());
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
     return mockContext;
   }
 
   private void verifyDelegateTaskCreationResult(ExecutionResponse response, boolean isRollback) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
 
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();

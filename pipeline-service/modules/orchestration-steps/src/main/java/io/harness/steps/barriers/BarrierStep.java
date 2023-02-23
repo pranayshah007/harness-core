@@ -17,8 +17,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -27,6 +25,7 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierOutcome;
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.service.BarrierService;
+import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -35,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
 @Slf4j
-public class BarrierStep implements AsyncExecutable<StepElementParameters> {
+public class BarrierStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.BARRIER_STEP_TYPE;
 
   private static final String BARRIER = "barrier";
@@ -48,8 +47,8 @@ public class BarrierStep implements AsyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepElementParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
     BarrierExecutionInstance barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(
         barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());
@@ -62,7 +61,7 @@ public class BarrierStep implements AsyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 

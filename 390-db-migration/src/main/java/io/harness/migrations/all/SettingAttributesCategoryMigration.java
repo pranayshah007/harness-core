@@ -19,9 +19,9 @@ import software.wings.dl.WingsPersistence;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * @author marklu on 9/4/19

@@ -71,9 +71,11 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("paramsPaths")
   ParameterField<List<String>> paramsPaths;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
 
   @Override
   public StoreConfig getStoreConfig() {
@@ -100,6 +102,10 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
     if (openshiftManifest.getSkipResourceVersioning() != null) {
       resultantManifest = resultantManifest.withSkipResourceVersioning(openshiftManifest.getSkipResourceVersioning());
     }
+    if (openshiftManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest =
+          resultantManifest.withEnableDeclarativeRollback(openshiftManifest.getEnableDeclarativeRollback());
+    }
 
     return resultantManifest;
   }
@@ -107,7 +113,8 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new OpenshiftManifestStepParameters(identifier,
-        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), paramsPaths, skipResourceVersioning);
+        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), paramsPaths, skipResourceVersioning,
+        enableDeclarativeRollback);
   }
 
   @Value
@@ -116,5 +123,6 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
     StoreConfigWrapperParameters store;
     ParameterField<List<String>> paramsPaths;
     ParameterField<Boolean> skipResourceVersioning;
+    ParameterField<Boolean> enableDeclarativeRollback;
   }
 }

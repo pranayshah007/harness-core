@@ -17,11 +17,11 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.net.URL;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -48,11 +48,11 @@ public class PipelineExpressionHelper {
     if (!EmptyPredicate.isEmpty(ambiance.getMetadata().getModuleType())) {
       moduleName = ambiance.getMetadata().getModuleType();
     } else {
-      Optional<PipelineExecutionSummaryEntity> optional = pmsExecutionSummaryService.getPipelineExecutionSummary(
-          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-          AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId());
-      if (optional.isPresent()) {
-        moduleName = getModuleName(optional.get(), moduleName);
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+          pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(ambiance.getPlanExecutionId(),
+              Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules));
+      if (pipelineExecutionSummaryEntity != null) {
+        moduleName = getModuleName(pipelineExecutionSummaryEntity, moduleName);
       }
     }
     return moduleName;

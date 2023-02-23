@@ -17,7 +17,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -32,7 +32,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -45,10 +44,12 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -58,13 +59,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<TerragruntDestroyTaskResponse> {
+public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTaskResponse> {
   public static final StepType STEP_TYPE =
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_DESTROY.getYamlType());
 
   @Inject private TerragruntStepHelper helper;
-  @Inject private KryoSerializer kryoSerializer;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject public TerragruntConfigDAL terragruntConfigDAL;
@@ -147,7 +147,8 @@ public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<Ter
 
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
-        .commandType(TerragruntCommandType.DESTROY)
+        .tgModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFilesStore(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))
@@ -178,11 +179,18 @@ public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<Ter
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     TerragruntInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, TerragruntCommandType.DESTROY.name(), ambiance);
+
+    if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
+      throw new InvalidRequestException(
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
+    }
+
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
@@ -217,6 +225,7 @@ public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<Ter
     builder.accountId(accountId)
         .entityId(entityId)
         .stateFileId(helper.getLatestFileId(entityId))
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
             terragruntConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))
@@ -237,7 +246,7 @@ public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<Ter
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerragruntDestroyTaskResponse> responseSupplier)
       throws Exception {
-    log.info("Handling Task Result Inline for the Terragrunt Destroy Step");
+    log.info("Handling Task Result for the Terragrunt Destroy Step");
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
     TerragruntDestroyStepParameters parameters = (TerragruntDestroyStepParameters) stepElementParameters.getSpec();
@@ -277,7 +286,7 @@ public class TerragruntDestroyStep extends TaskExecutableWithRollbackAndRbac<Ter
     commandUnitsList.add(FETCH_CONFIG_FILES);
     commandUnitsList.add(DESTROY);
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnitsList,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
         TERRAGRUNT_DESTROY_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

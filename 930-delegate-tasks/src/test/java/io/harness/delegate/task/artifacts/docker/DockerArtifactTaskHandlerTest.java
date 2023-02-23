@@ -11,14 +11,17 @@ import static io.harness.artifacts.docker.service.DockerRegistryService.MAX_NO_O
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.service.DockerRegistryService;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -30,6 +33,7 @@ import io.harness.rule.Owner;
 import io.fabric8.utils.Lists;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +84,55 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildWithV2SHA256Digest() {
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
+    DockerInternalConfig dockerInternalConfig =
+        DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
+    doReturn(buildDetailsInternal)
+        .when(dockerRegistryService)
+        .verifyBuildNumber(dockerInternalConfig, "imagePath", "tag");
+    Map<String, String> label = new HashMap<>();
+    label.put("label", "label");
+    doReturn(Collections.singletonList(label))
+        .when(dockerRegistryService)
+        .getLabels(dockerInternalConfig, "imagePath", Collections.singletonList("tag"));
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().shaV2("V2_DIGEST").build();
+    doReturn(artifactMetaInfo)
+        .when(dockerRegistryService)
+        .getArtifactMetaInfo(dockerInternalConfig, "imagePath", "tag", true);
+    DockerArtifactDelegateRequest sourceAttributes =
+        DockerArtifactDelegateRequest.builder()
+            .imagePath("imagePath")
+            .tag("tag")
+            .shouldFetchDockerV2DigestSHA256(true)
+            .dockerConnectorDTO(DockerConnectorDTO.builder()
+                                    .dockerRegistryUrl("URL")
+                                    .auth(DockerAuthenticationDTO.builder()
+                                              .credentials(DockerUserNamePasswordDTO.builder()
+                                                               .username("username")
+                                                               .passwordRef(SecretRefData.builder().build())
+                                                               .build())
+                                              .build())
+                                    .build())
+            .build();
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = dockerArtifactService.getLastSuccessfulBuild(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(DockerArtifactDelegateResponse.class);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0).getBuildDetails().getMetadata().get(
+                   ArtifactMetadataKeys.SHAV2))
+        .isEqualTo("V2_DIGEST");
+    DockerArtifactDelegateResponse attributes =
+        (DockerArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getImagePath()).isEqualTo(sourceAttributes.getImagePath());
+    assertThat(attributes.getTag()).isEqualTo(sourceAttributes.getTag());
+  }
+
+  @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuildFromRegex() {
@@ -123,7 +176,7 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
         DockerInternalConfig.builder().dockerRegistryUrl("URL").username("username").build();
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(dockerRegistryService)
-        .getBuilds(dockerInternalConfig, "imagePath", MAX_NO_OF_TAGS_PER_IMAGE);
+        .getBuilds(dockerInternalConfig, "imagePath", MAX_NO_OF_TAGS_PER_IMAGE, "tagRegex");
     DockerArtifactDelegateRequest sourceAttributes =
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")

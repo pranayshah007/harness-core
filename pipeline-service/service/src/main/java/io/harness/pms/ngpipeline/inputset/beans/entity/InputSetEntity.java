@@ -23,15 +23,15 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.PipelineVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -46,7 +46,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -64,10 +63,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("inputSetsPMS")
 @TypeAlias("inputSetsPMS")
 @HarnessEntity(exportable = true)
-public class InputSetEntity
-    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        //            TODO: remove the index once the old git sync is sunset
         .add(CompoundMongoIndex.builder()
                  .name("unique_accountId_organizationId_projectId_pipelineId_inputSetId_repo_branch")
                  .unique(true)
@@ -79,6 +79,16 @@ public class InputSetEntity
                  .field(InputSetEntityKeys.yamlGitConfigRef)
                  .field(InputSetEntityKeys.branch)
                  .build())
+        //            This index will be used for get inputSet call and repo filter
+        .add(CompoundMongoIndex.builder()
+                 .name("gitx_accountId_organizationId_projectId_pipelineId_inputSetId_repo")
+                 .field(InputSetEntityKeys.accountId)
+                 .field(InputSetEntityKeys.orgIdentifier)
+                 .field(InputSetEntityKeys.projectIdentifier)
+                 .field(InputSetEntityKeys.pipelineIdentifier)
+                 .field(InputSetEntityKeys.identifier)
+                 .field(InputSetEntityKeys.repo)
+                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_repoURL_filePath")
                  .field(InputSetEntityKeys.accountId)
@@ -86,6 +96,7 @@ public class InputSetEntity
                  .field(InputSetEntityKeys.filePath)
                  .build())
         // for full sync
+        //            TODO: remove the index once the old git sync is sunset
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_repo_branch")
                  .field(InputSetEntityKeys.accountId)
@@ -97,7 +108,7 @@ public class InputSetEntity
                  .build())
         .build();
   }
-  @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
@@ -114,8 +125,8 @@ public class InputSetEntity
   @NotEmpty InputSetEntityType inputSetEntityType;
   @Wither List<String> inputSetReferences;
 
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
   @Wither @Version Long version;
 
@@ -132,8 +143,11 @@ public class InputSetEntity
   @Setter @NonFinal String repo;
   @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
 
   @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
+
+  @Setter @NonFinal String harnessVersion;
 
   public String getData() {
     return yaml;
@@ -170,5 +184,12 @@ public class InputSetEntity
   @Override
   public String getInvalidYamlString() {
     return yaml;
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
   }
 }

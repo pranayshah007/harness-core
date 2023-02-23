@@ -37,4 +37,6 @@ public interface NotificationSettingsService {
   boolean checkIfWebhookIsSecret(List<String> webhooks);
 
   Map<String, String> buildTaskAbstractions(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void deleteByAccount(String accountId);
 }

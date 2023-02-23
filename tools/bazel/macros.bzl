@@ -17,6 +17,7 @@ def openapi_stub_generator(name):
         config_file = "jaxrs-spec-config.json",
         language = "jaxrs-spec",
         spec = "openapi.yaml",
+        logback_test = "logback-test.xml",
     )
 
 def resources(name = "resources", runtime_deps = [], testonly = 0, visibility = None):
@@ -83,8 +84,9 @@ def run_analysis_per_module(
         checkstyle_srcs = ["*"],
         pmd_srcs = ["*"],
         sonarqube_srcs = ["*.java"],
+        test_only = False,
         run_duplicated = True):
-    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_duplicated = run_duplicated)
+    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_pmd = not test_only, run_sonar = not test_only, run_duplicated = not test_only and run_duplicated)
 
 def run_analysis(
         checkstyle_srcs = ["src/**/*"],

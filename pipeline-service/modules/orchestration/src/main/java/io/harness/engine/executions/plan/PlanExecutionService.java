@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
@@ -61,10 +62,26 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   List<PlanExecution> findByStatusWithProjections(Set<Status> statuses, Set<String> fieldNames);
 
+  /**
+   * Fetches all planExecutions entries with given status with fieldsToBeIncluded as projections from analytics node
+   * Uses - status_idx index
+   * @param statuses
+   * @param fieldNames
+   * @return
+   */
+  CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
+      Set<Status> statuses, Set<String> fieldNames);
+
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
   long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
   PlanExecution findNextExecutionToRunInAccount(String accountId);
+
+  /**
+   * Deletes the planExecution and its related metadata
+   * @param planExecutionIds Ids of to be deleted planExecutions
+   */
+  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
 }

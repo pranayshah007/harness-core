@@ -52,6 +52,7 @@ import io.harness.migrations.all.AddDeploymentFreezeReferenceToUserGroups;
 import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
+import io.harness.migrations.all.AddIsCrossGenerationAccessEnabledToAccountMigration;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
 import io.harness.migrations.all.AddMisfireInstructionToQuartz;
 import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
@@ -65,9 +66,11 @@ import io.harness.migrations.all.AddValidUntilToWorkflowExecution;
 import io.harness.migrations.all.AlertCheckJobPollIntervalMigration;
 import io.harness.migrations.all.AmendCorruptedEncryptedServiceVariable;
 import io.harness.migrations.all.ApiKeysSetNameMigration;
+import io.harness.migrations.all.ArtifactSourceCollectionEnabledMigration;
 import io.harness.migrations.all.CDPaidLicenseToNGMigration;
 import io.harness.migrations.all.CEViewsMigration;
 import io.harness.migrations.all.CleanUpDirectK8sInfraMappingEncryptedFieldsMigration;
+import io.harness.migrations.all.CleanupInfraMappingsForDeletedServices;
 import io.harness.migrations.all.CleanupOrphanInfraMappings;
 import io.harness.migrations.all.CleanupOrphanInstances;
 import io.harness.migrations.all.CleanupSyncStatusForDeletedEntities;
@@ -409,6 +412,9 @@ public class MigrationBackgroundList {
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
         .add(Pair.of(239, AddValidUntilToDelegateGroupMigration.class))
+        .add(Pair.of(240, ArtifactSourceCollectionEnabledMigration.class))
+        .add(Pair.of(241, CleanupInfraMappingsForDeletedServices.class))
+        .add(Pair.of(242, AddIsCrossGenerationAccessEnabledToAccountMigration.class))
         .build();
   }
 }

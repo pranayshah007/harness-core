@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +28,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
+import io.harness.pms.pipelinestage.v1.helper.PipelineStageHelperV1;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -40,6 +45,7 @@ import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActi
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +64,7 @@ public class PipelineStageHelperTest extends CategoryTest {
 
   @Mock private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+  @Mock private PipelineStageHelperV1 pipelineStageHelperV1;
   @InjectMocks private PipelineStageHelper pipelineStageHelper;
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -78,6 +85,21 @@ public class PipelineStageHelperTest extends CategoryTest {
         .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
     pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity);
     verify(pmsPipelineTemplateHelper, times(1)).resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+    verify(pipelineStageHelperV1, times(0)).containsPipelineStage(yaml);
+
+    pipelineEntity = PipelineEntity.builder().harnessVersion(PipelineVersion.V1).build();
+    doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
+        .when(pmsPipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE);
+    pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity);
+    verify(pipelineStageHelperV1, times(1)).containsPipelineStage(yaml);
+
+    PipelineEntity pipelineEntity1 = PipelineEntity.builder().harnessVersion("V2").build();
+    doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
+        .when(pmsPipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity1, BOOLEAN_FALSE_VALUE);
+    assertThatThrownBy(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity1))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -193,43 +215,62 @@ public class PipelineStageHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateFailureStrategy() {
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(null)).doesNotThrowAnyException();
-    List<FailureStrategyConfig> failureStrategyConfigs = getFailureStrategy(RetryFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> failureStrategyConfigs =
+        getFailureStrategy(RetryFailureActionConfig.builder().build());
 
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(failureStrategyConfigs))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> miFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> miFailureStrategy =
         getFailureStrategy(ManualInterventionFailureActionConfig.builder().build());
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(miFailureStrategy))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> pipelineRollbackFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> pipelineRollbackFailureStrategy =
         getFailureStrategy(PipelineRollbackFailureActionConfig.builder().build());
     assertThatThrownBy(() -> pipelineStageHelper.validateFailureStrategy(pipelineRollbackFailureStrategy))
         .isInstanceOf(InvalidRequestException.class);
 
-    List<FailureStrategyConfig> defaultFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> defaultFailureStrategy =
         getFailureStrategy(ProceedWithDefaultValuesFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(defaultFailureStrategy))
         .doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> ignoreFailureStrategy = getFailureStrategy(IgnoreFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> ignoreFailureStrategy =
+        getFailureStrategy(IgnoreFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(ignoreFailureStrategy)).doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> markAsSuccessFailureStrategy =
+    ParameterField<List<FailureStrategyConfig>> markAsSuccessFailureStrategy =
         getFailureStrategy(MarkAsSuccessFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(markAsSuccessFailureStrategy))
         .doesNotThrowAnyException();
 
-    List<FailureStrategyConfig> abortFailureStrategy = getFailureStrategy(AbortFailureActionConfig.builder().build());
+    ParameterField<List<FailureStrategyConfig>> abortFailureStrategy =
+        getFailureStrategy(AbortFailureActionConfig.builder().build());
     assertThatCode(() -> pipelineStageHelper.validateFailureStrategy(abortFailureStrategy)).doesNotThrowAnyException();
   }
 
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetInputSetYaml() throws IOException {
+    YamlField inputSetField = YamlUtils.readTreeWithDefaultObjectMapper("a:\n  b: c");
+    String inputSetYaml = pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V0);
+    assertThat(inputSetYaml).isEqualTo("pipeline:\n  a:\n    b: \"c\"\n");
+    verify(pipelineStageHelperV1, times(0)).getInputSet(inputSetField);
+
+    pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V1);
+    verify(pipelineStageHelperV1, times(1)).getInputSet(inputSetField);
+
+    assertThatThrownBy(() -> pipelineStageHelper.getInputSetYaml(inputSetField, "V2"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
   @NotNull
-  private List<FailureStrategyConfig> getFailureStrategy(FailureStrategyActionConfig failureStrategyActionConfig) {
-    return Collections.singletonList(
-        FailureStrategyConfig.builder()
-            .onFailure(OnFailureConfig.builder().action(failureStrategyActionConfig).build())
-            .build());
+  private ParameterField<List<FailureStrategyConfig>> getFailureStrategy(
+      FailureStrategyActionConfig failureStrategyActionConfig) {
+    return ParameterField.createValueField(
+        Collections.singletonList(FailureStrategyConfig.builder()
+                                      .onFailure(OnFailureConfig.builder().action(failureStrategyActionConfig).build())
+                                      .build()));
   }
 }

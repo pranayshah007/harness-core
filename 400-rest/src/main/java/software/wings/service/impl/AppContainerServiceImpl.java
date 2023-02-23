@@ -35,6 +35,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.mapping.Mapper;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,7 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.mapping.Mapper;
 
 /**
  * Created by anubhaw on 5/4/16.

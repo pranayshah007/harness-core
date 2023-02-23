@@ -24,7 +24,7 @@ import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleKe
 import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.transformer.NotificationRuleConditionTransformer;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -34,6 +34,9 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class NotificationRuleServiceImpl implements NotificationRuleService {
   @Inject private HPersistence hPersistence;
@@ -52,7 +52,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   private Map<NotificationRuleType, NotificationRuleConditionTransformer>
       notificationRuleTypeNotificationRuleConditionTransformerMap;
   @Inject private Map<NotificationRuleType, NotificationRuleUpdatableEntity> notificationRuleMapBinder;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Override
@@ -119,7 +119,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
-    serviceLevelObjectiveService.beforeNotificationRuleDelete(projectParams, identifier);
+    serviceLevelObjectiveV2Service.beforeNotificationRuleDelete(projectParams, identifier);
     monitoredServiceService.beforeNotificationRuleDelete(projectParams, identifier);
     return hPersistence.delete(notificationRules.get(0));
   }

@@ -175,7 +175,7 @@ public class RancherResolveState extends State {
                                     .selectionLogsTrackingEnabled(true)
                                     .build();
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     StateExecutionData executionData = new RancherStateExecutionData(activityId);
 
     return ExecutionResponse.builder()

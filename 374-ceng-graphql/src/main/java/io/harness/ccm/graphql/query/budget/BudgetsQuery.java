@@ -9,18 +9,27 @@ package io.harness.ccm.graphql.query.budget;
 
 import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
-import io.harness.ccm.graphql.dto.budget.BudgetSummary;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.WingsException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,8 +38,11 @@ import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +52,10 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetsQuery {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private BudgetDao budgetDao;
+  @Inject private BudgetGroupDao budgetGroupDao;
+  @Inject private CEViewService ceViewService;
   @Inject private BudgetService budgetService;
+  @Inject private BudgetGroupService budgetGroupService;
   @Inject private BudgetCostService budgetCostService;
   @Inject private CCMRbacHelper rbacHelper;
 
@@ -66,9 +81,19 @@ public class BudgetsQuery {
       }
 
       if (budget != null) {
-        return buildBudgetSummary(budget, true);
+        return buildBudgetSummary(budget, true,
+            ceViewService
+                .getPerspectiveFolderIds(
+                    accountId, Collections.singletonList(BudgetUtils.getPerspectiveIdForBudget(budget)))
+                .iterator()
+                .next());
       }
 
+      // If budget is null and budgetId is not null
+      // the budget group id might have been passed as budgetId
+      if (budget == null && budgetId != null) {
+        return buildBudgetGroupSummary(budgetGroupDao.get(budgetId, accountId));
+      }
     } catch (Exception e) {
       log.info("Exception while fetching budget for given perspective: ", e);
     }
@@ -82,14 +107,40 @@ public class BudgetsQuery {
       @GraphQLArgument(name = "offset", defaultValue = "0") Integer offset,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    List<BudgetSummary> budgetSummaryList = new ArrayList<>();
     List<Budget> budgets = budgetDao.list(accountId, limit, offset);
     if (fetchOnlyPerspectiveBudgets) {
       budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     }
-    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
-    budgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+    List<String> perspectiveIds = budgets.stream()
+                                      .filter(BudgetUtils::isPerspectiveBudget)
+                                      .map(BudgetUtils::getPerspectiveIdForBudget)
+                                      .collect(Collectors.toList());
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId, perspectiveIds);
+    HashMap<String, String> perspectiveIdAndFolderIds =
+        ceViewService.getPerspectiveIdAndFolderId(accountId, perspectiveIds);
+    List<Budget> allowedBudgets = null;
+    if (folderIds != null) {
+      Set<String> allowedFolderIds =
+          rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+      allowedBudgets = budgets.stream()
+                           .filter(budget
+                               -> BudgetUtils.isPerspectiveBudget(budget)
+                                   && allowedFolderIds.contains(
+                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget))))
+                           .collect(Collectors.toList());
+    }
+    List<BudgetSummary> budgetSummaryList = new ArrayList<>();
+    if (allowedBudgets == null || allowedBudgets.size() == 0) {
+      if (budgets.size() > 0) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+      }
+      return budgetSummaryList;
+    }
+    allowedBudgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
+    allowedBudgets.forEach(budget
+        -> budgetSummaryList.add(buildBudgetSummary(
+            budget, false, perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))));
 
     return budgetSummaryList;
   }
@@ -99,8 +150,18 @@ public class BudgetsQuery {
       @GraphQLEnvironment final ResolutionEnvironment env,
       @GraphQLArgument(name = "breakdown") BudgetBreakdown breakdown) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return budgetService.getBudgetTimeSeriesStats(
-        budgetDao.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
+    // Check if any budget with this id exists
+    Budget budget = budgetDao.get(budgetId, accountId);
+
+    // If budget exists we return time series stats of the budget
+    if (budget != null) {
+      return budgetService.getBudgetTimeSeriesStats(budget, breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
+    }
+
+    // If no budget exists with such id then we check if it's a budget group
+    // And we get the time series stats of the budget group
+    return budgetGroupService.getBudgetGroupTimeSeriesStats(
+        budgetGroupDao.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
   }
 
   @GraphQLQuery(name = "budgetSummaryList", description = "List of budget cards for perspectives")
@@ -120,7 +181,13 @@ public class BudgetsQuery {
                 .collect(Collectors.toList());
       }
 
-      perspectiveBudgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+      perspectiveBudgets.forEach(budget
+          -> budgetSummaryList.add(buildBudgetSummary(budget, false,
+              ceViewService
+                  .getPerspectiveFolderIds(
+                      accountId, Collections.singletonList(BudgetUtils.getPerspectiveIdForBudget(budget)))
+                  .iterator()
+                  .next())));
 
     } catch (Exception e) {
       log.info("Exception while fetching budget summary cards for given perspective: ", e);
@@ -128,7 +195,7 @@ public class BudgetsQuery {
     return budgetSummaryList;
   }
 
-  private BudgetSummary buildBudgetSummary(Budget budget, boolean fetchLatestSpend) {
+  private BudgetSummary buildBudgetSummary(Budget budget, boolean fetchLatestSpend, String folderId) {
     Double actualCost = budget.getActualCost();
     if (fetchLatestSpend) {
       actualCost = budgetCostService.getActualCost(budget);
@@ -141,17 +208,48 @@ public class BudgetsQuery {
         .budgetAmount(budget.getBudgetAmount())
         .actualCost(actualCost)
         .forecastCost(budget.getForecastCost())
-        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget))
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget.getEndTime()))
         .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
         .timeScope(BudgetUtils.getBudgetPeriod(budget).toString().toLowerCase())
-        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, ACTUAL_COST))
-        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, FORECASTED_COST))
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), FORECASTED_COST))
         .alertThresholds(budget.getAlertThresholds())
-        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
         .period(BudgetUtils.getBudgetPeriod(budget))
-        .startTime(BudgetUtils.getBudgetStartTime(budget))
         .type(budget.getType())
+        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
+        .startTime(BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()))
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+        .isBudgetGroup(false)
+        .disableCurrencyWarning(budget.getDisableCurrencyWarning())
+        .folderId(folderId)
+        .build();
+  }
+
+  private BudgetSummary buildBudgetGroupSummary(BudgetGroup budgetGroup) {
+    if (budgetGroup == null) {
+      return null;
+    }
+
+    return BudgetSummary.builder()
+        .id(budgetGroup.getUuid())
+        .name(budgetGroup.getName())
+        .perspectiveId(null)
+        .perspectiveName(null)
+        .budgetAmount(budgetGroup.getBudgetGroupAmount())
+        .actualCost(budgetGroup.getActualCost())
+        .forecastCost(budgetGroup.getForecastCost())
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budgetGroup.getEndTime()))
+        .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
+        .timeScope(budgetGroup.getPeriod().toString().toLowerCase())
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budgetGroup.getAlertThresholds(), ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budgetGroup.getAlertThresholds(), FORECASTED_COST))
+        .alertThresholds(budgetGroup.getAlertThresholds())
+        .period(budgetGroup.getPeriod())
+        .type(null)
+        .growthRate(null)
+        .startTime(BudgetUtils.getBudgetStartTime(budgetGroup.getStartTime(), budgetGroup.getPeriod()))
+        .budgetMonthlyBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown())
+        .isBudgetGroup(true)
         .build();
   }
 }

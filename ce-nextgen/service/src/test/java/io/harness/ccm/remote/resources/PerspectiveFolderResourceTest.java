@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,7 +42,9 @@ import io.harness.telemetry.TelemetryReporter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -97,8 +101,8 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
     qlceView = QLCEView.builder().id(PERSPECTIVE_ID).name(PERSPECTIVE_NAME).folderId(FOLDER_ID).build();
     when(ceViewService.getAllViews(any(), any(), anyBoolean(), any())).thenReturn(Collections.singletonList(qlceView));
     when(ceViewFolderService.save(any())).thenReturn(perspectiveFolder);
-    when(ceViewFolderService.getFolders(any())).thenReturn(Collections.singletonList(perspectiveFolder));
-    when(ceViewFolderService.getFolders(any(), any())).thenReturn(Collections.singletonList(perspectiveFolder));
+    when(ceViewFolderService.getFolders(any(), anyString())).thenReturn(Collections.singletonList(perspectiveFolder));
+    when(ceViewFolderService.getFolders(any(), anyList())).thenReturn(Collections.singletonList(perspectiveFolder));
     when(ceViewFolderService.updateFolder(any(), any())).thenReturn(perspectiveFolder);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
@@ -129,7 +133,10 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void testGetFolders() {
-    ResponseDTO<List<CEViewFolder>> response = perspectiveFolderResource.getFolders(ACCOUNT_ID);
+    Set<String> perspectiveFolders = new HashSet<>();
+    perspectiveFolders.add(FOLDER_ID);
+    when(rbacHelper.checkFolderIdsGivenPermission(any(), any(), any(), any(), any())).thenReturn(perspectiveFolders);
+    ResponseDTO<List<CEViewFolder>> response = perspectiveFolderResource.getFolders(ACCOUNT_ID, "");
     assertThat(response.getData().size()).isEqualTo(1);
     assertThat(response.getData().get(0)).isEqualTo(perspectiveFolder);
   }
@@ -159,6 +166,9 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
   public void movePerspectives() {
+    Set<String> perspectiveFolders = new HashSet<>();
+    perspectiveFolders.add(FOLDER_ID);
+    when(rbacHelper.checkFolderIdsGivenPermission(any(), any(), any(), any(), any())).thenReturn(perspectiveFolders);
     ResponseDTO<List<CEView>> response = perspectiveFolderResource.movePerspectives(ACCOUNT_ID,
         MovePerspectiveDTO.builder()
             .perspectiveIds(Collections.singletonList(PERSPECTIVE_ID))

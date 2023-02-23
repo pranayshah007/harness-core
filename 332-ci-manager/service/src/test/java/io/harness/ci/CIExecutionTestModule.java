@@ -41,10 +41,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import java.util.List;
 import java.util.Set;
 import javax.cache.Cache;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(CI)

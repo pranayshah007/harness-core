@@ -14,7 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.common.capacity.Capacity;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -32,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,7 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ElastigroupDeployStepInfoVisitorHelper.class)
 @TypeAlias("ElastigroupDeployStepInfo")
 @RecasterAlias("io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo")
-public class ElastigroupDeployStepInfo implements CDStepInfo, Visitable {
+public class ElastigroupDeployStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -57,7 +58,7 @@ public class ElastigroupDeployStepInfo implements CDStepInfo, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  Capacity newService;
+  @NotNull Capacity newService;
 
   Capacity oldService;
 

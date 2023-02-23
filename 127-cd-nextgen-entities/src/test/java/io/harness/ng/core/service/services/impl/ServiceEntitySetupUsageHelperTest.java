@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,7 +105,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.PROJECT)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
@@ -205,7 +205,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
     String serviceYaml = readFile("service/serviceWith3ConnectorAndTemplateReferences.yaml");
     ServiceEntity entity = ServiceEntity.builder()
                                .identifier("v2serviceTEMP")
-                               .name("my-service")
+                               .name("v2serviceTEMP")
                                .accountId("accountId")
                                .orgIdentifier("orgId")
                                .projectIdentifier("projId")
@@ -299,7 +299,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.ORG)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
@@ -332,12 +331,28 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.ACCOUNT)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
     assertThat(metadataMap.get("referredEntityType")).isNull();
     assertThat(metadataMap.get("action")).isEqualTo("flushCreate");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testUpdateSetupUsages_WithInvalidReferredEntity() {
+    String serviceYaml = readFile("service/serviceWithInvalidConnectorReference.yaml");
+    // account level service
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("newservice")
+                               .name("newservice")
+                               .accountId("accountId")
+                               .yaml(serviceYaml)
+                               .build();
+    assertThatThrownBy(() -> entitySetupUsageHelper.getAllReferredEntities(entity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The org level connectors cannot be used at account level. Ref: [org.dp1]");
   }
 
   private String readFile(String filename) {

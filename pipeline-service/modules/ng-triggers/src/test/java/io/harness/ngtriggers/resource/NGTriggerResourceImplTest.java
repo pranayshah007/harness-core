@@ -30,6 +30,7 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.LastTriggerExecutionDetails;
@@ -386,7 +387,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         ngTriggerResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER).getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = EntityNotFoundException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetException() {
@@ -610,7 +611,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = EntityNotFoundException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateNotPresent() throws Exception {
@@ -663,11 +664,11 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO.isErrorResponse()).isEqualTo(true);
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = EntityNotFoundException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testUpdateException() throws Exception {
-    doThrow(new InvalidRequestException("exception")).when(ngTriggerService).update(any());
+    doThrow(new EntityNotFoundException("exception")).when(ngTriggerService).update(any());
     doReturn(Optional.empty())
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -886,7 +887,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = EntityNotFoundException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerEventHistoryException() {

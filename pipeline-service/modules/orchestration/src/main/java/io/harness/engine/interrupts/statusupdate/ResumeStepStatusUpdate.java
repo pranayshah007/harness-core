@@ -8,11 +8,8 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
-import static io.harness.pms.contracts.execution.Status.PAUSING;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -37,12 +34,12 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
     boolean resumePlan = resumeParents(nodeStatusUpdateInfo.getNodeExecution());
     if (resumePlan) {
+      // Why excluding current node -> as status update for this node is queued, this we dont want to mark pipeline
+      // status as queued.
       Status planStatus = planExecutionService.calculateStatusExcluding(
           nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
       if (!StatusUtils.isFinalStatus(planStatus)) {
-        EnumSet<Status> allowedStartStatuses = EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED);
-        planExecutionService.updateStatusForceful(
-            nodeStatusUpdateInfo.getPlanExecutionId(), planStatus, null, false, allowedStartStatuses);
+        planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), planStatus);
       }
     }
   }
@@ -52,8 +49,13 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
     if (nodeExecution.getParentId() == null) {
       return true;
     }
-    NodeExecution parentNodeExecution = nodeExecutionService.updateStatusWithOps(
-        nodeExecution.getParentId(), RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+    Status currentPlanStatus = planExecutionService.getStatus(nodeExecution.getPlanExecutionId());
+    // If planStatus is InputWaiting then on resuming execution, planStatus needs to be updated. So returning true.
+    if (currentPlanStatus == INPUT_WAITING) {
+      return true;
+    }
+    NodeExecution parentNodeExecution =
+        nodeExecutionService.updateStatusWithOps(nodeExecution.getParentId(), RUNNING, null, EnumSet.of(PAUSED));
     return parentNodeExecution != null && resumeParents(parentNodeExecution);
   }
 }

@@ -42,16 +42,17 @@ import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.grpc.server.Connector;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.logstreaming.LogStreamingServiceConfig;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoModule;
 import io.harness.mongo.ObjectFactoryModule;
-import io.harness.mongo.QueryFactory;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.persistence.NoopUserProvider;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UserProvider;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
@@ -63,7 +64,6 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.morphia.EventServerMorphiaRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testframework.framework.ManagerExecutor;
@@ -107,6 +107,10 @@ import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.converters.TypeConverter;
 import graphql.GraphQL;
 import io.dropwizard.Configuration;
 import java.io.Closeable;
@@ -130,9 +134,6 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -168,6 +169,8 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
 
     MongoClient mongoClient = new MongoClient(clientUri);
     closingFactory.addServer(mongoClient);
+
+    com.mongodb.client.MongoClient newMongoClient = MongoClients.create(mongoUri);
 
     RestResponse<ElasticsearchConfig> elasticsearchConfigRestResponse =
         Setup.portal()
@@ -279,7 +282,9 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       AdvancedDatastore datastore(Morphia morphia) {
         AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, dbName);
-        datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
+        MongoConfig mongoConfig = MongoConfig.builder().build();
+        datastore.setQueryFactory(
+            new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
         return datastore;
       }
 
@@ -288,6 +293,13 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Singleton
       MongoClient mongoClient() {
         return mongoClient;
+      }
+
+      @Provides
+      @Named("primaryMongoClient")
+      @Singleton
+      com.mongodb.client.MongoClient newMongoClient() {
+        return newMongoClient;
       }
 
       @Provides

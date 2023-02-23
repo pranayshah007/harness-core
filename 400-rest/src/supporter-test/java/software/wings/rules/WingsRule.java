@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.NoopStatement;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -55,6 +56,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.manage.GlobalContextManager;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -75,7 +77,6 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.serializer.morphia.ManagerTestMorphiaRegistrar;
-import io.harness.service.DelegateServiceModule;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.RealMongo;
@@ -130,6 +131,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.mongodb.MongoClient;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Configuration;
 import io.dropwizard.lifecycle.Managed;
 import java.io.Closeable;
@@ -149,7 +151,6 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -169,6 +170,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     if (isIntegrationTest(target)) {
+      return new NoopStatement();
+    }
+    if (isIgnorePropertySetAndNotAlwaysRun(frameworkMethod)) {
       return new NoopStatement();
     }
     Statement wingsStatement = new Statement() {
@@ -191,6 +195,22 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     };
 
     return wingsStatement;
+  }
+
+  private boolean isIgnorePropertySetAndNotAlwaysRun(FrameworkMethod frameworkMethod) {
+    return frameworkMethod.getAnnotation(HarnessAlwaysRun.class) == null
+        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS")) && ownedByCdTeam(frameworkMethod);
+  }
+
+  private boolean ownedByCdTeam(FrameworkMethod frameworkMethod) {
+    Set<HarnessTeam> cdTeams = ImmutableSet.of(HarnessTeam.CDC, HarnessTeam.CDP, HarnessTeam.PIPELINE);
+    OwnedBy annotation = frameworkMethod.getDeclaringClass().getAnnotation(OwnedBy.class);
+    if (annotation == null) {
+      log.info("No owned by test present for test {}", frameworkMethod.getName());
+      return false;
+    }
+    HarnessTeam value = annotation.value();
+    return cdTeams.contains(value);
   }
 
   protected boolean isIntegrationTest(Object target) {
@@ -351,6 +371,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                                                     .connectTimeOutSeconds(15)
                                                                     .build())
                                             .topic("delegate-service")
+                                            .enableQueueAndDequeue(false)
                                             .build());
     configuration.setAccessControlClientConfiguration(
         AccessControlClientConfiguration.builder()

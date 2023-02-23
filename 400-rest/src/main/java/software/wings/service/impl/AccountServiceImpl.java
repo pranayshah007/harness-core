@@ -40,6 +40,7 @@ import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
 import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
 import static java.time.Duration.ofHours;
@@ -130,6 +131,10 @@ import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
+import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
+import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
+import software.wings.beans.accountdetails.events.CrossGenerationAccessYamlDTO;
+import software.wings.beans.accountdetails.events.DefaultExperienceYamlDTO;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.events.LoginSettingsWhitelistedDomainsUpdateEvent;
@@ -148,6 +153,8 @@ import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.licensing.LicenseService;
 import software.wings.persistence.AppContainer;
 import software.wings.persistence.mail.EmailData;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
@@ -180,6 +187,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.account.AccountLicenseObserver;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
+import software.wings.service.intfc.instance.stats.collector.StatsCollector;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.verification.CVConfiguration;
@@ -192,10 +200,18 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -218,12 +234,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * Created by peeyushaggarwal on 10/11/16.
@@ -234,7 +244,6 @@ import org.mongodb.morphia.query.UpdateResults;
 @Slf4j
 @TargetModule(_955_ACCOUNT_MGMT)
 @BreakDependencyOn("io.harness.delegate.beans.Delegate")
-@BreakDependencyOn("software.wings.service.impl.DelegateConnectionDao")
 public class AccountServiceImpl implements AccountService {
   private static final SecureRandom random = new SecureRandom();
   private static final int SIZE_PER_SERVICES_REQUEST = 25;
@@ -294,6 +303,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private OutboxService outboxService;
+  @Inject private StatsCollector statsCollector;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -366,8 +376,7 @@ public class AccountServiceImpl implements AccountService {
               .setData(AccountEntityChangeDTO.newBuilder().setAccountId(accountId).build().toByteString())
               .build());
     } catch (Exception ex) {
-      log.error(
-          String.format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
+      log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
 
@@ -567,6 +576,83 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean updateIsSmpAccount(String accountId, boolean isSmpAccount) {
+    Account account = get(accountId);
+    account.setSmpAccount(isSmpAccount);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience) {
+    Account account = get(accountIdentifier);
+    DefaultExperience oldDefaultExperience = account.getDefaultExperience();
+    account.setDefaultExperience(defaultExperience);
+    Account updatedAccount = update(account);
+    ngAuditAccountDetailsDefaultExperience(
+        accountIdentifier, oldDefaultExperience, updatedAccount.getDefaultExperience());
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsDefaultExperience(
+      String accountIdentifier, DefaultExperience oldDefaultExperience, DefaultExperience newDefaultExperience) {
+    try {
+      OutboxEvent outboxEvent =
+          outboxService.save(AccountDetailsDefaultExperienceUpdateEvent.builder()
+                                 .accountIdentifier(accountIdentifier)
+                                 .oldDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(oldDefaultExperience).build())
+                                 .newDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(newDefaultExperience).build())
+                                 .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsDefaultExperienceUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsDefaultExperienceUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
+  public Account updateCrossGenerationAccessEnabled(String accountIdentifier, boolean isCrossGenerationAccessEnabled) {
+    Account account = get(accountIdentifier);
+    boolean oldIsCrossGenerationAccessEnabled = account.isCrossGenerationAccessEnabled();
+    account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
+    Account updatedAccount = update(account);
+    ngAuditAccountDetailsCrossGenerationAccess(
+        accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsCrossGenerationAccess(
+      String accountIdentifier, boolean oldIsCrossGenerationAccessEnabled, boolean newIsCrossGenerationAccessEnabled) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          AccountDetailsCrossGenerationAccessUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(oldIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .newCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(newIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsCrossGenerationAccessUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsCrossGenerationAccessUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -582,6 +668,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setLicenseInfo(account.getLicenseInfo());
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
+    accountDetails.setCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
     accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
     if (featureFlagService.isEnabled(CG_LICENSE_USAGE, accountId)) {
@@ -690,7 +777,7 @@ public class AccountServiceImpl implements AccountService {
       count++;
     }
     throw new GeneralException(
-        String.format("Failed to generate unique Account Name for initial accountName=%s", accountName));
+        format("Failed to generate unique Account Name for initial accountName=%s", accountName));
   }
 
   /**
@@ -901,6 +988,7 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.nextGenEnabled, account.isNextGenEnabled())
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
+            .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed());
 
     if (null != account.getLicenseInfo()) {
@@ -917,6 +1005,10 @@ public class AccountServiceImpl implements AccountService {
 
     if (account.getDefaultExperience() != null) {
       updateOperations.set(AccountKeys.defaultExperience, account.getDefaultExperience());
+    }
+
+    if (account.isCrossGenerationAccessEnabled() != null) {
+      updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, account.isCrossGenerationAccessEnabled());
     }
 
     wingsPersistence.update(account, updateOperations);
@@ -1251,6 +1343,8 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     updateMigratedToClusterUrl(account, migratedToClusterUrl);
     // Also need to prevent all existing users in the migration account from logging in after completion of migration.
+    log.info("Marking users in migration account: {}, migrated to cluster: {}, to disabled", accountId,
+        migratedToClusterUrl);
     setUserStatusInAccount(accountId, false);
     return setAccountStatusInternal(account, AccountStatus.INACTIVE);
   }
@@ -1260,6 +1354,40 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     setUserStatusInAccount(accountId, true);
     return setAccountStatusInternal(account, AccountStatus.ACTIVE);
+  }
+
+  @Override
+  public void scheduleAccountLevelJobs(
+      String targetAccountId, List<AccountJobType> jobTypes, AccountJobProperties jobProperties) {
+    if (jobTypes.contains(AccountJobType.ALERT)) {
+      log.info("Start adding AlertCheckJob for account {}", targetAccountId);
+      AlertCheckJob.delete(jobScheduler, targetAccountId);
+      AlertCheckJob.add(jobScheduler, targetAccountId);
+      log.info("AlertCheckJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.INSTANCE)) {
+      if (jobProperties != null && jobProperties.getInstanceStatsSnapshotTimeDaysAgo() >= 0) {
+        long instanceStatsSnapshotTime =
+            Instant.now().minus(Period.ofDays(jobProperties.getInstanceStatsSnapshotTimeDaysAgo())).toEpochMilli();
+        boolean statsCreated = statsCollector.createStatsAtIfMissing(targetAccountId, instanceStatsSnapshotTime);
+        if (!statsCreated) {
+          throw new InvalidRequestException(format("Failed to create instance stats for account, %s", targetAccountId));
+        }
+      }
+
+      log.info("Start adding InstanceStatsCollectorJob for account {}", targetAccountId);
+      InstanceStatsCollectorJob.delete(jobScheduler, targetAccountId);
+      InstanceStatsCollectorJob.add(jobScheduler, targetAccountId);
+      log.info("InstanceStatsCollectorJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.LIMIT_VICINITY)) {
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+      LimitVicinityCheckerJob.delete(jobScheduler, targetAccountId);
+      LimitVicinityCheckerJob.add(jobScheduler, targetAccountId);
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+    }
   }
 
   private void updateMigratedToClusterUrl(Account account, String migratedToClusterUrl) {
@@ -1516,7 +1644,7 @@ public class AccountServiceImpl implements AccountService {
     try {
       featureName = FeatureName.valueOf(featureFlagName);
     } catch (IllegalArgumentException ex) {
-      String errMsg = String.format("Invalid feature flag name received: %s", featureFlagName);
+      String errMsg = format("Invalid feature flag name received: %s", featureFlagName);
       log.error(errMsg, ex);
       throw new InvalidRequestException(errMsg);
     }
@@ -1746,12 +1874,21 @@ public class AccountServiceImpl implements AccountService {
     return false;
   }
 
+  private void validateName(String name) {
+    String[] parts = name.split(ILLEGAL_ACCOUNT_NAME_CHARACTERS, 2);
+    if (parts.length > 1) {
+      throw new InvalidRequestException("Account or Company Name '" + name + "' contains illegal characters", USER);
+    }
+  }
+
   @Override
   public Account updateAccountName(String accountId, String accountName, String companyName) {
     notNullCheck("Account name can not be set to null!", accountName);
+    validateName(accountName);
     UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
     updateOperations.set(AccountKeys.accountName, accountName);
     if (isNotEmpty(companyName)) {
+      validateName(companyName);
       updateOperations.set(AccountKeys.companyName, companyName);
     }
     wingsPersistence.update(
@@ -2142,6 +2279,41 @@ public class AccountServiceImpl implements AccountService {
       return true;
     }
     log.info("Failed to update ring name to {} for accountId = {} ", ringName, accountId);
+    return false;
+  }
+
+  @Override
+  public Integer getTrustLevel(String accountId) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    return account.getTrustLevel();
+  }
+
+  @Override
+  public boolean updateTrustLevel(String accountId, Integer trustLevel) {
+    Account account = get(accountId);
+
+    if (account == null) {
+      throw new AccountNotFoundException(
+          "Account is not found for the given id: " + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+
+    UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
+    updateOperations.set(AccountKeys.trustLevel, trustLevel);
+
+    UpdateResults updateResults = wingsPersistence.update(
+        wingsPersistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+
+    if (updateResults != null && updateResults.getUpdatedCount() > 0) {
+      log.info("Successfully updated account trust level to {} for accountId = {} ", trustLevel, accountId);
+      return true;
+    }
+
+    log.info("Failed to update account trust level to {} for accountId = {} ", trustLevel, accountId);
     return false;
   }
 }

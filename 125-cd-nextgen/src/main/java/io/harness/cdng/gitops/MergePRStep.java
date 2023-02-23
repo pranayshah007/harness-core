@@ -10,13 +10,13 @@ package io.harness.cdng.gitops;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -26,6 +26,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
@@ -41,7 +42,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -55,8 +55,10 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.ConnectorUtils;
@@ -65,14 +67,15 @@ import io.harness.utils.IdentifierRefHelper;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
-  @Inject private KryoSerializer kryoSerializer;
+public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDStepHelper cdStepHelper;
@@ -162,7 +165,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     Map<String, Object> apiParamOptions = null;
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.GITOPS_API_PARAMS_MERGE_PR)) {
-      apiParamOptions = gitOpsSpecParams.getVariables().getValue();
+      apiParamOptions = gitOpsSpecParams.getVariables();
     }
 
     IdentifierRef identifierRef =
@@ -222,6 +225,10 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
                 .build();
         break;
+      case BITBUCKET:
+        gitApiTaskParams = getTaskParamsForBitbucket((BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO(),
+            connectorDetails, prNumber, sha, ref, gitOpsSpecParams.getDeleteSourceBranch(), stepParameters);
+        break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);
     }
@@ -243,7 +250,8 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
 
-    return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, gitOpsSpecParams.getCommandUnits(), taskName,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        gitOpsSpecParams.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
   }
@@ -260,5 +268,22 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return null;
+  }
+
+  private GitApiTaskParams getTaskParamsForBitbucket(BitbucketConnectorDTO bitbucketConnectorDTO,
+      ConnectorDetails connectorDetails, int prNumber, String sha, String ref,
+      ParameterField<Boolean> deleteSourceBranch, StepElementParameters stepParameters) {
+    return GitApiTaskParams.builder()
+        .gitRepoType(GitRepoType.BITBUCKET)
+        .requestType(GitApiRequestType.MERGE_PR)
+        .connectorDetails(connectorDetails)
+        .prNumber(String.valueOf(prNumber))
+        .sha(sha)
+        .ref(ref)
+        .owner(bitbucketConnectorDTO.getGitRepositoryDetails().getOrg())
+        .repo(bitbucketConnectorDTO.getGitRepositoryDetails().getName())
+        .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(
+            deleteSourceBranch, MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+        .build();
   }
 }

@@ -23,15 +23,15 @@ import static software.wings.service.impl.yaml.sync.GitSyncErrorUtils.getCommitI
 import static software.wings.service.impl.yaml.sync.GitSyncErrorUtils.getCommitMessageOfError;
 import static software.wings.service.impl.yaml.sync.GitSyncErrorUtils.getYamlContentOfError;
 
+import static dev.morphia.aggregation.Group.first;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.aggregation.Group.first;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -79,6 +79,9 @@ import software.wings.yaml.gitSync.beans.YamlGitConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.AggregationOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,9 +99,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * git sync service.
@@ -126,7 +126,7 @@ public class GitSyncServiceImpl implements GitSyncService {
     if (activityForFileHistory) {
       req.addOrder(GitFileActivityKeys.createdAt, SortOrder.OrderType.DESC);
     }
-    PageResponse<GitFileActivity> response = wingsPersistence.query(GitFileActivity.class, req);
+    PageResponse<GitFileActivity> response = wingsPersistence.queryAnalytics(GitFileActivity.class, req);
     List<GitFileActivity> gitFileActivities = response.getResponse();
     List<GitFileActivity> gitFileActivitiesFilteredByAccountRBAC = gitFileActivities;
     if (whetherWeCanHaveAccountLevelFile(appId)) {
@@ -236,6 +236,7 @@ public class GitSyncServiceImpl implements GitSyncService {
     if (isEmpty(changesFailed)) {
       return;
     }
+
     List<String> nameOfFilesProcessedInCommit = getNameOfFilesProcessed(changesFailed);
     Map<String, String> latestActivitiesForFiles = getLatestActivitiesForFiles(nameOfFilesProcessedInCommit, accountId);
     changesFailed.parallelStream().forEach(failedChange
@@ -283,6 +284,7 @@ public class GitSyncServiceImpl implements GitSyncService {
       String filePath;
       String errorMessage;
     }
+
     Map<String, String> fileNameErrorMap = new HashMap<>();
     Query<GitFileActivity> query = wingsPersistence.createQuery(GitFileActivity.class)
                                        .filter(ACCOUNT_ID_KEY, accountId)
@@ -434,7 +436,7 @@ public class GitSyncServiceImpl implements GitSyncService {
       pageRequest.addFilter(GitFileActivitySummaryKeys.gitToHarness, EQ, gitToHarness);
     }
     PageResponse<GitFileActivitySummary> pageResponse =
-        wingsPersistence.query(GitFileActivitySummary.class, pageRequest);
+        wingsPersistence.queryAnalytics(GitFileActivitySummary.class, pageRequest);
     List<GitFileActivitySummary> gitFileActivitySummaries = pageResponse.getResponse();
     populateConnectorNameInGitFileActivitySummaries(gitFileActivitySummaries, accountId);
     pageResponse.setResponse(gitFileActivitySummaries);

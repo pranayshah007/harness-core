@@ -42,8 +42,9 @@ public class QLDelegate implements QLObject {
   String version;
   String delegateProfileId;
   List<String> tags;
-  List<DelegateConnection> connections;
+  @Deprecated List<DelegateConnection> connections;
   List<DelegateScope> includeScopes;
   List<DelegateScope> excludeScopes;
   List<String> supportedTasks;
+  boolean disconnected;
 }

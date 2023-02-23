@@ -14,11 +14,17 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -28,6 +34,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -37,6 +45,9 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -52,6 +63,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -69,31 +82,57 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
+    DelegateResponseData delegateResponseData = (DelegateResponseData) responseSupplier.get();
+    if (delegateResponseData instanceof GitFetchResponse) {
+      AsgExecutionPassThroughData executionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
+
+      Supplier<TaskChainResponse> executeAsgPrepareRollbackDataTaskSupplier = () -> {
+        Map<String, List<String>> asgStoreManifestsContent =
+            asgStepCommonHelper.buildManifestContentMap(executionPassThroughData.getAsgManifestFetchData(), ambiance);
+        AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
+            AsgPrepareRollbackDataPassThroughData.builder()
+                .infrastructureOutcome(executionPassThroughData.getInfrastructure())
+                .asgStoreManifestsContent(asgStoreManifestsContent)
+                .build();
+
+        return executeAsgPrepareRollbackDataTask(ambiance, stepParameters, asgPrepareRollbackDataPassThroughData,
+            executionPassThroughData.getLastActiveUnitProgressData());
+      };
+
+      return asgStepCommonHelper.chainFetchGitTaskUntilAllGitManifestsFetched(executionPassThroughData,
+          delegateResponseData, ambiance, stepParameters, executeAsgPrepareRollbackDataTaskSupplier);
+    }
+
     return asgStepCommonHelper.executeNextLinkRolling(
-        this, ambiance, stepParameters, passThroughData, responseSupplier);
+        this, ambiance, stepParameters, passThroughData, delegateResponseData);
   }
 
   @Override
   public TaskChainResponse executeAsgTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       AsgExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       AsgStepExecutorParams asgStepExecutorParams) {
-    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
 
     AsgRollingDeployStepParameters asgSpecParameters = (AsgRollingDeployStepParameters) stepElementParameters.getSpec();
+
+    String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
 
     AsgRollingDeployRequest asgRollingDeployRequest =
         AsgRollingDeployRequest.builder()
             .commandName(ASG_ROLLING_DEPLOY_COMMAND_NAME)
-            .accountId(accountId)
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .accountId(accountId)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(asgSpecParameters.getSkipMatching().getValue())
-            .useAlreadyRunningInstances(asgSpecParameters.getUseAlreadyRunningInstances().getValue())
-            .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
-            .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
+            .skipMatching(ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getSkipMatching()))
+            .useAlreadyRunningInstances(
+                ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()))
+            .instanceWarmup(ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getInstanceWarmup()))
+            .minimumHealthyPercentage(
+                ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))
+            .amiImageId(amiImageId)
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgRollingDeployRequest, ambiance,
@@ -142,7 +181,23 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       return AsgStepCommonHelper.getFailureResponseBuilder(asgRollingDeployResponse, stepResponseBuilder).build();
     }
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    AsgRollingDeployOutcome asgRollingDeployOutcome =
+        AsgRollingDeployOutcome.builder()
+            .asgStoreManifestsContent(
+                asgRollingDeployResponse.getAsgRollingDeployResult().getAsgStoreManifestsContent())
+            .autoScalingGroupContainer(
+                asgRollingDeployResponse.getAsgRollingDeployResult().getAutoScalingGroupContainer())
+            .build();
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_DEPLOY_OUTCOME,
+        asgRollingDeployOutcome, StepOutcomeGroup.STEP.name());
+
+    List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(asgRollingDeployResponse,
+        infrastructureOutcome.getInfrastructureKey(),
+        asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
 
   @Override

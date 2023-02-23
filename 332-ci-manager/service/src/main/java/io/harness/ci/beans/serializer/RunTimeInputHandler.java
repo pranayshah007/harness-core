@@ -291,6 +291,40 @@ public class RunTimeInputHandler {
     return finalVal;
   }
 
+  public static String resolveNumberParameterWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
+      ParameterField<Double> parameterField, boolean isMandatory, Double defaultValue) {
+    if (parameterField == null) {
+      if (isMandatory && defaultValue == null) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      } else {
+        if (defaultValue != null) {
+          return defaultValue.toString();
+        }
+        return "";
+      }
+    }
+
+    // It only checks input set pattern. Variable can be resolved on lite engine.
+    if (parameterField.isExpression() && matchesInputSetPattern(parameterField.getExpressionValue())) {
+      if (isMandatory && defaultValue == null) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      } else {
+        log.warn(format("Failed to resolve optional field %s in step type %s with identifier %s", fieldName, stepType,
+            stepIdentifier));
+        return defaultValue == null ? "" : defaultValue.toString();
+      }
+    }
+    String finalVal = parameterField.fetchFinalValue().toString();
+    if (finalVal == null) {
+      finalVal = "";
+    }
+    return finalVal;
+  }
+
   public static Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<Map<String, String>> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {

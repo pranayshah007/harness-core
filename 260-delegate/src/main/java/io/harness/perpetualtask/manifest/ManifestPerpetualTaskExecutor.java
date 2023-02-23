@@ -28,7 +28,7 @@ import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.artifact.ArtifactsPublishedCache;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.dto.HelmChart;
 import software.wings.delegatetasks.helm.ManifestRepoServiceType;
 import software.wings.delegatetasks.manifest.ApplicationManifestLogContext;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;

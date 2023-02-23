@@ -9,11 +9,11 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
 import io.harness.beans.TriggerReference;
-import io.harness.common.EntityReference;
 import io.harness.common.EntityTypeConstants;
 import io.harness.common.EntityYamlRootNames;
 
@@ -453,6 +453,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLAN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLAN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLAN),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM_TEMPLATE(
+      ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
@@ -494,7 +497,50 @@ public enum EntityType {
       EntityYamlRootNames.ASG_ROLLING_DEPLOY),
   @JsonProperty(EntityTypeConstants.ASG_ROLLING_ROLLBACK)
   ASG_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ASG_ROLLING_ROLLBACK);
+      EntityYamlRootNames.ASG_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS)
+  CCM_GOVERNANCE_RULE_AWS(ModuleType.CE, EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS, IdentifierRef.class,
+      EntityYamlRootNames.CCM_GOVERNANCE_RULE),
+  @JsonProperty(EntityTypeConstants.TAS_ROLLING_DEPLOY)
+  TAS_ROLLING_DEPLOY(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.TAS_ROLLING_DEPLOY),
+  @JsonProperty(EntityTypeConstants.TAS_ROLLING_ROLLBACK)
+  TAS_ROLLING_ROLLBACK(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TAS_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.K8S_DRY_RUN_MANIFEST)
+  K8S_DRY_RUN_MANIFEST_STEP(ModuleType.CD, EntityTypeConstants.K8S_DRY_RUN_MANIFEST, IdentifierRef.class,
+      EntityYamlRootNames.K8S_DRY_RUN_MANIFEST),
+  @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE_STEP)
+  ASG_BLUE_GREEN_SWAP_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE_STEP,
+      IdentifierRef.class, EntityYamlRootNames.ASG_BLUE_GREEN_SWAP_SERVICE_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_DEPLOY)
+  ASG_BLUE_GREEN_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ASG_BLUE_GREEN_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
+  ASG_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ASG_BLUE_GREEN_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_RUN)
+  TERRAFORM_CLOUD_RUN(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_RUN, IdentifierRef.class,
+      EntityYamlRootNames.TERRAFORM_CLOUD_RUN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK)
+  TERRAFORM_CLOUD_ROLLBACK(ModuleType.CD, EntityTypeConstants.TERRAFORM_CLOUD_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAFORM_CLOUD_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC(ModuleType.CD,
+      EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC, IdentifierRef.class,
+      EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
+  GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT,
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK,
+      IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.AWS_LAMBDA_DEPLOY)
+  AWS_LAMBDA_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;

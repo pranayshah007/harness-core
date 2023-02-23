@@ -31,6 +31,9 @@ import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.dto.FetchRemoteEntityRequest;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -40,6 +43,7 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -55,6 +59,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,6 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
@@ -77,6 +83,8 @@ public class NGTemplateServiceHelper {
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
   private TemplateGitXService templateGitXService;
+
+  private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
@@ -471,6 +479,27 @@ public class NGTemplateServiceHelper {
     }
   }
 
+  /**
+   * In both the request and the response, the key will remain the same, which will be a combination of the accountId,
+   * OrgId, ProjectId, TemplateId and Version There can be 2 types of error cases:
+   * 1. where the entire batch request will fail in cases like connectivity to NG Manager might be down
+   * 2. few files in the batch request will fail
+   *
+   * @param accountIdentifier
+   * @param remoteTemplatesList
+   * @return
+   */
+  public Map<String, TemplateEntity> getBatchRemoteTemplates(
+      String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    Map<String, GitAware> remoteEntities =
+        gitAwareEntityHelper.fetchEntitiesFromRemote(accountIdentifier, remoteTemplatesList);
+    Map<String, TemplateEntity> batchTemplateEntities = new HashMap<>();
+    for (Map.Entry<String, GitAware> remoteEntity : remoteEntities.entrySet()) {
+      batchTemplateEntities.put(remoteEntity.getKey(), (TemplateEntity) remoteEntity.getValue());
+    }
+    return batchTemplateEntities;
+  }
+
   public Optional<TemplateEntity> getLastUpdatedTemplate(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
@@ -566,12 +595,13 @@ public class NGTemplateServiceHelper {
   }
 
   public boolean deleteTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments) {
+      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments,
+      boolean forceDelete) {
     try {
       if (isOldGitSync(templateToDelete)) {
-        templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments);
+        templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments, forceDelete);
       } else {
-        templateRepository.deleteTemplate(templateToDelete, comments);
+        templateRepository.deleteTemplate(templateToDelete, comments, forceDelete);
       }
       return true;
     } catch (Exception e) {
@@ -590,5 +620,18 @@ public class NGTemplateServiceHelper {
       return String.format(
           "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
     }
+  }
+
+  public Update getTemplateUpdateForInlineToRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, TemplateMoveConfigOperationDTO moveConfigOperationDTO) {
+    Update update = new Update();
+    update.set(TemplateEntityKeys.repo, moveConfigOperationDTO.getRepoName());
+    update.set(TemplateEntityKeys.storeType, StoreType.REMOTE);
+    update.set(TemplateEntityKeys.filePath, moveConfigOperationDTO.getFilePath());
+    update.set(TemplateEntityKeys.connectorRef, moveConfigOperationDTO.getConnectorRef());
+    update.set(TemplateEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    update.set(TemplateEntityKeys.fallBackBranch, moveConfigOperationDTO.getBranch());
+    return update;
   }
 }

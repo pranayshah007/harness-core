@@ -38,11 +38,11 @@ import software.wings.service.intfc.VerificationService;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * Created by rsingh on 1/9/18.

@@ -9,6 +9,7 @@ package software.wings.service.impl.yaml;
 
 import static io.harness.annotations.dev.HarnessModule._951_CG_GIT_SYNC;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.PageRequest.PageRequestBuilder;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -464,9 +465,14 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
         if (gitSyncPath) {
           gitSyncErrorService.upsertGitSyncErrors(gitFileChange, message, true, false);
 
-          // createAlert of type HarnessToGitFullSyncError
-          alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.GitSyncError,
-              GitSyncErrorAlert.builder().accountId(accountId).message(message).build());
+          if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId)) {
+            alertService.openAlert(accountId, appId, AlertType.GitSyncError,
+                GitSyncErrorAlert.builder().accountId(accountId).message(message).build());
+          } else {
+            // createAlert of type HarnessToGitFullSyncError
+            alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.GitSyncError,
+                GitSyncErrorAlert.builder().accountId(accountId).message(message).build());
+          }
         }
 
         if (failFast) {
@@ -1505,7 +1511,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
                                                   .addFilter(EnvironmentKeys.appId, EQ, app.getAppId())
                                                   .addOrder(EnvironmentKeys.name, SortOrder.OrderType.ASC)
                                                   .build();
-    List<Environment> environments = environmentService.list(pageRequestEnv, false, null).getResponse();
+    List<Environment> environments = environmentService.list(pageRequestEnv, false, null, false).getResponse();
 
     if (environments != null) {
       // iterate over environments

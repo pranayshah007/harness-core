@@ -7,6 +7,9 @@
 
 package io.harness.pms.expressions.functors;
 
+import static io.harness.NGCommonEntityConstants.FUNCTOR_BASE64_METHOD_NAME;
+import static io.harness.NGCommonEntityConstants.FUNCTOR_STRING_METHOD_NAME;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -45,6 +48,7 @@ public class RemoteExpressionFunctor extends LateBindingMap implements Expressio
       } else {
         allArgs = Arrays.asList((String[]) args);
       }
+      long startEvaluateExpressionTimeInMs = System.currentTimeMillis();
       ExpressionResponse expressionResponse = PmsGrpcClientUtils.retryAndProcessException(
           remoteFunctorServiceBlockingStub::evaluate,
           ExpressionRequest.newBuilder().setAmbiance(ambiance).setFunctorKey(functorKey).addAllArgs(allArgs).build());
@@ -52,6 +56,9 @@ public class RemoteExpressionFunctor extends LateBindingMap implements Expressio
         return ExpressionResultUtils.getPrimitiveResponse(
             expressionResponse.getValue(), expressionResponse.getPrimitiveType());
       }
+      long evaluatedExpressionTimeInMs = System.currentTimeMillis() - startEvaluateExpressionTimeInMs;
+      log.info("Expression evaluated successfully, functorKey: {}, time taken in ms: {}", functorKey,
+          evaluatedExpressionTimeInMs);
       return RecastOrchestrationUtils.fromJson(expressionResponse.getValue());
     } catch (ClassNotFoundException e) {
       log.error(e.getMessage());
@@ -63,6 +70,16 @@ public class RemoteExpressionFunctor extends LateBindingMap implements Expressio
   }
 
   public Object getValue(String... args) {
+    return get(args);
+  }
+
+  public Object getAsString(String ref) {
+    String[] args = {FUNCTOR_STRING_METHOD_NAME, ref};
+    return get(args);
+  }
+
+  public Object getAsBase64(String ref) {
+    String[] args = {FUNCTOR_BASE64_METHOD_NAME, ref};
     return get(args);
   }
 }

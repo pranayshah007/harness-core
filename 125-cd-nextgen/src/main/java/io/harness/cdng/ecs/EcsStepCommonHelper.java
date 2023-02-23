@@ -13,7 +13,6 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.LogLevel.INFO;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.lang.String.format;
 
@@ -40,14 +39,17 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
@@ -109,6 +111,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -118,12 +121,14 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -138,11 +143,15 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private EcsEntityHelper ecsEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   private static final String TARGET_GROUP_ARN_EXPRESSION = "<+targetGroupArn>";
+  @Inject private CDStepHelper cdStepHelper;
+  private static final String INVALID_ECS_TASK_DEFINITION =
+      "Either Ecs Task definition manifest or ecsTaskDefinitionArn field should be present "
+      + "in service";
 
   public TaskChainResponse startChainLink(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
@@ -161,6 +170,9 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     validateManifestsOutcome(ambiance, manifestsOutcome);
 
     List<ManifestOutcome> ecsManifestOutcomes = getEcsManifestOutcome(manifestsOutcome.values(), ecsStepHelper);
+
+    // validate task definition presence
+    validateTaskDefinitionPresence(ambiance, ecsManifestOutcomes, ecsStepHelper);
 
     LogCallback logCallback = getLogCallback(EcsCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
@@ -222,7 +234,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     ManifestOutcome ecsTaskDefinitionManifestOutcome =
         ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsManifestOutcomes);
     String ecsTaskDefinitionHarnessContent = null;
-    if (ManifestStoreType.HARNESS.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
+    if (ecsTaskDefinitionManifestOutcome != null
+        && ManifestStoreType.HARNESS.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
       ecsTaskDefinitionHarnessContent =
           fetchFilesContentFromLocalStore(ambiance, ecsTaskDefinitionManifestOutcome, logCallback).get(0);
     }
@@ -235,34 +248,6 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     if (ManifestStoreType.HARNESS.equals(ecsServiceDefinitionManifestOutcome.getStore().getKind())) {
       ecsServiceDefinitionHarnessContent =
           fetchFilesContentFromLocalStore(ambiance, ecsServiceDefinitionManifestOutcome, logCallback).get(0);
-    }
-
-    // Get EcsGitFetchFileConfig list for scalable targets if present
-    List<ManifestOutcome> ecsScalableTargetManifestOutcomes =
-        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalableTargetDefinition);
-
-    List<String> ecsScalableTargetHarnessContentList = new ArrayList<>();
-    if (CollectionUtils.isNotEmpty(ecsScalableTargetManifestOutcomes)) {
-      for (ManifestOutcome ecsScalableTargetManifestOutcome : ecsScalableTargetManifestOutcomes) {
-        if (ManifestStoreType.HARNESS.equals(ecsScalableTargetManifestOutcome.getStore().getKind())) {
-          ecsScalableTargetHarnessContentList.add(
-              fetchFilesContentFromLocalStore(ambiance, ecsScalableTargetManifestOutcome, logCallback).get(0));
-        }
-      }
-    }
-
-    // Get EcsGitFetchFileConfig list for scaling policies if present
-    List<ManifestOutcome> ecsScalingPolicyManifestOutcomes =
-        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
-
-    List<String> ecsScalingPolicyHarnessContentList = new ArrayList<>();
-    if (CollectionUtils.isNotEmpty(ecsScalingPolicyManifestOutcomes)) {
-      for (ManifestOutcome ecsScalingPolicyManifestOutcome : ecsScalingPolicyManifestOutcomes) {
-        if (ManifestStoreType.HARNESS.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
-          ecsScalingPolicyHarnessContentList.add(
-              fetchFilesContentFromLocalStore(ambiance, ecsScalingPolicyManifestOutcome, logCallback).get(0));
-        }
-      }
     }
 
     // Render expressions for all file content fetched from Harness File Store
@@ -285,6 +270,30 @@ public class EcsStepCommonHelper extends EcsStepUtils {
           engineExpressionService.renderExpression(ambiance, ecsServiceDefinitionHarnessContent);
     }
 
+    return ecsHarnessStoreContentBuilder.taskDefinitionHarnessContent(ecsTaskDefinitionHarnessContent)
+        .serviceDefinitionHarnessContent(ecsServiceDefinitionHarnessContent)
+        .scalableTargetHarnessContentList(
+            getScalableTargetHarnessContentList(ambiance, ecsStepHelper, logCallback, ecsManifestOutcomes))
+        .scalingPolicyHarnessContentList(
+            getScalingPolicyHarnessContentList(ambiance, ecsStepHelper, logCallback, ecsManifestOutcomes))
+        .build();
+  }
+
+  private List<String> getScalableTargetHarnessContentList(Ambiance ambiance, EcsStepHelper ecsStepHelper,
+      LogCallback logCallback, List<ManifestOutcome> ecsManifestOutcomes) {
+    // Get EcsGitFetchFileConfig list for scalable targets if present
+    List<ManifestOutcome> ecsScalableTargetManifestOutcomes =
+        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalableTargetDefinition);
+
+    List<String> ecsScalableTargetHarnessContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsScalableTargetManifestOutcomes)) {
+      for (ManifestOutcome ecsScalableTargetManifestOutcome : ecsScalableTargetManifestOutcomes) {
+        if (ManifestStoreType.HARNESS.equals(ecsScalableTargetManifestOutcome.getStore().getKind())) {
+          ecsScalableTargetHarnessContentList.add(
+              fetchFilesContentFromLocalStore(ambiance, ecsScalableTargetManifestOutcome, logCallback).get(0));
+        }
+      }
+    }
     if (CollectionUtils.isNotEmpty(ecsScalableTargetHarnessContentList)) {
       ecsScalableTargetHarnessContentList =
           ecsScalableTargetHarnessContentList.stream()
@@ -292,7 +301,24 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                   -> engineExpressionService.renderExpression(ambiance, ecsScalableTargetHarnessContent))
               .collect(Collectors.toList());
     }
+    return ecsScalableTargetHarnessContentList;
+  }
 
+  private List<String> getScalingPolicyHarnessContentList(Ambiance ambiance, EcsStepHelper ecsStepHelper,
+      LogCallback logCallback, List<ManifestOutcome> ecsManifestOutcomes) {
+    // Get EcsGitFetchFileConfig list for scaling policies if present
+    List<ManifestOutcome> ecsScalingPolicyManifestOutcomes =
+        ecsStepHelper.getManifestOutcomesByType(ecsManifestOutcomes, ManifestType.EcsScalingPolicyDefinition);
+
+    List<String> ecsScalingPolicyHarnessContentList = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(ecsScalingPolicyManifestOutcomes)) {
+      for (ManifestOutcome ecsScalingPolicyManifestOutcome : ecsScalingPolicyManifestOutcomes) {
+        if (ManifestStoreType.HARNESS.equals(ecsScalingPolicyManifestOutcome.getStore().getKind())) {
+          ecsScalingPolicyHarnessContentList.add(
+              fetchFilesContentFromLocalStore(ambiance, ecsScalingPolicyManifestOutcome, logCallback).get(0));
+        }
+      }
+    }
     if (CollectionUtils.isNotEmpty(ecsScalingPolicyHarnessContentList)) {
       ecsScalingPolicyHarnessContentList =
           ecsScalingPolicyHarnessContentList.stream()
@@ -300,12 +326,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
                   -> engineExpressionService.renderExpression(ambiance, ecsScalingPolicyHarnessContent))
               .collect(Collectors.toList());
     }
-
-    return ecsHarnessStoreContentBuilder.taskDefinitionHarnessContent(ecsTaskDefinitionHarnessContent)
-        .serviceDefinitionHarnessContent(ecsServiceDefinitionHarnessContent)
-        .scalableTargetHarnessContentList(ecsScalableTargetHarnessContentList)
-        .scalingPolicyHarnessContentList(ecsScalingPolicyHarnessContentList)
-        .build();
+    return ecsScalingPolicyHarnessContentList;
   }
 
   private TaskChainResponse prepareEcsHarnessStoreTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
@@ -513,7 +534,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     ManifestOutcome ecsTaskDefinitionManifestOutcome =
         ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsManifestOutcomes);
     EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig = null;
-    if (ManifestStoreType.S3.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
+    if (ecsTaskDefinitionManifestOutcome != null
+        && ManifestStoreType.S3.equals(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
       ecsTaskDefinitionS3FetchFileConfig =
           getEcsS3FetchFilesConfigFromManifestOutcome(ecsTaskDefinitionManifestOutcome, ambiance, ecsStepHelper);
     }
@@ -635,8 +657,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -656,7 +678,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig = null;
 
-    if (ManifestStoreType.isInGitSubset(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
+    if (ecsTaskDefinitionManifestOutcome != null
+        && ManifestStoreType.isInGitSubset(ecsTaskDefinitionManifestOutcome.getStore().getKind())) {
       ecsTaskDefinitionGitFetchFileConfig =
           getEcsGitFetchFilesConfigFromManifestOutcome(ecsTaskDefinitionManifestOutcome, ambiance, ecsStepHelper);
     }
@@ -788,6 +811,38 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return getEcsGitFetchFilesConfig(ambiance, gitStoreConfig, manifestOutcome, ecsStepHelper);
   }
 
+  public String getTaskDefinitionArn(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.ECS_SERVICE_SWEEPING_OUTPUT));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new InvalidRequestException(INVALID_ECS_TASK_DEFINITION, USER);
+    }
+    EcsServiceCustomSweepingOutput ecsServiceCustomSweepingOutput =
+        (EcsServiceCustomSweepingOutput) optionalSweepingOutput.getOutput();
+    if (EmptyPredicate.isEmpty(ecsServiceCustomSweepingOutput.getEcsTaskDefinitionArn())) {
+      throw new InvalidRequestException(INVALID_ECS_TASK_DEFINITION, USER);
+    }
+    return engineExpressionService.renderExpression(ambiance, ecsServiceCustomSweepingOutput.getEcsTaskDefinitionArn());
+  }
+
+  private boolean validateTaskDefinitionPresence(
+      Ambiance ambiance, List<ManifestOutcome> manifestOutcomes, EcsStepHelper ecsStepHelper) {
+    if (ecsStepHelper.getEcsTaskDefinitionManifestOutcome(manifestOutcomes) != null) {
+      return true;
+    }
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.ECS_SERVICE_SWEEPING_OUTPUT));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new InvalidRequestException(INVALID_ECS_TASK_DEFINITION, USER);
+    }
+    EcsServiceCustomSweepingOutput ecsServiceCustomSweepingOutput =
+        (EcsServiceCustomSweepingOutput) optionalSweepingOutput.getOutput();
+    if (EmptyPredicate.isEmpty(ecsServiceCustomSweepingOutput.getEcsTaskDefinitionArn())) {
+      throw new InvalidRequestException(INVALID_ECS_TASK_DEFINITION, USER);
+    }
+    return true;
+  }
+
   private EcsGitFetchFileConfig getEcsGitFetchFilesConfig(
       Ambiance ambiance, GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome, EcsStepHelper ecsStepHelper) {
     return EcsGitFetchFileConfig.builder()
@@ -886,8 +941,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -920,8 +975,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -958,8 +1013,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -1891,20 +1946,21 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse queueEcsTask(StepElementParameters stepElementParameters,
-      EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
+      EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd,
+      TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {ecsCommandRequest})
-                            .taskType(TaskType.ECS_COMMAND_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
 
-    String taskName = TaskType.ECS_COMMAND_TASK_NG.getDisplayName() + " : " + ecsCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + ecsCommandRequest.getCommandName();
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
@@ -1927,8 +1983,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

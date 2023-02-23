@@ -164,7 +164,7 @@ cg:
     nettyThreads: 16
     useScriptCache: true
 
-  atmosphereBroadcaster: HAZELCAST
+  atmosphereBroadcaster: MEMORY
 
   redisAtmosphereConfig:
     sentinel: false
@@ -348,7 +348,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 1658d03e
+  scmVersion: c1ce9f00
 
   ngAuthUIEnabled: false
 
@@ -385,7 +385,7 @@ cg:
       durationUnit: MINUTES
 
   cacheConfig:
-    cacheBackend: HAZELCAST
+    cacheBackend: NOOP
     cacheNamespace: ""
     disabledCaches: []
 
@@ -691,6 +691,14 @@ cg:
     defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
   enableOpentelemetry: false
+
+  delegateQueueServiceConfig:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    topic: "delegate-service"
+    enableQueueAndDequeue: false
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

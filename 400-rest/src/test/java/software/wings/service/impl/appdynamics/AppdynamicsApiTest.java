@@ -101,7 +101,7 @@ public class AppdynamicsApiTest extends WingsBaseTest {
     delegateService = spy(new AppdynamicsDelegateServiceImpl());
     doReturn(appdynamicsRestClient).when(delegateService).getAppdynamicsRestClient(anyString());
     doReturn(appdynamicsRestClient).when(delegateService).getAppdynamicsRestClient(any(AppDynamicsConnectorDTO.class));
-    when(delegateProxyFactory.get(eq(AppdynamicsDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(AppdynamicsDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(delegateService);
     doNothing().when(delegateLogService).save(anyString(), any(ThirdPartyApiCallLog.class));
 

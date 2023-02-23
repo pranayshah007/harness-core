@@ -48,6 +48,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -101,6 +102,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
   @Mock private SpotInstStateHelper spotinstStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks
   private final AwsAmiServiceTrafficShiftAlbDeployState state =
@@ -256,7 +258,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     doReturn(false).when(featureFlagService).isEnabled(any(), any());
 
     if (!isSuccess) {
-      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTaskV2(any());
     }
 
     AwsAmiDeployStateExecutionData awsAmiDeployStateExecutionData = AwsAmiDeployStateExecutionData.builder().build();
@@ -269,7 +271,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
 
   private void verifyDelegateTaskCreationResult(ExecutionResponse response) {
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(state.delegateService, times(1)).queueTask(captor.capture());
+    verify(state.delegateService, times(1)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();

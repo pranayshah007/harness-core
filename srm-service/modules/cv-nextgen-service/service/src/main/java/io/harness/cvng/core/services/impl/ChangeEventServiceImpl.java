@@ -11,9 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.QueryChecks.COUNT;
 
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Group.id;
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Group.id;
 
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
@@ -46,11 +46,17 @@ import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
+import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import dev.morphia.annotations.Id;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -69,11 +75,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 // TODO: merge ChangeEventService and ActivityService
 public class ChangeEventServiceImpl implements ChangeEventService {
@@ -174,21 +175,9 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     List<Activity> activities = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
         changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
                                     .order(Sort.descending(ActivityKeys.eventTime))
-                                    .asList(new FindOptions()
-                                                .skip(pageRequest.getPageIndex() * pageRequest.getPageSize())
-                                                .limit(pageRequest.getPageSize()));
-    long total = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
-        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
-                     .count();
-    long totalPages = (total / pageRequest.getPageSize()) + ((total % pageRequest.getPageSize()) == 0 ? 0 : 1);
-    return PageResponse.<ChangeEventDTO>builder()
-        .pageIndex(pageRequest.getPageIndex())
-        .totalPages(totalPages)
-        .pageSize(pageRequest.getPageSize())
-        .totalItems(total)
-        .pageItemCount(activities.size())
-        .content(activities.stream().map(transformer::getDto).collect(Collectors.toList()))
-        .build();
+                                    .asList();
+    return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
+        pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
 
   private ChangeTimeline getTimeline(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,
@@ -344,8 +333,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   }
 
   private double getPercentageChange(long current, long previous) {
-    if (previous == 0) {
+    if (previous == 0 && current > 0) {
       return 100;
+    } else if (previous == 0 && current == 0) {
+      return 0;
     }
     return ((double) (current - previous) * 100) / previous;
   }

@@ -13,9 +13,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -39,7 +41,8 @@ public interface PMSInputSetRepositoryCustom {
       String pipelineIdentifier, String identifier, boolean notDeleted);
 
   Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly);
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly,
+      boolean loadFromFallbackBranch);
 
   InputSetEntity updateForOldGitSync(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
 
@@ -61,4 +64,9 @@ public interface PMSInputSetRepositoryCustom {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);
 
   boolean checkIfInputSetWithGivenFilePathExists(String accountId, String repoURL, String filePath);
+
+  InputSetEntity updateInputSetEntity(
+      InputSetEntity inputSetToMove, Criteria criteria, Update update, MoveConfigOperationType moveConfigOperationType);
+
+  List<String> findAllUniqueInputSetRepos(@NotNull Criteria criteria);
 }

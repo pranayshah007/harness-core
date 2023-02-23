@@ -10,7 +10,6 @@ package io.harness.filter.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersTestBase;
 import io.harness.filter.dto.FilterDTO;
@@ -20,6 +19,7 @@ import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import java.util.List;
+import javax.ws.rs.NotFoundException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -105,7 +105,7 @@ public class FilterServiceTest extends FiltersTestBase {
     verifyTheValuesAreCorrect(inputFilterDTO, savedFilterDTO);
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = NotFoundException.class)
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testDeleteWhenFilterDoesnotExists() {

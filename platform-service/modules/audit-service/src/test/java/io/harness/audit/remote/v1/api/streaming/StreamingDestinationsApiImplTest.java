@@ -21,7 +21,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.audit.api.streaming.StreamingService;
+import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
@@ -34,10 +36,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.rule.Owner;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
-import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationResponse;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
 import io.harness.utils.PageUtils.SortFields;
 
 import java.util.List;
@@ -60,26 +63,30 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   private static final int MAX_PAGE_NUMBER = 100;
   private static final int MAX_PAGE_SIZE = 100;
   private String harnessAccount;
-  private String slug;
+  private String identifier;
   private String name;
   private String bucket;
-  private StatusEnum statusEnum;
+  private StreamingDestinationStatus statusEnum;
   private String connectorRef;
 
   @Mock private StreamingService streamingService;
   @Mock private StreamingDestinationsApiUtils streamingDestinationsApiUtils;
+  @Mock private AggregateStreamingServiceImpl aggregateStreamingService;
   private StreamingDestinationsApiImpl streamingDestinationsApi;
+  @Mock private AccessControlClient accessControlClient;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.openMocks(this).close();
-    this.streamingDestinationsApi = new StreamingDestinationsApiImpl(streamingService, streamingDestinationsApiUtils);
+    this.streamingDestinationsApi = new StreamingDestinationsApiImpl(
+        streamingService, aggregateStreamingService, streamingDestinationsApiUtils, accessControlClient);
 
     harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
-    statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
+    statusEnum =
+        StreamingDestinationStatus.values()[RandomUtils.nextInt(0, StreamingDestinationStatus.values().length - 1)];
     connectorRef = "account." + randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
   }
 
@@ -138,7 +145,17 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-    assertThat(response.getHeaders()).containsKey("Link");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetStreamingDestinationsCards() {
+    String accountIdentifier = randomAlphabetic(10);
+    when(aggregateStreamingService.getStreamingDestinationCards(accountIdentifier))
+        .thenReturn(new StreamingDestinationCards());
+    streamingDestinationsApi.getStreamingDestinationsCards(accountIdentifier);
+    verify(aggregateStreamingService, times(1)).getStreamingDestinationCards(accountIdentifier);
   }
 
   @Test
@@ -147,13 +164,13 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   public void testGetStreamingDestinations() {
     StreamingDestination streamingDestination = getStreamingDestination();
 
-    when(streamingService.getStreamingDestination(harnessAccount, slug)).thenReturn(streamingDestination);
+    when(streamingService.getStreamingDestination(harnessAccount, identifier)).thenReturn(streamingDestination);
     when(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
         .thenReturn(new StreamingDestinationResponse());
 
-    Response response = streamingDestinationsApi.getStreamingDestination(slug, harnessAccount);
+    Response response = streamingDestinationsApi.getStreamingDestination(identifier, harnessAccount);
 
-    verify(streamingService, times(1)).getStreamingDestination(harnessAccount, slug);
+    verify(streamingService, times(1)).getStreamingDestination(harnessAccount, identifier);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     assertThat(response.getEntity()).isNotNull();
     assertThat(response.getEntity()).isInstanceOf(StreamingDestinationResponse.class);
@@ -165,15 +182,15 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   public void testGetStreamingDestinations_withNotFoundException() {
     doThrow(NoResultFoundException.newBuilder()
                 .code(ErrorCode.RESOURCE_NOT_FOUND)
-                .message(String.format("StreamingDestination: not found with identifier [%s]", slug))
+                .message(String.format("StreamingDestination: not found with identifier [%s]", identifier))
                 .level(Level.ERROR)
                 .reportTargets(USER)
                 .build())
         .when(streamingService)
-        .getStreamingDestination(harnessAccount, slug);
+        .getStreamingDestination(harnessAccount, identifier);
 
-    assertThatThrownBy(() -> streamingDestinationsApi.getStreamingDestination(slug, harnessAccount))
-        .hasMessage(String.format("StreamingDestination: not found with identifier [%s]", slug))
+    assertThatThrownBy(() -> streamingDestinationsApi.getStreamingDestination(identifier, harnessAccount))
+        .hasMessage(String.format("StreamingDestination: not found with identifier [%s]", identifier))
         .isInstanceOf(NoResultFoundException.class);
   }
 
@@ -181,11 +198,11 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testDeleteStreamingDestinations() {
-    when(streamingService.delete(harnessAccount, slug)).thenReturn(Boolean.TRUE);
+    when(streamingService.delete(harnessAccount, identifier)).thenReturn(Boolean.TRUE);
 
-    Response response = streamingDestinationsApi.deleteDisabledStreamingDestination(slug, harnessAccount);
+    Response response = streamingDestinationsApi.deleteDisabledStreamingDestination(identifier, harnessAccount);
 
-    verify(streamingService, times(1)).delete(harnessAccount, slug);
+    verify(streamingService, times(1)).delete(harnessAccount, identifier);
     assertThat(response.getStatus()).isEqualTo(Response.Status.NO_CONTENT.getStatusCode());
   }
 
@@ -194,13 +211,13 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteStreamingDestinations_withInvalidRequestException() {
     doThrow(new InvalidRequestException(String.format(
-                "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", slug)))
+                "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", identifier)))
         .when(streamingService)
-        .delete(harnessAccount, slug);
+        .delete(harnessAccount, identifier);
 
-    assertThatThrownBy(() -> streamingDestinationsApi.deleteDisabledStreamingDestination(slug, harnessAccount))
+    assertThatThrownBy(() -> streamingDestinationsApi.deleteDisabledStreamingDestination(identifier, harnessAccount))
         .hasMessage(String.format(
-            "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", slug))
+            "StreamingDestination: cannot delete an active StreamingDestination with identifier [%s]", identifier))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -216,9 +233,9 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
         .thenReturn(new StreamingDestinationResponse());
 
     Response response =
-        streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount);
+        streamingDestinationsApi.updateStreamingDestination(identifier, streamingDestinationDTO, harnessAccount);
 
-    verify(streamingService, times(1)).update(slug, streamingDestinationDTO, harnessAccount);
+    verify(streamingService, times(1)).update(identifier, streamingDestinationDTO, harnessAccount);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     assertThat(response.getEntity()).isNotNull();
     assertThat(response.getEntity()).isInstanceOf(StreamingDestinationResponse.class);
@@ -232,22 +249,22 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
 
     doThrow(new InvalidRequestException(String.format(
                 "StreamingDestination: identifier [%s] did not match with StreamingDestinationDTO identifier [%s]",
-                slug, slug)))
+                identifier, identifier)))
         .when(streamingService)
-        .update(slug, streamingDestinationDTO, harnessAccount);
+        .update(identifier, streamingDestinationDTO, harnessAccount);
     assertThatThrownBy(
-        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        () -> streamingDestinationsApi.updateStreamingDestination(identifier, streamingDestinationDTO, harnessAccount))
         .hasMessage(String.format(
-            "StreamingDestination: identifier [%s] did not match with StreamingDestinationDTO identifier [%s]", slug,
-            slug));
+            "StreamingDestination: identifier [%s] did not match with StreamingDestinationDTO identifier [%s]",
+            identifier, identifier));
 
     doThrow(new InvalidRequestException(String.format(
                 "StreamingDestination: conectorRef [%s] did not match with StreamingDestinationDTO conectorRef [%s]",
                 connectorRef, connectorRef)))
         .when(streamingService)
-        .update(slug, streamingDestinationDTO, harnessAccount);
+        .update(identifier, streamingDestinationDTO, harnessAccount);
     assertThatThrownBy(
-        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        () -> streamingDestinationsApi.updateStreamingDestination(identifier, streamingDestinationDTO, harnessAccount))
         .hasMessage(String.format(
             "StreamingDestination: conectorRef [%s] did not match with StreamingDestinationDTO conectorRef [%s]",
             connectorRef, connectorRef));
@@ -256,9 +273,9 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
                 String.format("StreamingDestination: type [%s] did not match with StreamingDestinationDTO type [%s]",
                     statusEnum.name(), statusEnum.name())))
         .when(streamingService)
-        .update(slug, streamingDestinationDTO, harnessAccount);
+        .update(identifier, streamingDestinationDTO, harnessAccount);
     assertThatThrownBy(
-        () -> streamingDestinationsApi.updateStreamingDestination(slug, streamingDestinationDTO, harnessAccount))
+        () -> streamingDestinationsApi.updateStreamingDestination(identifier, streamingDestinationDTO, harnessAccount))
         .hasMessage(
             String.format("StreamingDestination: type [%s] did not match with StreamingDestinationDTO type [%s]",
                 statusEnum.name(), statusEnum.name()));
@@ -269,7 +286,7 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
         new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
 
     return new StreamingDestinationDTO()
-        .slug(slug)
+        .identifier(identifier)
         .name(name)
         .status(statusEnum)
         .connectorRef(connectorRef)
@@ -278,7 +295,7 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
 
   private StreamingDestination getStreamingDestination() {
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
-    streamingDestination.setIdentifier(slug);
+    streamingDestination.setIdentifier(identifier);
     streamingDestination.setName(name);
     streamingDestination.setType(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
     streamingDestination.setStatus(statusEnum);

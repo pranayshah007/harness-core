@@ -165,6 +165,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -185,9 +188,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.quartz.TriggerKey;
 
 @OwnedBy(CDC)
@@ -240,7 +240,7 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public PageResponse<Trigger> list(PageRequest<Trigger> pageRequest, boolean withTags, String tagFilter) {
     PageResponse<Trigger> response =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags, false);
     return postProcessTriggers(response);
   }
 
@@ -2515,6 +2515,48 @@ public class TriggerServiceImpl implements TriggerService {
     }
     if (envParamaterized) {
       validateAndAuthorizeEnvironment(trigger, existing, variables);
+    }
+  }
+
+  @Override
+  public void authorizeRead(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeRead(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have read permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeUpdate(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeUpdate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have update permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+
+  @Override
+  public void authorizeSave(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeCreate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have create permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeDeletion(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeDeletion(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have delete permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
     }
   }
 

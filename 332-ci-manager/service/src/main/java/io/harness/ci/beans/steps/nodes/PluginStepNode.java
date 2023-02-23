@@ -66,8 +66,9 @@ public class PluginStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public PluginStepNode(String uuid, String identifier, String name, List<FailureStrategyConfig> failureStrategies,
-      PluginStepInfo pluginStepInfo, PluginStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public PluginStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, PluginStepInfo pluginStepInfo,
+      PluginStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
     this.pluginStepInfo = pluginStepInfo;
     this.type = type;

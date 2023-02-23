@@ -32,16 +32,15 @@ public class DebeziumControllerStarter {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void startDebeziumController(DebeziumConfig debeziumConfig, ChangeConsumerConfig changeConsumerConfig,
-      PersistentLocker locker, RedisConfig redisLockConfig) {
+      PersistentLocker locker, RedisConfig redisLockConfig, List<Integer> listOfErrorCodesForOffsetReset) {
     List<String> collections = debeziumConfig.getMonitoredCollections();
     for (String monitoredCollection : collections) {
       try {
         MongoCollectionChangeConsumer changeConsumer =
-            consumerFactory.get(debeziumConfig.getSleepInterval(), monitoredCollection, changeConsumerConfig,
-                debeziumConfig.getProducingCountPerBatch(), debeziumConfig.getRedisStreamSize(), cfClient);
+            consumerFactory.get(changeConsumerConfig, cfClient, monitoredCollection);
         DebeziumController debeziumController = new DebeziumController(
             DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
-            changeConsumer, locker, debeziumExecutorService, debeziumService);
+            changeConsumer, locker, debeziumExecutorService, debeziumService, listOfErrorCodesForOffsetReset);
         debeziumExecutorService.submit(debeziumController);
         log.info("Starting Debezium Controller for Collection {} ...", monitoredCollection);
       } catch (Exception e) {

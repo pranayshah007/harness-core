@@ -20,6 +20,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 
 @Value
 @Builder
@@ -100,5 +101,10 @@ public class CompoundTextMongoIndex implements MongoIndex {
     public CompoundTextMongoIndexBuilder descRangeField(String rangeField) {
       return rangeField("-" + rangeField);
     }
+  }
+
+  @Override
+  public BasicDBObject getHint() {
+    throw new NotImplementedException("Text indexes doesn't use hint");
   }
 }

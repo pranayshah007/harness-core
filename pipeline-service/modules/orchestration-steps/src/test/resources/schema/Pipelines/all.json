@@ -525,7 +525,8 @@
       "type": "object",
       "required": [
         "key",
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "key": {
@@ -642,7 +643,7 @@
             "connectorRef": {
               "type": "string"
             },
-            "delegateSelectors": {
+            "entrypoint": {
               "oneOf": [
                 {
                   "type": "array",
@@ -651,17 +652,15 @@
                   }
                 },
                 {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
+                  "type": "string"
                 }
               ]
             },
-            "entrypoint": {
+            "envVariables": {
               "oneOf": [
                 {
-                  "type": "array",
-                  "items": {
+                  "type": "object",
+                  "additionalProperties": {
                     "type": "string"
                   }
                 },
@@ -745,7 +744,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -1116,7 +1116,8 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValues"
+            "ProceedWithDefaultValues",
+            "MarkAsFailure"
           ]
         }
       },
@@ -1859,6 +1860,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "MarkAsFailFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MarkAsFailure"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "MarkAsSuccessFailureActionConfig": {
       "allOf": [
         {
@@ -2034,7 +2057,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -2067,35 +2090,7 @@
       ],
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         },
         "errors": {
           "type": "array",
@@ -2112,7 +2107,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -2123,35 +2119,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2160,35 +2128,7 @@
       "type": "object",
       "properties": {
         "action": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/AbortFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/IgnoreFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ManualInterventionFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/MarkAsSuccessFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/PipelineRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/ProceedWithDefaultValuesFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/RetryFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StageRollbackFailureActionConfig"
-            },
-            {
-              "$ref": "#/definitions/StepGroupFailureActionConfig"
-            }
-          ]
+          "$ref": "#/definitions/FailureStrategyActionConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2201,7 +2141,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2323,6 +2263,39 @@
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2456,7 +2429,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "notificationRules": {
           "type": "array",
@@ -2607,7 +2580,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "value": {
           "type": "string"
@@ -2712,6 +2685,30 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PolicyConfig": {
+      "type": "object",
+      "required": [
+        "policySets"
+      ],
+      "properties": {
+        "policySets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PolicySpec": {
@@ -3039,7 +3036,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -3651,11 +3648,11 @@
             },
             "identifier": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
             },
             "skipInstances": {
               "oneOf": [
@@ -3703,18 +3700,27 @@
               "type": "string"
             },
             "failureStrategies": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/FailureStrategyConfig"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "identifier": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
             },
             "skipInstances": {
               "oneOf": [
@@ -3756,7 +3762,16 @@
               }
             },
             "when": {
-              "$ref": "#/definitions/StageWhenCondition"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/StageWhenCondition"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           },
           "additionalProperties": false,
@@ -3905,19 +3920,31 @@
         "description": {
           "type": "string"
         },
+        "enforce": {
+          "$ref": "#/definitions/PolicyConfig"
+        },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -3930,7 +3957,16 @@
           "type": "string"
         },
         "when": {
-          "$ref": "#/definitions/StepWhenCondition"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StepWhenCondition"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -4229,8 +4265,7 @@
       "type": "object",
       "required": [
         "identifier",
-        "name",
-        "steps"
+        "name"
       ],
       "properties": {
         "delegateSelectors": {
@@ -4249,18 +4284,27 @@
           ]
         },
         "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "steps": {
           "type": "array",
@@ -4273,11 +4317,39 @@
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
         },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
         "when": {
-          "$ref": "#/definitions/StepWhenCondition"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StepWhenCondition"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "steps"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "StepGroupFailureActionConfig": {
       "allOf": [
@@ -4331,7 +4403,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -4390,7 +4471,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -4541,6 +4622,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "duration"
+          ],
           "properties": {
             "duration": {
               "type": "string",

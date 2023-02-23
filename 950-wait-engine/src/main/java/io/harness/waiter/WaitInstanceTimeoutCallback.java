@@ -15,9 +15,9 @@ import io.harness.waiter.persistence.PersistenceWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.annotations.Transient;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j

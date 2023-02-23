@@ -98,8 +98,7 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
         resourceGroupService.list(Scope.of(account, org, project), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects/%s/resource-groups)", org, project),
-            pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
@@ -112,7 +111,7 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   public Response updateResourceGroupProject(CreateResourceGroupRequest body, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
-    if (!resourceGroup.equals(body.getSlug())) {
+    if (!resourceGroup.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }
     ResourceGroupRequest resourceGroupRequest =

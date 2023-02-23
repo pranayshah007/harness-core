@@ -100,8 +100,8 @@ public class TasResource {
   getTasOrganizations(@Parameter(description = "Identifier for tas connector") @QueryParam(
                           "connectorRef") String tasConnectorIdentifier,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @ProjectIdentifier @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
@@ -130,8 +130,8 @@ public class TasResource {
                    "connectorRef") String tasConnectorIdentifier,
       @Parameter(description = "organization for tas") @NotNull @QueryParam("organization") String organization,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @ProjectIdentifier @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     log.info("retrieving spaces for tas");
     return ResponseDTO.newResponse(tasResourceService.listSpaces(
         tasConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, organization));

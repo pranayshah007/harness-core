@@ -10,11 +10,11 @@ package io.harness.iterator;
 import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

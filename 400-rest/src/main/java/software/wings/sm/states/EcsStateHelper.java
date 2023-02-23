@@ -62,6 +62,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -99,7 +100,6 @@ import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Log;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
@@ -119,6 +119,7 @@ import software.wings.beans.container.ContainerTaskMapper;
 import software.wings.beans.container.EcsContainerTask;
 import software.wings.beans.container.EcsServiceSpecification;
 import software.wings.beans.container.EcsServiceSpecificationMapper;
+import software.wings.beans.dto.Log;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.ecs.request.EcsBGListenerUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
@@ -186,6 +187,8 @@ public class EcsStateHelper {
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private StateExecutionService stateExecutionService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   public ContainerSetupParams buildContainerSetupParams(
       ExecutionContext context, EcsSetupStateConfig ecsSetupStateConfig) {
@@ -388,7 +391,7 @@ public class EcsStateHelper {
     delegateTask.setDescription("ECS Listener Update task execution");
     delegateTask.setTags(isNotEmpty(awsConfig.getTag()) ? singletonList(awsConfig.getTag()) : null);
 
-    delegateService.queueTask(delegateTask);
+    delegateService.queueTaskV2(delegateTask);
     appendDelegateTaskDetails(delegateTask, stateExecutionInstanceId);
 
     return ExecutionResponse.builder()
@@ -400,13 +403,14 @@ public class EcsStateHelper {
 
   private void appendDelegateTaskDetails(DelegateTask delegateTask, String stateExecutionInstanceId) {
     if (isBlank(delegateTask.getUuid())) {
-      delegateTask.setUuid(generateUuid());
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,
         DelegateTaskDetails.builder()
             .delegateTaskId(delegateTask.getUuid())
-            .taskDescription(delegateTask.calcDescription())
+            .taskDescription(
+                delegateTask.getData() != null ? delegateTask.calcDescription() : delegateTask.calcDescriptionV2())
             .setupAbstractions(delegateTask.getSetupAbstractions())
             .build());
   }
@@ -802,7 +806,7 @@ public class EcsStateHelper {
             .description("ECS command task execution")
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1109,7 +1113,7 @@ public class EcsStateHelper {
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .description("ECS Command task execution")
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1147,7 +1151,7 @@ public class EcsStateHelper {
             .selectionLogsTrackingEnabled(selectionLogsEnabled)
             .description("ECS Run task deploy execution")
             .build();
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     return task;
   }
 
@@ -1355,7 +1359,7 @@ public class EcsStateHelper {
 
     EcsCommandExecutionResponse delegateResponse;
     try {
-      delegateResponse = delegateService.executeTask(task);
+      delegateResponse = delegateService.executeTaskV2(task);
     } catch (InterruptedException e) {
       log.error("", e);
       Thread.currentThread().interrupt();
