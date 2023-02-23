@@ -28,9 +28,11 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.core.PluginDescriptor;
 import io.harness.delegate.service.common.AbstractDelegateAgentService;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.logging.AutoLogContext;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.bash.BashScriptTask;
@@ -77,6 +79,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentService {
   private final Map<String, DelegateTaskExecutionData> currentlyExecutingFutures = new ConcurrentHashMap<>();
 
   @Inject @Named("timeoutExecutor") private ThreadPoolExecutor timeoutEnforcement;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
 
   @Inject private Injector injector;
   private TimeLimiter delegateTaskTimeLimiter;
@@ -89,8 +92,10 @@ public class DelegatePlatformService extends AbstractDelegateAgentService {
           .build();
 
   @Override
-  protected void executeTask(@NonNull final DelegateTaskPackage delegateTaskPackage) {
-    TaskData taskData = delegateTaskPackage.getData();
+  protected void executeTask(@NonNull final PluginDescriptor taskDescriptor) {
+    final DelegateTaskPackage delegateTaskPackage =
+        (DelegateTaskPackage) kryoSerializer.asInflatedObject(taskDescriptor.getInput().getBinaryData().toByteArray());
+    final var taskData = delegateTaskPackage.getData();
 
     log.debug("DelegateTask acquired - accountId: {}, taskType: {}", getDelegateConfiguration().getAccountId(),
         taskData.getTaskType());
@@ -102,16 +107,16 @@ public class DelegatePlatformService extends AbstractDelegateAgentService {
 
     final BooleanSupplier preExecutionFunction = getPreExecutionFunction(delegateTaskPackage);
     final Consumer<DelegateTaskResponse> postExecutionFunction =
-        response -> sendTaskResponse(delegateTaskPackage.getDelegateTaskId(), response);
+        response -> sendTaskResponse(taskDescriptor.getId(), response);
 
     final BashScriptTask delegateRunnableTask =
         new BashScriptTask(delegateTaskPackage, preExecutionFunction, postExecutionFunction);
 
     injector.injectMembers(delegateRunnableTask);
-    currentlyExecutingFutures.get(delegateTaskPackage.getDelegateTaskId()).setExecutionStartTime(getClock().millis());
+    currentlyExecutingFutures.get(taskDescriptor.getId()).setExecutionStartTime(getClock().millis());
 
     // Submit execution for watching this task execution.
-    timeoutEnforcement.submit(() -> enforceDelegateTaskTimeout(delegateTaskPackage.getDelegateTaskId(), taskData));
+    timeoutEnforcement.submit(() -> enforceDelegateTaskTimeout(taskDescriptor.getId(), taskData));
 
     // Start task execution in same thread and measure duration.
     if (getDelegateConfiguration().isImmutable()) {

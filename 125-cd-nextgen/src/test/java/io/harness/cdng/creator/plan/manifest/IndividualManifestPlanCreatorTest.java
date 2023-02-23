@@ -67,7 +67,8 @@ public class IndividualManifestPlanCreatorTest extends CDNGTestBase {
         ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS,
         ManifestType.TAS_AUTOSCALER, ManifestType.DeploymentRepo, ManifestType.AsgLaunchTemplate,
         ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction,
-        ManifestType.GoogleCloudFunctionDefinition, ManifestType.AwsLambda, ManifestType.AwsSamDirectory));
+        ManifestType.GoogleCloudFunctionDefinition, ManifestType.AwsLambdaFunctionDefinition,
+        ManifestType.AwsSamDirectory));
 
     assertThat(manifestsSupportedTypes.containsAll(expectedSupportedTypes)).isEqualTo(true);
   }

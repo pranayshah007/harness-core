@@ -44,7 +44,7 @@ public enum ManifestConfigType {
   ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction),
   @JsonProperty(ManifestType.GoogleCloudFunctionDefinition)
   CLOUD_FUNCTION_DEFINITION(ManifestType.GoogleCloudFunctionDefinition),
-  @JsonProperty(ManifestType.AwsLambda) AWS_LAMBDA(ManifestType.AwsLambda),
+  @JsonProperty(ManifestType.AwsLambdaFunctionDefinition) AWS_LAMBDA(ManifestType.AwsLambdaFunctionDefinition),
   @JsonProperty(ManifestType.AwsSamDirectory) AWS_SAM_DIRECTORY(ManifestType.AwsSamDirectory);
 
   private final String displayName;

@@ -260,9 +260,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;
     try {
-      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
-          mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
+      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch,
+          pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
     } catch (InvalidInputSetException e) {
       InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
       return ResponseDTO.newResponse(

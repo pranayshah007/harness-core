@@ -137,6 +137,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+  @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -607,6 +608,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           format("Service Definition is not defined for service [Name: %s, Identifier: %s]", serviceEntity.getName(),
               serviceEntity.getIdentifier()));
     }
+    serviceCustomSweepingOutputHelper.saveAdditionalServiceFieldsToSweepingOutput(ngServiceConfig, ambiance);
 
     serviceStepsHelper.checkForVariablesAccessOrThrow(
         ambiance, ngServiceConfig, stepParameters.getServiceRef().getValue());

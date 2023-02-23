@@ -7,7 +7,10 @@
 
 package io.harness.cdng.usage;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_DATE_USAGE_PARAMS_MESSAGE;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGCommonEntityConstants;
@@ -16,6 +19,9 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -33,16 +39,20 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -76,6 +86,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
     })
 public class CDLicenseUsageResource {
   @Inject private ServiceEntityService serviceEntityService;
+  @Inject private CDLicenseUsageImpl cdLicenseUsageService;
 
   @GET
   @Path("services")
@@ -87,8 +98,8 @@ public class CDLicenseUsageResource {
       hidden = true)
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
   public ResponseDTO<PageResponse<ServiceResponse>>
-  getAllServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+  getAllServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                     ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
@@ -107,6 +118,26 @@ public class CDLicenseUsageResource {
     Pageable pageRequest = getPageRequest(page, size, sort);
     Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
     return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
+  }
+
+  @POST
+  @Path("si-date")
+  @ApiOperation(value = "Get Service Instances date usage in CD Module", nickname = "getServiceInstancesDateUsage")
+  @Hidden
+  @Operation(operationId = "getServiceInstancesDateUsage",
+      summary = "Get Service Instances usage by dates in requested date range",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns service instances usage per dates")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<ServiceInstancesDateUsageDTO>
+  getServiceInstancesDateUsage(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                   ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Valid @RequestBody(
+          description = SERVICE_INSTANCES_DATE_USAGE_PARAMS_MESSAGE) ServiceInstancesDateUsageParams dateUsageParams) {
+    return ResponseDTO.newResponse(
+        cdLicenseUsageService.getServiceInstancesDateUsage(accountIdentifier, dateUsageParams));
   }
 
   private Pageable getPageRequest(int page, int size, List<String> sort) {

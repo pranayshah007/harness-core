@@ -26,6 +26,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(PL)
 @Provider
@@ -52,7 +53,7 @@ public class ApiResponseFilter implements ContainerResponseFilter {
                                                  return fieldError;
                                                })
                                                .collect(Collectors.toList());
-            errorResponse.setMessage("Validation Error.");
+            errorResponse.setMessage(resolveMessage(failureDTO.getMessage(), "Validation Error."));
             errorResponse.setErrors(fieldErrors);
           } else if (responseContext.getEntity() instanceof ErrorDTO) {
             ErrorDTO errorDTO = (ErrorDTO) responseContext.getEntity();
@@ -60,12 +61,12 @@ public class ApiResponseFilter implements ContainerResponseFilter {
           }
         } else if (isaResourceNotFound(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
-          errorResponse.setMessage(String.format("Not Found. %s", errorDTOBase.getMessage()));
+          errorResponse.setMessage(resolveMessage(errorDTOBase.getMessage(), "Not Found."));
           errorResponse.setCode(ErrorResponse.CodeEnum.RESOURCE_NOT_FOUND);
           responseContext.setStatus(404);
         } else if (isaDuplicateField(responseContext)) {
           ErrorDTOBase errorDTOBase = (ErrorDTOBase) responseContext.getEntity();
-          errorResponse.setMessage(String.format("Duplicate Field. %s", errorDTOBase.getMessage()));
+          errorResponse.setMessage(resolveMessage(errorDTOBase.getMessage(), "Duplicate Field."));
           responseContext.setStatus(409);
         } else {
           return;
@@ -76,29 +77,41 @@ public class ApiResponseFilter implements ContainerResponseFilter {
           return;
         }
         ErrorDTO errorDTO = (ErrorDTO) responseContext.getEntity();
-        errorResponse.setMessage(String.format("Unauthorized. %s", errorDTO.getMessage()));
+        errorResponse.setMessage(resolveMessage(errorDTO.getMessage(), "Unauthorized."));
         break;
       case 403:
         if (!(responseContext.getEntity() instanceof ErrorDTO)) {
           return;
         }
         errorDTO = (ErrorDTO) responseContext.getEntity();
-        errorResponse.setMessage(String.format("Forbidden Request. %s", errorDTO.getMessage()));
+        errorResponse.setMessage(resolveMessage(errorDTO.getMessage(), "Forbidden Request."));
         break;
       case 404:
-        errorResponse.setMessage("Not Found.");
+        if (responseContext.getEntity() instanceof ErrorDTOBase) {
+          errorResponse.setMessage(
+              resolveMessage(((ErrorDTOBase) responseContext.getEntity()).getMessage(), "Not Found."));
+        }
         if (isaEntityNotFound(responseContext)) {
           errorResponse.setCode(ErrorResponse.CodeEnum.ENTITY_NOT_FOUND);
         }
         break;
       case 412:
-        errorResponse.setMessage("Precondition Failed.");
+        if (responseContext.getEntity() instanceof ErrorDTOBase) {
+          errorResponse.setMessage(
+              resolveMessage(((ErrorDTOBase) responseContext.getEntity()).getMessage(), "Precondition Failed."));
+        }
         break;
       case 415:
-        errorResponse.setMessage("Unsupported Media Type.");
+        if (responseContext.getEntity() instanceof ErrorDTOBase) {
+          errorResponse.setMessage(
+              resolveMessage(((ErrorDTOBase) responseContext.getEntity()).getMessage(), "Unsupported Media Type."));
+        }
         break;
       case 500:
-        errorResponse.setMessage("Oops, something went wrong on our end. Please contact Harness Support.");
+        if (responseContext.getEntity() instanceof ErrorDTOBase) {
+          errorResponse.setMessage(resolveMessage(((ErrorDTOBase) responseContext.getEntity()).getMessage(),
+              "Oops, something went wrong on our end. Please contact Harness Support."));
+        }
         break;
       default:
         return;
@@ -124,5 +137,9 @@ public class ApiResponseFilter implements ContainerResponseFilter {
   private boolean isaEntityNotFound(ContainerResponseContext responseContext) {
     return responseContext.getEntity() instanceof ErrorDTOBase
         && ErrorCode.ENTITY_NOT_FOUND.equals(((ErrorDTOBase) responseContext.getEntity()).getCode());
+  }
+
+  private String resolveMessage(String responseMessage, String defaultResponse) {
+    return StringUtils.isEmpty(responseMessage) ? defaultResponse : responseMessage;
   }
 }

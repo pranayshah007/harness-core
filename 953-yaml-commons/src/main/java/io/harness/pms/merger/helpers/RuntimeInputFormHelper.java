@@ -45,6 +45,12 @@ public class RuntimeInputFormHelper {
     return runtimeInputFormYamlConfig.getYaml();
   }
 
+  // only to be used for get runtime input form API, everywhere else the above method is to be used
+  public String createRuntimeInputFormWithDefaultValues(String yaml) {
+    YamlConfig runtimeInputFormYamlConfig = createRuntimeInputFormWithDefaultValuesYamlConfig(yaml);
+    return runtimeInputFormYamlConfig.getYaml();
+  }
+
   public String removeRuntimeInputsFromYaml(String pipelineYaml, String runtimeInputsYaml, boolean keepInput) {
     YamlConfig runtimeInputFormYamlConfig =
         createRuntimeInputFormYamlConfig(new YamlConfig(pipelineYaml), new YamlConfig(runtimeInputsYaml), keepInput);
@@ -53,10 +59,16 @@ public class RuntimeInputFormHelper {
 
   private YamlConfig createRuntimeInputFormYamlConfig(String yaml, boolean keepInput) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
-    return createRuntimeInputFormYamlConfig(yamlConfig, keepInput);
+    return createRuntimeInputFormYamlConfig(yamlConfig, keepInput, false);
   }
 
-  public YamlConfig createRuntimeInputFormYamlConfig(YamlConfig yamlConfig, boolean keepInput) {
+  private YamlConfig createRuntimeInputFormWithDefaultValuesYamlConfig(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    return createRuntimeInputFormYamlConfig(yamlConfig, true, true);
+  }
+
+  public YamlConfig createRuntimeInputFormYamlConfig(
+      YamlConfig yamlConfig, boolean keepInput, boolean keepDefaultValues) {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
@@ -67,6 +79,9 @@ public class RuntimeInputFormHelper {
           || (keepInput && NGExpressionUtils.matchesInputSetPattern(value))
           || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
               && !key.isType())) {
+        templateMap.put(key, fullMap.get(key));
+      }
+      if (keepInput && keepDefaultValues && key.isDefault()) {
         templateMap.put(key, fullMap.get(key));
       }
     });

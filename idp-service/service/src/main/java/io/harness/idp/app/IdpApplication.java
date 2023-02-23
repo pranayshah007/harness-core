@@ -7,35 +7,54 @@
 
 package io.harness.idp.app;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.events.consumers.EntityCrudStreamConsumer;
 import io.harness.events.consumers.IdpEventConsumerController;
 import io.harness.health.HealthService;
+import io.harness.idp.annotations.IdpServiceAuth;
+import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
+import io.harness.security.InternalApiAuthFilter;
+import io.harness.security.NextGenAuthenticationFilter;
+import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+import io.harness.token.remote.TokenClient;
 
 import com.codahale.metrics.MetricRegistry;
 import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.name.Names;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.ServerProperties;
 
 /**
@@ -96,6 +115,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
+    registerAuthFilters(configuration, environment, injector);
     initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -122,5 +142,45 @@ public class IdpApplication extends Application<IdpConfiguration> {
       environment.jersey().register(injector.getInstance(resource));
     }
     environment.jersey().property(ServerProperties.RESOURCE_VALIDATION_DISABLE, true);
+  }
+
+  private void registerAuthFilters(IdpConfiguration config, Environment environment, Injector injector) {
+    Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
+        -> (resourceInfoAndRequest.getKey().getResourceMethod() != null
+               && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(IdpServiceAuth.class) != null)
+        || (resourceInfoAndRequest.getKey().getResourceClass() != null
+            && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(IdpServiceAuth.class) != null)
+        || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+            && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(IdpServiceAuthIfHasApiKey.class)
+                != null
+            && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null)
+        || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+            && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null)
+        || (resourceInfoAndRequest.getKey().getResourceClass() != null
+            && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null);
+    Map<String, String> serviceToSecretMapping = new HashMap<>();
+    serviceToSecretMapping.put(AuthorizationServiceHeader.BEARER.getServiceId(), config.getJwtAuthSecret());
+    serviceToSecretMapping.put(
+        AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(), config.getJwtIdentityServiceSecret());
+    serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
+    environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+    registerInternalApiAuthFilter(config, environment);
+  }
+
+  private void registerInternalApiAuthFilter(IdpConfiguration configuration, Environment environment) {
+    Map<String, String> serviceToSecretMapping = new HashMap<>();
+    serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getIdpServiceSecret());
+    environment.jersey().register(
+        new InternalApiAuthFilter(getAuthFilterPredicate(InternalApi.class), null, serviceToSecretMapping));
+  }
+
+  private Predicate<Pair<ResourceInfo, ContainerRequestContext>> getAuthFilterPredicate(
+      Class<? extends Annotation> annotation) {
+    return resourceInfoAndRequest
+        -> (resourceInfoAndRequest.getKey().getResourceMethod() != null
+               && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(annotation) != null)
+        || (resourceInfoAndRequest.getKey().getResourceClass() != null
+            && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(annotation) != null);
   }
 }

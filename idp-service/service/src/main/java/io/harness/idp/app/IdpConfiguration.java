@@ -39,6 +39,12 @@ public class IdpConfiguration extends Configuration {
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
+  @JsonProperty("idpServiceSecret") private String idpServiceSecret;
+  @JsonProperty("jwtAuthSecret") private String jwtAuthSecret;
+  @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
+  @JsonProperty("backstageSaToken") private String backstageSaToken;
+  @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
+  @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
 

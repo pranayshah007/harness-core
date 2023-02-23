@@ -9,25 +9,25 @@ package io.harness.idp.namespace.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.namespace.beans.dto.Namespace;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class NamespaceMapper {
-  public Namespace toDTO(NamespaceEntity namespaceNameEntity) {
-    return Namespace.builder()
-        .accountIdentifier(namespaceNameEntity.getAccountIdentifier())
-        .namespace(namespaceNameEntity.getId())
-        .build();
+  public NamespaceInfo toDTO(NamespaceEntity namespaceNameEntity) {
+    NamespaceInfo namespaceInfo = new NamespaceInfo();
+    namespaceInfo.setNamespace(namespaceNameEntity.getId());
+    namespaceInfo.setAccountIdentifier(namespaceNameEntity.getAccountIdentifier());
+    return namespaceInfo;
   }
 
-  public NamespaceEntity fromDTO(Namespace namespace) {
+  public NamespaceEntity fromDTO(NamespaceInfo namespaceInfo) {
     return NamespaceEntity.builder()
-        .accountIdentifier(namespace.getAccountIdentifier())
-        .id(namespace.getNamespace())
+        .accountIdentifier(namespaceInfo.getAccountIdentifier())
+        .id(namespaceInfo.getNamespace())
         .build();
   }
 }

@@ -199,7 +199,18 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
 
   private boolean isIgnorePropertySetAndNotAlwaysRun(FrameworkMethod frameworkMethod) {
     return frameworkMethod.getAnnotation(HarnessAlwaysRun.class) == null
-        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS"));
+        && "true".equalsIgnoreCase(System.getenv("IGNORE_400_TESTS")) && ownedByCdTeam(frameworkMethod);
+  }
+
+  private boolean ownedByCdTeam(FrameworkMethod frameworkMethod) {
+    Set<HarnessTeam> cdTeams = ImmutableSet.of(HarnessTeam.CDC, HarnessTeam.CDP, HarnessTeam.PIPELINE);
+    OwnedBy annotation = frameworkMethod.getDeclaringClass().getAnnotation(OwnedBy.class);
+    if (annotation == null) {
+      log.info("No owned by test present for test {}", frameworkMethod.getName());
+      return false;
+    }
+    HarnessTeam value = annotation.value();
+    return cdTeams.contains(value);
   }
 
   protected boolean isIntegrationTest(Object target) {

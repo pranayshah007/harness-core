@@ -238,9 +238,8 @@ public class AccountResourceNG {
   @Path("/{accountId}/default-experience")
   public RestResponse<AccountDTO> updateDefaultExperience(
       @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
-    Account account = accountService.get(accountId);
-    account.setDefaultExperience(dto.getDefaultExperience());
-    return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
+    return new RestResponse(
+        AccountMapper.toAccountDTO(accountService.updateDefaultExperience(accountId, dto.getDefaultExperience())));
   }
 
   @PUT
@@ -249,9 +248,8 @@ public class AccountResourceNG {
   @InternalApi
   public RestResponse<AccountDTO> updateCrossGenerationAccessEnabled(
       @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
-    Account account = accountService.get(accountId);
-    account.isCrossGenerationAccessEnabled(dto.isCrossGenerationAccessEnabled());
-    return new RestResponse(AccountMapper.toAccountDTO(accountService.update(account)));
+    return new RestResponse(AccountMapper.toAccountDTO(
+        accountService.updateCrossGenerationAccessEnabled(accountId, dto.isCrossGenerationAccessEnabled())));
   }
 
   @GET

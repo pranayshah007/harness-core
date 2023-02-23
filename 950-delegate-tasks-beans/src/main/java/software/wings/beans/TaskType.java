@@ -43,6 +43,7 @@ public enum TaskType {
   JENKINS_GET_PLANS(TaskGroup.JENKINS),
   JENKINS_VALIDATE_ARTIFACT_SERVER(TaskGroup.JENKINS),
   JENKINS_CONNECTIVITY_TEST_TASK(TaskGroup.JENKINS),
+
   BAMBOO(TaskGroup.BAMBOO),
   BAMBOO_COLLECTION(TaskGroup.BAMBOO),
   BAMBOO_GET_BUILDS(TaskGroup.BAMBOO),
@@ -464,7 +465,12 @@ public enum TaskType {
   GOOGLE_FUNCTION_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Rollback Task"),
   GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Prepare Rollback Task"),
   GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Deploy Without Traffic Task"),
-  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task");
+  GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task"),
+  ECS_TASK_ARN_ROLLING_DEPLOY_NG(TaskGroup.ECS, "ECS Rolling Task"),
+  ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
+  ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
+  BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO),
+  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

@@ -12,11 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.security.dto.Principal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateTokenDetails {
   private String uuid;
@@ -28,4 +30,5 @@ public class DelegateTokenDetails {
   private DelegateTokenStatus status;
   private String value;
   private String ownerIdentifier;
+  private long revokeAfter;
 }

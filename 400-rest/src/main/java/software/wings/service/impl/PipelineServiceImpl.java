@@ -206,7 +206,7 @@ public class PipelineServiceImpl implements PipelineService {
   public PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest, boolean withDetails,
       Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Pipeline> res =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags, false);
 
     List<Pipeline> pipelines = res.getResponse();
     if (withDetails) {

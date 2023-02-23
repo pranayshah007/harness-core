@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ImageSecretFunctor;
@@ -75,9 +74,6 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
             .artifactCollectionUtils(artifactCollectionUtils)
             .build());
 
-    final boolean evalExpInSync =
-        featureFlagService.isEnabled(FeatureName.DEL_EVALUATE_SECRET_EXPRESSION_SYNC, accountId);
-
     secretManagerFunctor = SecretManagerFunctor.builder()
                                .mode(mode)
                                .featureFlagService(featureFlagService)
@@ -91,7 +87,6 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                .expressionFunctorToken(expressionFunctorToken)
                                .delegateMetricsService(delegateMetricsService)
                                .expressionEvaluatorExecutor(expressionEvaluatorExecutor)
-                               .evaluateSync(evalExpInSync)
                                .build();
     addFunctor(SecretManagerFunctorInterface.FUNCTOR_NAME, secretManagerFunctor);
 
@@ -104,8 +99,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
             .secretsCache(secretsCache)
             .delegateMetricsService(delegateMetricsService)
             .ngSecretService(ngSecretService)
-            .expressionEvaluatorExecutor(expressionEvaluatorExecutor)
-            .evaluateSync(evalExpInSync);
+            .expressionEvaluatorExecutor(expressionEvaluatorExecutor);
 
     if (EmptyPredicate.isNotEmpty(taskSetupAbstractions)) {
       ngSecretManagerFunctorBuilder.orgId(taskSetupAbstractions.get("orgIdentifier"))

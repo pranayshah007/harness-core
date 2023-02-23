@@ -109,6 +109,7 @@ public interface SecretManager extends OwnedByAccount {
   String saveSecretText(String accountId, SecretText secretText, boolean validateScopes);
 
   EncryptedData encryptSecret(String accountId, SecretText secretText, boolean validateScopes);
+  EncryptedData encryptSecretUsingGlobalSM(String accountId, SecretText secretText, boolean validateScopes);
 
   boolean updateSecretText(String accountId, String uuId, SecretText secretText, boolean validateScopes);
 

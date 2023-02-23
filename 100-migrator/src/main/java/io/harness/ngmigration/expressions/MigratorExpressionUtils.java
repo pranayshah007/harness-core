@@ -68,11 +68,17 @@ public class MigratorExpressionUtils {
   static Map<String, Object> prepareContextMap(
       Map<String, String> secretRefMap, Map<String, Object> customExpressions) {
     Map<String, Object> context = new HashMap<>();
+
+    context.put("deploymentTriggeredBy", "<+pipeline.triggeredBy.name>");
+    context.put("currentStep.name", "<+step.name>");
+    context.put("deploymentUrl", "<+pipeline.execution.url>");
+
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");
     context.put("infra.kubernetes.infraId", "<+INFRA_KEY>");
     context.put("infra.helm.releaseName", "<+infra.releaseName>");
     context.put("infra.name", "<+infra.name>");
+    context.put("infra.cloudProvider.name", "<+infra.connectorRef>");
 
     // Env Expressions
     context.put("env.name", "<+env.name>");
@@ -92,7 +98,7 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.image", "<+ARTIFACT_PLACEHOLDER.image>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.tag", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.dockerconfig", "<+ARTIFACT_PLACEHOLDER.imagePullSecret>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.fileName", "<+ARTIFACT_PLACEHOLDER.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.format", "<+ARTIFACT_PLACEHOLDER.repositoryFormat>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.getSHA()", "<+ARTIFACT_PLACEHOLDER.metadata.SHA>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.groupId", "<+ARTIFACT_PLACEHOLDER.groupId>");
@@ -108,11 +114,11 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.displayName", "<+ARTIFACT_PLACEHOLDER.displayName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.artifactId", "<+ARTIFACT_PLACEHOLDER.metadata.artifactId>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.version", "<+ARTIFACT_PLACEHOLDER.metadata.version>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.revision", "<+ARTIFACT_PLACEHOLDER.buildNo>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.revision", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.buildNo", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.registryUrl", "<+ARTIFACT_PLACEHOLDER.registryUrl>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.URL>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.URL>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.url>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.url>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions

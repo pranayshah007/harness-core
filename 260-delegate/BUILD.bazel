@@ -91,7 +91,6 @@ java_library(
     ],
     resources = [
         "//:resource",
-        "//260-delegate/src/main/java/io/harness/delegate/service/core/k8s/resources:resource",
         "//260-delegate/src/test/resources:resource",
         "//400-rest/src/main/resources:resource",
         "//980-commons/src/main/resources:resource",

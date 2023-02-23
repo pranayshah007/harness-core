@@ -10,7 +10,6 @@ package io.harness.cdng.artifact.steps;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
@@ -44,9 +43,6 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
-import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
@@ -56,9 +52,6 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -249,26 +242,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                     .build(),
                 false));
         return templateMergeResponseDTO.getMergedPipelineYaml();
-      } catch (InvalidRequestException e) {
-        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
-          throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
-        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
-          throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
-        } else {
-          throw new NGTemplateException(e.getMessage(), e);
-        }
-      } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
-      } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
-      } catch (UnexpectedException e) {
-        log.error("Error connecting to Template Service", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
-      } catch (Exception e) {
-        log.error("Unknown exception in resolving templates", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception ex) {
+        throw new InvalidRequestException(TEMPLATE_RESOLVE_EXCEPTION_MSG, ex);
       } finally {
         log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
             System.currentTimeMillis() - start, projectId, orgId, accountId);

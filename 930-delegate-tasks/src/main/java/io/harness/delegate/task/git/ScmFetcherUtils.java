@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -32,7 +33,7 @@ public class ScmFetcherUtils {
       boolean useBase64) throws IOException {
     String filePath;
     if (relativize) {
-      filePath = Paths.get(basePath).relativize(Paths.get(fileContent.getPath())).toString();
+      filePath = Paths.get(basePath).relativize(Paths.get(processedFilePath(fileContent.getPath()))).toString();
       if (isEmpty(filePath)) {
         filePath = Paths.get(fileContent.getPath()).getFileName().toString();
       }
@@ -61,5 +62,9 @@ public class ScmFetcherUtils {
       log.warn("File content is not a valid base64 value, fallback to plain text. Error: {}", e.getMessage());
       return fileContent.getContent().getBytes(StandardCharsets.UTF_8);
     }
+  }
+
+  private String processedFilePath(String filePath) {
+    return isNotEmpty(filePath) && filePath.charAt(0) == '/' ? filePath.substring(1) : filePath;
   }
 }
