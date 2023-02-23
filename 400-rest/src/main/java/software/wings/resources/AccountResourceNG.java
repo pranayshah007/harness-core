@@ -249,7 +249,7 @@ public class AccountResourceNG {
   public RestResponse<AccountDTO> updateCrossGenerationAccessEnabled(
       @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
     return new RestResponse(AccountMapper.toAccountDTO(
-        accountService.updateCrossGenerationAccessEnabled(accountId, dto.isCrossGenerationAccessEnabled())));
+        accountService.updateCrossGenerationAccessEnabled(accountId, dto.isCrossGenerationAccessEnabled(), true)));
   }
 
   @GET
