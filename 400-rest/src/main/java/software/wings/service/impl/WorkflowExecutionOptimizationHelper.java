@@ -43,6 +43,7 @@ import dev.morphia.mapping.Mapper;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -57,9 +58,12 @@ public class WorkflowExecutionOptimizationHelper {
     }
 
     Set<String> appIds = new HashSet<>();
-
+    AtomicBoolean isIdValuePresent = new AtomicBoolean(false);
     PageRequest<WorkflowExecution> dummyPageRequest = populatePageFilters(pageRequest);
     dummyPageRequest.getFilters().forEach(filter -> {
+      if (WorkflowExecutionKeys.uuid.equals(filter.getFieldName())) {
+        isIdValuePresent.set(true);
+      }
       if (WorkflowExecutionKeys.envIds.equals(filter.getFieldName())) {
         List<Environment> environments = hPersistence.createQuery(Environment.class)
                                              .filter(EnvironmentKeys.accountId, accountId)
@@ -105,6 +109,9 @@ public class WorkflowExecutionOptimizationHelper {
       }
     });
 
+    if (!isIdValuePresent.get()) {
+      pageRequest.setIndexHint(null);
+    }
     if (!appIds.isEmpty()) {
       final SearchFilterBuilder filterBuilder = SearchFilter.builder();
       filterBuilder.fieldName(WorkflowExecutionKeys.appId).fieldValues(appIds.toArray()).op(IN);
