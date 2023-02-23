@@ -9,6 +9,7 @@ package io.harness.gitsync.common.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
+import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping.HTTP_500;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,7 +21,9 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.gitsync.common.beans.ScmErrorDetails;
 import io.harness.gitsync.common.dtos.GitErrorMetadata;
+import io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -38,7 +41,7 @@ public class ScmExceptionUtils {
     return null;
   }
 
-  public String getHintMessage(WingsException ex) {
+  public String getHintMessage(Exception ex) {
     WingsException hintException = ExceptionUtils.cause(ErrorCode.HINT, ex);
     if (hintException == null) {
       return "";
@@ -47,7 +50,7 @@ public class ScmExceptionUtils {
     }
   }
 
-  public String getExplanationMessage(WingsException ex) {
+  public String getExplanationMessage(Exception ex) {
     WingsException explanationException = ExceptionUtils.cause(ErrorCode.EXPLANATION, ex);
     if (explanationException == null) {
       return "";
@@ -64,7 +67,7 @@ public class ScmExceptionUtils {
     return "Unexpected error occurred while performing scm operation.";
   }
 
-  public static GitErrorMetadata getGitErrorMetadata(WingsException ex) {
+  public static GitErrorMetadata getGitErrorMetadata(Exception ex) {
     ErrorMetadataDTO errorMetadata = ExceptionUtils.getErrorMetadata(ex, GitErrorMetadata.TYPE);
     if (errorMetadata == null) {
       return GitErrorMetadata.builder().build();
@@ -74,5 +77,28 @@ public class ScmExceptionUtils {
 
   public static boolean isNestedScmBadRequestException(WingsException ex) {
     return ExceptionUtils.cause(ScmBadRequestException.class, ex) != null;
+  }
+
+  public static ScmErrorDetails getScmErrorDetails(Exception exception) {
+    return ScmErrorDetails.builder()
+        .error(exception.getMessage())
+        .explanation(ScmExceptionUtils.getExplanationMessage(exception))
+        .hint(ScmExceptionUtils.getHintMessage(exception))
+        .gitErrorMetadata(ScmExceptionUtils.getGitErrorMetadata(exception))
+        .statusCode(ScmExceptionUtils.getStatusCode(exception))
+        .build();
+  }
+
+  public static int getStatusCode(Exception exception) {
+    if (!(exception instanceof WingsException)) {
+      return HTTP_500;
+    }
+    WingsException wingsException = (WingsException) exception;
+    ScmException scmException = ScmExceptionUtils.getScmException(wingsException);
+    if (scmException == null) {
+      return wingsException.getCode().getStatus().getCode();
+    } else {
+      return ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode());
+    }
   }
 }

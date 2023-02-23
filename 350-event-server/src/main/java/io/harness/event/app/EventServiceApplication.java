@@ -9,6 +9,7 @@ package io.harness.event.app;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.ng.DbAliases.DMS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,8 +26,8 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
-import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.threading.ExecutorModule;
@@ -43,6 +44,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -62,7 +64,6 @@ import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import ru.vyarus.guice.validator.ValidationModule;
 
 @Slf4j
@@ -188,9 +189,15 @@ public class EventServiceApplication extends Application<EventServiceConfig> {
 
   private static void registerStores(EventServiceConfig config, Injector injector) {
     final String eventsMongoUri = config.getEventsMongo().getUri();
+    final String dmsMongoUri = config.getDmsMongo().getUri();
+
+    final HPersistence hPersistence = injector.getInstance(HPersistence.class);
+
     if (isNotEmpty(eventsMongoUri) && !eventsMongoUri.equals(config.getHarnessMongo().getUri())) {
-      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
       hPersistence.register(EVENTS_STORE, config.getEventsMongo().getUri());
+    }
+    if (isNotEmpty(dmsMongoUri) && !dmsMongoUri.equals(config.getHarnessMongo().getUri())) {
+      hPersistence.register(Store.builder().name(DMS).build(), config.getDmsMongo().getUri());
     }
   }
 

@@ -12,17 +12,23 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureFlag;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.dto.UserInviteDTO;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
@@ -42,9 +48,11 @@ import io.harness.user.remote.UserFilterNG;
 
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
 import software.wings.security.authentication.TwoFactorAuthenticationSettings;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
@@ -89,11 +97,14 @@ import retrofit2.http.Body;
 public class UserResourceNG {
   private final UserService userService;
   private final SignupService signupService;
+  private final UserServiceHelper userServiceHelper;
   private final TwoFactorAuthenticationManager twoFactorAuthenticationManager;
   private final AccountService accountService;
   private final ScimUserService scimUserService;
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
+
+  @Inject private FeatureFlagService featureFlagService;
 
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
@@ -142,6 +153,13 @@ public class UserResourceNG {
   @POST
   @Path("/signup-invite/community")
   public RestResponse<UserInfo> createCommunityUserAndCompleteSignup(SignupInviteDTO request) {
+    try {
+      signupService.validateEmail(request.getEmail());
+    } catch (WingsException exception) {
+      throw new InvalidRequestException(
+          String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
+          exception);
+    }
     if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }
@@ -179,7 +197,16 @@ public class UserResourceNG {
   @DELETE
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
-    userService.delete(accountId, userId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+      if (!userService.isUserPartOfAnyUserGroupInCG(userId, accountId)) {
+        log.warn("User {}, is being deleted from CG, since he is not part of any user-groups in CG",
+            userService.get(userId).getEmail());
+        userService.delete(accountId, userId);
+      }
+    } else {
+      userService.delete(accountId, userId);
+    }
     return new RestResponse<>(true);
   }
 
@@ -195,6 +222,9 @@ public class UserResourceNG {
   @Path("/scim/disabled")
   public RestResponse<Boolean> disableScimUser(@QueryParam("accountId") String accountId,
       @QueryParam("userId") String userId, @QueryParam("disabled") boolean disabled) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      disabled = false;
+    }
     return new RestResponse<>(scimUserService.changeScimUserDisabled(accountId, userId, disabled));
   }
 
@@ -203,6 +233,13 @@ public class UserResourceNG {
   public RestResponse<ScimUser> patchUpdateScimUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId, @Body PatchRequest patchRequest) {
     return new RestResponse<>(scimUserService.updateUser(accountId, userId, patchRequest));
+  }
+
+  @PUT
+  @Path("/scim/patch/details")
+  public RestResponse<ScimUser> patchUpdateScimUserDetails(
+      @QueryParam("accountId") String accountId, @QueryParam("userId") String userId, @Body PatchRequest patchRequest) {
+    return new RestResponse<>(scimUserService.updateUserDetails(accountId, userId, patchRequest));
   }
 
   @PUT
@@ -307,6 +344,7 @@ public class UserResourceNG {
   @Path("/batch")
   public RestResponse<List<UserInfo>> listUsers(@QueryParam("accountId") String accountId, UserFilterNG userFilterNG) {
     Set<User> userSet = new HashSet<>();
+
     if (!isEmpty(userFilterNG.getUserIds())) {
       userSet.addAll(userService.getUsers(userFilterNG.getUserIds(), accountId));
     }
@@ -314,6 +352,14 @@ public class UserResourceNG {
       userSet.addAll(userService.getUsersByEmail(userFilterNG.getEmailIds(), accountId));
     }
     return new RestResponse<>(convertUserToNgUser(new ArrayList<>(userSet), false));
+  }
+
+  @POST
+  @Path("/batch-emails")
+  public RestResponse<List<UserInfo>> listUsersEmails(@QueryParam("accountId") String accountId) {
+    List<User> emails = userService.getUsersEmails(accountId);
+
+    return new RestResponse<>(convertUserToNgUser(new ArrayList<>(emails), false));
   }
 
   @PUT
@@ -412,6 +458,15 @@ public class UserResourceNG {
   disableTwoFactorAuth(@QueryParam("emailId") String emailId) {
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(
         twoFactorAuthenticationManager.disableTwoFactorAuthentication(userService.getUserByEmail(emailId)))));
+  }
+
+  @GET
+  @Path("reset-two-factor-auth/{userId}")
+  @ApiOperation(value = "Resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+  public RestResponse<Boolean> reset2fa(
+      @PathParam("userId") @NotEmpty String userId, @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(twoFactorAuthenticationManager.sendTwoFactorAuthenticationResetEmail(userId));
   }
 
   @PUT

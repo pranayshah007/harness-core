@@ -114,7 +114,7 @@ public class BitbucketConnectorValidatorTest extends CategoryTest {
   public void validateTestViaDelegate() {
     BitbucketConnectorDTO bitbucketConnectorDTO = getConnector(true);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(GitCommandExecutionResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())

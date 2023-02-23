@@ -16,7 +16,9 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HANTANG;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.JOHANNES;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
@@ -42,13 +44,21 @@ import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.ILLEGAL_ACCOUNT_NAME;
 import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 
+import static com.google.common.collect.Sets.newHashSet;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -80,6 +90,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
@@ -107,6 +118,8 @@ import software.wings.licensing.LicenseService;
 import software.wings.persistence.mail.EmailData;
 import software.wings.resources.AccountResource;
 import software.wings.resources.UserResource;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
@@ -127,6 +140,7 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
+import software.wings.service.intfc.instance.stats.collector.StatsCollector;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.sm.StateType;
 import software.wings.utils.AccountPermissionUtils;
@@ -177,6 +191,8 @@ public class AccountServiceTest extends WingsBaseTest {
   @Mock private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private DelegateVersionService delegateVersionService;
+  @Mock private PersistentScheduler jobScheduler;
+  @Mock private StatsCollector statsCollector;
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private MainConfiguration configuration;
 
@@ -547,6 +563,40 @@ public class AccountServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_forIsCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    account.isCrossGenerationAccessEnabled(Boolean.TRUE);
+    accountService.update(account);
+
+    assertThat(wingsPersistence.get(Account.class, account.getUuid())).isEqualTo(account);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateCrossGenerationAccessEnabled(account.getUuid(), true);
+    Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
+
+    assertTrue(updatedAccount.isCrossGenerationAccessEnabled());
+  }
+
+  @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldGetAccountByCompanyName() {
@@ -594,14 +644,15 @@ public class AccountServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldListSupportAccounts() {
-    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    Account account = anAccount().withCompanyName(HARNESS_NAME).withAccountName("account").build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), null).get(0).getUuid()).isNotEmpty();
-    assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
-                   .get(0)
-                   .getAccountName())
-        .isNull();
+    assertThat(
+        accountService.listHarnessSupportAccounts(Collections.emptySet(), newHashSet("accountName", AccountKeys.uuid))
+            .get(0)
+            .getAccountName())
+        .isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
     assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
@@ -1014,6 +1065,18 @@ public class AccountServiceTest extends WingsBaseTest {
     account = accountService.get(account.getUuid());
     assertThat(account.getAccountName()).isEqualTo(newAccountName);
     assertThat(account.getCompanyName()).isEqualTo(companyName);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void test_updateAccountName_withInvalidAccountName() {
+    String companyName = "CompanyName 1";
+    Account account = saveAccount(companyName);
+    String newAccountName = "<html><h1>HTML Injection:</h1></html>";
+    assertThatThrownBy(() -> accountService.updateAccountName(account.getUuid(), newAccountName, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Account or Company Name '<html><h1>HTML Injection:</h1></html>' contains illegal characters");
   }
 
   @Test
@@ -1520,5 +1583,39 @@ public class AccountServiceTest extends WingsBaseTest {
     wingsPersistence.save(account);
     assertThat(accountService.getAllAccounts().get(0).getDefaultExperience()).isEqualTo(DefaultExperience.CG);
     assertThat(accountService.getAllAccounts().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testScheduleAccountLevelJobs() {
+    AccountJobProperties jobProperties = new AccountJobProperties();
+    jobProperties.setInstanceStatsSnapshotTimeDaysAgo(1);
+    doReturn(true).when(jobScheduler).deleteJob(anyString(), anyString());
+    doNothing().when(jobScheduler).ensureJob__UnderConstruction(any(), any());
+    doReturn(true).when(statsCollector).createStatsAtIfMissing(anyString(), anyLong());
+    accountService.scheduleAccountLevelJobs(accountId,
+        List.of(AccountJobType.ALERT, AccountJobType.INSTANCE, AccountJobType.LIMIT_VICINITY), jobProperties);
+
+    verify(jobScheduler, times(1)).deleteJob(accountId, "ALERT_CHECK_CRON_GROUP");
+    verify(jobScheduler, times(1)).deleteJob(accountId, "INSTANCE_STATS_COLLECT_CRON_GROUP");
+    verify(jobScheduler, times(1)).deleteJob(accountId, "LIMIT_VICINITY_CHECKER_CRON_GROUP");
+    verify(jobScheduler, times(3)).ensureJob__UnderConstruction(any(), any());
+    verify(statsCollector, times(1)).createStatsAtIfMissing(eq(accountId), anyLong());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testScheduleAccountLevelJobsWithInstanceStatsFailed() {
+    AccountJobProperties jobProperties = new AccountJobProperties();
+    jobProperties.setInstanceStatsSnapshotTimeDaysAgo(1);
+    doReturn(true).when(jobScheduler).deleteJob(anyString(), anyString());
+    doNothing().when(jobScheduler).ensureJob__UnderConstruction(any(), any());
+    doReturn(false).when(statsCollector).createStatsAtIfMissing(anyString(), anyLong());
+    assertThatThrownBy(
+        () -> accountService.scheduleAccountLevelJobs(accountId, List.of(AccountJobType.INSTANCE), jobProperties))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(format("Failed to create instance stats for account, %s", accountId));
   }
 }

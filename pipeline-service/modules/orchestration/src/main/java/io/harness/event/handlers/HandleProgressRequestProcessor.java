@@ -12,26 +12,48 @@ import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.HandleProgressRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.EnumSet;
 import java.util.Map;
 
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class HandleProgressRequestProcessor implements SdkResponseProcessor {
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject private PlanExecutionService planExecutionService;
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     HandleProgressRequest progressRequest = event.getProgressRequest();
     Map<String, Object> progressDoc = RecastOrchestrationUtils.fromJson(progressRequest.getProgressJson());
-    nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),
-        ops -> setUnset(ops, NodeExecutionKeys.progressData, progressDoc));
+
+    // Checking if event has sent any status to update for its step. If the update is successful, same is updated for
+    // pipeline too.
+    if (progressRequest.getStatus() != Status.NO_OP) {
+      NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
+          SdkResponseEventUtils.getNodeExecutionId(event), progressRequest.getStatus(),
+          ops -> setUnset(ops, NodeExecutionKeys.progressData, progressDoc), EnumSet.noneOf(Status.class));
+      if (nodeExecution != null) {
+        String planNodeId = nodeExecution.getAmbiance().getPlanExecutionId();
+        Status planStatus = planExecutionService.calculateStatusExcluding(planNodeId, nodeExecution.getNodeId());
+        if (!StatusUtils.isFinalStatus(planStatus)) {
+          planExecutionService.updateStatus(planNodeId, planStatus);
+        }
+      }
+    } else {
+      nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),
+          ops -> setUnset(ops, NodeExecutionKeys.progressData, progressDoc));
+    }
   }
 }

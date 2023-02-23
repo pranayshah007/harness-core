@@ -24,6 +24,7 @@ import io.harness.audit.entities.Resource.ResourceKeys;
 import io.harness.audit.entities.ResourceScope.ResourceScopeKeys;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.ng.core.common.beans.KeyValuePair.KeyValuePairKeys;
@@ -32,6 +33,7 @@ import io.harness.request.RequestMetadata;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
@@ -41,7 +43,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -58,7 +59,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonInclude(NON_NULL)
 public class AuditEvent {
   @NotNull @NotBlank String insertId;
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
 
   @Valid @NotNull ResourceScope resourceScope;
 
@@ -106,6 +107,11 @@ public class AuditEvent {
                  .field(AuditEventKeys.PROJECT_IDENTIFIER_KEY)
                  .field(AuditEventKeys.RESOURCE_TYPE_KEY)
                  .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("ngAuditCreatedAtIdx")
+                 .field(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
+                 .sortField(AuditEventKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("uniqueNgAuditEventIdx")

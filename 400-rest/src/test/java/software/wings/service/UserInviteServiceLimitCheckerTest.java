@@ -21,8 +21,8 @@ import static software.wings.utils.WingsTestConstants.USER_ID;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.category.element.UnitTests;
 import io.harness.limits.ActionType;
@@ -46,9 +46,9 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 public class UserInviteServiceLimitCheckerTest extends WingsBaseTest {
   private final User.Builder userBuilder = anUser().appId(APP_ID).email(USER_EMAIL).name(USER_NAME).password(PASSWORD);

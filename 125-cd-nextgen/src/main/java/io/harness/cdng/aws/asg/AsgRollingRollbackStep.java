@@ -13,9 +13,12 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
@@ -24,7 +27,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -44,11 +46,12 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<AsgCommandResponse> {
+public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ASG_ROLLING_ROLLBACK.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -62,6 +65,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
   @Inject private OutcomeService outcomeService;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -78,7 +82,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(asgRollingRollbackResponse.getUnitProgressData().getUnitProgresses());
 
-      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder);
+      stepResponse = generateStepResponse(asgRollingRollbackResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing asg rolling rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -87,11 +91,12 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
       stepHelper.sendRollbackTelemetryEvent(
           ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus(), accountName);
     }
+
     return stepResponse;
   }
 
-  private StepResponse generateStepResponse(
-      AsgRollingRollbackResponse asgRollingRollbackResponse, StepResponseBuilder stepResponseBuilder) {
+  private StepResponse generateStepResponse(AsgRollingRollbackResponse asgRollingRollbackResponse,
+      StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
     StepResponse stepResponse;
 
     if (asgRollingRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
@@ -102,9 +107,20 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
                                .build())
               .build();
     } else {
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+      List<ServerInstanceInfo> serverInstanceInfos = asgStepCommonHelper.getServerInstanceInfos(
+          asgRollingRollbackResponse, infrastructureOutcome.getInfrastructureKey(),
+          asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance).getRegion());
+
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
+
       stepResponse =
           stepResponseBuilder.status(Status.SUCCEEDED)
               .stepOutcome(StepResponse.StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).build())
+              .stepOutcome(stepOutcome)
               .build();
     }
     return stepResponse;
@@ -117,6 +133,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
         (AsgRollingRollbackStepParameters) stepElementParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(asgRollingRollbackStepParameters.getAsgRollingDeployFqn())) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
@@ -130,6 +147,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
                 + OutcomeExpressionConstants.ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME));
 
     if (!asgRollingPrepareRollbackDataOptionalOutput.isFound()) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
@@ -149,7 +167,7 @@ public class AsgRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<As
         AsgRollingRollbackRequest.builder()
             .accountId(accountId)
             .asgName(asgRollingPrepareRollbackDataOutcome.getAsgName())
-            .asgStoreManifestsContent(asgRollingPrepareRollbackDataOutcome.getAsgStoreManifestsContent())
+            .asgManifestsDataForRollback(asgRollingPrepareRollbackDataOutcome.getAsgManifestsDataForRollback())
             .commandName(ASG_ROLLING_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))

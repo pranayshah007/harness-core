@@ -22,8 +22,8 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GitFileConfig;
@@ -64,8 +64,8 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
             .builder()
             // TODO: There needs to be a logic to build identifier of the manifest
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
                     .type(StoreConfigType.GIT)
@@ -125,7 +125,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
         GitStore.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
-            .paths(ParameterField.createValueField(Collections.singletonList(path)))
+            .paths(MigratorUtility.splitWithComma(path))
             .build();
 
     if (StringUtils.isNotBlank(gitFileConfig.getCommitId())) {

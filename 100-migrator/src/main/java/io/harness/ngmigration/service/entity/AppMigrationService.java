@@ -11,7 +11,9 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
+import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,15 +26,16 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.importer.TemplateImportService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.JsonUtils;
@@ -40,6 +43,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
@@ -50,14 +54,16 @@ import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
+import software.wings.beans.trigger.Trigger;
+import software.wings.beans.trigger.Trigger.TriggerKeys;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureProvisionerService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceVariableService;
 
@@ -66,6 +72,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +90,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
+
+  @Inject InfrastructureProvisionerService infrastructureProvisionerService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -179,6 +188,31 @@ public class AppMigrationService extends NgMigrationService {
                           .collect(Collectors.toList()));
     }
 
+    // Infra Provisioners
+    List<InfrastructureProvisioner> infrastructureProvisioners =
+        hPersistence.createQuery(InfrastructureProvisioner.class)
+            .filter(InfrastructureProvisioner.APP_ID, appId)
+            .filter(InfrastructureProvisioner.ACCOUNT_ID_KEY, application.getAccountId())
+            .asList();
+    if (EmptyPredicate.isNotEmpty(infrastructureProvisioners)) {
+      children.addAll(
+          infrastructureProvisioners.stream()
+              .distinct()
+              .map(provisioner -> CgEntityId.builder().id(provisioner.getUuid()).type(INFRA_PROVISIONER).build())
+              .collect(Collectors.toList()));
+    }
+
+    List<Trigger> triggers = hPersistence.createQuery(Trigger.class)
+                                 .filter(TriggerKeys.appId, appId)
+                                 .filter(TriggerKeys.accountId, application.getAccountId())
+                                 .asList();
+    if (EmptyPredicate.isNotEmpty(triggers)) {
+      children.addAll(triggers.stream()
+                          .distinct()
+                          .map(trigger -> CgEntityId.builder().id(trigger.getUuid()).type(TRIGGER).build())
+                          .collect(Collectors.toList()));
+    }
+
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
@@ -195,12 +229,6 @@ public class AppMigrationService extends NgMigrationService {
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(appService.get(entityId));
   }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
@@ -218,11 +246,12 @@ public class AppMigrationService extends NgMigrationService {
     for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
-      Map<String, String> variableSpec =
-          ImmutableMap.<String, String>builder()
-              .put("valueType", "FIXED")
-              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
-              .build();
+      Map<String, String> variableSpec = ImmutableMap.<String, String>builder()
+                                             .put("valueType", "FIXED")
+                                             .put("fixedValue",
+                                                 (String) MigratorExpressionUtils.render(new HashMap<>(),
+                                                     new HashMap<>(), value, inputDTO.getCustomExpressions()))
+                                             .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
@@ -248,28 +277,31 @@ public class AppMigrationService extends NgMigrationService {
         .build();
   }
 
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Application application = (Application) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, application.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
-    return Collections.singletonList(
-        NGYamlFile.builder()
-            .filename(String.format("application/%s/%s.yaml", application.getAppId(), application.getName()))
-            .type(APPLICATION)
-            .ngEntityDetail(NgEntityDetail.builder()
-                                .identifier(identifier)
-                                .orgIdentifier(orgIdentifier)
-                                .projectIdentifier(projectIdentifier)
-                                .build())
-            .cgBasicInfo(application.getCgBasicInfo())
-            .build());
+    return YamlGenerationDetails.builder()
+        .yamlFileList(Collections.singletonList(
+            NGYamlFile.builder()
+                .filename(String.format("application/%s/%s.yaml", application.getAppId(), application.getName()))
+                .type(APPLICATION)
+                .ngEntityDetail(NgEntityDetail.builder()
+                                    .identifier(identifier)
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .build())
+                .cgBasicInfo(application.getCgBasicInfo())
+                .build()))
+        .build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

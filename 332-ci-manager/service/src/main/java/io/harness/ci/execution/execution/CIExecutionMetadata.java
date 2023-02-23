@@ -16,17 +16,20 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -42,11 +45,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("ciExecutionMetadata")
 @HarnessEntity(exportable = true)
 public class CIExecutionMetadata {
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
-  @FdIndex String accountId;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
+  String accountId;
   OSType buildType;
-  String runtimeId;
+  String stageExecutionId;
+  String queueId;
   Infrastructure.Type infraType;
+  @Builder.Default
+  @FdTtlIndex
+  private Date expireAfter = Date.from(OffsetDateTime.now().plusSeconds(86400).toInstant());
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -54,6 +61,11 @@ public class CIExecutionMetadata {
                  .name("accountIdAndBuildType")
                  .field(CIExecutionMetadataKeys.accountId)
                  .field(CIExecutionMetadataKeys.buildType)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("stageExecutionIdAndAccountId")
+                 .field(CIExecutionMetadataKeys.stageExecutionId)
+                 .field(CIExecutionMetadataKeys.accountId)
                  .build())
         .build();
   }

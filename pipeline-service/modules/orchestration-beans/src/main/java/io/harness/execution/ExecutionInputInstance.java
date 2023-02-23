@@ -14,13 +14,13 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -37,7 +37,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ExecutionInputInstance {
   public static final long TTL_MONTHS = 6;
 
-  @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;
+  @Id @dev.morphia.annotations.Id String inputInstanceId;
   @FdUniqueIndex String nodeExecutionId;
   @CreatedDate Long createdAt;
   @CreatedDate Long validUntil;

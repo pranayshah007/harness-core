@@ -16,7 +16,11 @@ import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.yaml.utils.YamlConstants;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,20 +39,26 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
 
@@ -68,6 +78,7 @@ public class YamlUtils {
 
     // map empty string to null instead of failing with Mapping Exception
     mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+    mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -93,6 +104,30 @@ public class YamlUtils {
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
+  }
+
+  public YamlField tryReadTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Invalid yaml", ex);
+    }
+  }
+
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
     return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
   }
@@ -328,7 +363,7 @@ public class YamlUtils {
     return response.toString();
   }
 
-  private List<String> getQualifiedNameList(
+  public List<String> getQualifiedNameList(
       YamlNode yamlNode, String fieldName, boolean shouldAppendStrategyExpression) {
     if (yamlNode.getParentNode() == null) {
       List<String> qualifiedNameList = new ArrayList<>();
@@ -360,8 +395,23 @@ public class YamlUtils {
     return qualifiedNameList;
   }
 
-  public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
+  private String getStageFQNPathForV1Yaml(List<String> qualifiedNames, YamlNode yamlNode) {
+    if (qualifiedNames.size() == 1) {
+      if (!EmptyPredicate.isEmpty(yamlNode.getName())) {
+        return qualifiedNames.get(0) + "." + yamlNode.getName();
+      }
+      return qualifiedNames.get(0);
+    }
+    return qualifiedNames.get(0) + "." + qualifiedNames.get(1);
+  }
+
+  public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
+    // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode,
+        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+      return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
+    }
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }
@@ -577,6 +627,40 @@ public class YamlUtils {
     } else if (node.isArray()) {
       removeUuidInArray(node);
     }
+  }
+
+  public String getYamlWithoutInputs(YamlConfig config) throws IOException {
+    Map<FQN, Object> fqnToValueMap = config.getFqnToValueMap();
+    Map<FQN, Object> fqnObjectMap = new HashMap<>();
+    for (FQN fqn : fqnToValueMap.keySet()) {
+      Object value = fqnToValueMap.get(fqn);
+      if (value instanceof TextNode) {
+        String trimValue = ((TextNode) value).textValue().trim();
+        String valueWithoutValidators = trimValue;
+        for (String validator : VALIDATORS) {
+          if (trimValue.contains(validator)) {
+            ParameterField<?> parameterField = YamlUtils.read(trimValue, ParameterField.class);
+            valueWithoutValidators = parameterField.fetchFinalValue().toString();
+            break;
+          }
+        }
+        if (!valueWithoutValidators.equals(YamlConstants.INPUT) || checkIfSiblingHasDefaultValue(fqn, fqnToValueMap)) {
+          fqnObjectMap.put(fqn, new TextNode(valueWithoutValidators));
+        }
+      } else {
+        fqnObjectMap.put(fqn, value);
+      }
+    }
+    return new YamlConfig(fqnObjectMap, config.getYamlMap()).getYaml();
+  }
+
+  // Check if any sibling field is default key or not (handling for variables as default for them is in sibling)
+  private boolean checkIfSiblingHasDefaultValue(FQN currentNodeFqn, Map<FQN, Object> fqnToValueMap) {
+    FQN parent = currentNodeFqn.getParent();
+    // getting default key sibling to see if it exists in fqnMap or not
+    FQN defaultSiblingNode =
+        FQN.duplicateAndAddNode(parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key("default").build());
+    return fqnToValueMap.containsKey(defaultSiblingNode);
   }
 
   private void removeUuidInObject(JsonNode node) {

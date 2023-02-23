@@ -23,10 +23,10 @@ import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.migration.NGMigration;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.CryptoUtils;
-import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -111,7 +111,7 @@ public class CCMAdminRoleAssignmentMigration implements NGMigration {
     try {
       Call<ResponseDTO<List<ModuleLicenseDTO>>> moduleLicensesByModuleType =
           ngLicenseHttpClient.getModuleLicensesByModuleType(ModuleType.CE, expiryTime);
-      List<ModuleLicenseDTO> ceEnabledLicenses = RestCallToNGManagerClientUtils.execute(moduleLicensesByModuleType);
+      List<ModuleLicenseDTO> ceEnabledLicenses = NGRestUtils.getResponse(moduleLicensesByModuleType);
       return ceEnabledLicenses.stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toList());
     } catch (Exception ex) {
       log.error("Exception in account shard ", ex);

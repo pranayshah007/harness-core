@@ -23,6 +23,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -33,6 +34,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
+import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -76,7 +78,8 @@ public class PMSPipelineTemplateHelper {
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
       String loadFromCache) {
-    if (TemplateRefHelper.hasTemplateRef(yaml)
+    // validating the duplicate fields in yaml field
+    if (TemplateRefHelper.hasTemplateRef(yaml, true)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       long start = System.currentTimeMillis();
@@ -90,16 +93,21 @@ public class PMSPipelineTemplateHelper {
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+                  .build(),
+              true));
         }
-        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, loadFromCache,
-            TemplateApplyRequestDTO.builder()
-                .originalEntityYaml(yaml)
-                .checkForAccess(checkForTemplateAccess)
-                .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                .build()));
-
+        GitSyncBranchContext gitSyncBranchContext =
+            GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
+        try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
+          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+              null, null, null, null, null, null, null, null, loadFromCache,
+              TemplateApplyRequestDTO.builder()
+                  .originalEntityYaml(yaml)
+                  .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .build(),
+              true));
+        }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
@@ -141,8 +149,8 @@ public class PMSPipelineTemplateHelper {
         accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
   }
 
-  public RefreshResponseDTO getRefreshedYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public RefreshResponseDTO getRefreshedYaml(String accountId, String orgId, String projectId, String yaml,
+      PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
@@ -150,15 +158,15 @@ public class PMSPipelineTemplateHelper {
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
           gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
           pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), refreshRequest));
+          pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.getRefreshedYaml(
-        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
   }
 
-  public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public ValidateTemplateInputsResponseDTO validateTemplateInputsForGivenYaml(String accountId, String orgId,
+      String projectId, String yaml, PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     long start = System.currentTimeMillis();
@@ -168,10 +176,10 @@ public class PMSPipelineTemplateHelper {
             projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
             gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
             pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), refreshRequest));
+            pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
       }
       return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
-          accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+          accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
     } finally {
       log.info(
           "[PMS_PipelineTemplate] validating template inputs for given yaml took {}ms for projectId {}, orgId {}, accountId {}",
@@ -179,8 +187,8 @@ public class PMSPipelineTemplateHelper {
     }
   }
 
-  public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
+  public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(String accountId, String orgId, String projectId,
+      String yaml, PipelineEntity pipelineEntity, String loadFromCache) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
     if (gitEntityInfo != null) {
@@ -188,11 +196,11 @@ public class PMSPipelineTemplateHelper {
           gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
           gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
           pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), refreshRequest));
+          pipelineEntity.getProjectIdentifier(), loadFromCache, refreshRequest));
     }
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
-        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+        accountId, orgId, projectId, null, null, null, null, null, null, null, null, loadFromCache, refreshRequest));
   }
 
   public HashSet<String> getTemplatesModuleInfo(TemplateMergeResponseDTO templateMergeResponseDTO) {

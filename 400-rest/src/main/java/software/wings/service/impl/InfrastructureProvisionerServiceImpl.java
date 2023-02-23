@@ -82,7 +82,6 @@ import software.wings.beans.InfrastructureMappingBlueprint.CloudProviderType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisionerDetails;
 import software.wings.beans.InfrastructureProvisionerDetails.InfrastructureProvisionerDetailsBuilder;
-import software.wings.beans.Log.Builder;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
@@ -96,6 +95,7 @@ import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
+import software.wings.beans.dto.Log.Builder;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.dl.WingsPersistence;
 import software.wings.expression.ManagerExpressionEvaluator;
@@ -131,6 +131,8 @@ import software.wings.utils.GitUtilsManager;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -150,8 +152,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDP)
@@ -492,7 +492,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       PageRequest<InfrastructureProvisioner> pageRequest, boolean withTags, String tagFilter, @NotEmpty String appId) {
     final long apiStartTime = System.currentTimeMillis();
     PageResponse<InfrastructureProvisioner> pageResponse =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PROVISIONER, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PROVISIONER, withTags, false);
 
     log.info(format("Time taken in fetching listWithTagFilters : [%s] ms", System.currentTimeMillis() - apiStartTime));
     long startTime = System.currentTimeMillis();
@@ -821,7 +821,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
 
     DelegateResponseData notifyResponseData;
     try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
+      notifyResponseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new InvalidRequestException("Thread was interrupted. Please try again.");
@@ -956,7 +956,7 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
             .build();
     DelegateResponseData responseData;
     try {
-      responseData = delegateService.executeTask(delegateTask);
+      responseData = delegateService.executeTaskV2(delegateTask);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new WingsException("Thread was interrupted. Please try again.");

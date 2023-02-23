@@ -27,13 +27,13 @@ import software.wings.security.UsageRestrictions.AppEnvRestriction;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class AddScopedToAccountAttributeToEncryptedDataTest extends WingsBaseTest {
   @Inject WingsPersistence wingsPersistence;

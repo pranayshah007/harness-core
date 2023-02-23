@@ -38,6 +38,11 @@ public class ExecutionInterruptEntity implements ExecutionEntity<ExecutionInterr
   }
 
   @Override
+  public String getCompletedExecutionsQuery() {
+    return EMPTY_STRING;
+  }
+
+  @Override
   public String getEntityCountQuery() {
     return ENTITY_COUNT;
   }

@@ -46,6 +46,8 @@ public class HelmExceptionConstants {
         "Try deleting the release or change the status of the helm-managed release secret manually";
     public static final String HINT_INVALID_YAML = "K8s yaml is invalid/incorrect.";
     public static final String HINT_RESOURCE_CONFLICT = "There is conflict due to existing resource(s)";
+    public static final String HINT_TIMEOUT_ERROR =
+        "--timeout flag can be configured inside the service manifest section, under Advanced section of Manifest Details. Select the command type %s and pass the timeout flag with an appropriate value.";
     public static final String DEFAULT_HINT_HELM_INSTALL =
         "Make sure that the helm chart can be installed successfully using the helm cli.";
     public static final String DEFAULT_HINT_HELM_UPGRADE =
@@ -82,6 +84,7 @@ public class HelmExceptionConstants {
         "There are no releases in the release history with 'Deployed' status";
     public static final String EXPLAIN_UNKNOWN_COMMAND_FLAG =
         "Provided Command flag is incorrect or invalid. Please check.";
+    public static final String EXPLAIN_TIMEOUT_EXCEPTION = "Time limit exceeded for the Helm command: ";
     public static final String EXPLAIN_INVALID_YAML =
         "Error processing yaml manifest. Please check the indentation, any invalid/missing fields etc. For more details, please check logs.";
     public static final String DEFAULT_EXPLAIN_HELM_INSTALL = "Unable to install helm chart.";
@@ -111,6 +114,7 @@ public class HelmExceptionConstants {
     public static final String EXISTING_RESOURCE_CONFLICT = "existing resource conflict";
     public static final String UNKNOWN_COMMAND_FLAG = "unknown flag";
     public static final String NO_DEPLOYED_RELEASES = "no deployed releases";
+    public static final String TIMEOUT_EXCEPTION = "timed out";
 
     public HelmCliErrorMessages() {
       throw new UnsupportedOperationException("not supported");

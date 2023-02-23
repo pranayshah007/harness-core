@@ -230,11 +230,11 @@ public class ConnectorResource {
       @Parameter(description = "Filter Connectors by Source Category. Available Source Categories are "
               + "CLOUD_PROVIDER, SECRET_MANAGER, CLOUD_COST, ARTIFACTORY, CODE_REPO,  "
               + "MONITORING and TICKETING") @QueryParam(SOURCE_CATEGORY_KEY) ConnectorCategory sourceCategory,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("version") String version, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
-    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(
-        page, size, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, type, category, sourceCategory)));
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, searchTerm, type, category, sourceCategory, version)));
   }
 
   @POST
@@ -605,12 +605,15 @@ public class ConnectorResource {
   @GET
   @Path("/fieldValues")
   @ApiOperation(value = "Get All Allowed field values for Connector Type", nickname = "getAllAllowedFieldValues")
-  @Operation(operationId = "getAllAllowedFieldValues", summary = "List all settings for a Connector type",
-      description = "Returns the list of Connector settings for the given Connector type.",
+  @Operation(operationId = "getAllAllowedFieldValues",
+      summary = "List all the configured field values for the given Connector type.",
+      description =
+          "Returns all the configured field values for the given Connector type, which can be used during connector creation.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns all settings for the Connector type")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Returns all the configured field values for the given Connector type, which can be used during connector creation.")
       })
   public ResponseDTO<FieldValues>
   getAllAllowedFieldValues(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(

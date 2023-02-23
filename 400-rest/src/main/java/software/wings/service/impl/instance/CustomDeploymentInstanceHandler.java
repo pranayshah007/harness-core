@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.beans.ArtifactMetadata;
@@ -20,6 +21,7 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.NoInstancesException;
 import io.harness.validation.Validator;
 
 import software.wings.api.CustomDeploymentTypeInfo;
@@ -148,6 +150,12 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
       List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping) {
+    if (isEmpty(instancesInDb)) {
+      throw new NoInstancesException(
+          format("No instances found in database for custom deployment. Infra Mapping ID [%s]",
+              infraMapping.getInfrastructureDefinitionId()));
+    }
+
     Map<String, Instance> instancesInDbMap = instancesInDb.stream().collect(Collectors.toMap(
         instance -> ((PhysicalHostInstanceInfo) instance.getInstanceInfo()).getHostName(), Function.identity()));
 
@@ -160,6 +168,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
     log.info("Instances to be added {}", instancesToBeAdded);
     log.info("Instances to be deleted {}", instancesToBeDeleted);
+    log.info(
+        format("Instances in database=%d, Instances from server=%d", instancesInDb.size(), latestHostInfos.size()));
 
     Set<String> instanceIdsForDeletion = instancesInDbMap.entrySet()
                                              .stream()
@@ -175,9 +185,10 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     if (isNotEmpty(instancesToBeAdded)) {
       if (isEmpty(newDeploymentSummaries)) {
         Optional<Instance> instanceWithExecutionInfoOptional = getInstanceWithExecutionInfo(instancesInDb);
-        if (!instanceWithExecutionInfoOptional.isPresent()) {
-          log.warn("Couldn't find an instance from a previous deployment");
-          return;
+        if (instanceWithExecutionInfoOptional.isEmpty()) {
+          throw new NoInstancesException(
+              format("No instances found in DB which contain execution summary. Infra mapping ID: [%s]",
+                  infraMapping.getInfrastructureDefinitionId()));
         }
         DeploymentSummary deploymentSummaryFromPrevious =
             DeploymentSummary.builder().deploymentInfo(CustomDeploymentTypeInfo.builder().build()).build();

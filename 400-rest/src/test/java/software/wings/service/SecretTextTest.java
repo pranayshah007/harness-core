@@ -114,6 +114,7 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -145,7 +146,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 11/3/17.
@@ -269,9 +269,9 @@ public class SecretTextTest extends WingsBaseTest {
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
 
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
-    when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(EncryptionService.class), any(SyncTaskContext.class)))
         .thenReturn(encryptionService);
     FieldUtils.writeField(secretService, "kmsRegistry", kmsEncryptorsRegistry, true);
     FieldUtils.writeField(secretService, "vaultRegistry", vaultEncryptorsRegistry, true);

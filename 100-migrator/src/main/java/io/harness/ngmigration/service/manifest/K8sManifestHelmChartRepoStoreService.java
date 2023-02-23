@@ -26,8 +26,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.HelmChartConfig;
@@ -79,8 +79,8 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
         HelmChartManifest.builder()
             .identifier(identifier)
             .helmVersion(service.getHelmVersion())
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .chartName(ParameterField.createValueField(helmChartConfig.getChartName()))
             .chartVersion(ParameterField.createValueField("<+input>"));
 

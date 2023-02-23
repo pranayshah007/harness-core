@@ -26,7 +26,7 @@ import static software.wings.utils.WingsIntegrationTestConstants.delegateAccount
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
@@ -61,7 +61,7 @@ import javax.ws.rs.core.GenericType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
-import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @Singleton
 @Slf4j

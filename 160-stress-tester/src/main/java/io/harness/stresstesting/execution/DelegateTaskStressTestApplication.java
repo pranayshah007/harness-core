@@ -38,6 +38,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.google.protobuf.TextFormat;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 import java.io.File;
@@ -49,7 +50,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)

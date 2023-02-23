@@ -22,9 +22,9 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.InputSetReference;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.context.GlobalContext;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -104,15 +104,15 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     String objectId = "objectId";
     doReturn(Optional.of(InputSetEntity.builder().objectIdOfYaml(objectId).build()))
         .when(pmsInputSetService)
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean());
     EntityGitDetails returnedEntity =
         inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, inputSetYaml).get();
     verify(pmsInputSetService, times(1))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
     returnedEntity = inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, overLayYaml).get();
     verify(pmsInputSetService, times(2))
-        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean());
+        .getWithoutValidations(anyString(), any(), any(), any(), anyString(), anyBoolean(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
   }
 
@@ -122,14 +122,12 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
   public void testSave() throws IOException {
     setupGitContext();
     overLayYaml = Resources.toString(this.getClass().getClassLoader().getResource("overlay1.yml"), Charsets.UTF_8);
-    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build())
-        .when(pmsInputSetService)
-        .create(any(), any(), any(), anyBoolean());
+    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build()).when(pmsInputSetService).create(any(), anyBoolean());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.save(accountId, inputSetYaml);
-    verify(pmsInputSetService, times(1)).create(any(), any(), any(), anyBoolean());
+    verify(pmsInputSetService, times(1)).create(any(), anyBoolean());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
     inputSetEntityGitSyncHelper.save(accountId, overLayYaml);
-    verify(pmsInputSetService, times(2)).create(any(), any(), any(), anyBoolean());
+    verify(pmsInputSetService, times(2)).create(any(), anyBoolean());
   }
 
   @Test
@@ -139,9 +137,9 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     setupGitContext();
     doReturn(InputSetEntity.builder().yaml(inputSetYaml).build())
         .when(pmsInputSetService)
-        .update(any(), any(), any(), any(), anyBoolean());
+        .update(any(), any(), anyBoolean());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.update(accountId, inputSetYaml, ChangeType.NONE);
-    verify(pmsInputSetService, times(1)).update(any(), any(), any(), any(), anyBoolean());
+    verify(pmsInputSetService, times(1)).update(any(), any(), anyBoolean());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
   }
 

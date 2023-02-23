@@ -129,8 +129,14 @@ auditServiceConfig:
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
+  enableAudit: false
+  auditClientConfig:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
 
   enableOpentelemetry: false
+  exportMetricsToStackDriver: false
 
 resourceGroupServiceConfig:
   enableResourceGroup: true
@@ -152,6 +158,9 @@ resourceGroupServiceConfig:
       secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
     gitops-service:
       baseUrl: http://localhost:7908/api/v1/
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    ce-nextgen:
+      baseUrl: http://localhost:7340/
       secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   redis:
     sentinel: false

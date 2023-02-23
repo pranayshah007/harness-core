@@ -7,33 +7,37 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 
-import software.wings.ngmigration.CgEntityId;
+import software.wings.beans.GraphNode;
 import software.wings.sm.State;
-import software.wings.yaml.workflow.StepYaml;
 
-import java.util.Map;
-
-public class EmptyStepMapperImpl implements StepMapper {
+public class EmptyStepMapperImpl extends StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public SupportStatus stepSupportStatus(GraphNode graphNode) {
+    return SupportStatus.IGNORE;
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return null;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     return null;
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    return null;
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+    return MigratorUtility.getWaitStepNode(graphNode.getName(), 60);
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return true;
   }
 }

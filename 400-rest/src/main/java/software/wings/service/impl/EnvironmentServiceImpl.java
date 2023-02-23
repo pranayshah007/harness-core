@@ -39,12 +39,12 @@ import static software.wings.service.intfc.ServiceVariableService.EncryptedField
 import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 import static software.wings.yaml.YamlHelper.trimYaml;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -120,6 +120,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -138,8 +140,6 @@ import javax.annotation.Nonnull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDC)
@@ -184,8 +184,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Environment> list(PageRequest<Environment> request, boolean withTags, String tagFilter) {
-    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags);
+  public PageResponse<Environment> list(
+      PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary) {
+    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary);
   }
 
   @Override
@@ -193,7 +194,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       PageRequest<Environment> request, boolean withTags, String tagFilter, List<String> appIds) {
     // Time to list tags
     long startTime = System.currentTimeMillis();
-    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter);
+    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter, true);
     log.info("Total time taken to load tags {}", System.currentTimeMillis() - startTime);
 
     if (pageResponse.getResponse() == null) {
@@ -657,7 +658,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();
 
-    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null));
+    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
 
     List<Base> emptyList = new ArrayList<>();
 

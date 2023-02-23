@@ -14,11 +14,11 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -48,6 +48,9 @@ public class RuleEnforcementDAO {
                                        .equal(rule.getUuid());
     UpdateOperations<RuleEnforcement> updateOperations = hPersistence.createUpdateOperations(RuleEnforcement.class);
     if (rule.getName() != null) {
+      if (fetchByName(rule.getAccountId(), rule.getName(), true) != null) {
+        throw new InvalidRequestException("Rule Enforcement with the given name already exits");
+      }
       updateOperations.set(RuleEnforcementId.name, rule.getName());
     }
     if (rule.getRuleIds() != null) {
@@ -126,25 +129,21 @@ public class RuleEnforcementDAO {
   }
 
   public List<RuleEnforcement> ruleEnforcement(String accountId, List<String> ruleIds) {
-    List<RuleEnforcement> ruleEnforcements = hPersistence.createQuery(RuleEnforcement.class)
-                                                 .field(RuleEnforcementId.accountId)
-                                                 .equal(accountId)
-                                                 .field(RuleEnforcementId.ruleIds)
-                                                 .hasAnyOf(ruleIds)
-                                                 .asList();
-    log.info("{}", ruleEnforcements);
-    return ruleEnforcements;
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleIds)
+        .hasAnyOf(ruleIds)
+        .asList();
   }
 
   public List<RuleEnforcement> ruleSetEnforcement(String accountId, List<String> ruleSetIds) {
-    List<RuleEnforcement> ruleSetEnforcements = hPersistence.createQuery(RuleEnforcement.class)
-                                                    .field(RuleEnforcementId.accountId)
-                                                    .equal(accountId)
-                                                    .field(RuleEnforcementId.ruleSetIDs)
-                                                    .hasAnyOf(ruleSetIds)
-                                                    .asList();
-    log.info("{}", ruleSetEnforcements);
-    return ruleSetEnforcements;
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleSetIDs)
+        .hasAnyOf(ruleSetIds)
+        .asList();
   }
 
   public List<RuleEnforcement> listAll(String accountId, List<String> ruleEnforcementId) {

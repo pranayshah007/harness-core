@@ -87,6 +87,7 @@ import io.harness.connector.entities.embedded.helm.OciHelmConnector;
 import io.harness.connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication;
 import io.harness.connector.entities.embedded.jenkins.JenkinsConnector;
 import io.harness.connector.entities.embedded.jira.JiraConnector;
+import io.harness.connector.entities.embedded.jira.JiraUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sClientKeyCert;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sOpenIdConnect;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sServiceAccount;
@@ -101,12 +102,14 @@ import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswo
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
 import io.harness.connector.entities.embedded.tasconnector.TasConfig;
+import io.harness.connector.entities.embedded.terraformcloudconncetor.TerraformCloudConfig;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -163,6 +166,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ELKConnector.class);
     set.add(GcpSecretManagerConnector.class);
     set.add(AzureArtifactsConnector.class);
+    set.add(TerraformCloudConfig.class);
   }
 
   @Override
@@ -234,5 +238,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
     h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
         ServiceNowUserNamePasswordAuthentication.class);
+    h.put("connector.entities.embedded.servicenow.ServiceNowADFSAuthentication", ServiceNowADFSAuthentication.class);
+    h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
+        JiraUserNamePasswordAuthentication.class);
   }
 }

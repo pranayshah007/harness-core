@@ -14,8 +14,8 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.morphia.NGSettingMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @OwnedBy(PL)
 @UtilityClass

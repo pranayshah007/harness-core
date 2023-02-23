@@ -10,17 +10,16 @@ package io.harness.subscription.services;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
-import java.util.List;
 
 public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
@@ -28,15 +27,13 @@ public interface SubscriptionService {
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);
 
-  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO);
+  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
-  void cancelSubscription(String accountIdentifier, String subscriptionId);
+  void cancelSubscription(String accountIdentifier, String subscriptionId, ModuleType moduleType);
   void cancelAllSubscriptions(String accountIdentifier);
-  SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
+  SubscriptionDetailDTO getSubscription(String accountIdentifier);
   boolean checkSubscriptionExists(String subscriptionId);
-  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);

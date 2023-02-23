@@ -52,7 +52,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getExecutionStrategyList().getData();
 
     assertThat(executionStrategyResponse).isNotNull();
-    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(11);
+    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(14);
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.KUBERNETES))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
@@ -89,7 +89,17 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.TAS))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
+            ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT, ExecutionStrategyType.ROLLING));
+
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS))
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
+
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.AWS_LAMBDA))
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
+
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.AWS_SAM))
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
   }
 
   @Test
@@ -101,7 +111,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getServiceDefinitionTypes(null).getData();
 
     assertThat(serviceDefinitionTypes).isNotNull();
-    assertThat(serviceDefinitionTypes.size()).isEqualTo(11);
+    assertThat(serviceDefinitionTypes.size()).isEqualTo(14);
   }
 
   @Test

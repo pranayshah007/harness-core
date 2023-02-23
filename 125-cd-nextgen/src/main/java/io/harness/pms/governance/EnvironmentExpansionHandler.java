@@ -208,7 +208,8 @@ public class EnvironmentExpansionHandler implements JsonExpansionHandler {
     }
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, objectMapper.treeToValue(inputsNode, Map.class));
-    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(originalYaml, YamlPipelineUtils.writeYamlString(inputMap));
+    return MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), false, true);
   }
 
   private Optional<String> getEnvId(JsonNode fieldValue) {

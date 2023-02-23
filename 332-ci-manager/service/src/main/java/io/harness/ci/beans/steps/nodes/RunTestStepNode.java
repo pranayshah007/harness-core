@@ -17,17 +17,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
+
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -57,5 +63,18 @@ public class RunTestStepNode extends CIAbstractStepNode {
     StepType(String name) {
       this.name = name;
     }
+  }
+
+  @Builder
+  public RunTestStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, RunTestsStepInfo runTestsStepInfo,
+      RunTestStepNode.StepType type, ParameterField<Timeout> timeout) {
+    this.setUuid(uuid);
+    this.setIdentifier(identifier);
+    this.setName(name);
+    this.setFailureStrategies(failureStrategies);
+    this.runTestsStepInfo = runTestsStepInfo;
+    this.type = type;
+    this.setTimeout(timeout);
   }
 }

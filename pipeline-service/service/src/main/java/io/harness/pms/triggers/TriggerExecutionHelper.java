@@ -73,6 +73,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -86,6 +87,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.StoreTypeMapper;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -231,7 +233,8 @@ public class TriggerExecutionHelper {
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       String runtimeInputYaml = null;
-      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+      if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
       } else {
@@ -267,14 +270,22 @@ public class TriggerExecutionHelper {
         pipelineYaml = pipelineEntity.getYaml();
       } else {
         String pipelineYamlBeforeMerge = pipelineEntity.getYaml();
-        String sanitizedRuntimeInputYaml =
-            InputSetSanitizer.sanitizeRuntimeInput(pipelineYamlBeforeMerge, runtimeInputYaml);
-        if (isBlank(sanitizedRuntimeInputYaml)) {
-          pipelineYaml = pipelineYamlBeforeMerge;
-        } else {
-          planExecutionMetadataBuilder.inputSetYaml(sanitizedRuntimeInputYaml);
-          pipelineYaml =
-              InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
+        switch (pipelineEntity.getHarnessVersion()) {
+          case PipelineVersion.V1:
+            planExecutionMetadataBuilder.inputSetYaml(runtimeInputYaml);
+            pipelineYaml =
+                InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(runtimeInputYaml, pipelineYamlBeforeMerge);
+            break;
+          default:
+            String sanitizedRuntimeInputYaml =
+                InputSetSanitizer.sanitizeRuntimeInput(pipelineYamlBeforeMerge, runtimeInputYaml);
+            if (isBlank(sanitizedRuntimeInputYaml)) {
+              pipelineYaml = pipelineYamlBeforeMerge;
+            } else {
+              planExecutionMetadataBuilder.inputSetYaml(sanitizedRuntimeInputYaml);
+              pipelineYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(
+                  pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
+            }
         }
       }
 
@@ -334,8 +345,21 @@ public class TriggerExecutionHelper {
         executionMetaDataBuilder.setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
         // Set Principle user as pipeline service.
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
-        pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), pipelineYaml);
+        switch (pipelineEntity.getHarnessVersion()) {
+          case PipelineVersion.V0:
+            String yamlForValidatingSchema;
+            try {
+              yamlForValidatingSchema = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
+            } catch (Exception ex) {
+              log.error("Exception occurred while removing inputs from pipeline yaml", ex);
+              yamlForValidatingSchema =
+                  executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            }
+            pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
+            break;
+          default:
+        }
 
         executionMetaDataBuilder.setPrincipalInfo(
             ExecutionPrincipalInfo.newBuilder().setShouldValidateRbac(false).build());

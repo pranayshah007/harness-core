@@ -117,7 +117,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                                                 .build())
                                       .build();
       waitNotifyEngine.waitForAllOn(GENERAL, new EmailNotificationCallBack(), waitId);
-      delegateService.queueTask(delegateTask);
+      delegateService.queueTaskV2(delegateTask);
       return true;
     } catch (Exception e) {
       String errorString = emailUtils.getErrorString(emailData);

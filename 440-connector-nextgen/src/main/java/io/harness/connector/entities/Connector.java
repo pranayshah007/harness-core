@@ -32,6 +32,7 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +46,6 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -64,7 +64,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(HarnessTeam.DX)
 public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   @NotEmpty io.harness.encryption.Scope scope;
@@ -159,20 +159,20 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .unique(true)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_project_org_identifier_isDefault_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.identifier, ConnectorKeys.isFromDefaultBranch))
+                 .name("accountId_org_proj_identifier_isDefault_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.identifier, ConnectorKeys.isFromDefaultBranch))
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_project_org_repo_branch_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.yamlGitConfigRef, ConnectorKeys.branch))
+                 .name("accountId_org_project_repo_branch_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.yamlGitConfigRef, ConnectorKeys.branch))
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_project_org_isDefault_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.isFromDefaultBranch))
+                 .name("accountId_org_project_isDefault_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.isFromDefaultBranch))
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
@@ -188,6 +188,14 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
                      ConnectorKeys.projectIdentifier, ConnectorKeys.type))
                  .descSortField(ConnectorKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("nextTokenLookupIteration")
+                 .field(VaultConnectorKeys.nextTokenLookupIteration)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("type_nextTokenLookupIteration")
+                 .fields(Arrays.asList(ConnectorKeys.type, VaultConnectorKeys.nextTokenLookupIteration))
                  .build())
         .build();
   }

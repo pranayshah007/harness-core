@@ -15,7 +15,7 @@ import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -40,8 +40,8 @@ import io.harness.logging.LogLevel;
 
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.JenkinsSubTaskType;
-import software.wings.beans.Log;
 import software.wings.beans.command.JenkinsTaskParams;
+import software.wings.beans.dto.Log;
 import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.jenkins.model.CustomBuildWithDetails;
 import software.wings.service.impl.jenkins.JenkinsUtils;

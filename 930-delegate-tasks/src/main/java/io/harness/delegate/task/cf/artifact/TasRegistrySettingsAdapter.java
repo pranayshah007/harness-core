@@ -8,6 +8,7 @@
 package io.harness.delegate.task.cf.artifact;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,10 +30,17 @@ public class TasRegistrySettingsAdapter {
   @Inject private TasContainerRegistrySettingsProvider tasContainerRegistrySettingsProvider;
   @Inject private TasElasticContainerRegistrySettingsProvider tasElasticContainerRegistrySettingsProvider;
   @Inject private TasGoogleContainerRegistrySettingsProvider tasGoogleContainerRegistrySettingsProvider;
+  @Inject private TasGoogleArtifactRegistrySettingsProvider tasGoogleArtifactRegistrySettingsProvider;
   @Inject private TasNexus3RegistrySettingsProvider tasNexus3RegistrySettingsProvider;
+  @Inject private TasGithubPackageRegistrySettingsProvider tasGithubPackageRegistrySettingsProvider;
   @Inject DecryptionHelper decryptionHelper;
 
   public TasArtifactCreds getContainerSettings(TasContainerArtifactConfig artifactConfig) {
+    if (isNull(artifactConfig.getRegistryType())) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please contact Harness support team",
+          format("Unexpected null artifact configuration for TAS containers"),
+          new InvalidArgumentsException(Pair.of("artifactConfig", "Null artifact config")));
+    }
     switch (artifactConfig.getRegistryType()) {
       case DOCKER_HUB_PUBLIC:
         return dockerHubPublicRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
@@ -46,8 +54,12 @@ public class TasRegistrySettingsAdapter {
         return tasElasticContainerRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
       case GCR:
         return tasGoogleContainerRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
+      case GAR:
+        return tasGoogleArtifactRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
       case NEXUS_PRIVATE_REGISTRY:
         return tasNexus3RegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
+      case GITHUB_PACKAGE_REGISTRY:
+        return tasGithubPackageRegistrySettingsProvider.getContainerSettings(artifactConfig, decryptionHelper);
       default:
         throw NestedExceptionUtils.hintWithExplanationException(
             "Use a different container registry supported by Harness",

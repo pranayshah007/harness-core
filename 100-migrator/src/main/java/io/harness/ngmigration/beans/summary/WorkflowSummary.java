@@ -9,8 +9,10 @@ package io.harness.ngmigration.beans.summary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.TypeSummary;
 
 import java.util.Map;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,11 +25,17 @@ import lombok.NoArgsConstructor;
 public class WorkflowSummary extends BaseSummary {
   Map<String, Long> typeSummary;
   Map<String, Long> stepTypeSummary;
+  Set<String> expressions;
+
+  Map<String, TypeSummary> stepsSummary;
 
   @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
+  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary,
+      Set<String> expressions, Map<String, TypeSummary> stepsSummary) {
     super(count);
     this.typeSummary = typeSummary;
     this.stepTypeSummary = stepTypeSummary;
+    this.expressions = expressions;
+    this.stepsSummary = stepsSummary;
   }
 }

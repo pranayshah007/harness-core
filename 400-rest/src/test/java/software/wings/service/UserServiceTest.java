@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -75,9 +76,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anySetOf;
@@ -92,6 +93,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -161,6 +163,7 @@ import software.wings.service.impl.AccessRequestServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AwsMarketPlaceApiHandlerImpl;
 import software.wings.service.impl.HarnessUserGroupServiceImpl;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.impl.UserServiceImpl;
 import software.wings.service.impl.UserServiceLimitChecker;
 import software.wings.service.intfc.AccessRequestService;
@@ -183,6 +186,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -207,7 +215,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -215,11 +222,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * Created by anubhaw on 3/9/16.
@@ -296,6 +299,8 @@ public class UserServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private AwsMarketPlaceApiHandlerImpl marketPlaceService;
   @Inject WingsPersistence realWingsPersistence;
   @Mock PortalConfig portalConfig;
+
+  @Mock UserServiceHelper userServiceHelper;
 
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
@@ -598,6 +603,16 @@ public class UserServiceTest extends WingsBaseTest {
     when(configuration.getMarketPlaceConfig())
         .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceCeProductCode("CE").build());
     marketPlace.setProductCode("CE");
+    user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
+    assertThat(user).isEqualTo(savedUser);
+
+    // AWS marketplace signUp for FF
+    String ffProductCode = "FF";
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceProductCode("").build());
+    when(configuration.getMarketPlaceConfig())
+        .thenReturn(MarketPlaceConfig.builder().awsMarketPlaceFfProductCode(ffProductCode).build());
+    marketPlace.setProductCode(ffProductCode);
     user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
   }
@@ -917,6 +932,26 @@ public class UserServiceTest extends WingsBaseTest {
     when(userGroupService.list(ACCOUNT_ID,
              aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    userService.delete(ACCOUNT_ID, USER_ID);
+    verify(wingsPersistence).findAndDelete(any(), any());
+    verify(cache).remove(USER_ID);
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+  }
+
+  /**
+   * Should delete user flow V2.
+   */
+  @Test
+  @Owner(developers = ANUBHAW)
+  @Category(UnitTests.class)
+  public void shouldDeleteUserV2() {
+    when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
+    when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(userGroupService.list(ACCOUNT_ID,
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
+        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
+    when(userServiceHelper.isUserActiveInNG(any(), anyString())).thenReturn(false);
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);
@@ -1450,6 +1485,38 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).update(eq(userBuilder.uuid(USER_ID).build()), any(UpdateOperations.class));
     verify(updateOperations).set(eq("passwordHash"), anyString());
     verify(updateOperations).set(eq("passwordChangedAt"), anyLong());
+  }
+
+  /**
+   * Should update password and clear lockout info
+   *
+   */
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void shouldUpdatePasswordAndClearLockoutInfo() throws UnsupportedEncodingException {
+    when(query.get()).thenReturn(userBuilder.uuid(USER_ID).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    Algorithm algorithm = Algorithm.HMAC256("SECRET");
+    String token = JWT.create()
+                       .withIssuer("Harness Inc")
+                       .withIssuedAt(new Date())
+                       .withExpiresAt(new Date(System.currentTimeMillis() + 4 * 60 * 60 * 1000)) // 4 hrs
+                       .withClaim("email", USER_EMAIL)
+                       .sign(algorithm);
+
+    userService.updatePassword(token, USER_PASSWORD);
+    when(loginSettingsService.verifyPasswordStrength(Mockito.any(Account.class), Mockito.any(char[].class)))
+        .thenReturn(true);
+
+    verify(query, times(1)).filter("email", USER_EMAIL);
+    verify(emailDataNotificationService).send(any());
+    verify(authService).invalidateAllTokensForUser(USER_ID);
+    verify(wingsPersistence).update(eq(userBuilder.uuid(USER_ID).build()), any(UpdateOperations.class));
+    verify(updateOperations).set(eq("passwordHash"), anyString());
+    verify(updateOperations).set(eq("passwordExpired"), anyBoolean());
+    verify(updateOperations).set(eq("passwordChangedAt"), anyLong());
+    verify(loginSettingsService, times(1)).updateUserLockoutInfo(any(), any(), anyInt());
   }
 
   /**

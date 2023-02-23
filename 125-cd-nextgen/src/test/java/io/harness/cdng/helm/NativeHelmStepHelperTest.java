@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -55,7 +56,8 @@ import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -96,7 +98,10 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -132,7 +137,9 @@ import io.harness.filestore.utils.FileStoreNodeUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -174,6 +181,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1182,7 +1191,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .manifestFiles(asList(manifestFiles))
                     .lastActiveUnitProgressData(null)
                     .build()),
-            eq(false), eq(UnitProgressData.builder().build()));
+            eq(false), eq(getUnitProgressData()));
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
     assertThat(valuesFilesContent.size()).isEqualTo(2);
@@ -1800,13 +1809,15 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     doReturn(k8sDirectInfrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(eq(ambiance));
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("helm").store(CustomRemoteStoreConfig.builder().build()).build();
-    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
-                                                 .manifestOutcome(manifestOutcome)
-                                                 .manifestOutcomeList(asList(valuesManifestOutcome))
-                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-                                                 .shouldOpenFetchFilesStream(true)
-                                                 .shouldCloseFetchFilesStream(false)
-                                                 .build();
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .manifestOutcome(manifestOutcome)
+            .manifestOutcomeList(asList(valuesManifestOutcome))
+            .manifestStoreTypeVisited(new HashSet<>(Collections.singletonList(ManifestStoreType.CUSTOM_REMOTE)))
+            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+            .shouldOpenFetchFilesStream(true)
+            .shouldCloseFetchFilesStream(false)
+            .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
         asList(CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build()));
@@ -1822,7 +1833,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
     ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
-    passThroughData.setShouldCloseFetchFilesStream(true);
 
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
@@ -2418,7 +2428,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                 .infrastructure(passThroughData.getInfrastructure())
                 .lastActiveUnitProgressData(unitProgressData)
                 .build(),
-            passThroughData.getShouldOpenFetchFilesStream(), unitProgressData);
+            false, unitProgressData);
 
     TaskChainResponse response = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParameters, passThroughData, responseDataSuplier);
@@ -2608,7 +2618,108 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                        -> nativeHelmStepHelper.executeValuesFetchTask(ambiance, stepElementParameters,
                            aggregatedValuesManifests, helmChartFetchFilesResultMap, nativeHelmStepPassThroughData));
   }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomManifestValuesAndGitValuesWithHarnessStore() throws Exception {
+    StepElementParameters stepElementParams =
+        StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
 
+    String manifestIdentifier = "manifest-identifier";
+    LocalStoreFetchFilesResult localStoreFetchFilesResult =
+        LocalStoreFetchFilesResult.builder()
+            .LocalStoreFileContents(new ArrayList<>(asList("values yaml payload")))
+            .build();
+    List<String> files = asList("org:/path/to/helm/chart");
+    HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
+    Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap = new HashMap<>();
+    localStoreFetchFilesResultMap.put("helmOverride3", localStoreFetchFilesResult);
+    HelmChartManifestOutcome helmChartManifestOutcome =
+        HelmChartManifestOutcome.builder()
+            .identifier(manifestIdentifier)
+            .store(harnessStore)
+            .chartName(ParameterField.createValueField("chart"))
+            .valuesPaths(ParameterField.createValueField(asList("valuesOverride.yaml")))
+            .build();
+    List<String> overridePaths = new ArrayList<>(asList("folderPath/values2.yaml", "folderPath/values3.yaml"));
+    GitStore gitStore2 = GitStore.builder()
+                             .branch(ParameterField.createValueField("master"))
+                             .paths(ParameterField.createValueField(overridePaths))
+                             .connectorRef(ParameterField.createValueField("git-connector"))
+                             .build();
+    String extractionScript = "git clone something.git";
+    List<TaskSelectorYaml> delegateSelector = asList(new TaskSelectorYaml("sample-delegate"));
+    CustomRemoteStoreConfig customRemoteStoreConfig =
+        CustomRemoteStoreConfig.builder()
+            .filePath(ParameterField.createValueField("folderPath/values.yaml"))
+            .extractionScript(ParameterField.createValueField(extractionScript))
+            .delegateSelectors(ParameterField.createValueField(delegateSelector))
+            .build();
+    ValuesManifestOutcome valuesManifestOutcome1 =
+        ValuesManifestOutcome.builder().identifier("helmOverride1").store(gitStore2).build();
+    ValuesManifestOutcome valuesManifestOutcome2 =
+        ValuesManifestOutcome.builder().identifier("helmOverride2").store(customRemoteStoreConfig).build();
+    Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
+    CustomSourceFile customSourceFile =
+        CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build();
+    valuesFilesContentMap.put("helmOverride2", asList(customSourceFile));
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("helm", helmChartManifestOutcome, "helmOverride2",
+        valuesManifestOutcome2, "helmOverride1", valuesManifestOutcome1);
+    ManifestsOutcome manifestOutcomes = (ManifestsOutcome) OptionalOutcome.builder()
+                                            .found(true)
+                                            .outcome(new ManifestsOutcome(manifestOutcomeMap))
+                                            .build()
+                                            .getOutcome();
+    Collection<ManifestOutcome> manifestOutcomes1 = manifestOutcomes.values();
+    List<ManifestOutcome> manifestOutcome = manifestOutcomes1.stream()
+                                                .sorted(Comparator.comparingInt(ManifestOutcome::getOrder))
+                                                .collect(Collectors.toCollection(LinkedList::new));
+    List<ValuesManifestOutcome> aggregatedValuesManifests =
+        K8sHelmCommonStepHelper.getAggregatedValuesManifests(manifestOutcome);
+
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(helmChartManifestOutcome)
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests))
+                                                 .localStoreFileMapContents(localStoreFetchFilesResultMap)
+                                                 .build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
+        CustomManifestValuesFetchResponse.builder()
+            .valuesFilesContentMap(valuesFilesContentMap)
+            .zippedManifestFileId("zip")
+            .commandExecutionStatus(SUCCESS)
+            .unitProgressData(unitProgressData)
+            .build();
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("custom-value-fetch-response", customManifestValuesFetchResponse);
+    ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    TaskRequest taskRequest = TaskRequest.getDefaultInstance();
+    TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
+    doReturn(taskChainResponse).when(nativeHelmStepHelper).executeValuesFetchTask(any(), any(), any(), any(), any());
+    nativeHelmStepHelper.executeNextLink(
+        nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSupplier);
+
+    ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder()
+                                                      .identifier(helmChartManifestOutcome.getIdentifier())
+                                                      .store(harnessStore)
+                                                      .build();
+    LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
+    orderedValuesManifests.addFirst(valuesManifestOutcome);
+    ArgumentCaptor<K8sStepPassThroughData> valuesFilesContentCaptor2 =
+        ArgumentCaptor.forClass(K8sStepPassThroughData.class);
+    verify(nativeHelmStepHelper, times(1))
+        .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(orderedValuesManifests), eq(emptyMap()),
+            valuesFilesContentCaptor2.capture());
+
+    K8sStepPassThroughData nativeHelmStepPassThroughData = valuesFilesContentCaptor2.getValue();
+    assertThat(nativeHelmStepPassThroughData.getLocalStoreFileMapContents().size()).isEqualTo(1);
+    assertThat(nativeHelmStepPassThroughData.getLocalStoreFileMapContents().get("helmOverride3"))
+        .isEqualTo(localStoreFetchFilesResult);
+    assertThat(nativeHelmStepPassThroughData.getCustomFetchContent().get("helmOverride2"))
+        .isEqualTo(valuesFilesContentMap.get("helmOverride2"));
+  }
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {
     return FileNodeDTO.builder()
         .name(name)
@@ -2622,5 +2733,14 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
   private FileStoreNodeDTO getFolderStoreNode(String path, String name) {
     return FolderNodeDTO.builder().name(name).identifier("identifier").parentIdentifier("helm").path(path).build();
+  }
+
+  private UnitProgressData getUnitProgressData() {
+    CommandUnitProgress commandUnitProgress =
+        CommandUnitProgress.builder().status(CommandExecutionStatus.SUCCESS).build();
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
+    commandUnitProgressMap.put(K8sCommandUnitConstants.FetchFiles, commandUnitProgress);
+    return UnitProgressDataMapper.toUnitProgressData(
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build());
   }
 }

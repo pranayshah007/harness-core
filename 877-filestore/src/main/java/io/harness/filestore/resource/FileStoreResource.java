@@ -16,6 +16,8 @@ import static io.harness.NGCommonEntityConstants.FILE_CONTENT_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_FILTER_PROPERTIES_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_LIST_IDENTIFIERS_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_PATH_KEY;
+import static io.harness.NGCommonEntityConstants.FILE_PATH_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_SEARCH_TERM_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_TAGS_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_YAML_DEFINITION_MESSAGE;
@@ -38,6 +40,7 @@ import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.pms.rbac.NGResourceType.FILE;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
@@ -56,6 +59,7 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -75,6 +79,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -296,8 +301,8 @@ public class FileStoreResource {
   @Operation(operationId = "getFolderNodes", summary = "Get folder nodes at first level, not including sub-nodes",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of folder nodes as children")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns the folder populated with file store nodes as children")
       })
   public ResponseDTO<FolderNodeDTO>
   listFolderNodes(
@@ -312,6 +317,31 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(fileStoreService.listFolderNodes(
         accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO, filterQueryParams));
+  }
+
+  @GET
+  @Consumes({"application/json"})
+  @Path("folder")
+  @ApiOperation(value = "Get file store nodes on path", nickname = "getFileStoreNodesOnPath")
+  @Operation(operationId = "getFileStoreNodesOnPath", summary = "Get file store nodes on path",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the folder populated with file store nodes as children")
+      })
+  @Hidden
+  public ResponseDTO<FolderNodeDTO>
+  listFileStoreNodesOnPath(
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @NotNull @Parameter(description = FILE_PATH_PARAM_MESSAGE) @QueryParam(FILE_PATH_KEY) String path,
+      @BeanParam FileStoreNodesFilterQueryPropertiesDTO filterQueryParams) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FILE, null), FILE_VIEW_PERMISSION);
+
+    return ResponseDTO.newResponse(fileStoreService.listFileStoreNodesOnPath(
+        accountIdentifier, orgIdentifier, projectIdentifier, path, filterQueryParams));
   }
 
   @POST
@@ -378,7 +408,7 @@ public class FileStoreResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of entities where file is referenced by")
       })
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
                       PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
@@ -392,9 +422,9 @@ public class FileStoreResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
 
-    return ResponseDTO.newResponse(fileStoreService.listReferencedBy(
+    return ResponseDTO.newResponse(getNGPageResponse(fileStoreService.listReferencedBy(
         SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,
-        orgIdentifier, projectIdentifier, identifier, entityType));
+        orgIdentifier, projectIdentifier, identifier, entityType)));
   }
 
   @GET

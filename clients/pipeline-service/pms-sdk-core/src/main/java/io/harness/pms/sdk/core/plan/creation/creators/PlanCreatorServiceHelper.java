@@ -92,8 +92,8 @@ public class PlanCreatorServiceHelper {
         .build();
   }
 
-  public void decorateNodesWithStageFqn(YamlField field, PlanCreationResponse planForField) {
-    String stageFqn = YamlUtils.getStageFqnPath(field.getNode());
+  public void decorateNodesWithStageFqn(YamlField field, PlanCreationResponse planForField, String yamlVersion) {
+    String stageFqn = YamlUtils.getStageFqnPath(field.getNode(), yamlVersion);
     if (!EmptyPredicate.isEmpty(stageFqn)) {
       planForField.getNodes().forEach((k, v) -> v.setStageFqn(stageFqn));
 

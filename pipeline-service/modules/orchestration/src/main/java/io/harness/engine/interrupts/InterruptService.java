@@ -16,6 +16,7 @@ import io.harness.interrupts.Interrupt.State;
 import io.harness.pms.contracts.interrupts.InterruptType;
 
 import java.util.List;
+import java.util.Set;
 import javax.validation.Valid;
 
 @OwnedBy(PIPELINE)
@@ -44,4 +45,11 @@ public interface InterruptService {
   Interrupt get(String interruptId);
 
   long closeActiveInterrupts(String planExecutionId);
+
+  /**
+   * Delete all interrupts for given planExecutionIds
+   * Uses - planExecutionId_nodeExecutionId_createdAt_idx
+   * @param planExecutionIds
+   */
+  void deleteAllInterrupts(Set<String> planExecutionIds);
 }

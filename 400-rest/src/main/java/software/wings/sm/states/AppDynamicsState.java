@@ -58,6 +58,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,7 +71,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 /**
@@ -295,7 +295,7 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
     }
     List<String> delegateTaskIds = new ArrayList<>();
     for (DelegateTask task : delegateTasks) {
-      delegateTaskIds.add(delegateService.queueTask(task));
+      delegateTaskIds.add(delegateService.queueTaskV2(task));
     }
     return StringUtils.join(delegateTaskIds, ",");
   }

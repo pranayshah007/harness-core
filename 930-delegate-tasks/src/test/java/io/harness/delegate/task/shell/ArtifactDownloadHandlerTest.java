@@ -25,6 +25,7 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -36,16 +37,24 @@ import io.harness.delegate.beans.connector.awsconnector.AwsIRSASpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
+import io.harness.delegate.task.azure.artifact.AzureArtifactsHelper;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.AzureArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -78,11 +87,13 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
   @InjectMocks private ArtifactoryArtifactDownloadHandler artifactoryArtifactDownloadHandler;
   @InjectMocks private JenkinsArtifactDownloadHandler jenkinsArtifactDownloadHandler;
   @InjectMocks private AwsS3ArtifactDownloadHandler s3ArtifactDownloadHandler;
+  @InjectMocks private AzureArtifactDownloadHandler azureArtifactDownloadHandler;
   @Mock private ArtifactoryRequestMapper artifactoryRequestMapper;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private ArtifactoryNgService artifactoryNgService;
   @Mock private EncryptionService encryptionService;
   @Mock private AwsHelperService awsHelperService;
+  @Mock private AzureArtifactsHelper azureArtifactsHelper;
   private SecretRefData passwordRef;
 
   @Before
@@ -102,8 +113,14 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
             .secretKeyRef(SecretRefData.builder().identifier("secret").build())
             .build();
     when(secretDecryptionService.decrypt(any(AwsManualConfigSpecDTO.class), any())).thenReturn(awsManualConfigSpecDTO);
-    //    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
-    //        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder()
+                                                        .tokenRef(SecretRefData.builder()
+                                                                      .decryptedValue(DECRYPTED_PASSWORD_VALUE)
+                                                                      .identifier("azure_artifacts_secret")
+                                                                      .build())
+                                                        .build();
+    when(secretDecryptionService.decrypt(any(AzureArtifactsTokenDTO.class), any())).thenReturn(azureArtifactsTokenDTO);
   }
 
   @Test
@@ -529,6 +546,132 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
     assertThat(commandString).contains(" -o \"testdestination/name\"");
   }
 
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testAzureGetCommandString_MavenArtifact_Bash() {
+    when(azureArtifactsHelper.getArtifactFileName(any())).thenReturn("artifact_filename");
+    AzureArtifactsConnectorDTO connectorDTO = getAzureArtifactConnectorInfoDTO();
+
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE_ARTIFACTS).connectorConfig(connectorDTO).build();
+    AzureArtifactDelegateConfig delegateConfig = AzureArtifactDelegateConfig.builder()
+                                                     .identifier("azureArtifactsDelegateConfig")
+                                                     .connectorDTO(connectorInfoDTO)
+                                                     .feed("feed")
+                                                     .packageId("packageId1")
+                                                     .packageName("groupId:artifactId")
+                                                     .packageType("maven")
+                                                     .version("1.0.0")
+                                                     .scope("project")
+                                                     .project("test-project")
+                                                     .build();
+    String commandString =
+        azureArtifactDownloadHandler.getCommandString(delegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString)
+        .isEqualTo("curl -L --fail -H \"Authorization: Basic OnRlc3Q=\" "
+            + "-X GET \"azure.test.url/test-project/_apis/packaging/feeds/feed/maven/groupId/artifactId/1.0.0/artifact_filename/content?api-version=5.1-preview.1\""
+            + " -o \"testdestination/artifact_filename\"");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testAzureGetCommandString_MavenArtifact_Powershell() {
+    when(azureArtifactsHelper.getArtifactFileName(any())).thenReturn("artifact_filename");
+    AzureArtifactsConnectorDTO connectorDTO = getAzureArtifactConnectorInfoDTO();
+
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE_ARTIFACTS).connectorConfig(connectorDTO).build();
+    AzureArtifactDelegateConfig delegateConfig = AzureArtifactDelegateConfig.builder()
+                                                     .identifier("azureArtifactsDelegateConfig")
+                                                     .connectorDTO(connectorInfoDTO)
+                                                     .feed("feed")
+                                                     .packageId("packageId1")
+                                                     .packageName("groupId:artifactId")
+                                                     .packageType("maven")
+                                                     .version("1.0.0")
+                                                     .scope("project")
+                                                     .project("test-project")
+                                                     .build();
+    String commandString =
+        azureArtifactDownloadHandler.getCommandString(delegateConfig, "testdestination", ScriptType.POWERSHELL);
+
+    assertThat(commandString)
+        .isEqualTo("$Headers = @{\n"
+            + "    Authorization = \"Basic OnRlc3Q=\"\n"
+            + "}\n"
+            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + " $ProgressPreference = 'SilentlyContinue'\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/maven/groupId/artifactId/1.0.0/artifact_filename/content?api-version=5.1-preview.1\""
+            + " -Headers $Headers -OutFile \"testdestination\\artifact_filename\"");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testAzureGetCommandString_NugetArtifact_Bash() {
+    when(azureArtifactsHelper.getArtifactFileName(any())).thenReturn("artifact_filename");
+
+    AzureArtifactsConnectorDTO connectorDTO = getAzureArtifactConnectorInfoDTO();
+
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE_ARTIFACTS).connectorConfig(connectorDTO).build();
+    AzureArtifactDelegateConfig delegateConfig = AzureArtifactDelegateConfig.builder()
+                                                     .identifier("azureArtifactsDelegateConfig")
+                                                     .connectorDTO(connectorInfoDTO)
+                                                     .feed("feed")
+                                                     .packageId("packageId1")
+                                                     .packageName("groupId:artifactId")
+                                                     .packageType("nuget")
+                                                     .version("1.0.0")
+                                                     .scope("project")
+                                                     .project("test-project")
+                                                     .build();
+    String commandString =
+        azureArtifactDownloadHandler.getCommandString(delegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString)
+        .isEqualTo("curl -L --fail -H \"Authorization: Basic OnRlc3Q=\" "
+            + "-X GET \"azure.test.url/test-project/_apis/packaging/feeds/feed/nuget/packages/groupId:artifactId/versions/1.0.0/content?api-version=5.1-preview.1\" "
+            + "-o \"testdestination/artifact_filename\"");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testAzureGetCommandString_NugetArtifact_Powershell() {
+    when(azureArtifactsHelper.getArtifactFileName(any())).thenReturn("artifact_filename");
+
+    AzureArtifactsConnectorDTO connectorDTO = getAzureArtifactConnectorInfoDTO();
+
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.AZURE_ARTIFACTS).connectorConfig(connectorDTO).build();
+    AzureArtifactDelegateConfig delegateConfig = AzureArtifactDelegateConfig.builder()
+                                                     .identifier("azureArtifactsDelegateConfig")
+                                                     .connectorDTO(connectorInfoDTO)
+                                                     .feed("feed")
+                                                     .packageId("packageId1")
+                                                     .packageName("groupId:artifactId")
+                                                     .packageType("nuget")
+                                                     .version("1.0.0")
+                                                     .scope("project")
+                                                     .project("test-project")
+                                                     .build();
+    String commandString =
+        azureArtifactDownloadHandler.getCommandString(delegateConfig, "testdestination", ScriptType.POWERSHELL);
+
+    assertThat(commandString)
+        .isEqualTo("$Headers = @{\n"
+            + "    Authorization = \"Basic OnRlc3Q=\"\n"
+            + "}\n"
+            + " [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
+            + " $ProgressPreference = 'SilentlyContinue'\n"
+            + " Invoke-WebRequest -Uri \"azure.test.url/test-project/_apis/packaging/feeds/feed/nuget/packages/groupId:artifactId/versions/1.0.0/content?api-version=5.1-preview.1\""
+            + " -Headers $Headers -OutFile \"testdestination\\artifact_filename\"");
+  }
+
   private ConnectorInfoDTO getArtifactoryConnectorInfoDTOWithSecret() {
     SecretRefData passwordRef = SecretRefData.builder().identifier("secret_ident").build();
     ArtifactoryUsernamePasswordAuthDTO credentials =
@@ -601,5 +744,26 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
                                             .config(awsCredentialSpec)
                                             .build();
     return AwsConnectorDTO.builder().credential(awsCredentialDTO).executeOnDelegate(false).build();
+  }
+
+  private AzureArtifactsConnectorDTO getAzureArtifactConnectorInfoDTO() {
+    AzureArtifactsTokenDTO tokenDTO = AzureArtifactsTokenDTO.builder()
+                                          .tokenRef(SecretRefData.builder()
+                                                        .identifier("azure_artifacts_secret")
+                                                        .decryptedValue(DECRYPTED_PASSWORD_VALUE)
+                                                        .build())
+                                          .build();
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .credentialsSpec(tokenDTO)
+            .build();
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+    return AzureArtifactsConnectorDTO.builder()
+        .azureArtifactsUrl("azure.test.url")
+        .executeOnDelegate(false)
+        .auth(azureArtifactsAuthenticationDTO)
+        .build();
   }
 }

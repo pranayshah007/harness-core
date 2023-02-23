@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -59,6 +60,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -247,7 +250,9 @@ public class EcsRollingDeployStepTest extends CategoryTest {
                                                .passThroughData(ecsPrepareRollbackDataPassThroughData)
                                                .build();
 
-    doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponse1)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
     ecsRollingDeployStep.executeEcsTask(
         ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
 
@@ -273,7 +278,8 @@ public class EcsRollingDeployStepTest extends CategoryTest {
         ecsRollingDeployStepParameters.getForceNewDeployment().getValue().booleanValue());
     EcsRollingDeployRequest ecsRollingDeployRequest = ecsRollingDeployRequestBuilder.build();
     verify(ecsStepCommonHelper)
-        .queueEcsTask(stepElementParameters, ecsRollingDeployRequest, ambiance, ecsExecutionPassThroughData, true);
+        .queueEcsTask(stepElementParameters, ecsRollingDeployRequest, ambiance, ecsExecutionPassThroughData, true,
+            TaskType.ECS_COMMAND_TASK_NG);
   }
 
   @Test
@@ -295,7 +301,9 @@ public class EcsRollingDeployStepTest extends CategoryTest {
                                                .passThroughData(ecsPrepareRollbackDataPassThroughData)
                                                .build();
 
-    doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponse1)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
     ecsRollingDeployStep.executeEcsPrepareRollbackTask(
         ambiance, stepElementParameters, ecsPrepareRollbackDataPassThroughData, unitProgressData);
 
@@ -315,6 +323,6 @@ public class EcsRollingDeployStepTest extends CategoryTest {
             .build();
     verify(ecsStepCommonHelper)
         .queueEcsTask(stepElementParameters, ecsPrepareRollbackDataRequest, ambiance,
-            ecsPrepareRollbackDataPassThroughData, false);
+            ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
   }
 }

@@ -16,7 +16,6 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -37,11 +36,9 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 
@@ -74,14 +71,11 @@ public class K8sApiEventWatcher {
     String eventInfoFormat = k8sNamespaceEventWatchDTO.getEventInfoFormat();
     String eventErrorFormat = k8sNamespaceEventWatchDTO.getEventErrorFormat();
 
-    Set<String> workloadNames = k8sNamespaceEventWatchDTO.getResourceIds()
-                                    .stream()
-                                    .map(KubernetesResourceId::getName)
-                                    .collect(Collectors.toSet());
-
     try {
       String resourceVersion = null;
-      while (true) {
+      K8sEventFilter k8sEventFilter = new K8sEventFilter(
+          k8sNamespaceEventWatchDTO.getResourceIds(), coreV1Api, namespace, k8sNamespaceEventWatchDTO.getReleaseName());
+      while (!Thread.currentThread().isInterrupted()) {
         if (resourceVersion == null) {
           CoreV1EventList coreV1EventList =
               coreV1Api.listNamespacedEvent(namespace, null, null, null, null, null, null, null, null, null, false);
@@ -92,8 +86,8 @@ public class K8sApiEventWatcher {
           for (Watch.Response<CoreV1Event> eventListResponse : watch) {
             CoreV1Event event = eventListResponse.object;
             V1ObjectReference ref = event.getInvolvedObject();
-            if (ref.getName() != null
-                && workloadNames.stream().noneMatch(workloadName -> ref.getName().contains(workloadName))) {
+
+            if (!k8sEventFilter.test(event)) {
               continue;
             }
             if ("WARNING".equalsIgnoreCase(event.getType())) {
@@ -116,6 +110,10 @@ public class K8sApiEventWatcher {
         }
       }
     } catch (ApiException e) {
+      if (e.getCause() instanceof InterruptedIOException) {
+        Thread.currentThread().interrupt();
+        return;
+      }
       ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
       String errorMessage =
           String.format("Failed to watch events in namespace %s. ", namespace) + ExceptionUtils.getMessage(ex);

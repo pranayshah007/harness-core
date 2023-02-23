@@ -42,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -74,6 +75,7 @@ import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +86,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDP)
 public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
@@ -99,6 +100,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private CloudFormationDeleteStackState state = new CloudFormationDeleteStackState("stateName");
 
@@ -156,7 +158,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   private void verifyDelegate(ExecutionResponse executionResponse, boolean checkTags, int i) {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(i)).queueTask(captor.capture());
+    verify(delegateService, times(i)).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -222,7 +224,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, AwsConfig.builder().tag(TAG_NAME).build(), ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationDeleteStackRequest request =
         (CloudFormationDeleteStackRequest) delegateTask.getData().getParameters()[0];
@@ -242,7 +244,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
 
     state.buildAndQueueDelegateTask(mockContext, provisioner, AwsConfig.builder().tag(TAG_NAME).build(), ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     CloudFormationDeleteStackRequest request =
         (CloudFormationDeleteStackRequest) delegateTask.getData().getParameters()[0];

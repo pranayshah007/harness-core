@@ -12,9 +12,9 @@ import io.harness.ng.DbAliases;
 
 import software.wings.beans.Base;
 
+import dev.morphia.annotations.Entity;
 import lombok.Getter;
 import lombok.Setter;
-import org.mongodb.morphia.annotations.Entity;
 
 @StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testMongo", noClassnameStored = true)

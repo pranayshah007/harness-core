@@ -59,6 +59,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -66,7 +67,6 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.redisson.api.RedissonClient;
 import ru.vyarus.guice.validator.ValidationModule;
 

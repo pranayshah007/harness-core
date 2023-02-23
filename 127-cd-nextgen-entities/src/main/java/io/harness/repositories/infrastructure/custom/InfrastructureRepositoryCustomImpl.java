@@ -9,6 +9,7 @@ package io.harness.repositories.infrastructure.custom;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
@@ -129,6 +130,24 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
                                 .is(projectIdentifier)
                                 .and(InfrastructureEntityKeys.envIdentifier)
                                 .is(envIdentifier);
+
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.find(query, InfrastructureEntity.class);
+  }
+
+  @Override
+  public List<InfrastructureEntity> findAllFromEnvIdentifierAndDeploymentType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier)
+                                .and(InfrastructureEntityKeys.envIdentifier)
+                                .is(envIdentifier)
+                                .and(InfrastructureEntityKeys.deploymentType)
+                                .is(deploymentType);
 
     Query query = new Query(baseCriteria);
     return mongoTemplate.find(query, InfrastructureEntity.class);

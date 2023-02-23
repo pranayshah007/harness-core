@@ -22,6 +22,7 @@ import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -55,6 +56,7 @@ public class EcsRunTaskBaseStepInfo {
   @JsonProperty("runTaskRequestDefinition")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
   @SkipAutoEvaluation
+  @NotNull
   ParameterField<StoreConfigWrapper> runTaskRequestDefinition;
 
   @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})

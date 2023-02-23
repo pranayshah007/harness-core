@@ -42,6 +42,8 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +52,6 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -59,6 +59,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class EncryptedDataLocalToGcpKmsMigrationHandler
     extends IteratorPumpModeHandler implements Handler<EncryptedData> {
   public static final int MAX_RETRY_COUNT = 3;
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(40);
   private final List<SettingVariableTypes> secretTypes;
   private final WingsPersistence wingsPersistence;
   private final FeatureFlagService featureFlagService;
@@ -127,12 +128,35 @@ public class EncryptedDataLocalToGcpKmsMigrationHandler
                     .clazz(EncryptedData.class)
                     .fieldName(EncryptedDataKeys.nextLocalToGcpKmsMigrationIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofHours(40))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this)
                     .filterExpander(filterExpander)
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    MorphiaFilterExpander<EncryptedData> filterExpander = getFilterExpander();
+
+    if (filterExpander == null) {
+      log.warn("Iterator {} not started since the Morphia Filter is NULL", iteratorName);
+      return;
+    }
+
+    iterator = (MongoPersistenceIterator<EncryptedData, MorphiaFilterExpander<EncryptedData>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       EncryptedData.class,
+                       MongoPersistenceIterator.<EncryptedData, MorphiaFilterExpander<EncryptedData>>builder()
+                           .clazz(EncryptedData.class)
+                           .fieldName(EncryptedDataKeys.nextLocalToGcpKmsMigrationIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .filterExpander(filterExpander)
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

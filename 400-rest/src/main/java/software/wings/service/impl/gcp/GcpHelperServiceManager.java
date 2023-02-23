@@ -112,7 +112,7 @@ public class GcpHelperServiceManager {
                                               .build())
                                     .build();
     try {
-      DelegateResponseData notifyResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData notifyResponseData = delegateService.executeTaskV2(delegateTask);
       validateDelegateSuccessForSyncTask(notifyResponseData);
       return (GcpResponse) notifyResponseData;
     } catch (InterruptedException ex) {

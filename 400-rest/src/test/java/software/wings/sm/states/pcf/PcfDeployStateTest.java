@@ -16,6 +16,7 @@ import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.model.PcfConstants.DEFAULT_PCF_TASK_TIMEOUT_MIN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -79,6 +80,7 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
@@ -133,6 +135,7 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 
+import dev.morphia.Key;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,7 +149,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDP)
 public class PcfDeployStateTest extends WingsBaseTest {
@@ -169,6 +171,7 @@ public class PcfDeployStateTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();
   public static final String ORG = "ORG";
   public static final String SPACE = "SPACE";
@@ -589,5 +592,56 @@ public class PcfDeployStateTest extends WingsBaseTest {
     FieldUtils.writeField(pcfDeployState, "pcfStateHelper", mockPcfStateHelper, true);
     doReturn(10).when(mockPcfStateHelper).getStateTimeoutMillis(context, DEFAULT_PCF_TASK_TIMEOUT_MIN, false);
     assertThat(pcfDeployState.getTimeoutMillis(context)).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTimeoutWhenNotGivenFromUI() {
+    on(context).set("serviceTemplateService", serviceTemplateService);
+    on(context).set("variableProcessor", variableProcessor);
+    on(context).set("sweepingOutputService", sweepingOutputService);
+    on(context).set("evaluator", evaluator);
+
+    pcfDeployState.setInstanceCount(50);
+    pcfDeployState.setInstanceUnitType(PERCENTAGE);
+    ExecutionResponse response = pcfDeployState.execute(context);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(response).isNotNull().hasFieldOrPropertyWithValue("async", true);
+    assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
+    verify(activityService).save(any(Activity.class));
+    verify(delegateService).queueTask(any(DelegateTask.class));
+
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+
+    assertThat(delegateTask.getData().getTimeout()).isEqualTo(300000);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTimeoutWhenValueIsGivenFromUI() {
+    on(context).set("serviceTemplateService", serviceTemplateService);
+    on(context).set("variableProcessor", variableProcessor);
+    on(context).set("sweepingOutputService", sweepingOutputService);
+    on(context).set("evaluator", evaluator);
+
+    pcfDeployState.setTimeoutIntervalInMinutes(7);
+    pcfDeployState.setInstanceCount(50);
+    pcfDeployState.setInstanceUnitType(PERCENTAGE);
+    ExecutionResponse response = pcfDeployState.execute(context);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(response).isNotNull().hasFieldOrPropertyWithValue("async", true);
+    assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
+    verify(activityService).save(any(Activity.class));
+    verify(delegateService).queueTask(any(DelegateTask.class));
+
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+
+    assertThat(delegateTask.getData().getTimeout()).isEqualTo(420000);
   }
 }

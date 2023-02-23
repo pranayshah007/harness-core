@@ -43,13 +43,13 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.aws.utility.StringUtil;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -264,7 +264,7 @@ public class AzureResourceServiceImpl implements AzureResourceService {
         azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = azureHelperService.getEncryptionDetails(connector, baseNGAccess);
     Map<AzureAdditionalParams, String> additionalParams = new HashMap<>(Collections.emptyMap());
-    if (StringUtil.isNotEmpty(subscriptionId)) {
+    if (StringUtils.isNotEmpty(subscriptionId)) {
       additionalParams.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
     }
     AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()

@@ -17,6 +17,7 @@ import io.harness.exception.ConnectException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.runtime.SCMRuntimeException;
 
 import com.google.inject.Singleton;
 import io.grpc.Channel;
@@ -65,6 +66,11 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
             throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", ex);
           }
           Thread.sleep(100);
+        } catch (SCMRuntimeException ex) {
+          if (++retryCount > 0) {
+            throw ex;
+          }
+          Thread.sleep(100);
         }
       }
     } finally {
@@ -90,7 +96,7 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           "The delegate encountered internal error and was unable to perform the operation. Scm Manager could not be created",
           e);
       throw new ScmInternalServerErrorException(
-          "The delegate encountered internal error and was unable to perform the operation. Please try after some time.");
+          "The delegate encountered internal error and was unable to perform the operation. Scm binary not found.");
     }
     throw new InvalidRequestException("SCM on" + OS + "is not supported yet");
   }

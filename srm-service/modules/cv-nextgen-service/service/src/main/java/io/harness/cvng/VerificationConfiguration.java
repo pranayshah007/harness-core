@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
+import io.harness.cvng.core.WebhookConfig;
 import io.harness.cvng.notification.config.ErrorTrackingClientConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -32,6 +33,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.app.PortalConfig;
 
@@ -95,17 +97,21 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("accessControlClientConfig") private AccessControlClientConfiguration accessControlClientConfiguration;
   @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
+  @JsonProperty("webhookConfig") private WebhookConfig webhookConfig;
   @JsonProperty("distributedLockImplementation")
   private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
   private ServiceHttpClientConfig templateServiceClientConfig;
   private String templateServiceSecret;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
+  @JsonProperty(value = "enableDebugAPI") private boolean enableDebugAPI;
   @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   public static final String RESOURCE_PACKAGE = "io.harness.cvng";
+  @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
+  @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
 
   private String portalUrl;
   /**

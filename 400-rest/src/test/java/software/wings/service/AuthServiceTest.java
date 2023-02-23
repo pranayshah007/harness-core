@@ -12,7 +12,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.KAPIL;
-import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -102,6 +101,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
+import dev.morphia.AdvancedDatastore;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -122,7 +122,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.AdvancedDatastore;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -252,14 +251,6 @@ public class AuthServiceTest extends WingsBaseTest {
       UserThreadLocal.unset();
     }
     assertThat(exceptionThrown).isFalse();
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void testValidateDelegateToken() {
-    authService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
-    verify(delegateTokenAuthenticator).validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, null, false);
   }
 
   @Test

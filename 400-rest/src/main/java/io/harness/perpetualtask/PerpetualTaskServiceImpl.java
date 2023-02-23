@@ -19,6 +19,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
+import static java.lang.System.currentTimeMillis;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
@@ -155,6 +157,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
                                        .delegateId("")
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
+                                       .assignIteration(currentTimeMillis())
                                        .taskDescription(taskDescription)
                                        .build();
 
@@ -271,13 +274,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
-  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId) {
+  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId, boolean referenceFalseKryoSerializer) {
     log.info("Getting perpetual task context for task with id: {}", taskId);
     PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
 
     PerpetualTaskExecutionParams params = null;
     try {
-      params = getTaskParams(perpetualTaskRecord);
+      params = getTaskParams(perpetualTaskRecord, referenceFalseKryoSerializer);
     } catch (Exception e) {
       log.error("Error while fetching perpetual task context task params ", e);
       perpetualTaskRecordDao.updateInvalidStateWithExceptions(
@@ -297,12 +300,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         .build();
   }
 
-  private PerpetualTaskExecutionParams getTaskParams(PerpetualTaskRecord perpetualTaskRecord) throws Exception {
+  private PerpetualTaskExecutionParams getTaskParams(
+      PerpetualTaskRecord perpetualTaskRecord, boolean referenceFalseKryoSerializer) throws Exception {
     Message perpetualTaskParams = null;
 
     if (perpetualTaskRecord.getClientContext().getClientParams() != null) {
       PerpetualTaskServiceClient client = clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType());
-      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext());
+      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext(), referenceFalseKryoSerializer);
 
       return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(perpetualTaskParams)).build();
     } else {

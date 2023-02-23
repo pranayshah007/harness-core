@@ -42,8 +42,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class OverlayInputSetValidationHelper {
-  public void validateOverlayInputSet(
-      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, String pipelineYaml) {
+  public void validateOverlayInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
@@ -54,8 +53,8 @@ public class OverlayInputSetValidationHelper {
     if (EmptyPredicate.isEmpty(identifier)) {
       throw new InvalidRequestException("Identifier cannot be empty");
     }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Overlay Input Set identifier length cannot be more that 63 characters.");
+    if (identifier.length() > 127) {
+      throw new InvalidRequestException("Overlay Input Set identifier length cannot be more that 127 characters.");
     }
     List<String> inputSetReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
     if (inputSetReferences.isEmpty()) {
@@ -68,7 +67,7 @@ public class OverlayInputSetValidationHelper {
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
         inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Map<String, String> invalidReferences =
-        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences, pipelineYaml);
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
     if (!invalidReferences.isEmpty()) {
       OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
           OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
@@ -166,7 +165,7 @@ public class OverlayInputSetValidationHelper {
         throw new InvalidRequestException("Empty Input Set Identifier not allowed in Input Set References");
       }
       inputSets.add(inputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false));
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false));
     });
     return inputSets;
   }

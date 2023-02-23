@@ -24,12 +24,12 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.NGTemplateReference;
 import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.filestore.entities.NGFile;
@@ -131,6 +131,22 @@ public class FileReferenceServiceTest extends CategoryTest {
         .isInstanceOf(ReferencedEntityException.class)
         .hasMessage("Folder [testFolder1], or its subfolders, contain file(s) referenced by " + 2
             + " other entities and can not be deleted.");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldVerifyFolderIsReferencedBy() {
+    String identifier1 = "testFolder1";
+    NGFile folder1 =
+        NGFile.builder().identifier(identifier1).accountIdentifier(ACCOUNT_IDENTIFIER).type(NGFileType.FOLDER).build();
+    String folderFqn = ACCOUNT_IDENTIFIER.concat("/").concat(identifier1);
+    when(fileStructureService.listFolderChildrenFQNs(any())).thenReturn(Lists.newArrayList());
+    when(entitySetupUsageService.referredByEntityCount(ACCOUNT_IDENTIFIER, folderFqn, EntityType.FILES)).thenReturn(1L);
+
+    assertThatThrownBy(() -> fileReferenceService.validateReferenceByAndThrow(folder1))
+        .isInstanceOf(ReferencedEntityException.class)
+        .hasMessage("Folder [testFolder1] is referenced by " + 1 + " other entities and can not be deleted.");
   }
 
   @Test

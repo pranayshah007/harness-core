@@ -30,13 +30,13 @@ import static software.wings.beans.RoleType.NON_PROD_SUPPORT;
 import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.service.intfc.UsageRestrictionsService.UsageRestrictionsClient.ALL;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -116,6 +116,8 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -124,8 +126,6 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Application Service Implementation class.
@@ -275,7 +275,7 @@ public class AppServiceImpl implements AppService {
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, false);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {
@@ -309,8 +309,8 @@ public class AppServiceImpl implements AppService {
       if (details) {
         PageRequest<Environment> envPageRequest =
             PageRequestBuilder.aPageRequest().addFilter("appId", Operator.IN, appIdArray).build();
-        List<Environment> envList =
-            wingsPersistence.getAllEntities(envPageRequest, () -> environmentService.list(envPageRequest, false, null));
+        List<Environment> envList = wingsPersistence.getAllEntities(
+            envPageRequest, () -> environmentService.list(envPageRequest, false, null, false));
         appIdEnvMap = envList.stream().collect(groupingBy(Environment::getAppId));
 
         PageRequest<Service> servicePageRequest =

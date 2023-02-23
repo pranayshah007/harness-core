@@ -436,6 +436,31 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(396, "TERRAFORM_PROVISION_TASK_V2");
     taskTypeOrdinalMapping.put(397, "TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2");
     taskTypeOrdinalMapping.put(398, "TERRAFORM_FETCH_TARGETS_TASK_V2");
+    taskTypeOrdinalMapping.put(399, "TAS_ROLLING_DEPLOY");
+    taskTypeOrdinalMapping.put(400, "TAS_ROLLING_ROLLBACK");
+    taskTypeOrdinalMapping.put(401, "K8S_DRY_RUN_MANIFEST_TASK_NG");
+    taskTypeOrdinalMapping.put(402, "COMMAND_TASK_NG_WITH_AZURE_ARTIFACT");
+    taskTypeOrdinalMapping.put(403, "AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG");
+    taskTypeOrdinalMapping.put(404, "AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG");
+    taskTypeOrdinalMapping.put(405, "AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG");
+    taskTypeOrdinalMapping.put(406, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG");
+    taskTypeOrdinalMapping.put(407, "SCM_BATCH_GET_FILE_TASK");
+    taskTypeOrdinalMapping.put(408, "TERRAFORM_CLOUD_TASK_NG");
+    taskTypeOrdinalMapping.put(409, "GIT_TASK_NG");
+    taskTypeOrdinalMapping.put(410, "GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG");
+    taskTypeOrdinalMapping.put(411, "GOOGLE_FUNCTION_COMMAND_TASK");
+    taskTypeOrdinalMapping.put(412, "GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG");
+    taskTypeOrdinalMapping.put(413, "GCP_PROJECTS_TASK_NG");
+    taskTypeOrdinalMapping.put(414, "GCS_BUCKETS_TASK_NG");
+    taskTypeOrdinalMapping.put(415, "AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG");
+    taskTypeOrdinalMapping.put(416, "GOOGLE_FUNCTION_DEPLOY_TASK");
+    taskTypeOrdinalMapping.put(417, "GOOGLE_FUNCTION_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(418, "GOOGLE_FUNCTION_PREPARE_ROLLBACK_TASK");
+    taskTypeOrdinalMapping.put(419, "GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK");
+    taskTypeOrdinalMapping.put(420, "GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK");
+    taskTypeOrdinalMapping.put(421, "ECS_TASK_ARN_ROLLING_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(422, "ECS_TASK_ARN_CANARY_DEPLOY_NG");
+    taskTypeOrdinalMapping.put(423, "ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

@@ -14,9 +14,9 @@ import static io.harness.cache.CacheBackend.NOOP;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.STOManagerConfiguration;
+import io.harness.app.CIManagerConfiguration;
 import io.harness.app.STOManagerServiceModule;
-import io.harness.beans.execution.QueueServiceClient;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -30,7 +30,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -62,6 +62,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -72,7 +73,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -158,8 +158,8 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       }
     });
 
-    STOManagerConfiguration configuration =
-        STOManagerConfiguration.builder()
+    CIManagerConfiguration configuration =
+        CIManagerConfiguration.builder()
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
             .accessControlClientConfiguration(AccessControlClientConfiguration.builder().build())
@@ -171,7 +171,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
                                           .delegateServiceEndpointVariableValue("delegate-service:8080")
                                           .liteEngineImageTag("v1.4-alpha")
                                           .pvcDefaultStorageSize(25600)
-                                          .queueServiceClient(QueueServiceClient.builder().build())
+                                          .queueServiceClientConfig(QueueServiceClientConfig.builder().build())
                                           .build())
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
             .logServiceConfig(LogServiceConfig.builder()

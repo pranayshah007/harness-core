@@ -14,11 +14,12 @@ import io.harness.dto.converter.FailureInfoDTOConverter;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Level;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.Objects;
@@ -47,11 +48,6 @@ public class ExecutionSummaryUpdateUtils {
     return false;
   }
 
-  public static boolean isStageStrategyNode(NodeExecution nodeExecution) {
-    return nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
-        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance());
-  }
-
   /**
    * This function adds some information at the stage layoutNodeMap level.
    * Performs the following operation:
@@ -68,41 +64,12 @@ public class ExecutionSummaryUpdateUtils {
     if (isBarrierNode(level)) {
       updated = performUpdatesOnBarrierNode(update, nodeExecution);
     }
-    ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
-    if (isStageStrategyNode(nodeExecution)) {
-      updated = updateStrategyNode(update, nodeExecution, status) || updated;
-    }
     if (OrchestrationUtils.isStageNode(nodeExecution)) {
+      ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
       updated = updateStageNode(update, nodeExecution, status, level) || updated;
     }
+
     return updated;
-  }
-
-  private static boolean updateStrategyNode(Update update, NodeExecution nodeExecution, ExecutionStatus status) {
-    update.set(String.format(LayoutNodeGraphConstants.STATUS, nodeExecution.getNodeId()), status);
-    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
-        nodeExecution.getResolvedStepParameters());
-    return true;
-  }
-
-  public boolean addPipelineUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.internalStatus, nodeExecution.getStatus());
-      update.set(PlanExecutionSummaryKeys.status, status);
-      if (nodeExecution.getEndTs() != null) {
-        update.set(PlanExecutionSummaryKeys.endTs, nodeExecution.getEndTs());
-      }
-      if (status == ExecutionStatus.FAILED) {
-        update.set(PlanExecutionSummaryKeys.executionErrorInfo,
-            ExecutionErrorInfo.builder().message(nodeExecution.getFailureInfo().getErrorMessage()).build());
-        update.set(PlanExecutionSummaryKeys.failureInfo,
-            FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
-      }
-      return true;
-    }
-
-    return false;
   }
 
   private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {
@@ -148,5 +115,13 @@ public class ExecutionSummaryUpdateUtils {
     }
     update.set(String.format(LayoutNodeGraphConstants.EXECUTION_INPUT_CONFIGURED, stageUuid),
         nodeExecution.getExecutionInputConfigured());
+    update.set(String.format(LayoutNodeGraphConstants.NODE_IDENTIFIER, stageUuid), nodeExecution.getIdentifier());
+    update.set(String.format(LayoutNodeGraphConstants.NAME, stageUuid), nodeExecution.getName());
+
+    boolean isRollbackStageNode =
+        nodeExecution.getNodeId().endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
+    update.set(
+        String.format(LayoutNodeGraphConstants.BASE_KEY + "." + GraphLayoutNodeDTOKeys.isRollbackStageNode, stageUuid),
+        isRollbackStageNode);
   }
 }

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
-@OwnedBy(HarnessTeam.PL)
+@OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @SuperBuilder
 public class GitFileResponse extends ScmBaseResponse {

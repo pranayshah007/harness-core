@@ -20,7 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ServiceRepositoryCustom {
   Page<ServiceEntity> findAll(Criteria criteria, Pageable pageable);
-  List<ServiceEntity> findAll(Criteria criteria);
+  @Deprecated List<ServiceEntity> findAll(Criteria criteria); // Use find all  with pageable
   ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity);
   ServiceEntity update(Criteria criteria, ServiceEntity serviceEntity);
   @Deprecated boolean softDelete(Criteria criteria);
@@ -34,4 +34,6 @@ public interface ServiceRepositoryCustom {
 
   ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       boolean deleted);
+
+  List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

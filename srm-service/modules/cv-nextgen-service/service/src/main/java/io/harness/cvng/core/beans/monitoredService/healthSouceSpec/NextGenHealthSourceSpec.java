@@ -14,7 +14,6 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.HealthSourceParams;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -66,7 +65,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   private Key getKeyFromCVConfig(@NotNull NextGenLogCVConfig cvConfig) {
     return Key.builder()
         .monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier())
-        .queryIdentifier(cvConfig.getQueryName())
+        .queryIdentifier(cvConfig.getQueryIdentifier())
         .build();
   }
 
@@ -77,7 +76,6 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
         .groupName(cvConfig.getGroupName())
         .build();
   }
-
   private Map<Key, CVConfig> getExistingCVConfigMap(List<CVConfig> existingCVConfigs) {
     switch (dataSourceType.getVerificationType()) {
       case TIME_SERIES:
@@ -126,20 +124,33 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
     queryDefinitions.forEach((QueryDefinition query) -> {
       Preconditions.checkArgument(
           StringUtils.isNotBlank(query.getIdentifier()), "Query identifier does not match the expected pattern.");
+      Preconditions.checkArgument(StringUtils.isNotBlank(query.getGroupName()), "Query Group Name must be present.");
+      Preconditions.checkArgument(StringUtils.isNotBlank(query.getName()), "Query Name must be present.");
+
       if (uniqueQueryNames.contains(query.getName())) {
         throw new InvalidRequestException(String.format("Duplicate query name present %s", query.getName()));
       }
       uniqueQueryNames.add(query.getName());
     });
     if (dataSourceType.getVerificationType() == VerificationType.LOG) {
+      if (dataSourceType == DataSourceType.ELASTICSEARCH) {
+        queryDefinitions.forEach((QueryDefinition query) -> {
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getMessageIdentifier()),
+              "message identifier does not match the expected pattern.");
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getTimeStampFormat()),
+              "timestamp format does not match the expected pattern.");
+          Preconditions.checkArgument(StringUtils.isNotBlank(query.getQueryParams().getTimeStampIdentifier()),
+              "timestamp identifier does not match the expected pattern.");
+          Preconditions.checkArgument(
+              StringUtils.isNotBlank(query.getQueryParams().getIndex()), "index does not match the expected pattern.");
+        });
+      }
       queryDefinitions.forEach((QueryDefinition query)
                                    -> Preconditions.checkArgument(Objects.isNull(query.getMetricThresholds())
                                            || query.getMetricThresholds().size() == 0,
                                        "Metric Thresholds should not be present for logs."));
     } else {
       queryDefinitions.forEach((QueryDefinition query) -> {
-        Preconditions.checkArgument(
-            StringUtils.isNotBlank(query.getGroupName()), "GroupName must be present for metrics");
         if (Objects.nonNull(query.getContinuousVerificationEnabled()) && query.getContinuousVerificationEnabled()) {
           Preconditions.checkArgument(Objects.nonNull(query.getQueryParams())
                   && StringUtils.isNotEmpty(query.getQueryParams().getServiceInstanceField()),
@@ -148,6 +159,8 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
       });
     }
   }
+
+  @JsonIgnore
   public DataSourceType getDataSourceType() {
     return dataSourceType;
   }
@@ -168,7 +181,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
           metricDefinitionMap.put(key, metricDefinitions);
         });
 
-        Map<Key, CVConfig> sumologicMetricCVConfigs = new HashMap<>();
+        Map<Key, CVConfig> metricCVConfigs = new HashMap<>();
         metricDefinitionMap.forEach((Key key, List<QueryDefinition> queryDefinitions) -> {
           NextGenMetricCVConfig nextGenMetricCVConfig =
               NextGenMetricCVConfig.builder()
@@ -177,21 +190,20 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                   .verificationType(VerificationType.TIME_SERIES)
                   .dataSourceType(dataSourceType)
                   .orgIdentifier(orgIdentifier)
-                  .healthSourceParams(HealthSourceParams.builder().region(healthSourceParams.getRegion()).build())
+                  .healthSourceParams(healthSourceParams.getHealthSourceParamsEntity())
                   .projectIdentifier(projectIdentifier)
                   .monitoredServiceIdentifier(monitoredServiceIdentifier)
                   .identifier(identifier)
-                  .category(queryDefinitions.get(0).getRiskProfile().getCategory())
+                  .category(key.getCategory())
                   .connectorIdentifier(connectorRef)
                   .monitoredServiceIdentifier(monitoredServiceIdentifier)
                   .monitoringSourceName(name)
                   .build();
-          nextGenMetricCVConfig.populateFromQueryDefinitions(
-              queryDefinitions, queryDefinitions.get(0).getRiskProfile().getCategory());
+          nextGenMetricCVConfig.populateFromQueryDefinitions(queryDefinitions, key.getCategory());
           nextGenMetricCVConfig.addCustomMetricThresholds(queryDefinitions);
-          sumologicMetricCVConfigs.put(key, nextGenMetricCVConfig);
+          metricCVConfigs.put(key, nextGenMetricCVConfig);
         });
-        return sumologicMetricCVConfigs;
+        return metricCVConfigs;
       case LOG:
         return queryDefinitions.stream()
             .map(queryDefinition
@@ -204,7 +216,10 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                        .connectorIdentifier(getConnectorRef())
                        .monitoringSourceName(name)
                        .queryName(queryDefinition.getName())
-                       .query(queryDefinition.getQuery())
+                       .query(queryDefinition.getQuery().trim())
+                       .groupName(queryDefinition.getGroupName())
+                       .queryIdentifier(queryDefinition.getIdentifier())
+                       .healthSourceParams(healthSourceParams.getHealthSourceParamsEntity())
                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                        .category(CVMonitoringCategory.ERRORS)
                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -217,13 +232,27 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   @JsonIgnore
   @Deprecated
   public List<HealthSourceMetricDefinition> getMetricDefinitions() {
-    return queryDefinitions.stream()
-        .map(queryDefinition
-            -> HealthSourceMetricDefinition.builder()
-                   .metricName(queryDefinition.getName())
-                   .identifier(queryDefinition.getIdentifier())
-                   .riskProfile(queryDefinition.getRiskProfile())
-                   .build())
-        .collect(Collectors.toList());
+    if (DataSourceType.getTimeSeriesTypes().contains(dataSourceType)) {
+      return queryDefinitions.stream()
+          .map(queryDefinition
+              -> HealthSourceMetricDefinition.builder()
+                     .metricName(queryDefinition.getName())
+                     .identifier(queryDefinition.getIdentifier())
+                     .riskProfile(queryDefinition.getRiskProfile())
+                     .sli(
+                         HealthSourceMetricDefinition.SLIDTO.builder().enabled(queryDefinition.getSliEnabled()).build())
+                     .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                                   .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                       .enabled(queryDefinition.getLiveMonitoringEnabled())
+                                                       .build())
+                                   .deploymentVerification(
+                                       HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                           .enabled(queryDefinition.getContinuousVerificationEnabled())
+                                           .build())
+                                   .build())
+                     .build())
+          .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
   }
 }

@@ -14,6 +14,7 @@ import lombok.Value;
 @Value
 @Builder
 public class DelegateQueueServiceConfig {
+  boolean enableQueueAndDequeue;
   ServiceHttpClientConfig queueServiceConfig;
   String topic;
 }

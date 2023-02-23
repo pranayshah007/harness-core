@@ -145,7 +145,7 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
             .collect(Collectors.toList());
 
     // Add user defined metric thresholds to respective cvConfigs
-    cvConfigs.forEach(cvConfig -> cvConfig.addCustomMetricThresholds(metricPacks));
+    cvConfigs.forEach(cvConfig -> cvConfig.addMetricThresholds(metricPacks, metricDefinitions));
 
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))

@@ -10,8 +10,10 @@ package io.harness.ng.scim;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -38,15 +40,22 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.serializer.JsonUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,6 +63,7 @@ import org.mockito.Mock;
 import retrofit2.Call;
 
 @OwnedBy(PL)
+@Slf4j
 public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NgUserService ngUserService;
 
@@ -62,17 +72,24 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private NGScimUserServiceImpl scimUserService;
   @Mock private AccountClient accountClient;
 
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  ObjectMapper mapper = new ObjectMapper();
+  private static final String USERNAME = "userName";
+
   @Before
   public void setup() throws IOException {
     inviteService = mock(InviteService.class);
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.isFeatureFlagEnabled(any(), anyString())).thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(retrofit2.Response.success(new RestResponse<>(true)));
 
-    scimUserService = new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, accountClient);
+    scimUserService = new NGScimUserServiceImpl(
+        ngUserService, inviteService, userGroupService, accountClient, ngFeatureFlagHelperService);
   }
 
   @Test
@@ -324,5 +341,69 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     assertThat(scimUser.getUserName()).isEqualTo(userInfo.getEmail());
     assertThat(scimUser.getId()).isNotNull();
     assertThat(scimUser.getId()).isEqualTo(userInfo.getUuid());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testUpdateUserNameAndEmail() {
+    String name = randomAlphabetic(10);
+    String updatedName = randomAlphabetic(10);
+    String email = "username@harness.io";
+    String updatedEmail = "username123@harness.io";
+    String VALUE = "value";
+    String PRIMARY = "primary";
+    String userId = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+
+    UserInfo userInfo = UserInfo.builder().admin(true).email(email).name(name).uuid(userId).build();
+
+    UserMetadataDTO userMetadataDTO = UserMetadataDTO.builder().name(name).email(email).build();
+    Map<String, Object> emailMap = new HashMap<>() {
+      {
+        put(VALUE, updatedEmail);
+        put(PRIMARY, true);
+      }
+    };
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName(updatedName);
+    scimUser.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
+
+    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
+
+    scimUserService.updateUser(userId, accountId, scimUser);
+
+    userMetadataDTO.setName(updatedName);
+    userMetadataDTO.setExternallyManaged(true);
+    userMetadataDTO.setEmail(updatedEmail);
+    verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testEmailUpdateShouldConvertToLowerCase() {
+    String email = "username@harness.io";
+    String updatedEmail = "USERNAME123@harness.io";
+    String userId = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+
+    UserInfo userInfo = UserInfo.builder().admin(true).email(email).uuid(userId).build();
+
+    UserMetadataDTO userMetadataDTO = UserMetadataDTO.builder().email(email).build();
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName(updatedEmail);
+
+    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
+
+    scimUserService.updateUser(userId, accountId, scimUser);
+
+    userMetadataDTO.setExternallyManaged(true);
+    userMetadataDTO.setEmail(updatedEmail.toLowerCase());
+    verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
   }
 }

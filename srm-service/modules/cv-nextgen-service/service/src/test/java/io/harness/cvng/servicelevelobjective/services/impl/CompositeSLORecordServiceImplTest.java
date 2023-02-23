@@ -169,6 +169,44 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testCreate_SkipData() {
+    List<SLIRecord.SLIState> sliStateList1 = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
+        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.SKIP_DATA);
+    List<SLIRecord.SLIState> sliStateList2 = Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.SKIP_DATA,
+        SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD, SLIRecord.SLIState.GOOD);
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    List<SLIRecord> sliRecordList1 = createSLIRecords(sliId1, sliStateList1);
+    List<SLIRecord> sliRecordList2 = createSLIRecords(sliId2, sliStateList2);
+
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
+        serviceLevelObjectivesDetailCompositeSLORecordMap = new HashMap<>();
+    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), sliRecordList1);
+    serviceLevelObjectivesDetailCompositeSLORecordMap.put(
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), sliRecordList2);
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
+        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
+    objectivesDetailSLIMissingDataTypeMap.put(
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(0), SLIMissingDataType.GOOD);
+    objectivesDetailSLIMissingDataTypeMap.put(
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().get(1), SLIMissingDataType.BAD);
+    sloRecordService.create(serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0,
+        verificationTaskId, startTime, endTime);
+    List<CompositeSLORecord> sloRecords = sloRecordService.getSLORecords(verificationTaskId, startTime, endTime);
+    assertThat(sloRecords.size()).isEqualTo(3);
+    assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.5);
+    assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.5);
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testUpdate_completeOverlap() {
     List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75, 2.5, 2.75);
     List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25, 1.5, 2.25);

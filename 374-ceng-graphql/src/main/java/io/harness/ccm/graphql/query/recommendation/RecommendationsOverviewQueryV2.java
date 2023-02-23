@@ -23,11 +23,6 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.constructQLCEViewFilterFromViewIdCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertIdFilterToViewCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertQLCEViewRuleToViewRule;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getIdFilters;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getRuleFilters;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
@@ -37,6 +32,8 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
@@ -63,6 +60,7 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.queryconverter.SQLConverter;
@@ -77,6 +75,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import graphql.com.google.common.collect.ImmutableSet;
 import io.fabric8.utils.Lists;
@@ -85,6 +84,10 @@ import io.leangen.graphql.annotations.GraphQLContext;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -97,6 +100,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
@@ -118,6 +122,10 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
+  @Inject private ViewParametersHelper viewParametersHelper;
+  @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
   private static final Set<String> RECOMMENDATION_RESOURCE_TYPE_COLUMNS =
       ImmutableSet.of(WORKLOAD_NAME_FIELD_ID, INSTANCE_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID);
   private static final Set<String> RECOMMENDATION_FILTER_COLUMNS = ImmutableSet.of(CLUSTER_NAME_FIELD_ID,
@@ -151,6 +159,10 @@ public class RecommendationsOverviewQueryV2 {
                               .recommendationDetails(getRecommendationDetails(item, env))
                               .monthlyCost(item.getMonthlyCost())
                               .monthlySaving(item.getMonthlySaving())
+                              .recommendationState(item.getRecommendationState())
+                              .jiraConnectorRef(item.getJiraConnectorRef())
+                              .jiraIssueKey(item.getJiraIssueKey())
+                              .jiraStatus(item.getJiraStatus())
                               .build())
                 .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
@@ -247,16 +259,17 @@ public class RecommendationsOverviewQueryV2 {
     final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewTimeFilter> qlCEViewTimeFilters = viewsQueryHelper.getTimeFilters(perspectiveFilters);
 
-    final List<QLCEViewRule> qlCeViewRules = getRuleFilters(perspectiveFilters);
-    final List<ViewRule> combinedViewRuleList = convertQLCEViewRuleToViewRule(qlCeViewRules);
+    final List<QLCEViewRule> qlCeViewRules = viewParametersHelper.getRuleFilters(perspectiveFilters);
+    final List<ViewRule> combinedViewRuleList =
+        viewParametersHelper.convertQLCEViewRuleListToViewRuleList(qlCeViewRules);
     combinedViewRuleList.addAll(getPerspectiveRuleList(perspectiveFilters));
 
-    Condition ORConditions =
-        constructViewRuleFilterCondition(bigQuery, combinedViewRuleList, accountId, qlCEViewTimeFilters);
+    Condition ORConditions = constructViewRuleFilterCondition(combinedViewRuleList, accountId, qlCEViewTimeFilters);
 
-    final List<ViewCondition> viewIdConditions = convertIdFilterToViewCondition(getIdFilters(perspectiveFilters));
+    final List<ViewCondition> viewIdConditions =
+        viewParametersHelper.convertIdFilterToViewCondition(viewParametersHelper.getIdFilters(perspectiveFilters));
 
-    Condition ANDConditions = constructViewFilterCondition(bigQuery, viewIdConditions, accountId, qlCEViewTimeFilters);
+    Condition ANDConditions = constructViewFilterCondition(viewIdConditions, accountId, qlCEViewTimeFilters);
 
     return ORConditions.and(ANDConditions);
   }
@@ -341,22 +354,21 @@ public class RecommendationsOverviewQueryV2 {
   }
 
   @NotNull
-  private Condition constructViewRuleFilterCondition(@NotNull BigQuery bigQuery, @NotNull List<ViewRule> viewRuleList,
-      @NotNull String accountId, @NotNull List<QLCEViewTimeFilter> qlCEViewTimeFilters) {
+  private Condition constructViewRuleFilterCondition(@NotNull List<ViewRule> viewRuleList, @NotNull String accountId,
+      @NotNull List<QLCEViewTimeFilter> qlCEViewTimeFilters) {
     Condition condition = DSL.noCondition();
 
     for (ViewRule viewRule : viewRuleList) {
-      condition = condition.or(
-          constructViewFilterCondition(bigQuery, viewRule.getViewConditions(), accountId, qlCEViewTimeFilters));
+      condition =
+          condition.or(constructViewFilterCondition(viewRule.getViewConditions(), accountId, qlCEViewTimeFilters));
     }
 
     return condition;
   }
 
   @NotNull
-  private Condition constructViewFilterCondition(@NotNull BigQuery bigQuery,
-      @NotNull List<ViewCondition> viewConditionList, @NotNull String accountId,
-      @NotNull List<QLCEViewTimeFilter> qlCEViewTimeFilters) {
+  private Condition constructViewFilterCondition(@NotNull List<ViewCondition> viewConditionList,
+      @NotNull String accountId, @NotNull List<QLCEViewTimeFilter> qlCEViewTimeFilters) {
     Condition condition = DSL.noCondition();
 
     final Set<String> resourceTypes = new HashSet<>();
@@ -373,15 +385,21 @@ public class RecommendationsOverviewQueryV2 {
       } else if (viewFieldIdentifier == BUSINESS_MAPPING) {
         final String businessMappingId = idCondition.getViewField().getFieldId();
         if (Objects.nonNull(businessMappingId)) {
-          condition = condition.and(constructViewRuleFilterCondition(bigQuery,
-              getBusinessMappingViewRules(
-                  businessMappingId, accountId, idCondition.getViewOperator(), idCondition.getValues()),
-              accountId, qlCEViewTimeFilters));
+          condition = condition.and(
+              constructViewRuleFilterCondition(getBusinessMappingViewRules(businessMappingId, accountId,
+                                                   idCondition.getViewOperator(), idCondition.getValues()),
+                  accountId, qlCEViewTimeFilters));
         }
       } else if (idCondition.getViewField().getIdentifier() == LABEL) {
-        final TableResult result =
-            getWorkloadAndCloudServiceNamesTableResult(bigQuery, accountId, qlCEViewTimeFilters, idCondition);
-        condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
+        if (isClickHouseEnabled) {
+          final ResultSet result =
+              getWorkloadAndCloudServiceNamesResultSet(accountId, qlCEViewTimeFilters, idCondition);
+          condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
+        } else {
+          final TableResult result =
+              getWorkloadAndCloudServiceNamesTableResult(accountId, qlCEViewTimeFilters, idCondition);
+          condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
+        }
       }
     }
 
@@ -392,10 +410,11 @@ public class RecommendationsOverviewQueryV2 {
     return condition;
   }
 
-  private TableResult getWorkloadAndCloudServiceNamesTableResult(final BigQuery bigQuery, final String accountId,
-      final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
+  private TableResult getWorkloadAndCloudServiceNamesTableResult(
+      final String accountId, final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
+    final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewFilter> qlCEViewFilters =
-        Collections.singletonList(constructQLCEViewFilterFromViewIdCondition(idCondition));
+        Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
     final String cloudProviderTableName =
         bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
@@ -410,6 +429,26 @@ public class RecommendationsOverviewQueryV2 {
       return null;
     }
     return result;
+  }
+
+  private ResultSet getWorkloadAndCloudServiceNamesResultSet(
+      final String accountId, final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
+    final List<QLCEViewFilter> qlCEViewFilters =
+        Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
+    final String cloudProviderTableName =
+        bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
+    final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
+        qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
+    ResultSet resultSet;
+    try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
+         Statement statement = connection.createStatement()) {
+      resultSet = statement.executeQuery(query.toString());
+    } catch (SQLException e) {
+      log.error("Failed to get labels recommendation for query {}", query, e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+    return resultSet;
   }
 
   private Condition getWorkloadAndCloudServiceNamesConditions(final TableResult result) {
@@ -435,6 +474,31 @@ public class RecommendationsOverviewQueryV2 {
           cloudServiceNames.add(resourceName);
         }
       }
+    }
+    final Condition workloadCondition = getCondition(workloadNames, ResourceType.WORKLOAD);
+    final Condition cloudServiceCondition = getCondition(cloudServiceNames, ResourceType.ECS_SERVICE);
+    return DSL.or(workloadCondition, cloudServiceCondition);
+  }
+
+  private Condition getWorkloadAndCloudServiceNamesConditions(final ResultSet resultSet) {
+    if (Objects.isNull(resultSet)) {
+      return DSL.noCondition();
+    }
+    final Set<String> workloadNames = new HashSet<>();
+    final Set<String> cloudServiceNames = new HashSet<>();
+    try {
+      while (resultSet.next()) {
+        String resourceName = resultSet.getString("resourceName");
+        String instanceType = resultSet.getString("instanceType");
+        if (Objects.nonNull(resourceName) && Objects.nonNull(instanceType)) {
+          if (WORKLOAD_INSTANCE_TYPES.contains(instanceType)) {
+            workloadNames.add(resourceName);
+          } else if (CLOUD_SERVICE_INSTANCE_TYPES.contains(instanceType)) {
+            cloudServiceNames.add(resourceName);
+          }
+        }
+      }
+    } catch (Exception ignored) {
     }
     final Condition workloadCondition = getCondition(workloadNames, ResourceType.WORKLOAD);
     final Condition cloudServiceCondition = getCondition(cloudServiceNames, ResourceType.ECS_SERVICE);

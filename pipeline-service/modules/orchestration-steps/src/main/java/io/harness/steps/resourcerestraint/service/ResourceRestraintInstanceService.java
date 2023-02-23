@@ -23,6 +23,13 @@ import java.util.Set;
 public interface ResourceRestraintInstanceService {
   ResourceRestraintInstance save(ResourceRestraintInstance resourceRestraintInstance);
 
+  /**
+   * Delete all resource restraint instance for ids of given release type
+   * Uses - releaseEntityType_releaseEntityId_idx
+   * @param releaseEntityIds
+   */
+  void deleteInstancesForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope);
+
   ResourceRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
 
   ResourceRestraintInstance finishInstance(String uuid, String resourceUnit);

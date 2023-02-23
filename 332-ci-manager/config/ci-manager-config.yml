@@ -5,7 +5,7 @@
 server:
   applicationConnectors:
     - type: https
-      port: 7171
+      port: ${SERVER_APP_HTTPS_PORT:-7171}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -13,11 +13,11 @@ server:
       validateCerts: false
       maxRequestHeaderSize: 100KiB
     - type: http
-      port: 4457
+      port: ${SERVER_APP_HTTP_PORT:-4457}
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: https
-      port: 7071
+      port: ${SERVER_ADMIN_HTTPS_PORT:-7071}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -140,12 +140,13 @@ ciExecutionServiceConfig:
     gcsCreds: null
     projectId: null
     bucketName: null
-  queueServiceClient:
-    queueServiceConfig:
+  queueServiceClientConfig:
+    httpClientConfig:
       baseUrl: http://localhost:9091/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
-    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+    queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -161,10 +162,12 @@ ciExecutionServiceConfig:
     enterprise:
       defaultTotalExecutionCount: 100
       defaultMacExecutionCount: 10
+    overrideConfig:
+      - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.1
-  liteEngineImage: harness/ci-lite-engine:1.16.1
+  addonImage: harness/ci-addon:1.16.5
+  liteEngineImage: harness/ci-lite-engine:1.16.5
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -173,6 +176,40 @@ ciExecutionServiceConfig:
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
+    splitWindowsAmd64Pool: false
+  stoStepConfig:
+    defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: aquatrivy_default
+        image: harness/aqua-trivy-job-runner
+      - product: bandit_default
+        image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
+      - product: grype_default
+        image: harness/grype-job-runner
+      - product: snyk_default
+        image: harness/snyk-job-runner
+      - product: sonarqube_default
+        image: harness/sonarqube-agent-job-runner
+      - product: prismacloud_default
+        image: harness/twistlock-job-runner
+      - product: checkmarx_default
+        image: harness/checkmarx-job-runner
+      - product: zap_default
+        image: harness/zap-job-runner
+      - product: zap_quick
+        image: harness/zap-job-runner
+      - product: zap_attack
+        image: harness/zap-job-runner
+      - product: zap_standard
+        image: harness/zap-job-runner
+      - product: mend_default
+        image: harness/whitesource-agent-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -184,19 +221,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.6
+      image: plugins/kaniko:1.7.0
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.6
+      image: plugins/kaniko-ecr:1.7.0
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.6
+      image: plugins/kaniko-gcr:1.7.0
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.7
+      image: plugins/kaniko-acr:1.7.0
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -224,13 +261,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.3
+      image: plugins/cache:1.4.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.3
+      image: plugins/cache:1.4.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -246,8 +283,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.3
-      cacheS3: plugins/cache:1.4.3
+      cacheGCS: plugins/cache:1.4.7
+      cacheS3: plugins/cache:1.4.7
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -266,11 +303,11 @@ asyncDelegateResponseConsumption:
 
 pmsSdkGrpcServerConfig:
   connectors:
-    - port: 12301
+    - port: ${PMS_SDK_SERVER_CONFIG_SECURE_PORT:-12301}
       secure: true
       keyFilePath: key.pem
       certFilePath: cert.pem
-    - port: 12302
+    - port: ${PMS_SDK_SERVER_CONFIG_PORT:-12302}
 
 pmsGrpcClientConfig:
   target: localhost:12011
@@ -337,3 +374,4 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 enableOpentelemetry: false
+enableTelemetry: ${ENABLE_TELEMETRY:-false}

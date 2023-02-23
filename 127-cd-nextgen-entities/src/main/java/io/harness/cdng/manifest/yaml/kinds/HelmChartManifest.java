@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -79,13 +80,17 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("valuesPaths")
   ParameterField<List<String>> valuesPaths;
   @Wither
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   @SkipAutoEvaluation
   ParameterField<Boolean> skipResourceVersioning;
+
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither List<HelmManifestCommandFlag> commandFlags;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartName;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
@@ -121,6 +126,15 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withCommandFlags(new ArrayList<>(helmChartManifest.getCommandFlags()));
     }
 
+    if (helmChartManifest.getSubChartName() != null) {
+      resultantManifest = resultantManifest.withSubChartName(helmChartManifest.getSubChartName());
+    }
+
+    if (helmChartManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest =
+          resultantManifest.withEnableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback());
+    }
+
     return resultantManifest;
   }
 
@@ -145,7 +159,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new HelmChartManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), chartName, chartVersion, helmVersion,
-        valuesPaths, skipResourceVersioning, commandFlags);
+        valuesPaths, skipResourceVersioning, commandFlags, subChartName, enableDeclarativeRollback);
   }
 
   @Value
@@ -158,5 +172,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
     List<HelmManifestCommandFlag> commandFlags;
+    ParameterField<String> subChartName;
+    ParameterField<Boolean> enableDeclarativeRollback;
   }
 }

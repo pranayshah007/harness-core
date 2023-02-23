@@ -26,6 +26,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -93,12 +94,14 @@ public class SyncPipelineExecutionsWithWrongStatusInTimescale implements NGMigra
     List<String> projections = new ArrayList<>();
     projections.add(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.status);
     projections.add(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.endTs);
-    List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityList =
-        pmsExecutionSummaryRepository.findAllWithRequiredProjection(criteria, pageable, projections);
 
-    try (PreparedStatement updateStatement = connection.prepareStatement(UPDATE_STATEMENT)) {
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRepository.findAllWithRequiredProjectionUsingAnalyticsNode(
+                 criteria, pageable, projections);
+         PreparedStatement updateStatement = connection.prepareStatement(UPDATE_STATEMENT)) {
       boolean update = false;
-      for (PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity : pipelineExecutionSummaryEntityList) {
+      while (iterator.hasNext()) {
+        PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = iterator.next();
         String status = planExecutionIdToStatusMap.get(pipelineExecutionSummaryEntity.getPlanExecutionId());
         if (!status.equals(pipelineExecutionSummaryEntity.getStatus().name())) {
           update = true;

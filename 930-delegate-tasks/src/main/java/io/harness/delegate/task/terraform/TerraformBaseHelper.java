@@ -57,12 +57,6 @@ public interface TerraformBaseHelper {
   Map<String, String> buildCommitIdToFetchedFilesMap(String configFileIdentifier,
       GitBaseRequest gitBaseRequestForConfigFile, Map<String, String> commitIdForConfigFilesMap);
 
-  void addVarFilesCommitIdsToMap(
-      String accountId, List<TerraformVarFileInfo> varFileInfo, Map<String, String> commitIdForConfigFilesMap);
-
-  void addBackendFileCommitIdsToMap(
-      String accountId, TerraformBackendConfigFileInfo fileInfo, Map<String, String> commitIdForConfigFilesMap);
-
   String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
       String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
       String scriptPath, String workingDir);
@@ -79,10 +73,12 @@ public interface TerraformBaseHelper {
       LogCallback logCallback, GitBaseRequest gitBaseRequestForConfigFile, String baseDir, String workingDir);
 
   List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo, String scriptDir,
-      LogCallback logCallback, String accountId, String tfVarDirectory) throws IOException;
+      LogCallback logCallback, String accountId, String tfVarDirectory, Map<String, String> commitIdToFetchedFilesMap)
+      throws IOException;
 
   String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo bcFileInfo,
-      String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory) throws IOException;
+      String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,
+      Map<String, String> commitIdToFetchedFilesMap) throws IOException;
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 
@@ -95,7 +91,7 @@ public interface TerraformBaseHelper {
 
   String getBaseDir(String entityId);
 
-  void configureCredentialsForModuleSource(TerraformTaskNGParameters taskParameters,
+  void configureCredentialsForModuleSource(String baseDir, Map<String, String> envVars,
       GitStoreDelegateConfig conFileFileGitStore, LogCallback logCallback) throws IOException;
 
   String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, String planName,

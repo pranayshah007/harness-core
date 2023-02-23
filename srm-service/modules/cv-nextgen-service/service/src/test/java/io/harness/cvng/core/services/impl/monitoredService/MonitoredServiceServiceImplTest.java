@@ -21,11 +21,13 @@ import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -34,6 +36,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.ModuleType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -129,14 +133,22 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -176,6 +188,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
@@ -187,7 +202,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject ServiceDependencyService serviceDependencyService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
+
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject CVNGLogService cvngLogService;
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
@@ -200,6 +216,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock private PersistentLocker mockedPersistentLocker;
   @Mock private EnforcementClientService enforcementClientService;
   @Mock private FeatureFlagService featureFlagService;
+
+  @Mock private NgLicenseHttpClient ngLicenseHttpClient;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -226,6 +244,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     healthSourceName = "health source name";
     healthSourceIdentifier = "healthSourceIdentifier";
     accountId = builderFactory.getContext().getAccountId();
@@ -267,6 +287,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
+    FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
   }
 
   @Test
@@ -318,8 +339,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testGetMonitoredServiceChangeDetails_inRange() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
+    serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
     List<MonitoredServiceChangeDetailSLO> monitoredServiceChangeDetailSLOS =
         monitoredServiceService.getMonitoredServiceChangeDetails(
             builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), null, null);
@@ -335,8 +356,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testGetMonitoredServiceChangeDetails_notInRange() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
+    serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
     List<MonitoredServiceChangeDetailSLO> monitoredServiceChangeDetailSLOS =
         monitoredServiceService.getMonitoredServiceChangeDetails(
             builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), 1640058000000l, 1641058000000l);
@@ -666,8 +687,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(cvConfig);
     List<MetricDTO> metricDTOS = monitoredServiceService.getSloMetrics(
         builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, healthSourceIdentifier);
-    metricDTOS =
-        metricDTOS.stream().sorted(Comparator.comparing(metricDTO -> metricDTO.getMetricName())).collect(toList());
+    metricDTOS = metricDTOS.stream().sorted(Comparator.comparing(MetricDTO::getMetricName)).collect(toList());
     assertThat(metricDTOS.size()).isEqualTo(2);
     assertThat(metricDTOS.get(0).getMetricName()).isEqualTo("metricName1");
     assertThat(metricDTOS.get(1).getMetricName()).isEqualTo("metricName3");
@@ -781,7 +801,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             savedMonitoredServiceDTO.getSources()
                 .getChangeSources()
                 .stream()
-                .map(changeSource -> changeSource.getIdentifier())
+                .map(ChangeSourceDTO::getIdentifier)
                 .collect(toList()));
     assertThat(changeSources.size()).isEqualTo(1);
   }
@@ -821,7 +841,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             updatedMonitoredServiceDTO.getSources()
                 .getChangeSources()
                 .stream()
-                .map(changeSource -> changeSource.getIdentifier())
+                .map(ChangeSourceDTO::getIdentifier)
                 .collect(toList()));
     assertThat(changeSources.size()).isEqualTo(2);
   }
@@ -980,6 +1000,41 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGet_usingIdentifiers() {
+    MonitoredServiceDTO monitoredServiceDTO1 = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+    MonitoredServiceDTO monitoredServiceDTO2 = createMonitoredServiceDTOBuilder("ms2", "service1", "env2").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+    List<MonitoredServiceDetail> monitoredServiceDetails = monitoredServiceService.getMonitoredServiceDetails(
+        builderFactory.getContext().getProjectParams(), Set.of("ms1", "ms2"));
+    assertThat(monitoredServiceDetails.size()).isEqualTo(2);
+    assertThat(monitoredServiceDetails.get(0).getMonitoredServiceIdentifier()).isEqualTo("ms1");
+    assertThat(monitoredServiceDetails.get(0).getServiceIdentifier()).isEqualTo("service1");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentIdentifier()).isEqualTo("env1");
+    assertThat(monitoredServiceDetails.get(0).getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAll() {
+    MonitoredServiceDTO monitoredServiceDTO1 = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+    MonitoredServiceDTO monitoredServiceDTO2 = createMonitoredServiceDTOBuilder("ms2", "service1", "env2").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+    List<MonitoredServiceDetail> monitoredServiceDetails =
+        monitoredServiceService.getAllMonitoredServiceDetails(builderFactory.getContext().getProjectParams());
+    assertThat(monitoredServiceDetails.size()).isEqualTo(2);
+    assertThat(monitoredServiceDetails.get(0).getMonitoredServiceIdentifier()).isEqualTo("ms1");
+    assertThat(monitoredServiceDetails.get(0).getServiceIdentifier()).isEqualTo("service1");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentIdentifier()).isEqualTo("env1");
+    assertThat(monitoredServiceDetails.get(0).getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServiceDetails.get(0).getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testGet_usingServiceEnvironmentNotPresent() {
@@ -1097,8 +1152,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
-    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, environmentIdentifier, 0, 10, null, false);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1106,9 +1161,16 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(monitoredServiceListItemDTO.getServiceRef()).isEqualTo(serviceIdentifier);
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentIdentifier);
+    assertThat(monitoredServiceListItemDTO.getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServiceListItemDTO.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
     assertThat(monitoredServiceListItemDTO.getChangeSummary()).isEqualTo(changeSummary);
     assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+
+    monitoredServiceListDTOPageResponse =
+        monitoredServiceService.list(projectParams, Collections.emptyList(), 0, 10, null, false);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
   }
 
   @Test
@@ -1133,7 +1195,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummary = ChangeSummaryDTO.builder().build();
     when(changeSourceServiceMock.getChangeSummary(any(), any(), any(), any())).thenReturn(changeSummary);
     PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, "env2", 0, 10, null, false);
+        monitoredServiceService.list(projectParams, Collections.singletonList("env2"), 0, 10, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
@@ -1164,7 +1226,12 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         monitoredServiceService.list(projectParams, null, 0, 10, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
-    MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListDTOPageResponse.getContent().get(0);
+    List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS =
+        monitoredServiceListDTOPageResponse.getContent()
+            .stream()
+            .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
+            .collect(toList());
+    MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListItemDTOS.get(0);
     assertThat(monitoredServiceListItemDTO.getName()).isEqualTo(monitoredServiceIdentifier);
     assertThat(monitoredServiceListItemDTO.getIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(monitoredServiceListItemDTO.getServiceName()).isEqualTo("Mocked service name");
@@ -1198,9 +1265,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
                                        .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
                                        .collect(toList());
-    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceMonitoringEnabled()).isEqualTo(false);
   }
 
   @Test
@@ -1227,10 +1294,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
                                        .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
                                        .collect(toList());
-    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
-    assertThat(monitoredServiceListItemDTOS.get(3).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceMonitoringEnabled()).isEqualTo(false);
+    assertThat(monitoredServiceListItemDTOS.get(3).isServiceMonitoringEnabled()).isEqualTo(true);
   }
 
   @Test
@@ -1484,6 +1551,103 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
     assertThat(updatedMonitoredService.isEnabled()).isTrue();
     getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withLicense() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          List<ModuleLicenseDTO> srmModuleLicenseDTOS = new ArrayList<>();
+          srmModuleLicenseDTOS.add(SRMModuleLicenseDTO.builder()
+                                       .numberOfServices(5)
+                                       .moduleType(ModuleType.SRM)
+                                       .edition(Edition.FREE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .build());
+          testLicenses.put(ModuleType.SRM, srmModuleLicenseDTOS);
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          when(call.clone()).thenReturn(null);
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    assertThat(updatedMonitoredService.isEnabled()).isTrue();
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withOnlyFeatureFlag() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          testLicenses.put(ModuleType.SRM, new ArrayList<>());
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    assertThat(updatedMonitoredService.isEnabled()).isTrue();
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withInvalidSRMAccess() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          testLicenses.put(ModuleType.SRM, new ArrayList<>());
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), eq(FeatureName.CVNG_ENABLED.name()))).thenReturn(false);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    try {
+      monitoredServiceService.setHealthMonitoringFlag(
+          builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    } catch (Exception e) {
+      assertThat(e.getMessage()).isEqualTo("Invalid License, Please Contact Harness Support");
+    }
   }
 
   @Test
@@ -1842,8 +2006,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testList_withNoMonitoredService() {
-    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, environmentIdentifier, 0, 10, null, false);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(0);
     assertThat(monitoredServiceListDTOPageResponse.getPageItemCount()).isEqualTo(0);
@@ -1860,8 +2024,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         createMonitoredServiceDTOWithCustomDependencies("service_2_local", "service_2", Sets.newHashSet());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
-    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, environmentIdentifier, 0, 10, null, false);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
     monitoredServiceListDTOPageResponse.getContent().sort(
         Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier));
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
@@ -1913,8 +2077,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     setStartTimeEndTimeAndRiskScoreWith5MinBucket(msTwoHeatMap, endTime, 0.65, 0.55);
     hPersistence.save(msTwoHeatMap);
 
-    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
-        monitoredServiceService.list(projectParams, environmentIdentifier, 0, 10, null, true);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse = monitoredServiceService.list(
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, true);
 
     assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(1);
@@ -2139,8 +2303,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                 .errorBudgetRemainingPercentage(70.0)
                                                 .build();
     hPersistence.save(sloHealthIndicator);
-    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListItemDTOPageResponse =
-        monitoredServiceService.list(projectParams, environmentIdentifier, 0, 10, null, false);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListItemDTOPageResponse = monitoredServiceService.list(
+        projectParams, Collections.singletonList(environmentIdentifier), 0, 10, null, false);
     MonitoredServiceListItemDTO monitoredServiceListItemDTO =
         monitoredServiceListItemDTOPageResponse.getContent().get(0);
     assertThat(monitoredServiceListItemDTO.getSloHealthIndicators().size()).isEqualTo(1);
@@ -2670,7 +2834,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getHealthScoreNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2697,7 +2861,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getHealthScoreNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isFalse();
   }
@@ -2728,7 +2892,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
 
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeObservedNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2762,14 +2926,14 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .period(600000)
             .build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeImpactNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
 
     clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeImpactNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isFalse();
   }

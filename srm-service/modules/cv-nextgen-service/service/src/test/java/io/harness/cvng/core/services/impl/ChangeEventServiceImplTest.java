@@ -41,6 +41,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,7 +54,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
@@ -96,6 +96,60 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     Assertions.assertThat(activityFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withoutEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO = builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).build();
+
+    changeEventService.register(changeEventDTO);
+    changeEventService.register(changeEventDTO);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    Assertions.assertThat(activityFromDb).isNotNull();
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withDuplicateEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier").build();
+
+    changeEventService.register(changeEventDTO);
+    changeEventService.register(changeEventDTO);
+
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testRegister_insertCustomChangeEvent_withUniqueEventId() {
+    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
+        new HashSet<>(
+            Arrays.asList(builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY).build())));
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier1").build();
+
+    changeEventService.register(changeEventDTO);
+    ChangeEventDTO changeEventDTO2 =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_DEPLOY).id("identifier2").build();
+    changeEventService.register(changeEventDTO2);
+
+    long count = hPersistence.createQuery(Activity.class).count();
+    assertThat(count).isEqualTo(2);
   }
 
   @Test
@@ -305,19 +359,20 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testCreateTextSearchQuery() {
     // testing query as our test MongoServer doesn't support text search:
     // https://github.com/bwaldvogel/mongo-java-server
-    Query<Activity> activityQuery = changeEventService.createTextSearchQuery(Instant.ofEpochSecond(100),
-        Instant.ofEpochSecond(400), "searchText", Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
+    Query<Activity> activityQuery = changeEventService.createTextSearchQuery(Instant.parse("2023-01-31T00:00:00.00Z"),
+        Instant.parse("2023-01-31T10:00:00.00Z"), "searchText",
+        Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
         Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES));
 
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ query: {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
 
     activityQuery = changeEventService.createTextSearchQuery(
-        Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), "searchText", null, null);
+        Instant.parse("2023-01-31T00:00:00.00Z"), Instant.parse("2023-01-31T10:00:00.00Z"), "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ query: {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
   }
 
   @Test
@@ -350,7 +405,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCountInPrecedingWindow())
         .isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getPercentageChange())
-        .isCloseTo(100.0, offset(0.1));
+        .isCloseTo(0.0, offset(0.1));
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCountInPrecedingWindow())
         .isEqualTo(1);
@@ -409,7 +464,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCountInPrecedingWindow())
         .isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getPercentageChange())
-        .isCloseTo(100.0, offset(0.1));
+        .isCloseTo(0.0, offset(0.1));
 
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCountInPrecedingWindow())

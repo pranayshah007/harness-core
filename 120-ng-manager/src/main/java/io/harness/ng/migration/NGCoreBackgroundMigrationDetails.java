@@ -11,8 +11,11 @@ import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.CopyTemplatesPermissionRoleUpdate;
+import io.harness.ng.core.migration.NGWebhookMendateSettingsCategoryUpdateMigration;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
+import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
 
@@ -39,6 +42,9 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(3, PopulateYamlFieldInNGServiceEntityMigration.class))
         .add(Pair.of(4, CopyTemplatesPermissionRoleUpdate.class))
         .add(Pair.of(5, PopulateYamlAuthFieldInNGServiceNowConnectorMigration.class))
+        .add(Pair.of(6, NGWebhookMendateSettingsCategoryUpdateMigration.class))
+        .add(Pair.of(7, DeleteSoftDeletedConnectorsMigration.class))
+        .add(Pair.of(8, PopulateYamlAuthFieldInNGJiraConnectorMigration.class))
         .build();
   }
 }

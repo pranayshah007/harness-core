@@ -475,23 +475,13 @@ public class UserGroupServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testListUserGroupsBatch_withViewPermissionOnAll() {
+  public void testListUserGroupsBatch() {
     final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     String searchTerm = randomAlphabetic(5);
 
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-
-    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
-             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
-        .thenReturn(true);
     final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
     when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
         .thenReturn(allPages);
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
 
     List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
                                                                  .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -503,47 +493,6 @@ public class UserGroupServiceImplTest extends CategoryTest {
     verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
     assertThat(resultUserGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()))
         .isEqualTo(userGroupList.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()));
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testListUserGroupsBatch_withViewPermissionOnSelectedUserGroups() {
-    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    String searchTerm = randomAlphabetic(5);
-
-    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
-                                                          .resourceType(USERGROUP)
-                                                          .permission("core_usergroup_view")
-                                                          .resourceScope(ResourceScope.builder()
-                                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                                             .orgIdentifier(ORG_IDENTIFIER)
-                                                                             .projectIdentifier(PROJECT_IDENTIFIER)
-                                                                             .build());
-
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-
-    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
-             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
-        .thenReturn(false);
-    final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
-    when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
-        .thenReturn(allPages);
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
-
-    List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
-                                                                 .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                                 .orgIdentifier(ORG_IDENTIFIER)
-                                                                 .projectIdentifier(PROJECT_IDENTIFIER)
-                                                                 .searchTerm(searchTerm)
-                                                                 .build());
-
-    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
-    assertThat(resultUserGroups).isEqualTo(permittedUserGroups);
   }
 
   @Test

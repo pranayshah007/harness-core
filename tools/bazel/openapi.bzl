@@ -70,11 +70,12 @@ def _new_generator_command(ctx, gen_dir, rjars):
     )
 
     if _is_harness_swagger_v3_codegen(ctx):
-        gen_cmd += " io.swagger.codegen.v3.cli.SwaggerCodegen generate -i {spec} -c {config_file} -l {language} -o {output}".format(
+        gen_cmd += " -Dlogback.configurationFile={logback_test} io.swagger.codegen.v3.cli.SwaggerCodegen generate -i {spec} -c {config_file} -l {language} -o {output}".format(
             spec = ctx.file.spec.path,
             config_file = ctx.file.config_file.path,
             language = ctx.attr.language,
             output = gen_dir,
+            logback_test = ctx.file.logback_test.path,
         )
         gen_cmd += ' -D "{properties}"'.format(
             properties = _comma_separated_pairs(ctx.attr.system_properties),
@@ -92,7 +93,7 @@ def _new_generator_command(ctx, gen_dir, rjars):
         )
 
     if _is_openapi_codegen(ctx):
-        gen_cmd += " org.openapitools.codegen.OpenAPIGenerator generate --log-to-stderr -i {spec} -c {config_file} -g {language} -o {output}".format(
+        gen_cmd += " org.openapitools.codegen.OpenAPIGenerator generate -i {spec} -c {config_file} -g {language} -o {output}".format(
             spec = ctx.file.spec.path,
             config_file = ctx.file.config_file.path,
             language = ctx.attr.language,
@@ -143,6 +144,7 @@ def _impl(ctx):
         ctx.file.codegen_cli,
         ctx.file.spec,
         ctx.file.config_file,
+        ctx.file.logback_test,
     ] + _collect_files(ctx.attr.spec_refs) + cjars.to_list() + rjars.to_list()
     ctx.actions.run_shell(
         inputs = inputs,
@@ -198,6 +200,9 @@ openapi_gen = rule(
             allow_empty = True,
             allow_files = [".json", ".yaml"],
             default = [],
+        ),
+        "logback_test": attr.label(
+            allow_single_file = [".xml"],
         ),
         "language": attr.string(
             default = "jaxrs-spec",

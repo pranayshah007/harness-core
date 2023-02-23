@@ -81,7 +81,7 @@ redisLockConfig:
   nettyThreads: 16
   useScriptCache: true
 
-atmosphereBroadcaster: HAZELCAST
+atmosphereBroadcaster: MEMORY
 
 redisAtmosphereConfig:
   sentinel: false
@@ -191,7 +191,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 kubectlVersion: v1.13.2
-scmVersion: 1658d03e
+scmVersion: c1ce9f00
 
 portal:
   url: https://localhost:8000
@@ -216,7 +216,7 @@ portal:
   criticalDelegateTaskRejectAtLimit: 100000
 
 cacheConfig:
-  cacheBackend: HAZELCAST
+  cacheBackend: NOOP
   cacheNamespace: ""
   disabledCaches: []
 
@@ -234,7 +234,7 @@ featureFlagConfig:
 
 cfMigrationConfig:
   enabled: false
-  adminUrl : "http://localhost:3000/api/1.0"
+  adminUrl: "http://localhost:3000/api/1.0"
   apiKey: ""
   account: "default"
   org: "default_org"

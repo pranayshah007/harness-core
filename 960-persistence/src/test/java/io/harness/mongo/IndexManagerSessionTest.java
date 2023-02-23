@@ -29,14 +29,14 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.MappedClass;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
 
 public class IndexManagerSessionTest extends PersistenceTestBase {
   @Inject HPersistence persistence;
@@ -162,24 +162,6 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
     Date tooNew = new Date(System.currentTimeMillis() - Duration.ofDays(1).toMillis());
     assertThat(createCollectionSession(collection).isOkToDropIndexes(IndexManagerSession.tooNew(), accesses)).isFalse();
     assertThat(createCollectionSession(collection).isOkToDropIndexes(afterCreatingIndexes, accesses)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = GEORGE)
-  @Category(UnitTests.class)
-  @RealMongo
-  public void testCreateIndexCompositeIndexWithIdEntity() {
-    Morphia morphia = new Morphia();
-    morphia.map(TestCompositeIndexWithIdEntity.class);
-    Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
-    MappedClass mappedClass = mappedClasses.stream()
-                                  .filter(mc -> mc.getClazz().equals(TestCompositeIndexWithIdEntity.class))
-                                  .findFirst()
-                                  .get();
-    DBCollection collection = persistence.getCollection(mappedClass.getClazz());
-    assertThatThrownBy(() -> IndexManager.indexCreators(mappedClass, collection))
-        .isInstanceOf(IndexManagerInspectException.class)
-        .hasMessageContaining("collection key in a composite index");
   }
 
   @Test

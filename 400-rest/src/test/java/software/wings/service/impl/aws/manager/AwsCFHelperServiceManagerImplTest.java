@@ -71,7 +71,7 @@ public class AwsCFHelperServiceManagerImplTest extends CategoryTest {
                      AwsCFTemplateParamsData.builder().paramKey("k2").paramType("ENCRYPTED_TEXT").build()))
                  .build())
         .when(mockDelegateService)
-        .executeTask(any());
+        .executeTaskV2(any());
     AwsHelperServiceManager mockHelper = mock(AwsHelperServiceManager.class);
     on(service).set("helper", mockHelper);
     doNothing().when(mockHelper).validateDelegateSuccessForSyncTask(any());

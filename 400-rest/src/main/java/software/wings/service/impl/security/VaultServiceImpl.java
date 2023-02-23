@@ -57,14 +57,14 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Created by rsingh on 11/2/17.
@@ -332,7 +332,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
                                           .build();
     boolean isCertValidationRequired = accountService.isCertValidationRequired(vaultConfig.getAccountId());
     vaultConfig.setCertValidationRequired(isCertValidationRequired);
-    return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(SecretManagementDelegateService.class, syncTaskContext)
         .getVaultSecretChangeLogs(encryptedData, vaultConfig);
   }
 

@@ -73,9 +73,11 @@ public class K8sManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("valuesPaths")
   ParameterField<List<String>> valuesPaths;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
+  @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   // For Visitor Framework Impl
   String metadata;
 
@@ -92,6 +94,9 @@ public class K8sManifest implements ManifestAttributes, Visitable {
     }
     if (k8sManifest.getSkipResourceVersioning() != null) {
       resultantManifest = resultantManifest.withSkipResourceVersioning(k8sManifest.getSkipResourceVersioning());
+    }
+    if (k8sManifest.getEnableDeclarativeRollback() != null) {
+      resultantManifest = resultantManifest.withEnableDeclarativeRollback(k8sManifest.getEnableDeclarativeRollback());
     }
 
     return resultantManifest;
@@ -117,7 +122,8 @@ public class K8sManifest implements ManifestAttributes, Visitable {
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new K8sManifestStepParameters(identifier,
-        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), valuesPaths, skipResourceVersioning);
+        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), valuesPaths, skipResourceVersioning,
+        enableDeclarativeRollback);
   }
 
   @Value
@@ -126,5 +132,6 @@ public class K8sManifest implements ManifestAttributes, Visitable {
     StoreConfigWrapperParameters store;
     ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
+    ParameterField<Boolean> enableDeclarativeRollback;
   }
 }

@@ -25,4 +25,5 @@ public interface VariableRepository extends PagingAndSortingRepository<Variable,
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   List<Variable> findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  Long countByAccountIdentifier(String accountIdentifier);
 }

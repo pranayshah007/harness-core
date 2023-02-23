@@ -400,7 +400,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
     when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(planExecutionId, nodeExecution4.getUuid(),
-             StatusUtils.finalStatuses(), false, Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status)))
+             StatusUtils.finalStatuses(), false, Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status),
+             false))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for SUCCEEDED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("SUCCEEDED");
@@ -425,7 +426,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
     when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
-             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet()))
+             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet(), false))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for FAILED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("FAILED");
@@ -450,7 +451,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     Reflect.on(nodeExecution8).set(NodeExecutionKeys.status, Status.QUEUED);
 
     when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
-             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet()))
+             planExecutionId, nodeExecution4.getUuid(), null, false, Collections.emptySet(), false))
         .thenReturn(Collections.singletonList(nodeExecution7));
     // Check current status for ERRORED
     assertThat(engine.getProperty(functor, "stage.currentStatus")).isEqualTo("ERRORED");

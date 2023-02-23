@@ -29,13 +29,13 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

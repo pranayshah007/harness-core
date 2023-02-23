@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,8 +21,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class K8sCanaryHandlerConfig extends K8sHandlerConfig {
-  private ReleaseHistory releaseHistory;
-  private K8sLegacyRelease currentRelease;
+  private IK8sReleaseHistory releaseHistory;
+  private IK8sRelease currentRelease;
   private KubernetesResource canaryWorkload;
   private Integer targetInstances;
+  private boolean useDeclarativeRollback;
+  private String releaseName;
+  private int currentReleaseNumber;
 }

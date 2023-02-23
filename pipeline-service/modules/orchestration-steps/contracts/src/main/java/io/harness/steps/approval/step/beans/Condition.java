@@ -24,6 +24,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 public class Condition {
   @NotNull String key;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @NotEmpty ParameterField<String> value;
+  // value field should not be null or empty
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @NotEmpty ParameterField<String> value;
   @NotNull Operator operator;
 }

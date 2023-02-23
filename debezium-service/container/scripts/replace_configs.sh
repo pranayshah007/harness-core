@@ -46,6 +46,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$LIST_OF_ERROR_CODES_FOR_OFFSET_RESET" ]]; then
+  IFS=',' read -ra LIST <<< "$LIST_OF_ERROR_CODES_FOR_OFFSET_RESET"
+  INDEX=0
+  for ERROR_CODE in "${LIST[@]}"; do
+    export ERROR_CODE; export INDEX; yq -i '.listOfErrorCodesForOffsetReset.[env(INDEX)]=env(ERROR_CODE)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
@@ -103,6 +112,8 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value redisLockConfig.sentinel $REDIS_LOCK_CONFIG_USE_SENTINEL
 replace_key_value redisLockConfig.envNamespace $REDIS_LOCK_CONFIG_ENV_NAMESPACE

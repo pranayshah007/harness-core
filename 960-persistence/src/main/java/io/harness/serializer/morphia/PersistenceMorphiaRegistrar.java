@@ -15,6 +15,7 @@ import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentNGCronIterable;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.migration.DelegateMigrationFlag;
 import io.harness.migration.MigrationJobInstance;
 import io.harness.mongo.MorphiaMove;
 import io.harness.morphia.MorphiaRegistrar;
@@ -73,6 +74,7 @@ public class PersistenceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PersistentNGCronIterable.class);
     set.add(NameAndValueAccess.class);
     set.add(GitAware.class);
+    set.add(DelegateMigrationFlag.class);
   }
 
   @Override

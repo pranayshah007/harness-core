@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.AuthenticationScheme.SSH_KEY;
 import static io.harness.shell.KerberosConfig.KerberosConfigBuilder;
+import static io.harness.utils.SecretUtils.validateDecryptedValue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
@@ -44,7 +45,9 @@ public class SshSessionConfigHelper {
           TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
           TGTPasswordSpecDTO passwordSpecDTO =
               (TGTPasswordSpecDTO) secretDecryptionService.decrypt(tgtPasswordSpecDTO, encryptionDetails);
-          builder.withPassword(passwordSpecDTO.getPassword().getDecryptedValue());
+          char[] decryptedValue = passwordSpecDTO.getPassword().getDecryptedValue();
+          validateDecryptedValue(decryptedValue, passwordSpecDTO.getPassword().getIdentifier());
+          builder.withPassword(decryptedValue);
           break;
         case KeyTabFilePath:
           TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
@@ -68,9 +71,11 @@ public class SshSessionConfigHelper {
         SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
         SSHPasswordCredentialDTO passwordCredentialDTO =
             (SSHPasswordCredentialDTO) secretDecryptionService.decrypt(sshPasswordCredentialDTO, encryptionDetails);
+        char[] decryptedValue = passwordCredentialDTO.getPassword().getDecryptedValue();
+        validateDecryptedValue(decryptedValue, passwordCredentialDTO.getPassword().getIdentifier());
         builder.withAccessType(AccessType.USER_PASSWORD)
             .withUserName(passwordCredentialDTO.getUserName())
-            .withSshPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
+            .withSshPassword(decryptedValue);
         break;
       case KeyReference:
         SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
@@ -80,6 +85,7 @@ public class SshSessionConfigHelper {
             (SSHKeyReferenceCredentialDTO) secretDecryptionService.decrypt(
                 sshKeyReferenceCredentialDTO, encryptionDetails);
         char[] fileData = keyReferenceCredentialDTO.getKey().getDecryptedValue();
+        validateDecryptedValue(fileData, keyReferenceCredentialDTO.getKey().getIdentifier());
         keyReferenceCredentialDTO.getKey().setDecryptedValue(new String(fileData).toCharArray());
         builder.withAccessType(AccessType.KEY)
             .withKeyName("Key")

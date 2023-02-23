@@ -10,7 +10,7 @@ package io.harness.cvng.dashboard.resources;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.dashboard.beans.TimeSeriesMetricDataDTO;
@@ -48,7 +48,7 @@ public class TimeseriesDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all time series data in a given time range", nickname = "getTimeSeriesMetricData")
   public RestResponse<PageResponse<TimeSeriesMetricDataDTO>> getTimeSeriesMetricData(
-      @BeanParam ProjectParams projectParams,
+      @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("startTime") Long startTimeMillis, @NotNull @QueryParam("endTime") Long endTimeMillis,
       @QueryParam("anomalous") @DefaultValue("false") boolean anomalous, @QueryParam("filter") String filter,

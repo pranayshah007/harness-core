@@ -8,17 +8,18 @@
 package io.harness.cvng.analysis.beans;
 
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.clusterTypeRiskComparator;
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFrequencyData;
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount;
+
+import io.harness.cvng.core.beans.LogFeedback;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Data
@@ -27,29 +28,28 @@ import org.jetbrains.annotations.NotNull;
 public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadarChartListDTO> {
   String message;
   String clusterId;
-  int label;
+  /**
+   * @deprecated
+   */
+  @Deprecated(forRemoval = true) int label;
   Risk risk;
+  Risk previousRisk;
   @JsonIgnore Double radius;
   @JsonIgnore Double angle;
   DeploymentLogAnalysisDTO.ClusterType clusterType;
+  DeploymentLogAnalysisDTO.ClusterType previousClusterType;
   int count;
-  @Deprecated List<Double> frequencyData;
-  List<DeploymentLogAnalysisDTO.HostFrequencyData> hostFrequencyData = new ArrayList<>();
-  LogAnalysisRadarChartListDTO baseline;
-  List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> averageFrequencyData;
-  public List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> getAverageFrequencyData() {
-    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
-      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageTimeFrequencyList(hostFrequencyData);
-    }
-    return Collections.emptyList();
-  }
 
-  public List<Double> getFrequencyData() {
-    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
-      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageFrequencyList(hostFrequencyData);
-    }
-    return frequencyData;
-  }
+  List<HostFrequencyData> testHostFrequencyData;
+
+  List<TimestampFrequencyCount> totalTestFrequencyData;
+
+  List<TimestampFrequencyCount> averageControlFrequencyData;
+
+  LogAnalysisRadarChartListDTO baseline;
+
+  LogFeedback feedback;
+  LogFeedback feedbackApplied;
 
   @JsonProperty(value = "hasControlData")
   public boolean hasControlData() {

@@ -105,11 +105,11 @@ public class GitConnectorValidatorTest extends CategoryTest {
         GitCommandExecutionResponse.builder()
             .connectorValidationResult(ConnectorValidationResult.builder().status(FAILURE).build())
             .build();
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTask(any());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(FAILURE);
   }
 
@@ -134,10 +134,10 @@ public class GitConnectorValidatorTest extends CategoryTest {
             .build();
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTask(any());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 
@@ -163,10 +163,10 @@ public class GitConnectorValidatorTest extends CategoryTest {
             .build();
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTask(any());
+    doReturn(gitResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
     ConnectorValidationResult connectorValidationResult =
         gitConnectorValidator.validate(gitConfig, ACCOUNT_ID, null, null, null);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 

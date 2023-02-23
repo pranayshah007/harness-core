@@ -28,13 +28,13 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.ResourceLookup;
 
 import com.google.inject.Inject;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.Mapper;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.Mapper;
 
 public class PageRequestTest extends WingsBaseTest {
   private static final String ACCOUNTID = "accountId";

@@ -203,6 +203,9 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.Key;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -221,9 +224,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -1100,7 +1100,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (InvalidRequestException ex) {
       throw ex;
@@ -1162,7 +1162,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (Exception e) {
       log.warn(ExceptionUtils.getMessage(e), e);
@@ -1222,7 +1222,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     boolean useNewKubectlVersion =
         featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, infraMapping.getAccountId());
     try {
-      delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
           .validate(containerServiceParams, useNewKubectlVersion);
     } catch (Exception e) {
       log.warn(ExceptionUtils.getMessage(e), e);
@@ -1433,6 +1433,22 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
   private void prune(String appId, String infraMappingId) {
     pruneQueue.send(new PruneEvent(InfrastructureMapping.class, appId, infraMappingId));
     wingsPersistence.delete(InfrastructureMapping.class, appId, infraMappingId);
+  }
+
+  @Override
+  public void pruneByService(String appId, String serviceId) {
+    List<InfrastructureMapping> infrastructureMappings = wingsPersistence.createQuery(InfrastructureMapping.class)
+                                                             .filter(InfrastructureMappingKeys.appId, appId)
+                                                             .filter(InfrastructureMappingKeys.serviceId, serviceId)
+                                                             .project(InfrastructureMappingKeys.appId, true)
+                                                             .project(InfrastructureMappingKeys.serviceId, true)
+                                                             .project(InfrastructureMappingKeys.name, true)
+                                                             .project(InfrastructureMapping.ID, true)
+                                                             .asList();
+    for (InfrastructureMapping infrastructureMapping : infrastructureMappings) {
+      prune(appId, infrastructureMapping.getUuid());
+      auditServiceHelper.reportDeleteForAuditing(appId, infrastructureMapping);
+    }
   }
 
   @Override
@@ -2186,7 +2202,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
           ((HostConnectionAttributes) hostConnectionSetting.getValue()).getSshVaultConfigId());
       ((HostConnectionAttributes) hostConnectionSetting.getValue()).setSshVaultConfig(sshVaultConfig);
     }
-    return delegateProxyFactory.get(HostValidationService.class, syncTaskContext)
+    return delegateProxyFactory.getV2(HostValidationService.class, syncTaskContext)
         .validateHost(validationRequest.getHostNames(), hostConnectionSetting.toDTO(), encryptionDetails,
             validationRequest.getExecutionCredential(), sshVaultConfig);
   }
@@ -2428,7 +2444,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
                                                         .masterUrl(masterUrl)
                                                         .build();
     try {
-      Map<String, Integer> activeServiceCounts = delegateProxyFactory.get(ContainerService.class, syncTaskContext)
+      Map<String, Integer> activeServiceCounts = delegateProxyFactory.getV2(ContainerService.class, syncTaskContext)
                                                      .getActiveServiceCounts(containerServiceParams);
       return Integer.toString(activeServiceCounts.values().stream().mapToInt(Integer::intValue).sum());
     } catch (Exception e) {

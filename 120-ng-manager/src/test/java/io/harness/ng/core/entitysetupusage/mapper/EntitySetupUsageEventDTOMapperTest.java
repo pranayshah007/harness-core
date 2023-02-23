@@ -21,8 +21,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EntityReference;
 import io.harness.category.element.UnitTests;
-import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -126,9 +126,9 @@ public class EntitySetupUsageEventDTOMapperTest extends NgManagerTestBase {
         .thenReturn(YamlGitConfigDTO.builder().branch(branch).repo(repo).build());
 
     Page<ConnectorResponseDTO> mockedConnectorResponseDTO = createTheMockedConnectorResponse();
-    when(connectorService.list(eq(0), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(connectorService.list(eq(0), anyInt(), any(), any(), any(), any(), any(), any(), any(), (Boolean) any()))
         .thenReturn(mockedConnectorResponseDTO);
-    when(connectorService.list(eq(1), anyInt(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(connectorService.list(eq(1), anyInt(), any(), any(), any(), any(), any(), any(), any(), (Boolean) any()))
         .thenReturn(Page.empty());
     final GitEntityInfo newBranch = GitEntityInfo.builder().branch(branch).yamlGitConfigId(repo).build();
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {

@@ -41,6 +41,8 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.UpdateOptions;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,8 +57,6 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.UpdateOptions;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)

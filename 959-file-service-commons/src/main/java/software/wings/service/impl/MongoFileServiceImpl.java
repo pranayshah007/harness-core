@@ -21,7 +21,6 @@ import static java.util.stream.StreamSupport.stream;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.file.HarnessFile;
@@ -41,6 +40,7 @@ import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Filters;
+import dev.morphia.AdvancedDatastore;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -55,7 +55,6 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.AdvancedDatastore;
 
 /**
  * Use Mongo's {@see GridFSFile} as file/blob storage.
@@ -170,26 +169,26 @@ public class MongoFileServiceImpl implements FileService {
         getOrCreateGridFSBucket(fileBucket.representationName()).find(Filters.eq("_id", new ObjectId(fileId)));
     GridFSFile gridFSFile = gridFSFiles.first();
     if (gridFSFile != null) {
-      Document metadata = gridFSFile.getExtraElements();
+      Document metadata = gridFSFile.getMetadata();
       if (metadata == null) {
         fileMetadata = FileMetadata.builder()
                            .fileName(gridFSFile.getFilename())
                            .fileUuid(fileId)
                            .fileLength(gridFSFile.getLength())
-                           .checksumType(ChecksumType.MD5)
-                           .checksum(gridFSFile.getMD5())
                            .build();
       } else {
-        fileMetadata =
-            FileMetadata.builder()
-                .fileName(gridFSFile.getFilename())
-                .fileUuid(fileId)
-                .fileLength(gridFSFile.getLength())
-                .checksumType(ChecksumType.MD5)
-                .checksum(gridFSFile.getMD5())
-                .mimeType(metadata.getString("contentType"))
-                .metadata(metadata.entrySet().stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue)))
-                .build();
+        Map<String, Object> nonNullMetadata = new HashMap<>();
+        nonNullMetadata = metadata.entrySet()
+                              .stream()
+                              .filter(e -> e.getValue() != null)
+                              .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        fileMetadata = FileMetadata.builder()
+                           .fileName(gridFSFile.getFilename())
+                           .fileUuid(fileId)
+                           .fileLength(gridFSFile.getLength())
+                           .mimeType(metadata.getString("contentType"))
+                           .metadata(nonNullMetadata)
+                           .build();
       }
     }
 

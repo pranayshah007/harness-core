@@ -128,6 +128,7 @@ import software.wings.utils.ArtifactType;
 import software.wings.utils.WingsTestConstants.MockChecker;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -148,7 +149,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceResourceServiceImplTest extends WingsBaseTest {
@@ -511,7 +511,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.EMPTY_LIST);
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -552,7 +552,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.EMPTY_LIST);
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -599,7 +599,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -655,7 +655,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
         .thenReturn(pageResponse);
 
     assertThatThrownBy(() -> mockedServiceResourceService.list(pageRequest, false, false, false, null))
@@ -678,7 +678,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId("app1")).thenReturn(ACCOUNT_ID);
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);

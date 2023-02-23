@@ -13,7 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -26,8 +26,8 @@ import io.harness.expression.Expression;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
-import software.wings.beans.Log;
 import software.wings.beans.configfile.ConfigFileDto;
+import software.wings.beans.dto.Log;
 import software.wings.delegatetasks.DelegateConfigService;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.delegatetasks.DelegateLogService;
@@ -37,6 +37,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +46,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 7/14/16.

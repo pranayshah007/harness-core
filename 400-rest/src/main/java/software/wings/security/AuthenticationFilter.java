@@ -47,6 +47,7 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.AuthToken;
 import software.wings.beans.User;
@@ -107,10 +108,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   private Map<String, String> serviceToSecretMapping;
   private Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping;
 
+  private DelegateAuthService delegateAuthService;
+
   @Inject
   public AuthenticationFilter(UserService userService, AuthService authService, AuditService auditService,
       AuditHelper auditHelper, ApiKeyService apiKeyService, HarnessApiKeyService harnessApiKeyService,
-      ExternalApiRateLimitingService rateLimitingService, SecretManager secretManager) {
+      ExternalApiRateLimitingService rateLimitingService, SecretManager secretManager,
+      DelegateAuthService delegateAuthService) {
     this.userService = userService;
     this.authService = authService;
     this.auditService = auditService;
@@ -119,6 +123,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     this.harnessApiKeyService = harnessApiKeyService;
     this.rateLimitingService = rateLimitingService;
     this.secretManager = secretManager;
+    this.delegateAuthService = delegateAuthService;
     serviceToSecretMapping = getServiceToSecretMapping();
     serviceToJWTTokenHandlerMapping = getServiceToJWTTokenHandlerMapping();
   }
@@ -129,13 +134,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
-    if (delegateAPI()) {
+    if (delegateAPI() || delegateAuth2API()) {
       validateDelegateRequest(containerRequestContext);
-      return;
-    }
-
-    if (delegateAuth2API()) {
-      validateDelegateAuth2Request(containerRequestContext);
       return;
     }
 
@@ -237,6 +237,18 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     // Bearer token validation is needed for environments without Gateway
     if (checkIfBearerTokenAndValidate(authorization, containerRequestContext)) {
+      String accountId = null;
+      if (containerRequestContext.getUriInfo() != null) {
+        accountId = getRequestParamFromContext("accountId", containerRequestContext.getUriInfo().getPathParameters(),
+            containerRequestContext.getUriInfo().getQueryParameters());
+
+        if (isEmpty(accountId)) {
+          accountId = getRequestParamFromContext("routingId", containerRequestContext.getUriInfo().getPathParameters(),
+              containerRequestContext.getUriInfo().getQueryParameters());
+        }
+      }
+      log.info(
+          "AUTH_FILTER: Non gateway or non service-to-service bearer token validation call for account {}", accountId);
       setSourcePrincipalInContext(containerRequestContext, serviceToJWTTokenHandlerMapping, serviceToSecretMapping,
           SecurityContextBuilder.getPrincipal());
       return;
@@ -391,48 +403,6 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     authService.validateLearningEngineServiceToken(substringAfter(header, "LearningEngine "));
   }
 
-  protected void validateDelegateRequest(ContainerRequestContext containerRequestContext) {
-    MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
-    MultivaluedMap<String, String> queryParameters = containerRequestContext.getUriInfo().getQueryParameters();
-
-    String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
-    try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-      if (header != null && header.contains("Delegate")) {
-        final String delegateId = containerRequestContext.getHeaderString("delegateId");
-        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
-        final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
-
-        authService.validateDelegateToken(accountId,
-            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
-            delegateTokeName, agentMtlsAuthority, true);
-      } else {
-        throw new IllegalStateException("Invalid header:" + header);
-      }
-    }
-  }
-
-  protected void validateDelegateAuth2Request(ContainerRequestContext containerRequestContext) {
-    MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
-    MultivaluedMap<String, String> queryParameters = containerRequestContext.getUriInfo().getQueryParameters();
-
-    String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
-    try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      String authHeader = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-      if (authHeader != null && authHeader.contains("Delegate")) {
-        final String jwtToken =
-            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
-        final String delegateId = containerRequestContext.getHeaderString("delegateId");
-        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
-        final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
-
-        authService.validateDelegateToken(accountId, jwtToken, delegateId, delegateTokeName, agentMtlsAuthority, true);
-      } else {
-        throw new IllegalStateException("Invalid authentication header:" + authHeader);
-      }
-    }
-  }
-
   protected void validateExternalFacingApiRequest(ContainerRequestContext containerRequestContext) {
     String apiKey = containerRequestContext.getHeaderString(API_KEY_HEADER);
     if (isBlank(apiKey)) {
@@ -532,5 +502,26 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   private String getRequestParamFromContext(
       String key, MultivaluedMap<String, String> pathParameters, MultivaluedMap<String, String> queryParameters) {
     return queryParameters.getFirst(key) != null ? queryParameters.getFirst(key) : pathParameters.getFirst(key);
+  }
+
+  protected void validateDelegateRequest(ContainerRequestContext containerRequestContext) {
+    MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
+    MultivaluedMap<String, String> queryParameters = containerRequestContext.getUriInfo().getQueryParameters();
+
+    String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
+    try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+      if (header != null && header.contains("Delegate")) {
+        final String delegateId = containerRequestContext.getHeaderString("delegateId");
+        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+        final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
+
+        delegateAuthService.validateDelegateToken(accountId,
+            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
+            delegateTokeName, agentMtlsAuthority, true);
+      } else {
+        throw new IllegalStateException("Invalid header:" + header);
+      }
+    }
   }
 }

@@ -15,8 +15,8 @@ import static io.harness.event.model.EventConstants.ACCOUNT_ID;
 import static io.harness.event.model.EventConstants.IS_24X7_ENABLED;
 import static io.harness.event.model.EventConstants.VERIFICATION_STATE_TYPE;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.function.Function.identity;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.PageRequest;
@@ -43,9 +43,9 @@ import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.sm.StateType;
 import software.wings.verification.CVConfiguration;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,7 +198,7 @@ public class UsageMetricsService {
                                                  .addFilter("appId", Operator.IN, appIds.toArray())
                                                  .addFieldsIncluded("_id")
                                                  .build();
-      return environmentService.list(pageRequest, false, null).getTotal();
+      return environmentService.list(pageRequest, false, null, false).getTotal();
     } else {
       return 0;
     }

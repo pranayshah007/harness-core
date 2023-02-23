@@ -13,6 +13,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
+import io.harness.cvng.activity.entities.CustomChangeActivity;
+import io.harness.cvng.activity.entities.CustomChangeActivity.CustomChangeActivityBuilder;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityBuilder;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
@@ -29,6 +31,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.Can
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -41,6 +44,8 @@ import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOBuilder;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.CustomChangeEvent;
+import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
@@ -65,15 +70,32 @@ import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec.DefaultMonitoredSe
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec.TemplateMonitoredServiceSpecBuilder;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
+import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
+import io.harness.cvng.cdng.beans.v2.AnalysisReason;
+import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.ControlDataType;
+import io.harness.cvng.cdng.beans.v2.MetricThreshold;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdCriteria;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdType;
+import io.harness.cvng.cdng.beans.v2.MetricType;
+import io.harness.cvng.cdng.beans.v2.MetricValue;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload.CustomChangeWebhookEventDetail;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload.CustomChangeWebhookPayloadBuilder;
 import io.harness.cvng.core.beans.CustomHealthLogDefinition;
 import io.harness.cvng.core.beans.CustomHealthMetricDefinition;
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.RiskCategory;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO.ChangeSourceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
@@ -82,6 +104,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Monitored
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
@@ -91,6 +114,12 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthS
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceMetricSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec.NextGenHealthSourceSpecBuilder;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.IgnoreMetricThresholdSpec;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdCriteriaType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -137,6 +166,8 @@ import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuil
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource;
+import io.harness.cvng.core.entities.changeSource.CustomChangeSource.CustomChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
@@ -150,6 +181,23 @@ import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapBuilder;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
+import io.harness.cvng.downtime.beans.DowntimeCategory;
+import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeDuration;
+import io.harness.cvng.downtime.beans.DowntimeDurationType;
+import io.harness.cvng.downtime.beans.DowntimeRecurrence;
+import io.harness.cvng.downtime.beans.DowntimeRecurrenceType;
+import io.harness.cvng.downtime.beans.DowntimeScope;
+import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
+import io.harness.cvng.downtime.beans.DowntimeType;
+import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
+import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ErrorBudgetRemainingPercentageConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
@@ -157,7 +205,6 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleDTO.NotificationRuleDTOBuilder;
-import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
@@ -173,8 +220,6 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO.ServiceLevelIndicatorDTOBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO.ServiceLevelObjectiveDTOBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -193,9 +238,7 @@ import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
@@ -219,8 +262,6 @@ import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
-import io.harness.ng.core.service.dto.ServiceResponseDTO;
-import io.harness.ng.core.service.dto.ServiceResponseDTO.ServiceResponseDTOBuilder;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.collect.Sets;
@@ -286,14 +327,6 @@ public class BuilderFactory {
         .build();
   }
 
-  public ServiceResponseDTOBuilder serviceResponseDTOBuilder() {
-    return ServiceResponseDTO.builder()
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier(context.getServiceIdentifier())
-        .projectIdentifier(context.getProjectIdentifier());
-  }
-
   public EnvironmentResponseDTOBuilder environmentResponseDTOBuilder() {
     return EnvironmentResponseDTO.builder()
         .accountId(context.getAccountId())
@@ -308,13 +341,16 @@ public class BuilderFactory {
     Map<String, CVConfig> cvConfigMap = new HashMap<>();
     cvConfigMap.put(cvConfig.getUuid(), cvConfig);
     cvConfigMap.put(cvConfig2.getUuid(), cvConfig2);
+    List<CVConfig> cvConfigs = new ArrayList<>();
+    cvConfigs.add(cvConfig);
+    cvConfigs.add(cvConfig2);
     return VerificationJobInstance.builder()
         .accountId(context.getAccountId())
         .deploymentStartTime(clock.instant().minus(Duration.ofMinutes(2)))
         .startTime(clock.instant())
         .cvConfigMap(cvConfigMap)
         .dataCollectionDelay(Duration.ofMinutes(2))
-        .resolvedJob(getVerificationJob());
+        .resolvedJob(getVerificationJob(cvConfigs));
   }
 
   public SLOHealthIndicatorBuilder sLOHealthIndicatorBuilder() {
@@ -402,6 +438,62 @@ public class BuilderFactory {
         .build();
   }
 
+  public NextGenHealthSourceSpecBuilder createNextGenHealthSourceSpecMetric(
+      String identifier, DataSourceType dataSourceType) {
+    return NextGenHealthSourceSpec.builder()
+        .healthSourceParams(HealthSourceParamsDTO.builder().build())
+        .dataSourceType(DataSourceType.SUMOLOGIC_METRICS)
+        .queryDefinitions(List.of(
+            QueryDefinition.builder()
+                .name("sample_metric_name")
+                .identifier(identifier)
+                .groupName("sample_group")
+                .query("metric=Mem_UsedPercent")
+                .liveMonitoringEnabled(false)
+                .continuousVerificationEnabled(true)
+                .sliEnabled(false)
+                .riskProfile(RiskProfile.builder()
+                                 .riskCategory(RiskCategory.PERFORMANCE_OTHER)
+                                 .thresholdTypes(List.of(TimeSeriesThresholdType.ACT_WHEN_LOWER))
+                                 .build())
+                .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
+                .metricThresholds(List.of(
+                    io.harness.cvng.core.beans.monitoredService.MetricThreshold.builder()
+                        .metricName("sample_metric_name")
+                        .metricIdentifier("sample_identifier")
+                        .metricType("string")
+                        .groupName("sample_group")
+                        .type(MetricThresholdActionType.IGNORE)
+                        .spec(IgnoreMetricThresholdSpec.builder().build())
+                        .criteria(io.harness.cvng.core.beans.monitoredService.MetricThreshold.MetricThresholdCriteria
+                                      .builder()
+                                      .type(MetricThresholdCriteriaType.ABSOLUTE)
+                                      .spec(io.harness.cvng.core.beans.monitoredService.MetricThreshold
+                                                .MetricThresholdCriteria.MetricThresholdCriteriaSpec.builder()
+                                                .greaterThan(0d)
+                                                .lessThan(0d)
+                                                .build())
+                                      .build())
+                        .build()))
+                .build()))
+        .connectorRef("account.sumologic_try_2");
+  }
+
+  public NextGenHealthSourceSpecBuilder createNextGenHealthSourceSpecLogs(
+      String identifier, DataSourceType dataSourceType) {
+    return NextGenHealthSourceSpec.builder()
+        .healthSourceParams(HealthSourceParamsDTO.builder().build())
+        .dataSourceType(dataSourceType)
+        .queryDefinitions(List.of(QueryDefinition.builder()
+                                      .name("sample_log_name")
+                                      .identifier(identifier)
+                                      .groupName("default_group")
+                                      .query("_sourceCategory=windows/performance")
+                                      .queryParams(QueryParamsDTO.builder().serviceInstanceField("_sourceHost").build())
+                                      .build()))
+        .connectorRef("account.sumologic_try_2");
+  }
+
   public CVNGStepInfoBuilder cvngStepInfoBuilder() {
     return CVNGStepInfo.builder()
         .type("LoadTest")
@@ -421,7 +513,27 @@ public class BuilderFactory {
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoringSourceName(generateUuid())
         .metricPack(
-            MetricPack.builder().identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER).dataCollectionDsl("dsl").build())
+            MetricPack.builder()
+                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                .metrics(Collections.singleton(
+                    MetricPack.MetricDefinition.builder()
+                        .identifier("identifier")
+                        .type(TimeSeriesMetricType.OTHER)
+                        .name("name")
+                        .thresholds(Arrays.asList(TimeSeriesThreshold.builder()
+                                                      .uuid("thresholdId")
+                                                      .metricPackIdentifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricGroupName("*")
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricIdentifier("identifier")
+                                                      .deviationType(DeviationType.HIGHER_IS_RISKY)
+                                                      .criteria(TimeSeriesThresholdCriteria.builder().build())
+                                                      .action(IGNORE)
+                                                      .build()))
+                        .build()))
+                .dataCollectionDsl("dsl")
+                .build())
         .metricInfos(
             Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
         .applicationName(generateUuid())
@@ -533,16 +645,16 @@ public class BuilderFactory {
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid());
   }
 
-  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(DataSourceType dataSourceType) {
+  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(
+      DataSourceType dataSourceType, String groupName, String queryIdentifier) {
     return NextGenLogCVConfig.builder()
         .accountId(context.getAccountId())
         .dataSourceType(dataSourceType)
+        .groupName(groupName)
+        .queryIdentifier(queryIdentifier)
         .orgIdentifier(context.getOrgIdentifier())
-        .queryIdentifier(generateUuid())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .queryName(randomAlphabetic(10))
-        .query(randomAlphabetic(10))
         .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
         .enabled(true)
         .category(CVMonitoringCategory.ERRORS)
@@ -854,6 +966,18 @@ public class BuilderFactory {
         .type(ChangeSourceType.HARNESS_CD_CURRENT_GEN);
   }
 
+  public CustomChangeSourceBuilder getCustomChangeSourceBuilder(ChangeSourceType customChangeSourceType) {
+    return CustomChangeSource.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .enabled(true)
+        .name(randomAlphabetic(20))
+        .type(customChangeSourceType)
+        .identifier("customIdentifier");
+  }
+
   public ChangeSourceDTOBuilder getHarnessCDChangeSourceDTOBuilder() {
     return getChangeSourceDTOBuilder(ChangeSourceType.HARNESS_CD).spec(new HarnessCDChangeSourceSpec());
   }
@@ -877,6 +1001,14 @@ public class BuilderFactory {
                   .harnessApplicationId(randomAlphabetic(20))
                   .harnessServiceId(randomAlphabetic(20))
                   .harnessEnvironmentId(randomAlphabetic(20))
+                  .build());
+  }
+
+  public ChangeSourceDTOBuilder getCustomChangeSourceDTOBuilder(ChangeSourceType customChangeSourceType) {
+    return getChangeSourceDTOBuilder(customChangeSourceType)
+        .spec(CustomChangeSourceSpec.builder()
+                  .name(randomAlphabetic(20))
+                  .type(customChangeSourceType.getChangeCategory())
                   .build());
   }
 
@@ -926,6 +1058,25 @@ public class BuilderFactory {
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
         .eventEndTime(clock.instant().toEpochMilli());
+  }
+
+  public CustomChangeActivityBuilder getCustomChangeActivity(ChangeSourceType customChangeSourceType) {
+    return CustomChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(customChangeSourceType.getActivityType())
+        .activityType(customChangeSourceType.getActivityType())
+        .user("user")
+        .customChangeEvent(CustomChangeEvent.builder()
+                               .description("description")
+                               .changeEventDetailsLink("changeEventDetailsLink")
+                               .externalLinkToEntity("externalLinkToEntity")
+                               .build());
   }
 
   public HarnessCDCurrentGenActivityBuilder getHarnessCDCurrentGenActivityBuilder() {
@@ -1074,6 +1225,22 @@ public class BuilderFactory {
                       .build());
   }
 
+  public ChangeEventDTOBuilder getCustomChangeEventBuilder(ChangeSourceType customChangeSourceType) {
+    return getChangeEventDTOBuilder()
+        .type(customChangeSourceType)
+        .metadata(CustomChangeEventMetadata.builder()
+                      .user("user")
+                      .startTime(1000l)
+                      .endTime(2000l)
+                      .type(customChangeSourceType)
+                      .customChangeEvent(CustomChangeEvent.builder()
+                                             .description("description")
+                                             .changeEventDetailsLink("changeEventDetailsLink")
+                                             .externalLinkToEntity("externalLinkToEntity")
+                                             .build())
+                      .build());
+  }
+
   public ChangeEventDTOBuilder getChangeEventDTOBuilder() {
     return ChangeEventDTO.builder()
         .accountId(context.getAccountId())
@@ -1135,32 +1302,9 @@ public class BuilderFactory {
         .type(changeSourceType);
   }
 
-  public ServiceLevelObjectiveDTOBuilder getServiceLevelObjectiveDTOBuilder() {
-    return ServiceLevelObjectiveDTO.builder()
-        .projectIdentifier(context.getProjectIdentifier())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
-        .tags(new HashMap<String, String>() {
-          {
-            put("tag1", "value1");
-            put("tag2", "");
-          }
-        })
-        .description("slo description")
-        .target(SLOTargetDTO.builder()
-                    .type(SLOTargetType.ROLLING)
-                    .sloTargetPercentage(80.0)
-                    .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
-                    .build())
-        .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
-        .notificationRuleRefs(
-            Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("demo").enabled(true).build()))
-        .healthSourceRef("healthSourceIdentifier")
-        .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-        .userJourneyRef("userJourney");
+  public ChangeSourceDTOBuilder getChangeSourceDTOBuilder_Deserialize(ChangeSourceType changeSourceType) {
+    return getChangeSourceDTOBuilder(changeSourceType);
   }
-
   public ServiceLevelObjectiveV2DTOBuilder getSimpleServiceLevelObjectiveV2DTOBuilder() {
     return ServiceLevelObjectiveV2DTO.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)
@@ -1256,23 +1400,6 @@ public class BuilderFactory {
         .reason("reason");
   }
 
-  public ServiceLevelObjectiveBuilder getServiceLevelObjectiveBuilder() {
-    return ServiceLevelObjective.builder()
-        .accountId(context.getAccountId())
-        .projectIdentifier(context.getProjectIdentifier())
-        .orgIdentifier(context.getOrgIdentifier())
-        .identifier("sloIdentifier")
-        .name("sloName")
-        .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
-        .desc("slo description")
-        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
-        .sloTargetPercentage(80.0)
-        .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
-        .healthSourceIdentifier("healthSourceIdentifier")
-        .monitoredServiceIdentifier(context.serviceIdentifier + "_" + context.getEnvIdentifier())
-        .userJourneyIdentifier("userJourney");
-  }
-
   public UserJourneyDTO getUserJourneyDTOBuilder() {
     return UserJourneyDTO.builder().identifier("userJourney").name("userJourney").build();
   }
@@ -1355,7 +1482,7 @@ public class BuilderFactory {
         .metric2("metric2");
   }
 
-  private VerificationJob getVerificationJob() {
+  private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {
     TestVerificationJob testVerificationJob = new TestVerificationJob();
     testVerificationJob.setAccountId(context.getAccountId());
     testVerificationJob.setIdentifier("identifier");
@@ -1368,6 +1495,7 @@ public class BuilderFactory {
     testVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
+    testVerificationJob.setCvConfigs(cvConfigs);
     return testVerificationJob;
   }
 
@@ -1464,7 +1592,7 @@ public class BuilderFactory {
     String serviceIdentifier;
     String envIdentifier;
 
-    private String getMonitoredServiceIdentifier() {
+    public String getMonitoredServiceIdentifier() {
       return serviceIdentifier + "_" + envIdentifier;
     }
 
@@ -1492,6 +1620,12 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setOrgIdentifier(String orgIdentifier) {
+      projectParams.setOrgIdentifier(orgIdentifier);
+    }
+    public void setProjectIdentifier(String projectIdentifier) {
+      projectParams.setProjectIdentifier(projectIdentifier);
+    }
     public ServiceEnvironmentParams getServiceEnvironmentParams() {
       return ServiceEnvironmentParams.builder()
           .accountIdentifier(projectParams.getAccountIdentifier())
@@ -1620,5 +1754,184 @@ public class BuilderFactory {
                                                      .timeSeriesMetricType(TimeSeriesMetricType.INFRA)
                                                      .build();
     return Arrays.asList(performanceThroughputRiskCategory, infrastructureRiskCategory);
+  }
+
+  public MetricThreshold getMetricThreshold() {
+    return MetricThreshold.builder()
+        .thresholdType(MetricThresholdType.IGNORE)
+        .isUserDefined(true)
+        .action(MetricCustomThresholdActions.IGNORE)
+        .criteria(MetricThresholdCriteria.builder().lessThanThreshold(1.0).build())
+        .build();
+  }
+
+  public AnalysedDeploymentTestDataNode getAnalysedDeploymentTestDataNode() {
+    return AnalysedDeploymentTestDataNode.builder()
+        .nodeIdentifier("nodeIdentifier")
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .analysisReason(AnalysisReason.NO_CONTROL_DATA)
+        .controlDataType(ControlDataType.MINIMUM_DEVIATION)
+        .controlNodeIdentifier("controlNodeIdentifier")
+        .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedTestData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedControlData(
+            Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .build();
+  }
+
+  public MetricsAnalysis getMetricsAnalysis() {
+    return MetricsAnalysis.builder()
+        .metricName("metricName")
+        .metricType(MetricType.ERROR)
+        .metricIdentifier("metricIdentifier")
+        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder().identifier("healthSourceIdentifier").build())
+        .transactionGroup("transactionGroup")
+        .thresholds(Collections.singletonList(getMetricThreshold()))
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .testDataNodes(Collections.singletonList(getAnalysedDeploymentTestDataNode()))
+        .build();
+  }
+
+  public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    return DowntimeDTO.builder()
+        .identifier("downtimeOneTimeDuration")
+        .name("downtime OneTime Duration")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.ONE_TIME)
+                  .spec(OnetimeDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .type(OnetimeDowntimeType.DURATION)
+                            .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
+                                      .downtimeDuration(DowntimeDuration.builder()
+                                                            .durationValue(30)
+                                                            .durationType(DowntimeDurationType.MINUTES)
+                                                            .build())
+                                      .build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return DowntimeDTO.builder()
+        .identifier("downtimeOneTimeEndTime")
+        .name("downtime OneTime EndTime")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.ONE_TIME)
+                  .spec(OnetimeDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .type(OnetimeDowntimeType.END_TIME)
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public DowntimeDTO getRecurringDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofDays(365).toSeconds();
+    return DowntimeDTO.builder()
+        .identifier("downtimeRecurring")
+        .name("downtime Recurring")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entitiesRule(
+            EntityIdentifiersRule.builder()
+                .entityIdentifiers(Collections.singletonList(
+                    EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+                .build())
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.RECURRING)
+                  .spec(RecurringDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .downtimeDuration(DowntimeDuration.builder()
+                                                  .durationValue(30)
+                                                  .durationType(DowntimeDurationType.MINUTES)
+                                                  .build())
+                            .recurrenceEndTime(endTime)
+                            .downtimeRecurrence(DowntimeRecurrence.builder()
+                                                    .recurrenceValue(1)
+                                                    .recurrenceType(DowntimeRecurrenceType.WEEK)
+                                                    .build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public EntityUnavailabilityStatusesDTO getDowntimeEntityUnavailabilityStatusesDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return EntityUnavailabilityStatusesDTO.builder()
+        .entityType(EntityType.MAINTENANCE_WINDOW)
+        .entityId("downtimeRecurring")
+        .status(EntityUnavailabilityStatus.MAINTENANCE_WINDOW)
+        .startTime(startTime)
+        .endTime(endTime)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
+
+  public EntityUnavailabilityStatusesDTO getSLOEntityUnavailabilityStatusesDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return EntityUnavailabilityStatusesDTO.builder()
+        .entityType(EntityType.SLO)
+        .entityId("sliId")
+        .status(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+        .startTime(startTime)
+        .endTime(endTime)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
+
+  public CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilder() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .build());
   }
 }

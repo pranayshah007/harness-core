@@ -53,6 +53,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -68,9 +71,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -288,7 +288,7 @@ public class LdapGroupSyncJob implements Job {
                                           .appId(GLOBAL_APP_ID)
                                           .timeout(ldapSyncTimeout)
                                           .build();
-    LdapGroupResponse groupResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+    LdapGroupResponse groupResponse = delegateProxyFactory.getV2(LdapDelegateService.class, syncTaskContext)
                                           .fetchGroupByDn(LdapSettingsMapper.ldapSettingsDTO(ldapSettings),
                                               encryptedDataDetail, userGroup.getSsoGroupId());
     if (null == groupResponse) {

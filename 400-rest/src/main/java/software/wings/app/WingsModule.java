@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
+import static io.harness.audit.ResourceTypeConstants.NG_ACCOUNT_DETAILS;
 import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
@@ -27,7 +28,6 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
-import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -53,8 +53,11 @@ import io.harness.ccm.billing.preaggregated.PreAggregateBillingService;
 import io.harness.ccm.billing.preaggregated.PreAggregateBillingServiceImpl;
 import io.harness.ccm.budget.BudgetService;
 import io.harness.ccm.budget.BudgetServiceImpl;
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.ClusterRecordServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
 import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
@@ -70,7 +73,9 @@ import io.harness.ccm.health.HealthStatusServiceImpl;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskService;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskServiceImpl;
 import io.harness.ccm.setup.CESetupServiceModule;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
@@ -106,6 +111,8 @@ import io.harness.datahandler.services.AdminUserService;
 import io.harness.datahandler.services.AdminUserServiceImpl;
 import io.harness.datahandler.utils.AccountSummaryHelper;
 import io.harness.datahandler.utils.AccountSummaryHelperImpl;
+import io.harness.dataretention.LongerDataRetentionService;
+import io.harness.dataretention.LongerDataRetentionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.StartupMode;
@@ -117,9 +124,13 @@ import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
+import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
+import io.harness.delegate.service.impl.DelegateInstallationCommandServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
+import io.harness.delegate.service.intfc.DelegateFeedbacksService;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -137,6 +148,7 @@ import io.harness.event.handler.impl.segment.SegmentGroupEventJobService;
 import io.harness.event.handler.impl.segment.SegmentGroupEventJobServiceImpl;
 import io.harness.event.reconciliation.service.DeploymentReconService;
 import io.harness.event.reconciliation.service.DeploymentReconServiceImpl;
+import io.harness.event.reconciliation.service.DeploymentReconTask;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.IInstanceReconService;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
 import io.harness.exception.ExplanationException;
@@ -155,13 +167,13 @@ import io.harness.governance.pipeline.service.evaluators.OnWorkflow;
 import io.harness.governance.pipeline.service.evaluators.PipelineStatusEvaluator;
 import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
-import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.HsqsClient;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.invites.NgInviteClientModule;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClientModule;
 import io.harness.limits.LimitCheckerFactory;
@@ -182,6 +194,7 @@ import io.harness.marketplace.gcp.procurement.GcpProductHandler;
 import io.harness.metrics.impl.DelegateMetricsPublisher;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
+import io.harness.module.AgentMtlsModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.notifications.AlertNotificationRuleChecker;
@@ -273,6 +286,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.Workflow;
+import software.wings.beans.accountdetails.outbox.AccountDetailsOutboxEventHandler;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
@@ -525,6 +539,8 @@ import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskServiceImpl;
 import software.wings.service.impl.instance.ServerlessDashboardServiceImpl;
 import software.wings.service.impl.instance.ServerlessInstanceServiceImpl;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupService;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupServiceImpl;
 import software.wings.service.impl.instance.licensing.InstanceLimitProviderImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitCheckerImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitExcessHandlerImpl;
@@ -927,6 +943,20 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
   @Provides
   @Singleton
+  @Named("clickHouseConfig")
+  ClickHouseConfig clickHouseConfig() {
+    return ClickHouseConfig.builder().build();
+  }
+
+  @Provides
+  @Singleton
+  @Named("isClickHouseEnabled")
+  public boolean isClickHouseEnabled() {
+    return false;
+  }
+
+  @Provides
+  @Singleton
   public CdnStorageUrlGenerator cdnStorageUrlGenerator() {
     String clusterType = System.getenv("CLUSTER_TYPE");
     boolean isFreeCluster = StringUtils.equals(clusterType, "freemium");
@@ -1024,6 +1054,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(StatisticsService.class).to(StatisticsServiceImpl.class);
     bind(DashboardStatisticsService.class).to(DashboardStatisticsServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
+    bind(InstanceSyncPTBackupService.class).to(InstanceSyncPTBackupServiceImpl.class);
     bind(InstanceSyncPerpetualTaskService.class).to(InstanceSyncPerpetualTaskServiceImpl.class);
     bind(InstanceHandlerFactoryService.class).to(InstanceHandlerFactory.class);
     bind(BuildSourceService.class).to(BuildSourceServiceImpl.class);
@@ -1045,6 +1076,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateUpgraderService.class).to(DelegateUpgraderServiceImpl.class);
     bind(DelegateService.class).to(DelegateServiceImpl.class);
     bind(DelegateScopeService.class).to(DelegateScopeServiceImpl.class);
+    bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
@@ -1195,6 +1227,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);
@@ -1206,6 +1239,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(DelegateDownloadService.class).to(DelegateDownloadServiceImpl.class);
+    bind(DelegateFeedbacksService.class).to(DelegateFeedbacksServiceImpl.class);
 
     bind(WingsMongoExportImport.class);
 
@@ -1370,6 +1404,11 @@ public class WingsModule extends AbstractModule implements ServersModule {
               new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
     }
 
+    if (configuration.getDataReconciliationConfig() != null) {
+      bind(DeploymentReconTask.class)
+          .toInstance(new DeploymentReconTask(configuration.getDataReconciliationConfig().getDuration()));
+    }
+
     bind(ExecutorService.class)
         .annotatedWith(Names.named("CustomDashboardAPIExecutor"))
         .toInstance(Executors.newFixedThreadPool(2));
@@ -1420,6 +1459,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(PerpetualTaskScheduleService.class).to(PerpetualTaskScheduleServiceImpl.class);
+    bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
 
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
 
@@ -1492,7 +1532,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(K8sWatchTaskService.class).to(K8sWatchTaskServiceImpl.class);
     bind(HelmChartService.class).to(HelmChartServiceImpl.class);
     bind(LogStreamingServiceRestClient.class).toProvider(LogStreamingServiceClientFactory.class);
-    bind(HsqsServiceClient.class).toProvider(HQueueServiceClientFactory.class);
+    bind(HsqsClient.class).toProvider(HQueueServiceClientFactory.class);
     bind(IInstanceReconService.class).to(InstanceReconServiceImpl.class);
 
     // audit service
@@ -1527,6 +1567,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     outboxEventHandlerMapBinder.addBinding(DELEGATE_GROUPS).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(USER).to(UserEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(NG_LOGIN_SETTINGS).to(LoginSettingsOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(NG_ACCOUNT_DETAILS).to(AccountDetailsOutboxEventHandler.class);
   }
 
   private void bindFeatures() {
@@ -1686,6 +1727,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SecretsRBACService.class).to(SecretsRBACServiceImpl.class);
     bind(SecretsManagerRBACService.class).to(SecretsManagerRBACServiceImpl.class);
     bind(SecretManagementDelegateService.class).to(SecretManagementDelegateServiceImpl.class);
+    bind(LongerDataRetentionService.class).to(LongerDataRetentionServiceImpl.class);
 
     binder()
         .bind(VaultEncryptor.class)

@@ -9,6 +9,7 @@ package software.wings.beans.command;
 
 import static software.wings.beans.EntityVersion.Builder.anEntityVersion;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
@@ -22,11 +23,15 @@ import software.wings.beans.Base;
 import software.wings.beans.EntityVersion;
 import software.wings.beans.template.TemplateMetadata;
 import software.wings.beans.template.dto.ImportedTemplateDetails;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -34,8 +39,6 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 11/16/16.
@@ -45,7 +48,7 @@ import org.mongodb.morphia.annotations.Transient;
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ServiceCommandKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class ServiceCommand extends Base {
+public class ServiceCommand extends Base implements NGMigrationEntity {
   public static final String TEMPLATE_UUID_KEY = "templateUuid";
 
   private String name;
@@ -315,6 +318,17 @@ public class ServiceCommand extends Base {
         .withTemplateVersion(templateVersion)
         .withTemplateUuid(templateUuid)
         .withCommand(getCommand().cloneInternal())
+        .build();
+  }
+
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getServiceId() + "::" + getName())
+        .name(getName())
+        .type(SERVICE_COMMAND_TEMPLATE)
+        .appId(getAppId())
+        .accountId(getAccountId())
         .build();
   }
 

@@ -23,6 +23,9 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
+import net.jodah.failsafe.RetryPolicy;
 import okhttp3.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Call;
@@ -32,39 +35,51 @@ import retrofit2.Response;
 @Singleton
 @Slf4j
 public class NGRestClientExecutor {
-  public static final String DEFAULT_CONNECTION_ERROR_MESSAGE =
-      "Unable to connect to upstream systems, please try again.";
+  public static final String DEFAULT_ERROR_MESSAGE = "Error occurred while performing this operation.";
   private static final MediaType APPLICATION_KRYO_MEDIA_TYPE = MediaType.parse("application/x-kryo");
   @Inject private KryoSerializer kryoSerializer;
 
   public <T> T getResponse(Call<ResponseDTO<T>> request) {
+    RetryPolicy<Response<ResponseDTO<T>>> retryPolicy = RestClientUtils.getRetryPolicy("Request failed");
     try {
-      Response<ResponseDTO<T>> response = request.execute();
-      if (response.isSuccessful()) {
-        return response.body().getData();
-      } else {
-        String errorMessage = "";
-        try {
-          ErrorDTO errorDTO;
-          if (response.errorBody().contentType().toString().startsWith(APPLICATION_KRYO_MEDIA_TYPE.toString())) {
-            byte[] bytes = response.errorBody().bytes();
-            errorDTO = (ErrorDTO) kryoSerializer.asObject(bytes);
-          } else {
-            errorDTO = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
-          }
-          if (errorDTO != null) {
-            errorMessage = errorDTO.getMessage();
-          }
-        } catch (Exception e) {
-          log.debug("Error while converting error received from upstream systems", e);
-        }
-        throw new InvalidRequestException(
-            StringUtils.isEmpty(errorMessage) ? CGRestUtils.DEFAULT_ERROR_MESSAGE : errorMessage);
-      }
-    } catch (IOException ex) {
+      Response<ResponseDTO<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+      return handleResponse(response);
+    } catch (FailsafeException ex) {
+      throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
+    }
+  }
+
+  private static <T> Response<ResponseDTO<T>> executeRequest(Call<ResponseDTO<T>> request) throws IOException {
+    try {
+      Call<ResponseDTO<T>> cloneRequest = request.clone();
+      return cloneRequest == null ? request.execute() : cloneRequest.execute();
+    } catch (IOException ioException) {
       String url = Optional.ofNullable(request.request()).map(x -> x.url().encodedPath()).orElse(null);
-      log.error("IO error while connecting to the service: {}", url, ex);
-      throw new UnexpectedException(DEFAULT_CONNECTION_ERROR_MESSAGE);
+      log.error("IO error while connecting to the service: {}", url, ioException);
+      throw ioException;
+    }
+  }
+
+  private <T> T handleResponse(Response<ResponseDTO<T>> response) {
+    if (response.isSuccessful()) {
+      return response.body().getData();
+    } else {
+      String errorMessage = "";
+      try {
+        ErrorDTO errorDTO;
+        if (response.errorBody().contentType().toString().startsWith(APPLICATION_KRYO_MEDIA_TYPE.toString())) {
+          byte[] bytes = response.errorBody().bytes();
+          errorDTO = (ErrorDTO) kryoSerializer.asObject(bytes);
+        } else {
+          errorDTO = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
+        }
+        if (errorDTO != null) {
+          errorMessage = errorDTO.getMessage();
+        }
+      } catch (Exception e) {
+        log.debug("Error while converting error received from upstream systems", e);
+      }
+      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? DEFAULT_ERROR_MESSAGE : errorMessage);
     }
   }
 }

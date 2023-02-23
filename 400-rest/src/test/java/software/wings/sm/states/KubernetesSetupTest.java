@@ -69,6 +69,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.ImageDetails;
@@ -144,6 +145,7 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import dev.morphia.Key;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -154,7 +156,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -196,6 +197,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
   @InjectMocks private KubernetesSetup kubernetesSetup = new KubernetesSetup("name");
 
   @Mock private MainConfiguration configuration;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private ExecutionContext context;
 
@@ -404,7 +406,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
     kubernetesSetup.execute(context);
 
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(captor.capture());
+    verify(delegateService).queueTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
 
     CommandExecutionContext executionContext = (CommandExecutionContext) delegateTask.getData().getParameters()[1];

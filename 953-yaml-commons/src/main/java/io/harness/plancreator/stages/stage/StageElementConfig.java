@@ -78,9 +78,15 @@ public class StageElementConfig {
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;
 
-  @VariableExpression StageWhenCondition when;
+  @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
+  @VariableExpression
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<StageWhenCondition> when;
 
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("skipInstances")
@@ -104,8 +110,8 @@ public class StageElementConfig {
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
-      List<FailureStrategyConfig> failureStrategies, List<NGVariable> variables, String type, StageInfoConfig stageType,
-      ParameterField<String> skipCondition, StageWhenCondition when,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
+      StageInfoConfig stageType, ParameterField<String> skipCondition, ParameterField<StageWhenCondition> when,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.uuid = uuid;
     this.identifier = identifier;

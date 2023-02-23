@@ -8,6 +8,7 @@
 package io.harness.sto;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.beans.steps.STOStepSpecTypeConstants.SECURITY;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -59,60 +60,59 @@ import lombok.Getter;
 @AllArgsConstructor
 @OwnedBy(STO)
 public enum STOStepType {
-  AQUA_TRIVY("AquaTrivy", FeatureName.STO_STEP_PALETTE_V2, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
-      new String[] {"Security"}),
-  AWS_ECR(
-      "AWSECR", FeatureName.STO_STEP_PALETTE_V2, AwsEcrScanNode.class, EntityType.AWS_ECR, new String[] {"Security"}),
-  BANDIT("Bandit", FeatureName.STO_STEP_PALETTE_V1, BanditScanNode.class, EntityType.BANDIT, new String[] {"Security"}),
+  AQUA_TRIVY("AquaTrivy", FeatureName.STO_STEP_PALETTE_V1, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
+      new String[] {SECURITY}),
+  AWS_ECR("AWSECR", FeatureName.STO_STEP_PALETTE_V2, AwsEcrScanNode.class, EntityType.AWS_ECR, new String[] {SECURITY}),
+  BANDIT("Bandit", FeatureName.STO_STEP_PALETTE_V1, BanditScanNode.class, EntityType.BANDIT, new String[] {SECURITY}),
   BLACKDUCK("BlackDuck", FeatureName.STO_STEP_PALETTE_V1, BlackDuckScanNode.class, EntityType.BLACKDUCK,
-      new String[] {"Security"}),
+      new String[] {SECURITY}),
   BRAKEMAN("Brakeman", FeatureName.STO_STEP_PALETTE_V2, BrakemanScanNode.class, EntityType.BRAKEMAN,
-      new String[] {"Security"}),
-  BURP("Burp", FeatureName.STO_STEP_PALETTE_V1, BurpScanNode.class, EntityType.BURP, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  BURP("Burp", FeatureName.STO_STEP_PALETTE_V2, BurpScanNode.class, EntityType.BURP, new String[] {SECURITY}),
   CHECKMARX("Checkmarx", FeatureName.STO_STEP_PALETTE_V1, CheckmarxScanNode.class, EntityType.CHECKMARX,
-      new String[] {"Security"}),
-  CLAIR("Clair", FeatureName.STO_STEP_PALETTE_V2, ClairScanNode.class, EntityType.CLAIR, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  CLAIR("Clair", FeatureName.STO_STEP_PALETTE_V2, ClairScanNode.class, EntityType.CLAIR, new String[] {SECURITY}),
   DATA_THEOREM("DataTheorem", FeatureName.STO_STEP_PALETTE_V2, DataTheoremScanNode.class, EntityType.DATA_THEOREM,
-      new String[] {"Security"}),
+      new String[] {SECURITY}),
   DOCKER_CONTENT_TRUST("DockerContentTrust", FeatureName.STO_STEP_PALETTE_V2, DockerContentTrustScanNode.class,
-      EntityType.DOCKER_CONTENT_TRUST, new String[] {"Security"}),
+      EntityType.DOCKER_CONTENT_TRUST, new String[] {SECURITY}),
   EXTERNAL("External", FeatureName.STO_STEP_PALETTE_V2, ExternalScanNode.class, EntityType.EXTERNAL,
-      new String[] {"Security"}),
-  FORTIFY_ON_DEMAND("FortifyOnDemand", FeatureName.STO_STEP_PALETTE_V1, FortifyOnDemandScanNode.class,
-      EntityType.FORTIFY_ON_DEMAND, new String[] {"Security"}),
-  GRYPE("Grype", FeatureName.STO_STEP_PALETTE_V2, GrypeScanNode.class, EntityType.GRYPE, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  FORTIFY_ON_DEMAND("FortifyOnDemand", FeatureName.STO_STEP_PALETTE_V2, FortifyOnDemandScanNode.class,
+      EntityType.FORTIFY_ON_DEMAND, new String[] {SECURITY}),
+  GRYPE("Grype", FeatureName.STO_STEP_PALETTE_V1, GrypeScanNode.class, EntityType.GRYPE, new String[] {SECURITY}),
   JFROG_XRAY("JfrogXray", FeatureName.STO_STEP_PALETTE_V2, JfrogXrayScanNode.class, EntityType.JFROG_XRAY,
-      new String[] {"Security"}),
-  MEND("Mend", FeatureName.STO_STEP_PALETTE_V2, MendScanNode.class, EntityType.MEND, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  MEND("Mend", FeatureName.STO_STEP_PALETTE_V1, MendScanNode.class, EntityType.MEND, new String[] {SECURITY}),
   METASPLOIT("Metasploit", FeatureName.STO_STEP_PALETTE_V2, MetasploitScanNode.class, EntityType.METASPLOIT,
-      new String[] {"Security"}),
-  NESSUS("Nessus", FeatureName.STO_STEP_PALETTE_V2, NessusScanNode.class, EntityType.NESSUS, new String[] {"Security"}),
-  NEXUS_IQ("NexusIQ", FeatureName.STO_STEP_PALETTE_V2, NexusIQScanNode.class, EntityType.NEXUS_IQ,
-      new String[] {"Security"}),
-  NIKTO("Nikto", FeatureName.STO_STEP_PALETTE_V2, NiktoScanNode.class, EntityType.NIKTO, new String[] {"Security"}),
-  NMAP("Nmap", FeatureName.STO_STEP_PALETTE_V2, NmapScanNode.class, EntityType.NMAP, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  NESSUS("Nessus", FeatureName.STO_STEP_PALETTE_V2, NessusScanNode.class, EntityType.NESSUS, new String[] {SECURITY}),
+  NEXUS_IQ(
+      "NexusIQ", FeatureName.STO_STEP_PALETTE_V2, NexusIQScanNode.class, EntityType.NEXUS_IQ, new String[] {SECURITY}),
+  NIKTO("Nikto", FeatureName.STO_STEP_PALETTE_V2, NiktoScanNode.class, EntityType.NIKTO, new String[] {SECURITY}),
+  NMAP("Nmap", FeatureName.STO_STEP_PALETTE_V2, NmapScanNode.class, EntityType.NMAP, new String[] {SECURITY}),
   OPENVAS(
-      "Openvas", FeatureName.STO_STEP_PALETTE_V2, OpenvasScanNode.class, EntityType.OPENVAS, new String[] {"Security"}),
-  OWASP("Owasp", FeatureName.STO_STEP_PALETTE_V2, OwaspScanNode.class, EntityType.OWASP, new String[] {"Security"}),
+      "Openvas", FeatureName.STO_STEP_PALETTE_V2, OpenvasScanNode.class, EntityType.OPENVAS, new String[] {SECURITY}),
+  OWASP("Owasp", FeatureName.STO_STEP_PALETTE_V2, OwaspScanNode.class, EntityType.OWASP, new String[] {SECURITY}),
   PRISMA_CLOUD("PrismaCloud", FeatureName.STO_STEP_PALETTE_V1, PrismaCloudScanNode.class, EntityType.PRISMA_CLOUD,
-      new String[] {"Security"}),
+      new String[] {SECURITY}),
   PROWLER(
-      "Prowler", FeatureName.STO_STEP_PALETTE_V2, ProwlerScanNode.class, EntityType.PROWLER, new String[] {"Security"}),
-  QUALYS("Qualys", FeatureName.STO_STEP_PALETTE_V2, QualysScanNode.class, EntityType.QUALYS, new String[] {"Security"}),
+      "Prowler", FeatureName.STO_STEP_PALETTE_V2, ProwlerScanNode.class, EntityType.PROWLER, new String[] {SECURITY}),
+  QUALYS("Qualys", FeatureName.STO_STEP_PALETTE_V2, QualysScanNode.class, EntityType.QUALYS, new String[] {SECURITY}),
   REAPSAW(
-      "Reapsaw", FeatureName.STO_STEP_PALETTE_V2, ReapsawScanNode.class, EntityType.REAPSAW, new String[] {"Security"}),
+      "Reapsaw", FeatureName.STO_STEP_PALETTE_V2, ReapsawScanNode.class, EntityType.REAPSAW, new String[] {SECURITY}),
   SHIFT_LEFT("ShiftLeft", FeatureName.STO_STEP_PALETTE_V2, ShiftLeftScanNode.class, EntityType.SHIFT_LEFT,
-      new String[] {"Security"}),
-  SNIPER("Sniper", FeatureName.STO_STEP_PALETTE_V2, SniperScanNode.class, EntityType.SNIPER, new String[] {"Security"}),
-  SNYK("Snyk", FeatureName.STO_STEP_PALETTE_V1, SnykScanNode.class, EntityType.SNYK, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  SNIPER("Sniper", FeatureName.STO_STEP_PALETTE_V2, SniperScanNode.class, EntityType.SNIPER, new String[] {SECURITY}),
+  SNYK("Snyk", FeatureName.STO_STEP_PALETTE_V1, SnykScanNode.class, EntityType.SNYK, new String[] {SECURITY}),
   SONARQUBE("Sonarqube", FeatureName.STO_STEP_PALETTE_V1, SonarqubeScanNode.class, EntityType.SONARQUBE,
-      new String[] {"Security"}),
-  SYSDIG("Sysdig", FeatureName.STO_STEP_PALETTE_V2, SysdigScanNode.class, EntityType.SYSDIG, new String[] {"Security"}),
+      new String[] {SECURITY}),
+  SYSDIG("Sysdig", FeatureName.STO_STEP_PALETTE_V2, SysdigScanNode.class, EntityType.SYSDIG, new String[] {SECURITY}),
   TENABLE(
-      "Tenable", FeatureName.STO_STEP_PALETTE_V2, TenableScanNode.class, EntityType.TENABLE, new String[] {"Security"}),
-  VERACODE("Veracode", FeatureName.STO_STEP_PALETTE_V1, VeracodeScanNode.class, EntityType.VERACODE,
-      new String[] {"Security"}),
-  ZAP("Zap", FeatureName.STO_STEP_PALETTE_V1, ZapScanNode.class, EntityType.ZAP, new String[] {"Security"});
+      "Tenable", FeatureName.STO_STEP_PALETTE_V2, TenableScanNode.class, EntityType.TENABLE, new String[] {SECURITY}),
+  VERACODE("Veracode", FeatureName.STO_STEP_PALETTE_V2, VeracodeScanNode.class, EntityType.VERACODE,
+      new String[] {SECURITY}),
+  ZAP("Zap", FeatureName.STO_STEP_PALETTE_V1, ZapScanNode.class, EntityType.ZAP, new String[] {SECURITY});
   @Getter private String name;
   @Getter private FeatureName featureName;
   @Getter private Class<?> node;

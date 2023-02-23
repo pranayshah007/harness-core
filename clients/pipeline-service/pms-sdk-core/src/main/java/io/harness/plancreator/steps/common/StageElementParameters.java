@@ -40,7 +40,6 @@ public class StageElementParameters implements StepParameters {
 
   ParameterField<String> skipCondition;
   StageWhenCondition when;
-
   List<FailureStrategyConfig> failureStrategies;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
   Map<String, String> tags;

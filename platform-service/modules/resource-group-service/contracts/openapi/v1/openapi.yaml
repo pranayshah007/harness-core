@@ -295,7 +295,7 @@ components:
       description: Resource Group response body
       x-examples:
         example-resource-group:
-          slug: example_resource_group
+          identifier: example_resource_group
           name: Example_Resource Group
           color: '#0063F7'
           tags:
@@ -321,18 +321,18 @@ components:
           created: 1234567890
           updated: 1234567890
       properties:
-        slug:
+        identifier:
           type: string
           description: Resource Group Identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Resource Group Name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         color:
           type: string
           description: Color associated with the Resource Group.
@@ -381,7 +381,7 @@ components:
           description: Last modification timestamp for Resource Group.
           format: int64
       required:
-        - slug
+        - identifier
         - name
     CreateResourceGroupRequest:
       title: Create Resource Group Request
@@ -391,7 +391,7 @@ components:
       description: Resource Group request body
       x-examples:
         resource-group-request:
-          slug: example_resource_group
+          identifier: example_resource_group
           name: Example_Resource Group
           color: '#0063F7'
           tags:
@@ -412,17 +412,17 @@ components:
                 - example_resource_attribute
           include_all_resources: false
       properties:
-        slug:
+        identifier:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           description: Resource Group identifier
         name:
           type: string
           minLength: 1
-          maxLength: 64
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          maxLength: 128
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           description: Resource Group name
         color:
           type: string
@@ -451,7 +451,7 @@ components:
           type: boolean
           description: Boolean value for including all resources in Resource Group.
       required:
-        - slug
+        - identifier
         - name
     ResourceGroupScope:
       title: Resource Group Scope
@@ -475,21 +475,21 @@ components:
         account:
           type: string
           description: Account identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Organization identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Project identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
       required:
         - filter
     ResourceFilter:
@@ -515,9 +515,9 @@ components:
           description: Identifiers for the Resource Type.
           items:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
             minLength: 1
-            maxLength: 64
+            maxLength: 128
         attribute_name:
           type: string
           description: Attribute name on the basis of which filtering will be done.
@@ -537,17 +537,17 @@ components:
       x-examples:
         example-resource-selector-filter:
           resource_type: resource
-          resource_slug: example_resource
+          resource_identifier: example_resource
       properties:
         resource_type:
           type: string
           description: Filter by Resource type
-        resource_slug:
+        resource_identifier:
           type: string
           description: Filter by Resource identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
       required:
         - resource_type
     ResourceGroupFilterRequestBody:
@@ -566,27 +566,27 @@ components:
             - example_resource_group
           resource_selector_filter:
             - resource_type: RESOURCE
-              resource_slug: example_resource
+              resource_identifier: example_resource
           managed_filter: NO_FILTER
       properties:
         account:
           type: string
           description: Filter by Account identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
           description: Filter by Organization identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         project:
           type: string
           description: Filter by Project identifier.
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         search_term:
           type: string
           description: Filter Resource Group matching by identifier/name.
@@ -596,9 +596,9 @@ components:
           uniqueItems: true
           items:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
             minLength: 1
-            maxLength: 64
+            maxLength: 128
         resource_selector_filter:
           type: array
           description: Filter based on whether it has a particular Resource.
@@ -670,7 +670,7 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Sort:
       name: sort
       in: query
@@ -678,7 +678,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - created
           - updated
@@ -706,7 +706,7 @@ components:
           examples:
             resource-group-list-response:
               value:
-                - slug: example_resource_group
+                - identifier: example_resource_group
                   name: Example Resource Group
                   color: '#0063F7'
                   tags:
@@ -740,7 +740,7 @@ components:
           examples:
             resource-group-list-response:
               value: |
-                - slug: example_resource_group
+                - identifier: example_resource_group
                   name: Example Resource Group
                   color: '#0063F7'
                   tags:
@@ -766,13 +766,18 @@ components:
                   created: 1234567890
                   updated: 1234567890
       headers:
-        Link:
+        X-Total-Elements:
           schema:
-            type: string
-          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
-          examples:
-            sample:
-              value: '</v1/resource-groups?page=2&limit=1>; rel="next", </v1/resource-groups?page=1&limit=1>; rel="self", </v1/resource-groups?page=0&limit=1>; rel="previous", '
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     ResourceGroupsResponse:
       description: Resource Group response body
       content:
@@ -782,7 +787,7 @@ components:
           examples:
             resource-group-response:
               value:
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -813,7 +818,7 @@ components:
           examples:
             resource-group-response:
               value: |
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -847,7 +852,7 @@ components:
           examples:
             resource-group-request:
               value:
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -873,7 +878,7 @@ components:
           examples:
             resource-group-request:
               value: |
-                slug: example_resource_group
+                identifier: example_resource_group
                 name: Example Resource Group
                 color: '#0063F7'
                 tags:
@@ -911,7 +916,7 @@ components:
                   - example_resource_group
                 resource_selector_filter:
                   - resource_type: RESOURCE
-                    resource_slug: example_resource
+                    resource_identifier: example_resource
                 managed_filter: NO_FILTER
         application/yaml:
           schema:
@@ -927,7 +932,7 @@ components:
                   - example_resource_group
                 resource_selector_filter:
                   - resource_type: RESOURCE
-                    resource_slug: example_resource
+                    resource_identifier: example_resource
                 managed_filter: NO_FILTER
       description: Filter Resource Group request body
       required: true

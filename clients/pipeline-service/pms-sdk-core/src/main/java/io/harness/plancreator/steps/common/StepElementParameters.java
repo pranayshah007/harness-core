@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -44,6 +45,7 @@ public class StepElementParameters implements StepParameters {
 
   String type;
   SpecParameters spec;
+  PolicyConfig enforce;
 
   ParameterField<List<String>> delegateSelectors;
 
@@ -66,6 +68,7 @@ public class StepElementParameters implements StepParameters {
         .description(this.description)
         .identifier(this.identifier)
         .timeout(this.timeout)
+        .enforce(this.enforce)
         .failureStrategies(this.failureStrategies)
         .when(this.when)
         .skipCondition(this.skipCondition)

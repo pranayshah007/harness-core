@@ -47,11 +47,11 @@ foreach query in Env:queries {
              Var value = Var:values[Var:index]
              Var timestamp = Var:timeseries[Var:index]
              if Var:collectHostDataString != "true" {
-                 Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp)
+                 Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp)
                  Var:timeSeriesList.append(Var:tsRecord)
              }
              if Var:collectHostDataString == "true" {
-                 Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp, host=Var:hostName)
+                 Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp, host=Var:hostName)
                  Var:timeSeriesList.append(Var:tsRecord)
              }
              index = Var:index + Var:one

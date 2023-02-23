@@ -12,17 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.manifest.handler.ManifestHandler;
-
-import java.util.List;
-import java.util.Map;
+import io.harness.manifest.request.ManifestRequest;
 
 @OwnedBy(CDP)
 public abstract class AsgManifestHandler<M> extends ManifestHandler<M, AsgManifestHandlerChainState> {
   protected final AsgSdkManager asgSdkManager;
 
-  protected AsgManifestHandler(
-      AsgSdkManager asgSdkManager, List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    super(manifestContentList, overrideProperties);
+  protected AsgManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
+    super(manifestRequest);
     this.asgSdkManager = asgSdkManager;
   }
 }

@@ -48,6 +48,7 @@ import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -122,7 +123,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Inject @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
   private DelegateSyncService delegateSyncService;
   private DelegateTaskService delegateTaskService;
-
+  private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   private Server server;
   private Logger mockClientLogger;
   private Logger mockServerLogger;
@@ -149,8 +150,10 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateService = mock(DelegateService.class);
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
+    delegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, referenceFalseKryoSerializer, delegateTaskServiceClassic,
+        delegateTaskMigrationHelper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();
@@ -162,6 +165,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Category(UnitTests.class)
   public void testSubmitTask() {
     ByteString kryoParams = ByteString.copyFrom(kryoSerializer.asDeflatedBytes(ScriptType.BASH));
+    when(delegateTaskMigrationHelper.generateDelegateTaskUUID()).thenReturn(generateUuid());
 
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(Cd1SetupFields.APP_ID_FIELD, "appId");
@@ -183,8 +187,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                       .setType(TaskType.newBuilder().setType("TYPE").build())
                                       .setKryoParameters(kryoParams)
                                       .setExecutionTimeout(Duration.newBuilder().setSeconds(3).setNanos(100).build())
-                                      .setExpressionFunctorToken(200)
-                                      .putAllExpressions(expressions);
+                                      .setExpressionFunctorToken(200);
 
     List<String> taskSelectors = Arrays.asList("testSelector");
 
@@ -195,7 +198,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                              builder.setMode(TaskMode.SYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                          .getTaskId();
     assertThat(taskId1).isNotNull();
     assertThat(taskId1.getId()).isNotBlank();
@@ -209,7 +212,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                                builder.setMode(TaskMode.SYNC).setParked(false).build(),
                                asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                            .getTaskId();
     assertThat(taskId1Ng).isNotNull();
     assertThat(taskId1Ng.getId()).isNotBlank();
@@ -222,7 +225,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                              builder.setMode(TaskMode.ASYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                          .getTaskId();
     assertThat(taskId2).isNotNull();
     assertThat(taskId2.getId()).isNotBlank();
@@ -235,7 +238,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.ASYNC).setParked(true).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList(), false, null)
+                false, Collections.emptyList(), false, null, false)
             .getTaskId();
     assertThat(taskId3).isNotNull();
     assertThat(taskId3.getId()).isNotBlank();
@@ -250,7 +253,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.SYNC).setParked(false).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList(), false, null))
+                false, Collections.emptyList(), false, null, false))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.");
   }

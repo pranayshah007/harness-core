@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.JAMES_RICKS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
@@ -97,7 +98,7 @@ public class ErrorTrackingServiceImplTest extends CvNextGenTestBase {
 
     when(callMock.clone()).thenReturn(callMock);
     when(errorTrackingClientMock.getNotificationData(
-             eq(ORG), eq(ACCOUNT), eq(PROJECT), eq(SERVICE), eq(ENVIRONMENT), anyList()))
+             eq(ORG), eq(ACCOUNT), eq(PROJECT), eq(SERVICE), eq(ENVIRONMENT), anyList(), anyString()))
         .thenReturn(callMock);
     when(callMock.execute()).thenReturn(Response.success(notificationData));
   }
@@ -106,8 +107,9 @@ public class ErrorTrackingServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void notificationDataClientTest() {
-    final ErrorTrackingNotificationData responseNotificationData = errorTrackingService.getNotificationData(
-        ORG, ACCOUNT, PROJECT, SERVICE, ENVIRONMENT, Collections.singletonList(ErrorTrackingEventType.EXCEPTION));
+    final ErrorTrackingNotificationData responseNotificationData =
+        errorTrackingService.getNotificationData(ORG, ACCOUNT, PROJECT, SERVICE, ENVIRONMENT,
+            Collections.singletonList(ErrorTrackingEventType.EXCEPTION), "testNotificationId");
     assertThat(responseNotificationData).isNotNull();
     assertThat(responseNotificationData).isEqualTo(notificationData);
   }

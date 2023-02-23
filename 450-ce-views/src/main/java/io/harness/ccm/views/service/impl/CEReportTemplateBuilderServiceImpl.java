@@ -10,6 +10,8 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.ccm.clickHouse.ClickHouseService;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
@@ -35,10 +37,12 @@ import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -55,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -73,9 +78,14 @@ import org.jfree.data.category.DefaultCategoryDataset;
 @Slf4j
 public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuilderService {
   @Inject private CEViewService ceViewService;
-  @Inject private ViewsBillingServiceImpl viewsBillingService;
+  @Inject private ViewsBillingServiceImpl viewsBillingServiceImpl;
+  @Inject private ViewsBillingService viewsBillingService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
+  @Inject @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
+  @Inject ClickHouseService clickHouseService;
+  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
   // For table construction
   private static final String TABLE_START =
@@ -136,6 +146,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final Color WHITE = new Color(255, 255, 255);
   private static final Color GRAY = new Color(112, 113, 117);
   private static final int REPEAT_FREQUENCY = 10;
+  private static final long ONE_DAY_SEC = 86400;
+  private static final long ONE_HOUR_SEC = 3600;
 
   @Override
   public Map<String, String> getTemplatePlaceholders(
@@ -173,11 +185,10 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Todo: Pass default group by to cover cost categories
     // Generating Trend data
-    QLCEViewTrendInfo trendData =
-        viewsBillingService
-            .getTrendStatsDataNg(bigQuery, filters, Collections.emptyList(), aggregationFunction,
-                cloudProviderTableName, viewsQueryHelper.buildQueryParams(accountId, false))
-            .getTotalCost();
+    QLCEViewTrendInfo trendData = viewsBillingService
+                                      .getTrendStatsDataNg(filters, Collections.emptyList(), aggregationFunction,
+                                          viewsQueryHelper.buildQueryParams(accountId, false))
+                                      .getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -185,9 +196,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     // Generating table data
     List<QLCEViewEntityStatsDataPoint> tableData =
         viewsBillingService
-            .getEntityStatsDataPointsNg(bigQuery, filters, groupBy, aggregationFunction, sortCriteria,
-                cloudProviderTableName, DEFAULT_LIMIT, DEFAULT_OFFSET,
-                viewsQueryHelper.buildQueryParams(accountId, false, false))
+            .getEntityStatsDataPointsNg(filters, groupBy, aggregationFunction, sortCriteria, DEFAULT_LIMIT,
+                DEFAULT_OFFSET, viewsQueryHelper.buildQueryParams(accountId, false, false))
             .getData();
     if (isEmpty(tableData)) {
       throw new InvalidRequestException("Exception while generating report. No data to for table");
@@ -198,11 +208,17 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     groupBy.add(QLCEViewGroupBy.builder()
                     .timeTruncGroupBy(QLCEViewTimeTruncGroupBy.builder().resolution(QLCEViewTimeGroupType.DAY).build())
                     .build());
-    List<QLCEViewTimeSeriesData> chartData = viewsBillingService.convertToQLViewTimeSeriesData(
-        viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregationFunction, sortCriteria,
-            cloudProviderTableName, false, DEFAULT_LIMIT,
-            viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
-        accountId, groupBy);
+    List<QLCEViewTimeSeriesData> chartData = null;
+    if (isClickHouseEnabled) {
+      chartData =
+          clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNgForReport(filters, groupBy, aggregationFunction,
+              sortCriteria, DEFAULT_LIMIT, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false));
+    } else {
+      chartData = viewsBillingServiceImpl.convertToQLViewTimeSeriesData(
+          viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction, sortCriteria, false,
+              DEFAULT_LIMIT, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
+          accountId, groupBy);
+    }
     if (chartData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for chart");
     }
@@ -487,5 +503,28 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       currency = Currency.USD;
     }
     return currency;
+  }
+
+  public long getTimePeriod(List<QLCEViewGroupBy> groupBy) {
+    try {
+      List<QLCEViewTimeTruncGroupBy> timeGroupBy = groupBy.stream()
+                                                       .map(QLCEViewGroupBy::getTimeTruncGroupBy)
+                                                       .filter(Objects::nonNull)
+                                                       .collect(Collectors.toList());
+      switch (timeGroupBy.get(0).getResolution()) {
+        case HOUR:
+          return ONE_HOUR_SEC;
+        case WEEK:
+          return 7 * ONE_DAY_SEC;
+        case MONTH:
+          return 30 * ONE_DAY_SEC;
+        case DAY:
+        default:
+          return ONE_DAY_SEC;
+      }
+    } catch (Exception e) {
+      log.info("Time group by can't be null for timeSeries query");
+      return ONE_DAY_SEC;
+    }
   }
 }

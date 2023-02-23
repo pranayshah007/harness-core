@@ -21,6 +21,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.capability.ProcessExecutionCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -48,10 +49,10 @@ public abstract class AbstractTerragruntTaskParameters
     implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
   @NonNull String accountId;
   @NonNull String entityId;
-  @NonNull TerragruntRunConfiguration runConfiguration;
+  @Expression(ALLOW_SECRETS) @NonNull TerragruntRunConfiguration runConfiguration;
   @NonNull StoreDelegateConfig configFilesStore;
-  StoreDelegateConfig backendFilesStore;
-  List<StoreDelegateConfig> varFiles;
+  @Expression(ALLOW_SECRETS) StoreDelegateConfig backendFilesStore;
+  @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> varFiles;
   EncryptionConfig planSecretManager;
 
   @Expression(ALLOW_SECRETS) List<String> targets;
@@ -64,10 +65,16 @@ public abstract class AbstractTerragruntTaskParameters
   @Nullable CommandUnitsProgress commandUnitsProgress;
 
   List<EncryptedDataDetail> encryptedDataDetailList;
+  boolean tgModuleSourceInheritSSH;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+
+    executionCapabilities.addAll(ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerraform(
+        encryptedDataDetailList, maskingEvaluator));
+    executionCapabilities.addAll(ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerragrunt(
+        encryptedDataDetailList, maskingEvaluator));
 
     addStoreCapabilities(configFilesStore, executionCapabilities);
     if (backendFilesStore != null) {

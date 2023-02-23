@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_METADATA_ONLY;
+import static io.harness.beans.FeatureName.SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -130,6 +131,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -148,12 +155,6 @@ import javax.ws.rs.NotFoundException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @Singleton
@@ -577,7 +578,8 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
               "Auto artifact collection cannot be enabled for parameterized artifact sources");
         }
         SettingValue settingValue = settingsService.getSettingValueById(accountId, artifactStream.getSettingId());
-        if (settingValue instanceof NexusConfig) {
+        if (settingValue instanceof NexusConfig
+            && !featureFlagService.isEnabled(SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT, accountId)) {
           NexusConfig nexusConfig = (NexusConfig) settingValue;
           boolean isNexusThree = nexusConfig.getVersion() == null || nexusConfig.getVersion().equalsIgnoreCase("3.x");
           if (isNexusThree) {

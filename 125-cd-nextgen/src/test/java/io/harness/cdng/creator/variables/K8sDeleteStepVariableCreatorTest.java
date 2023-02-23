@@ -56,7 +56,8 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.name",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.description");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.description",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.when");
   }
 
   @Test
@@ -71,7 +72,8 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.description",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.deleteResources.spec.manifestPaths",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.deleteResources.spec.allManifestPaths");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.deleteResources.spec.allManifestPaths",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.when");
   }
 
   @Test
@@ -85,6 +87,7 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.spec.deleteResources.spec.deleteNamespace",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.description",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.name");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.name",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.when");
   }
 }

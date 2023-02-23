@@ -9,6 +9,7 @@ package io.harness.ng.core.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.ResourceConstants.INFRASTRUCTURE_ID;
 import static io.harness.ng.core.ResourceConstants.RESOURCE_TYPE;
 import static io.harness.ng.core.ResourceConstants.SERVICE_OVERRIDE_NAME;
@@ -16,8 +17,11 @@ import static io.harness.ng.core.ResourceConstants.STATUS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
+import io.harness.ng.core.AccountScope;
+import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -50,14 +54,19 @@ public class EnvironmentUpdatedEvent implements Event {
   private Environment newEnvironment;
   private Environment oldEnvironment;
 
-  public enum Status { CREATED, UPDATED, UPSERTED, DELETED }
+  public enum Status { CREATED, UPDATED, UPSERTED, DELETED, FORCE_DELETED }
 
   public enum ResourceType { SERVICE_OVERRIDE, INFRASTRUCTURE, ENVIRONMENT }
 
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, getOrgIdentifier(), getProjectIdentifier());
+    if (isNotEmpty(getProjectIdentifier())) {
+      return new ProjectScope(accountIdentifier, getOrgIdentifier(), getProjectIdentifier());
+    } else if (isNotEmpty(getOrgIdentifier())) {
+      return new OrgScope(accountIdentifier, getOrgIdentifier());
+    }
+    return new AccountScope(accountIdentifier);
   }
 
   private String getProjectIdentifier() {
@@ -88,6 +97,7 @@ public class EnvironmentUpdatedEvent implements Event {
         return newEnvironment.getOrgIdentifier();
     }
   }
+
   private String resourceName() {
     switch (resourceType) {
       case SERVICE_OVERRIDE:
@@ -109,6 +119,7 @@ public class EnvironmentUpdatedEvent implements Event {
     Map<String, String> labels = new HashMap<>();
     labels.put(STATUS, status.name());
     labels.put(RESOURCE_TYPE, resourceType.name());
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, resourceName());
     if (resourceType.equals(ResourceType.SERVICE_OVERRIDE)) {
       labels.put(SERVICE_OVERRIDE_NAME, resourceName());
     } else if (resourceType.equals(ResourceType.INFRASTRUCTURE)) {

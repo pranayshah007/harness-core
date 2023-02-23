@@ -46,10 +46,10 @@ import software.wings.service.intfc.security.GcpSecretsManagerService;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -270,8 +270,13 @@ public class GcpSecretsManagerServiceImpl extends AbstractSecretServiceImpl impl
   }
 
   private EncryptedData getEncryptedDataForSecretField(GcpKmsConfig gcpKmsConfig, char[] credentials) {
-    EncryptedData encryptedData = isNotEmpty(credentials) ? encryptLocal(credentials) : null;
-    if (gcpKmsConfig != null && encryptedData != null) {
+    if (isEmpty(credentials)) {
+      return null;
+    }
+    EncryptedData encryptedData = GLOBAL_ACCOUNT_ID.equals(gcpKmsConfig.getAccountId())
+        ? encryptLocal(credentials)
+        : encryptUsingBaseAlgo(gcpKmsConfig.getAccountId(), credentials);
+    if (encryptedData != null) {
       // Get by auth token encrypted record by Id or name.
       Query<EncryptedData> query = wingsPersistence.createQuery(EncryptedData.class);
       query.criteria(EncryptedDataKeys.accountId)

@@ -16,15 +16,26 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.TypeAlias;
 
-@Value
-@Builder
+@Getter
+@NoArgsConstructor
 @OwnedBy(CDP)
 @TypeAlias("asgExecutionPassThroughData")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgExecutionPassThroughData")
 public class AsgExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
-  UnitProgressData lastActiveUnitProgressData;
+  @Setter UnitProgressData lastActiveUnitProgressData;
+  AsgManifestFetchData asgManifestFetchData;
+
+  @Builder()
+  public AsgExecutionPassThroughData(InfrastructureOutcome infrastructure, UnitProgressData lastActiveUnitProgressData,
+      AsgManifestFetchData asgManifestFetchData) {
+    this.infrastructure = infrastructure;
+    this.lastActiveUnitProgressData = lastActiveUnitProgressData;
+    this.asgManifestFetchData = asgManifestFetchData;
+  }
 }

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.security.ServiceTokenGenerator.VERIFICATION_SERVICE_SECRET;
 
 import static software.wings.beans.alert.Alert.AlertKeys;
@@ -69,6 +70,7 @@ import io.harness.morphia.MorphiaModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
 import io.harness.redis.RedisConfig;
 import io.harness.resource.VersionInfoResource;
 import io.harness.resources.LogVerificationResource;
@@ -79,7 +81,7 @@ import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.VerificationRegistrars;
-import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.app.CharsetResponseFilter;
@@ -121,6 +123,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.name.Named;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.bundles.assets.ConfiguredAssetsBundle;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -148,7 +151,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.reflections.Reflections;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -338,6 +340,8 @@ public class VerificationServiceApplication extends Application<VerificationServ
     harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
 
     initMetrics();
+
+    registerStores(configuration, injector);
 
     registerResources(environment, injector);
 
@@ -632,5 +636,13 @@ public class VerificationServiceApplication extends Application<VerificationServ
   private void initializeServiceTaskPoll(Injector injector) {
     injector.getInstance(WorkflowVerificationTaskPoller.class).scheduleTaskPoll();
     injector.getInstance(ServiceGuardAccountPoller.class).scheduleAdministrativeTasks();
+  }
+
+  private void registerStores(VerificationServiceConfiguration configuration, Injector injector) {
+    final HPersistence persistence = injector.getInstance(HPersistence.class);
+    if (isNotEmpty(configuration.getDmsMongo().getUri())
+        && !configuration.getDmsMongo().getUri().equals(configuration.getMongoConnectionFactory().getUri())) {
+      persistence.register(Store.builder().name(DMS).build(), configuration.getDmsMongo().getUri());
+    }
   }
 }

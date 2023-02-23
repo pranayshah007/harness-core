@@ -7,8 +7,11 @@
 
 package software.wings.graphql.datafetcher.trigger;
 
+import static io.harness.beans.FeatureName.SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 
@@ -26,6 +29,7 @@ import com.google.inject.Inject;
 @OwnedBy(HarnessTeam.CDC)
 public class CreateTriggerDataFetcher extends BaseMutatorDataFetcher<QLCreateOrUpdateTriggerInput, QLTriggerPayload> {
   @Inject TriggerController triggerController;
+  @Inject private FeatureFlagService featureFlagService;
   private TriggerService triggerService;
 
   @Inject
@@ -39,8 +43,11 @@ public class CreateTriggerDataFetcher extends BaseMutatorDataFetcher<QLCreateOrU
   protected QLTriggerPayload mutateAndFetch(QLCreateOrUpdateTriggerInput parameter, MutationContext mutationContext) {
     try (AutoLogContext ignore0 =
              new AccountLogContext(mutationContext.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
-      final Trigger savedTrigger =
-          triggerService.save(triggerController.prepareTrigger(parameter, mutationContext.getAccountId()));
+      final Trigger trigger = triggerController.prepareTrigger(parameter, mutationContext.getAccountId());
+      if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, mutationContext.getAccountId())) {
+        triggerService.authorizeSave(trigger);
+      }
+      final Trigger savedTrigger = triggerService.save(trigger);
       return triggerController.prepareQLTrigger(
           savedTrigger, parameter.getClientMutationId(), mutationContext.getAccountId());
     }

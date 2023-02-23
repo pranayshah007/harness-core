@@ -19,6 +19,7 @@ import io.harness.security.encryption.AccessType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import dev.morphia.annotations.Entity;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,7 +29,6 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -54,6 +54,7 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   int secretEngineVersion;
   String secretIdRef;
   @FdIndex @NonFinal Long nextTokenRenewIteration;
+  @FdIndex @NonFinal Long nextTokenLookupIteration;
   @Getter(AccessLevel.NONE) @NonFinal Long renewalIntervalMinutes;
   @Getter(AccessLevel.NONE) Boolean secretEngineManuallyConfigured;
   @Getter(AccessLevel.NONE) String basePath;
@@ -62,6 +63,7 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
 
   @Builder.Default Boolean useVaultAgent = Boolean.FALSE;
   @Setter @NonFinal Long renewedAt;
+  @Setter @NonFinal Long lastTokenLookupAt;
 
   @Builder.Default Boolean useAwsIam = Boolean.FALSE;
   String awsRegion;
@@ -112,6 +114,8 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   public Long obtainNextIteration(String fieldName) {
     if (VaultConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
       return nextTokenRenewIteration;
+    } else if (VaultConnectorKeys.nextTokenLookupIteration.equals(fieldName)) {
+      return nextTokenLookupIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -120,6 +124,9 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (VaultConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
       this.nextTokenRenewIteration = nextIteration;
+      return;
+    } else if (VaultConnectorKeys.nextTokenLookupIteration.equals(fieldName)) {
+      this.nextTokenLookupIteration = nextIteration;
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

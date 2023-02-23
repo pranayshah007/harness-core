@@ -8,16 +8,12 @@
 package io.harness.pms.pipelinestage.v1.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -41,16 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineStageHelperV1 {
-  @Inject private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
-
-  public void validateNestedChainedPipeline(PipelineEntity entity) {
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
-
-    containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
-  }
-
-  private void containsPipelineStage(String yaml) {
+  public void containsPipelineStage(String yaml) {
     try {
       YamlField pipelineYamlField = YamlUtils.readTreeWithDefaultObjectMapper(yaml);
       List<YamlNode> stages = pipelineYamlField.getNode().getField(STAGES).getNode().asArray();

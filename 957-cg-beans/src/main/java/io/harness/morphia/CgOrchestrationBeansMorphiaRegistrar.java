@@ -16,9 +16,7 @@ import io.harness.beans.SweepingOutput;
 import io.harness.beans.terraform.TerraformPlanParam;
 
 import software.wings.api.ServiceElement;
-import software.wings.beans.Log;
 import software.wings.beans.TerraGroupProvisioners;
-import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.infrastructure.Host;
@@ -42,9 +40,7 @@ public class CgOrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(NGMigrationEntity.class);
     set.add(ThirdPartyApiCallLog.class);
     set.add(MigratedEntityMapping.class);
-    set.add(Log.class);
     set.add(CVActivityLog.class);
-    set.add(HelmChart.class);
     set.add(Host.class);
     set.add(MigrationAsyncTracker.class);
   }

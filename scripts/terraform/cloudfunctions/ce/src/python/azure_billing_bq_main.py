@@ -20,7 +20,7 @@ import util
 import requests
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CURRENCYCONVERSIONFACTORUSERINPUT, CEINTERNALDATASET, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
 from calendar import monthrange
 
 """
@@ -45,6 +45,7 @@ AZURESCHEMATOPIC = os.environ.get('AZURESCHEMATOPIC', f'projects/{PROJECTID}/top
 AZURESCHEMA_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURESCHEMATOPIC)
 AZURE_COST_CF_TOPIC_NAME = os.environ.get('AZURECOSTCFTOPIC', 'nikunjtesttopic')
 AZURE_COST_CF_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURE_COST_CF_TOPIC_NAME)
+COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
 def main(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -160,6 +161,16 @@ def main(event, context):
     ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
+    send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+        "eventType": "COST_CATEGORY_UPDATE",
+        "message": {
+            "accountId": jsonData["accountId"],
+            "startDate": "%s-%s-01" % (jsonData["reportYear"], jsonData["reportMonth"]),
+            "endDate": "%s-%s-%s" % (jsonData["reportYear"], jsonData["reportMonth"], monthrange(int(jsonData["reportYear"]), int(jsonData["reportMonth"]))[1]),
+            "cloudProvider": "AZURE",
+            "cloudProviderAccountIds": jsonData["subsIdsList"]
+        }
+    })
     print_("Completed")
 
 
@@ -307,7 +318,7 @@ def update_fx_rate_column_in_raw_table(jsonData, azure_column_mapping):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData, azure_column_mapping):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
@@ -422,7 +433,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
 
     # update currencyConversionFactorDefault table if reportMonth is current month
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -513,7 +524,7 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
     date_start = "%s-%s-01" % (year, month)
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -765,10 +776,12 @@ def get_unique_subs_id(jsonData, azure_column_mapping):
         subsids = []
         for row in results:
             subsids.append(row.subscriptionid)
+        jsonData["subsIdsList"] = subsids
         jsonData["subsId"] = ", ".join(f"'{w}'" for w in subsids)
     except Exception as e:
         print_("Failed to retrieve distinct subsids", "WARN")
         jsonData["subsId"] = ""
+        jsonData["subsIdsList"] = []
         raise e
     print_("Found unique subsids %s" % subsids)
 
@@ -825,6 +838,8 @@ def setAvailableColumns(jsonData):
         azure_column_mapping["currency"] = "billingcurrency"
     elif "currency" in columns:
         azure_column_mapping["currency"] = "currency"
+    elif "billingcurrencycode" in columns:
+        azure_column_mapping["currency"] = "billingcurrencycode"
     else:
         raise Exception("No mapping found for currency column")
 
@@ -1084,7 +1099,8 @@ def alter_unified_table(jsonData):
         ADD COLUMN IF NOT EXISTS azureResource STRING, \
         ADD COLUMN IF NOT EXISTS azureTenantId STRING, \
         ADD COLUMN IF NOT EXISTS azureCustomerName STRING, \
-        ADD COLUMN IF NOT EXISTS azureBillingCurrency STRING;" % ds
+        ADD COLUMN IF NOT EXISTS azureBillingCurrency STRING, \
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
 
     try:
         print_(query)
@@ -1117,9 +1133,10 @@ def ingest_data_to_costagg(jsonData):
                INSERT INTO `%s` (day, cost, cloudProvider, accountId)
                 SELECT TIMESTAMP_TRUNC(startTime, DAY) AS day, SUM(cost) AS cost, "AZURE" AS cloudProvider, '%s' as accountId
                 FROM `%s`  
-                WHERE DATE(startTime) >= '%s' and cloudProvider = "AZURE" 
+                WHERE DATE(startTime) >= '%s' and DATE(startTime) <= '%s' and cloudProvider = "AZURE" 
                 GROUP BY day;
-     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"), source_table, date_start)
+     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"),
+            source_table, date_start, date_end)
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH

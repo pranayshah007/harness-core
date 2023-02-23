@@ -32,6 +32,10 @@ public class CVFilterMatcher implements FilterMatcher {
 
   @Override
   public boolean matchesCondition() {
+    if (alertFilter == null) {
+      return false;
+    }
+
     Conditions filterConditions = alertFilter.getConditions();
     Operator op = filterConditions.getOperator();
     CVAlertFilters cvAlertFilters = filterConditions.getCvAlertFilters();

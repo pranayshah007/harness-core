@@ -47,6 +47,7 @@ import software.wings.common.InfrastructureConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.InfrastructureProvider;
@@ -95,6 +96,7 @@ public class AwsInfrastructureProvider implements InfrastructureProvider {
   @Inject private AwsEcsHelperServiceManager awsEcsHelperServiceManager;
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceTemplateHelper serviceTemplateHelper;
+  @Inject private AwsHelperServiceManager awsHelperServiceManager;
 
   @Override
   public PageResponse<Host> listHosts(AwsInfrastructureMapping awsInfrastructureMapping,
@@ -334,7 +336,7 @@ public class AwsInfrastructureProvider implements InfrastructureProvider {
         secretManager.getEncryptionDetails(awsConfig, appId, workflowExecutionId);
 
     if (infrastructureMapping.isSetDesiredCapacity()) {
-      awsHelperService.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, encryptionDetails,
+      awsHelperServiceManager.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, encryptionDetails,
           infrastructureMapping.getRegion(), infrastructureMapping.getAutoScalingGroupName(),
           infrastructureMapping.getDesiredCapacity(), new ManagerExecutionLogCallback());
     }
@@ -371,7 +373,7 @@ public class AwsInfrastructureProvider implements InfrastructureProvider {
         secretManager.getEncryptionDetails(awsConfig, appId, workflowExecutionId);
 
     if (awsInstanceInfrastructure.isSetDesiredCapacity()) {
-      awsHelperService.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, encryptionDetails,
+      awsHelperServiceManager.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, encryptionDetails,
           awsInstanceInfrastructure.getRegion(), awsInstanceInfrastructure.getAutoScalingGroupName(),
           awsInstanceInfrastructure.getDesiredCapacity(), new ManagerExecutionLogCallback());
     }

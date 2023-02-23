@@ -7,6 +7,7 @@ package git
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -258,8 +259,9 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 				ref = branch.Sha
 			}
 		}
-	case scm.DriverAzure:
+	case scm.DriverAzure, scm.DriverHarness:
 		// Azure doesnt support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
+		// Harness only supports a ref
 		contents, _, err := client.Contents.List(ctx, request.GetSlug(), "", ref, scm.ListOptions{})
 		if err == nil {
 			ref = contents[0].Sha
@@ -279,6 +281,12 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 			Status: int32(response.Status),
 		}
 		return out, nil
+	}
+
+	// bitbucket onprem API doesn't return commit link, hence populating it manually.
+	if refResponse.Link == "" && request.GetProvider().GetBitbucketServer() != nil {
+		namespace, name := scm.Split(request.GetSlug())
+		refResponse.Link = fmt.Sprintf("%sprojects/%s/repos/%s/commits/%s", client.BaseURL, namespace, name, refResponse.Sha)
 	}
 
 	commit, err := converter.ConvertCommit(refResponse)

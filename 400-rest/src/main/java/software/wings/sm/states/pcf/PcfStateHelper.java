@@ -45,8 +45,8 @@ import static io.harness.pcf.model.PcfConstants.VARS_YML;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.EnvironmentGlobal;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.ServiceOverride;
@@ -86,6 +86,7 @@ import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
@@ -127,7 +128,6 @@ import software.wings.beans.Environment;
 import software.wings.beans.GitFetchFilesConfig;
 import software.wings.beans.GitFetchFilesTaskParams;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Log;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.PcfInfrastructureMapping;
 import software.wings.beans.Service;
@@ -139,6 +139,7 @@ import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.container.PcfServiceSpecification;
+import software.wings.beans.dto.Log;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
@@ -229,6 +230,7 @@ public class PcfStateHelper {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private SettingsService settingsService;
   @Inject private FileService fileService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   public DelegateTask getDelegateTask(PcfDelegateTaskCreationData taskCreationData) {
     return DelegateTask.builder()
@@ -384,13 +386,14 @@ public class PcfStateHelper {
 
   private void appendDelegateTaskDetails(DelegateTask delegateTask, String stateExecutionInstanceId) {
     if (isBlank(delegateTask.getUuid())) {
-      delegateTask.setUuid(generateUuid());
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,
         DelegateTaskDetails.builder()
             .delegateTaskId(delegateTask.getUuid())
-            .taskDescription(delegateTask.calcDescription())
+            .taskDescription(
+                delegateTask.getData() != null ? delegateTask.calcDescription() : delegateTask.calcDescriptionV2())
             .setupAbstractions(delegateTask.getSetupAbstractions())
             .build());
   }

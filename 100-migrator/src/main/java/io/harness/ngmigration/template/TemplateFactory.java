@@ -18,6 +18,12 @@ public class TemplateFactory {
   private static final HttpTemplateService httpTemplateService = new HttpTemplateService();
 
   private static final ShellScriptTemplateService shellScriptTemplateService = new ShellScriptTemplateService();
+  private static final CustomDeploymentTemplateService customDeploymentTemplateService =
+      new CustomDeploymentTemplateService();
+  private static final CustomArtifactSourceTemplateService customArtifactSourceTemplateService =
+      new CustomArtifactSourceTemplateService();
+  private static final ServiceCommandTemplateService serviceCommandTemplateService =
+      new ServiceCommandTemplateService();
 
   private static final UnSupportedTemplateService unSupportedTemplateService = new UnSupportedTemplateService();
   public static NgTemplateService getTemplateService(Template template) {
@@ -25,6 +31,12 @@ public class TemplateFactory {
       return shellScriptTemplateService;
     } else if (TemplateType.HTTP.name().equals(template.getType())) {
       return httpTemplateService;
+    } else if (TemplateType.SSH.name().equals(template.getType())) {
+      return serviceCommandTemplateService;
+    } else if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
+      return customDeploymentTemplateService;
+    } else if (TemplateType.ARTIFACT_SOURCE.name().equals(template.getType())) {
+      return customArtifactSourceTemplateService;
     }
     return unSupportedTemplateService;
   }

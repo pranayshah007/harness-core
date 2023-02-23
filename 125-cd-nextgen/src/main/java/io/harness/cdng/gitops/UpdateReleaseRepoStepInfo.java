@@ -10,7 +10,7 @@ package io.harness.cdng.gitops;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.UpdateReleaseRepoStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -45,15 +45,15 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = UpdateReleaseRepoStepVisitorHelper.class)
 @TypeAlias("UpdateReleaseRepoStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.UpdateReleaseRepoStepInfo")
-public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo implements CDStepInfo, Visitable {
+public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo implements CDAbstractStepInfo, Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @VariableExpression(skipVariableExpression = true) List<NGVariable> variables;
 
   @Builder(builderMethodName = "infoBuilder")
   public UpdateReleaseRepoStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, List<NGVariable> variables) {
-    super(stringMap, delegateSelectors);
+      ParameterField<Map<String, String>> stringMap, List<NGVariable> variables, ParameterField<String> prTitle) {
+    super(stringMap, delegateSelectors, prTitle);
     this.variables = variables;
   }
 
@@ -77,6 +77,7 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
     return UpdateReleaseRepoStepParams.infoBuilder()
         .stringMap(getStringMap())
         .delegateSelectors(getDelegateSelectors())
+        .prTitle(prTitle)
         .variables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(variables))
         .build();
   }

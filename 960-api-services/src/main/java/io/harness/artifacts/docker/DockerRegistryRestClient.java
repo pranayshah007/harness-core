@@ -12,8 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerPublicImageTagResponse;
-import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerImageTagResponse;
-import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -25,11 +23,10 @@ import retrofit2.http.Url;
 
 @OwnedBy(CDC)
 public interface DockerRegistryRestClient {
-  //  https://auth.docker.io/token?service=registry.docker.io&scope=repository:samalba/my-app:pull,push
-
   @GET("/token")
   Call<DockerRegistryToken> getGithubContainerRegistryToken(@Header("Authorization") String basicAuthHeader);
 
+  //  https://auth.docker.io/token?service=registry.docker.io&scope=repository:samalba/my-app:pull,push
   @GET
   Call<DockerRegistryToken> getToken(@Header("Authorization") String basicAuthHeader, @Url String url,
       @Query("service") String service, @Query("scope") String scope);
@@ -55,6 +52,13 @@ public interface DockerRegistryRestClient {
   @GET("/v2/{imageName}/manifests/{tag}")
   Call<DockerImageManifestResponse>
   getImageManifest(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws")
+  @GET("/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 
   @GET("/v2/repositories/{imageName}/tags")

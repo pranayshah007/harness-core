@@ -21,16 +21,21 @@ import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVConfig.CVConfigKeys;
 import io.harness.cvng.core.entities.CVConfig.CVConfigUpdatableEntity;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.encryption.Scope;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,14 +48,17 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class CVConfigServiceImpl implements CVConfigService {
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private Map<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder;
+
+  @Inject private NextGenMetricCVConfig.UpdatableEntity metricCVConfigUpdatableEntity;
+
+  @Inject private NextGenLogCVConfig.ConfigUpdatableEntity logCVConfigUpdatableEntity;
+
   @Inject private SideKickService sideKickService;
   @Inject private Clock clock;
 
@@ -78,12 +86,25 @@ public class CVConfigServiceImpl implements CVConfigService {
   @Override
   public void update(CVConfig cvConfig) {
     checkNotNull(cvConfig.getUuid(), "Trying to update a CVConfig with empty UUID.");
-    Preconditions.checkNotNull(dataSourceTypeCVConfigMapBinder.containsKey(cvConfig.getType()));
     cvConfig.validate();
     UpdateOperations<CVConfig> updateOperations = hPersistence.createUpdateOperations(CVConfig.class);
-    UpdatableEntity<CVConfig, CVConfig> updatableEntity = dataSourceTypeCVConfigMapBinder.get(cvConfig.getType());
+    UpdatableEntity<CVConfig, CVConfig> updatableEntity = getCvConfigUpdateableEntity(cvConfig);
+    Preconditions.checkNotNull(updatableEntity);
     updatableEntity.setUpdateOperations(updateOperations, cvConfig);
     hPersistence.update(get(cvConfig.getUuid()), updateOperations);
+  }
+
+  private UpdatableEntity<CVConfig, CVConfig> getCvConfigUpdateableEntity(CVConfig baseCVConfig) {
+    DataSourceType type = baseCVConfig.getType();
+    UpdatableEntity<? extends CVConfig, ? extends CVConfig> updatableEntity;
+    if (baseCVConfig instanceof NextGenLogCVConfig) {
+      updatableEntity = logCVConfigUpdatableEntity;
+    } else if (baseCVConfig instanceof NextGenMetricCVConfig) {
+      updatableEntity = metricCVConfigUpdatableEntity;
+    } else {
+      updatableEntity = dataSourceTypeCVConfigMapBinder.get(type);
+    }
+    return (UpdatableEntity<CVConfig, CVConfig>) updatableEntity;
   }
 
   @Override
@@ -118,12 +139,17 @@ public class CVConfigServiceImpl implements CVConfigService {
   @Override
   public void deleteByIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier) {
-    hPersistence.createQuery(CVConfig.class, excludeAuthority)
-        .filter(CVConfigKeys.accountId, accountId)
-        .filter(CVConfigKeys.orgIdentifier, orgIdentifier)
-        .filter(CVConfigKeys.projectIdentifier, projectIdentifier)
-        .filter(CVConfigKeys.identifier, monitoringSourceIdentifier)
-        .forEach(cvConfig -> delete(cvConfig.getUuid()));
+    try (
+        HIterator<CVConfig> cvConfigs = new HIterator<>(hPersistence.createQuery(CVConfig.class, excludeAuthority)
+                                                            .filter(CVConfigKeys.accountId, accountId)
+                                                            .filter(CVConfigKeys.orgIdentifier, orgIdentifier)
+                                                            .filter(CVConfigKeys.projectIdentifier, projectIdentifier)
+                                                            .filter(CVConfigKeys.identifier, monitoringSourceIdentifier)
+                                                            .fetch())) {
+      for (CVConfig cvConfig : cvConfigs) {
+        delete(cvConfig.getUuid());
+      }
+    }
   }
 
   @Override

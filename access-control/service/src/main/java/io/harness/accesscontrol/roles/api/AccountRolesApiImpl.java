@@ -142,10 +142,10 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
     PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/roles", pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalItems(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
@@ -159,7 +159,7 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, null, null), Resource.of(ROLE, role), EDIT_ROLE_PERMISSION);
     HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder().accountIdentifier(account).build();
-    if (!role.equals(body.getSlug())) {
+    if (!role.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Role identifier in the request body and the URL do not match.");
     }
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();

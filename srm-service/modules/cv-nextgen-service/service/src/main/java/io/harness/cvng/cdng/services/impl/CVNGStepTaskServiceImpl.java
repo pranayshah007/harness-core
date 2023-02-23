@@ -41,14 +41,16 @@ import io.harness.persistence.HPersistence;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   @Inject private HPersistence hPersistence;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -61,6 +63,7 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
 
   @Override
   public void create(CVNGStepTask cvngStepTask) {
+    log.info("Creating CVNGStepTask {}", cvngStepTask);
     cvngStepTask.validate();
     hPersistence.save(cvngStepTask);
   }

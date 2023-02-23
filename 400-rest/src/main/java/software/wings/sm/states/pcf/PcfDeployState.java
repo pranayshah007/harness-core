@@ -85,6 +85,7 @@ import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
+import software.wings.stencils.DefaultValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;
@@ -122,6 +123,11 @@ public class PcfDeployState extends State {
   @Getter @Setter private List<String> tags;
   public static final String PCF_RESIZE_COMMAND = "PCF Resize";
   static final String NO_PREV_DEPLOYMENT_MSG = "No rollback required, skipping rollback";
+  @Getter
+  @Setter
+  @Attributes(title = "App resize Timeout Interval (Minutes)")
+  @DefaultValue("5")
+  private Integer timeoutIntervalInMinutes = 5;
 
   /**
    * Instantiates a new state.
@@ -226,7 +232,6 @@ public class PcfDeployState extends State {
       tags = pcfStateHelper.getRenderedTags(context, stateExecutionData.getSetupSweepingOutputPcf().getTags());
     }
     List<String> renderedTags = pcfStateHelper.getRenderedTags(context, tags);
-
     DelegateTask task =
         pcfStateHelper.getDelegateTask(PcfDelegateTaskCreationData.builder()
                                            .appId(app.getUuid())
@@ -238,9 +243,7 @@ public class PcfDeployState extends State {
                                            .infrastructureMappingId(pcfInfrastructureMapping.getUuid())
                                            .serviceId(pcfInfrastructureMapping.getServiceId())
                                            .parameters(new Object[] {commandRequest, encryptedDataDetails})
-                                           .timeout(setupSweepingOutputPcf.getTimeoutIntervalInMinutes() == null
-                                                   ? DEFAULT_PCF_TASK_TIMEOUT_MIN
-                                                   : setupSweepingOutputPcf.getTimeoutIntervalInMinutes())
+                                           .timeout(timeoutIntervalInMinutes)
                                            .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
                                            .taskDescription("PCF Deploy task execution")
                                            .tagList(renderedTags)

@@ -12,11 +12,13 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunTestStep;
@@ -41,10 +43,11 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
+  @Inject CIStepInfoUtils ciStepInfoUtils;
   String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries) {
     String buildTool = RunTimeInputHandler.resolveBuildTool(runTestsStepInfo.getBuildTool());
     if (buildTool == null) {
       throw new CIStageExecutionException("Build tool cannot be null");
@@ -61,8 +64,16 @@ public class VmRunTestStepSerializer {
                            .map(OutputNGVariable::getName)
                            .collect(Collectors.toList());
     }
-    String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
-        "connectorRef", "RunTest", identifier, runTestsStepInfo.getConnectorRef(), false);
+    String image =
+        RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, runTestsStepInfo.getImage(), false);
+    String connectorIdentifier;
+
+    if (isNotEmpty(registries)) {
+      connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
+    } else {
+      connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
+          "connectorRef", "RunTest", identifier, runTestsStepInfo.getConnectorRef(), false);
+    }
 
     String preCommand = RunTimeInputHandler.resolveStringParameter(
         "PreCommand", stepName, identifier, runTestsStepInfo.getPreCommand(), false);
@@ -84,9 +95,6 @@ public class VmRunTestStepSerializer {
     String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
 
     boolean runOnlySelectedTests = resolveBooleanParameter(runTestsStepInfo.getRunOnlySelectedTests(), true);
-
-    String image =
-        RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, runTestsStepInfo.getImage(), false);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
     Map<String, String> envVars =
         resolveMapParameter("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);

@@ -20,4 +20,7 @@ public interface ServiceSpecType {
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String ELASTIGROUP = "Elastigroup";
   String ASG = "Asg";
+  String GOOGLE_CLOUD_FUNCTIONS = "GoogleCloudFunctions";
+  String AWS_LAMBDA = "AwsLambda";
+  String AWS_SAM = "AWS_SAM";
 }

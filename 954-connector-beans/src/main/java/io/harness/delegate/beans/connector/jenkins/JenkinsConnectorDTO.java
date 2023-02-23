@@ -14,6 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsConnectorOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -52,5 +55,17 @@ public class JenkinsConnectorDTO extends ConnectorConfigDTO implements DelegateS
       return null;
     }
     return Collections.singletonList(auth.getCredentials());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return JenkinsConnectorOutcomeDTO.builder()
+        .jenkinsUrl(this.jenkinsUrl)
+        .delegateSelectors(this.delegateSelectors)
+        .auth(JenkinsAuthenticationOutcomeDTO.builder()
+                  .spec(this.auth.getCredentials())
+                  .type(this.auth.getAuthType())
+                  .build())
+        .build();
   }
 }

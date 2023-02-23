@@ -26,11 +26,11 @@ import software.wings.utils.TimeUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 /**
  * @author vardan

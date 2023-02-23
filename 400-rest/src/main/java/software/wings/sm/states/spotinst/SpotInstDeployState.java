@@ -192,7 +192,7 @@ public class SpotInstDeployState extends State {
         spotInstCommandRequest, env.getEnvironmentType(), awsAmiInfrastructureMapping.getServiceId(),
         isSelectionLogsTrackingForTasksEnabled());
 
-    delegateService.queueTask(task);
+    delegateService.queueTaskV2(task);
     appendDelegateTaskDetails(context, task);
 
     return ExecutionResponse.builder()

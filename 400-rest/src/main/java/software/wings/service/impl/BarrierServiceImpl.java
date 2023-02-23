@@ -64,6 +64,7 @@ import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -74,7 +75,6 @@ import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton
@@ -82,6 +82,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class BarrierServiceImpl extends IteratorPumpModeHandler implements BarrierService, ForceProctor {
   private static final String APP_ID = "appId";
   private static final String LEVEL = "level";
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
@@ -99,12 +100,28 @@ public class BarrierServiceImpl extends IteratorPumpModeHandler implements Barri
                     .clazz(BarrierInstance.class)
                     .fieldName(BarrierInstanceKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(1))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this::update)
                     .filterExpander(query -> query.filter(BarrierInstanceKeys.state, STANDING.name()))
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<BarrierInstance, MorphiaFilterExpander<BarrierInstance>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       BarrierService.class,
+                       MongoPersistenceIterator.<BarrierInstance, MorphiaFilterExpander<BarrierInstance>>builder()
+                           .clazz(BarrierInstance.class)
+                           .fieldName(BarrierInstanceKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this::update)
+                           .filterExpander(query -> query.filter(BarrierInstanceKeys.state, STANDING.name()))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

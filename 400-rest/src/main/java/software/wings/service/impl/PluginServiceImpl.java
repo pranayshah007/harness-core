@@ -76,12 +76,12 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 10/20/16.

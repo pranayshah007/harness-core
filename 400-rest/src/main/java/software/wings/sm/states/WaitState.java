@@ -28,9 +28,9 @@ import software.wings.sm.StateType;
 import com.github.reinert.jjschema.Attributes;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.annotations.Transient;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * dummy implementation for wait state.

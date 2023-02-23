@@ -33,10 +33,18 @@ public interface EnvironmentService {
 
   Page<Environment> list(Criteria criteria, Pageable pageable);
 
-  boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, Long version);
+  boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
+      Long version, boolean forceDelete);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
+
+  /**
+   * Deletes all environments linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean forceDeleteAllInOrg(String accountId, String orgIdentifier);
 
   List<Environment> listAccess(Criteria criteria);
 

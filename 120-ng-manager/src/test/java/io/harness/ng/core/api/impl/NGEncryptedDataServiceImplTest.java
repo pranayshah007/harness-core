@@ -10,6 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
@@ -30,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -41,7 +41,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptedSecretValue;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.helper.CustomSecretManagerHelper;
@@ -578,28 +577,12 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     Map<String, Boolean> dataMap = getDataForTestGetEncryptionDetailsForGettingNGEncryptedData();
     dataMap.forEach((encryptionTypeName, isAllowed) -> {
       String secretIdentifier = encryptionTypeName + "://" + randomAlphabetic(10) + "/" + randomAlphabetic(5);
-      buildAndCheckEncryptedDataCall(
-          accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier, true, !isAllowed);
-    });
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetEncryptionDetailsForGettingNGEncryptedDataWhenFFDisabled() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    Map<String, Boolean> dataMap = getDataForTestGetEncryptionDetailsForGettingNGEncryptedData();
-    dataMap.forEach((encryptionTypeName, isAllowed) -> {
-      String secretIdentifier = encryptionTypeName + "://" + randomAlphabetic(10) + "/" + randomAlphabetic(5);
-      buildAndCheckEncryptedDataCall(
-          accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier, false, true);
+      buildAndCheckEncryptedDataCall(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier, !isAllowed);
     });
   }
 
   private void buildAndCheckEncryptedDataCall(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String secretIdentifier, boolean featureEnabled, boolean expectedDBCall) {
+      String secretIdentifier, boolean expectedDBCall) {
     NGAccess ngAccess = BaseNGAccess.builder()
                             .accountIdentifier(accountIdentifier)
                             .orgIdentifier(orgIdentifier)
@@ -611,8 +594,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
             .secret(SecretRefData.builder().identifier(secretIdentifier).scope(Scope.PROJECT).build())
             .type(SecretVariableDTO.Type.TEXT)
             .build();
-    when(ngFeatureFlagHelperService.isEnabled(anyString(), eq(FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)))
-        .thenReturn(featureEnabled);
     when(dynamicSecretReferenceHelper.validateAndGetSecretRefParsedData(anyString()))
         .thenReturn(SecretRefParsedData.builder().build());
     ngEncryptedDataService.getEncryptionDetails(ngAccess, secretVariableDTO);
@@ -784,5 +765,50 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, true);
     assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateSecretPath_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    when(vaultEncryptor.validateReference(anyString(), anyString(), any())).thenReturn(true);
+    boolean result = ngEncryptedDataService.validateSecretRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
+    assertThat(result).isEqualTo(true);
+  }
+
+  @Test(expected = SecretManagementException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateSecretPath_Failure() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretManagerConfigDTO secretManager = VaultConfigDTO.builder()
+                                               .harnessManaged(false)
+                                               .encryptionType(VAULT)
+                                               .secretId(randomAlphabetic(10))
+                                               .accountIdentifier(accountIdentifier)
+                                               .authToken(randomAlphabetic(10))
+                                               .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false))
+        .thenReturn(secretManager);
+    when(vaultEncryptor.validateReference(anyString(), anyString(), any()))
+        .thenThrow(new SecretManagementException("not able to resolve path"));
+    boolean result = ngEncryptedDataService.validateSecretRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
+    assertThat(result).isEqualTo(false);
   }
 }

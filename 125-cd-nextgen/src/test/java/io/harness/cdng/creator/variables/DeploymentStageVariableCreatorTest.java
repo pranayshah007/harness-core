@@ -217,6 +217,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
 
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .identifier("infra")
+                                                    .name("infra")
                                                     .accountId(ACCOUNT_ID)
                                                     .orgIdentifier(ORG_IDENTIFIER)
                                                     .projectIdentifier(PROJ_IDENTIFIER)
@@ -260,23 +262,36 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     // env
     List<YamlProperties> envOutputProperties =
         variableCreationResponseList.get(0).getYamlExtraProperties().get(keys.get(0)).getOutputPropertiesList();
-    List<String> envFqnPropertiesList =
+    List<String> envLocalNamePropertiesList =
         envOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(envFqnPropertiesList)
+    assertThat(envLocalNamePropertiesList)
         .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
             "env.variables", "env.envGroupRef", "env.envGroupName");
 
-    // no infra vars
-    // service
+    List<String> envFQNPropertiesList =
+        envOutputProperties.stream().map(YamlProperties::getFqn).collect(Collectors.toList());
+    assertThat(envFQNPropertiesList)
+        .containsExactlyInAnyOrder("pipeline.stages.deployStage.spec.env.name",
+            "pipeline.stages.deployStage.spec.env.identifier", "pipeline.stages.deployStage.spec.env.description",
+            "pipeline.stages.deployStage.spec.env.type", "pipeline.stages.deployStage.spec.env.tags",
+            "pipeline.stages.deployStage.spec.env.environmentRef", "pipeline.stages.deployStage.spec.env.variables",
+            "pipeline.stages.deployStage.spec.env.envGroupRef", "pipeline.stages.deployStage.spec.env.envGroupName");
+
     List<YamlProperties> serviceOutputProperties =
         variableCreationResponseList.get(1).getYamlExtraProperties().get(keys.get(1)).getOutputPropertiesList();
-    List<String> serviceFqnPropertiesList =
+    List<String> serviceLocalNamePropertiesList =
         serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
-
-    assertThat(serviceFqnPropertiesList)
+    assertThat(serviceLocalNamePropertiesList)
         .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
             "service.gitOpsEnabled");
+
+    List<String> serviceFQNPropertiesList =
+        serviceOutputProperties.stream().map(YamlProperties::getFqn).collect(Collectors.toList());
+    assertThat(serviceFQNPropertiesList)
+        .containsExactlyInAnyOrder("pipeline.stages.deployStage.spec.service.identifier",
+            "pipeline.stages.deployStage.spec.service.name", "pipeline.stages.deployStage.spec.service.description",
+            "pipeline.stages.deployStage.spec.service.type", "pipeline.stages.deployStage.spec.service.tags",
+            "pipeline.stages.deployStage.spec.service.gitOpsEnabled");
   }
 
   @Test
@@ -317,6 +332,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
 
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .identifier("infra")
+                                                    .name("infra")
                                                     .accountId(ACCOUNT_ID)
                                                     .orgIdentifier(ORG_IDENTIFIER)
                                                     .projectIdentifier(PROJ_IDENTIFIER)
@@ -403,18 +420,19 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .serviceYamlFile("ServiceWithArtifactSources.yaml")
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
-            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
-                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
-                "artifacts.primary.displayName", "artifacts.primary.metadata", "artifacts.primary.registryHostname",
-                "artifacts.primary.region", "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
-                "artifacts.primary.repositoryFormat", "artifacts.primary.artifactDirectory",
-                "artifacts.primary.artifactPathFilter", "artifacts.primary.subscription", "artifacts.primary.registry",
-                "artifacts.primary.repository", "artifacts.primary.project", "artifacts.primary.package",
-                "artifacts.primary.version", "artifacts.primary.versionRegex", "artifacts.primary.repositoryType",
-                "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedSvcFqn(
+                List.of("service.identifier", "service.name", "service.description", "service.type", "service.tags",
+                    "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.imagePath",
+                    "artifacts.primary.tag", "artifacts.primary.tagRegex", "artifacts.primary.identifier",
+                    "artifacts.primary.type", "artifacts.primary.primaryArtifact", "artifacts.primary.image",
+                    "artifacts.primary.imagePullSecret", "artifacts.primary.label", "artifacts.primary.displayName",
+                    "artifacts.primary.digest", "artifacts.primary.metadata", "artifacts.primary.registryHostname",
+                    "artifacts.primary.region", "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
+                    "artifacts.primary.repositoryFormat", "artifacts.primary.artifactDirectory",
+                    "artifacts.primary.artifactPathFilter", "artifacts.primary.subscription",
+                    "artifacts.primary.registry", "artifacts.primary.repository", "artifacts.primary.project",
+                    "artifacts.primary.package", "artifacts.primary.version", "artifacts.primary.versionRegex",
+                    "artifacts.primary.repositoryType", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
@@ -460,16 +478,17 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
-                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
-                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
-                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
-                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
-                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
-                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",
+                "manifests.nginx.valuesPaths", "artifacts.sidecars.gcr_test.connectorRef",
+                "artifacts.sidecars.gcr_test.imagePath", "artifacts.sidecars.gcr_test.tag",
+                "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
+                "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
+                "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
@@ -492,16 +511,17 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
-                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
-                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
-                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
-                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
-                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
-                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",
+                "manifests.nginx.valuesPaths", "artifacts.sidecars.gcr_test.connectorRef",
+                "artifacts.sidecars.gcr_test.imagePath", "artifacts.sidecars.gcr_test.tag",
+                "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
+                "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
+                "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
@@ -524,16 +544,17 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
-                "manifests.nginx.skipResourceVersioning", "manifests.nginx.valuesPaths",
-                "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
-                "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
-                "artifacts.sidecars.gcr_test.registryHostname", "artifacts.sidecars.gcr_test.identifier",
-                "artifacts.sidecars.gcr_test.type", "artifacts.sidecars.gcr_test.primaryArtifact",
-                "artifacts.sidecars.gcr_test.image", "artifacts.sidecars.gcr_test.imagePullSecret",
-                "artifacts.primary.connectorRef", "artifacts.primary.imagePath", "artifacts.primary.tag",
-                "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                "artifacts.primary.label", "artifacts.primary.displayName", "artifacts.primary.metadata",
+                "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",
+                "manifests.nginx.valuesPaths", "artifacts.sidecars.gcr_test.connectorRef",
+                "artifacts.sidecars.gcr_test.imagePath", "artifacts.sidecars.gcr_test.tag",
+                "artifacts.sidecars.gcr_test.tagRegex", "artifacts.sidecars.gcr_test.registryHostname",
+                "artifacts.sidecars.gcr_test.identifier", "artifacts.sidecars.gcr_test.type",
+                "artifacts.sidecars.gcr_test.primaryArtifact", "artifacts.sidecars.gcr_test.image",
+                "artifacts.sidecars.gcr_test.imagePullSecret", "artifacts.primary.connectorRef",
+                "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
+                "artifacts.primary.displayName", "artifacts.primary.digest", "artifacts.primary.metadata",
                 "serviceVariables.svar2", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",

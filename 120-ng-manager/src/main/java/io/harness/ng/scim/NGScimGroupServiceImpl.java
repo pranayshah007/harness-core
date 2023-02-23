@@ -35,6 +35,7 @@ import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.service.ScimGroupService;
 
 import com.google.inject.Inject;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -110,11 +111,19 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     List<ScimGroup> scimGroupList = new ArrayList<>();
 
     if (StringUtils.isNotEmpty(searchQuery)) {
-      userGroupList = userGroupService.list(
-          Criteria.where(UserGroupKeys.accountIdentifier).is(accountId).and(UserGroupKeys.name).is(searchQuery),
+      userGroupList = userGroupService.list(Criteria.where(UserGroupKeys.accountIdentifier)
+                                                .is(accountId)
+                                                .and(UserGroupKeys.name)
+                                                .is(searchQuery)
+                                                .and(UserGroupKeys.externallyManaged)
+                                                .is(Boolean.TRUE),
           startIndex, count);
     } else {
-      return scimGroupList;
+      userGroupList = userGroupService.list(Criteria.where(UserGroupKeys.accountIdentifier)
+                                                .is(accountId)
+                                                .and(UserGroupKeys.externallyManaged)
+                                                .is(Boolean.TRUE),
+          startIndex, count);
     }
     if (isNotEmpty(userGroupList)) {
       for (UserGroup userGroup : userGroupList) {
@@ -144,6 +153,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
           Member memberTemp = new Member();
           memberTemp.setValue(member.getUuid());
           memberTemp.setDisplay(member.getEmail());
+          memberTemp.setRef(URI.create(""));
           memberList.add(memberTemp);
         });
       }

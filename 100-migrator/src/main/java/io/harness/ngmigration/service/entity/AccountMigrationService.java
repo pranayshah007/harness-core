@@ -8,14 +8,14 @@
 package io.harness.ngmigration.service.entity;
 
 import io.harness.beans.EncryptedData;
+import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.beans.PageRequest.PageRequestBuilder;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.AccountSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -28,7 +28,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.SettingsService;
@@ -36,7 +35,6 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.template.TemplateService;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,15 +85,10 @@ public class AccountMigrationService extends NgMigrationService {
     }
 
     try {
-      List<EncryptedData> encryptedDataList =
-          secretManager
-              .listSecrets(accountId,
-                  PageRequestBuilder.aPageRequest()
-                      .addFilter(EncryptedData.ACCOUNT_ID_KEY, Operator.EQ, accountId)
-                      .withLimit("UNLIMITED")
-                      .build(),
-                  null, null, true, false)
-              .getResponse();
+      List<EncryptedData> encryptedDataList = hPersistence.createQuery(EncryptedData.class)
+                                                  .project(EncryptedDataKeys.uuid, true)
+                                                  .filter(EncryptedDataKeys.accountId, accountId)
+                                                  .asList();
       if (EmptyPredicate.isNotEmpty(encryptedDataList)) {
         children.addAll(
             encryptedDataList.stream()
@@ -123,18 +116,14 @@ public class AccountMigrationService extends NgMigrationService {
   }
 
   @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return new ArrayList<>();
+    return null;
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

@@ -90,7 +90,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
         resourceGroupService.list(Scope.of(account, null, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/resource-groups", pageResponse.getContent().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()
@@ -103,7 +103,7 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   public Response updateResourceGroupAcc(
       CreateResourceGroupRequest body, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
-    if (!resourceGroup.equals(body.getSlug())) {
+    if (!resourceGroup.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }
     ResourceGroupRequest resourceGroupRequest = ResourceGroupApiUtils.getResourceGroupRequestAcc(body, account);

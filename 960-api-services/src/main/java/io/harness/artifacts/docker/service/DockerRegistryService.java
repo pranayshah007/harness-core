@@ -32,7 +32,8 @@ public interface DockerRegistryService {
    * @param maxNumberOfBuilds the max number of builds
    * @return the builds
    */
-  List<BuildDetailsInternal> getBuilds(DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(
+      DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds, String tagRegex);
 
   /**
    * Gets labels.
@@ -85,5 +86,6 @@ public interface DockerRegistryService {
    */
   boolean validateCredentials(DockerInternalConfig dockerConfig);
 
-  ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String tag);
+  ArtifactMetaInfo getArtifactMetaInfo(
+      DockerInternalConfig dockerConfig, String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256);
 }

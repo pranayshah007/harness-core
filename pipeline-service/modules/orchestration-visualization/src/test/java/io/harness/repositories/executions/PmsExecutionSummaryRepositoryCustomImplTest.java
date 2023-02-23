@@ -8,11 +8,13 @@
 package io.harness.repositories.executions;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -26,15 +28,17 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
-import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVisualizationTestBase {
@@ -107,8 +111,33 @@ public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVi
             .status(ExecutionStatus.SKIPPED)
             .build();
     mongoTemplate.save(pipelineExecutionSummaryEntity);
-    List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
-        pmsExecutionSummaryRepositoryCustom.fetchPipelineSummaryEntityFromRootParentId("root");
-    assertEquals(pipelineExecutionSummaryEntities.size(), 1);
+    try (
+        CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+            pmsExecutionSummaryRepositoryCustom.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo("root")) {
+      int count = 0;
+      while (iterator.hasNext()) {
+        count++;
+        iterator.next();
+      }
+      assertEquals(count, 1);
+    }
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testGetPipelineExecutionSummaryWithProjections() {
+    String planExecutionId = generateUuid();
+    mongoTemplate.save(PipelineExecutionSummaryEntity.builder()
+                           .planExecutionId(planExecutionId)
+                           .status(ExecutionStatus.SKIPPED)
+                           .build());
+    PipelineExecutionSummaryEntity entity =
+        pmsExecutionSummaryRepositoryCustom.getPipelineExecutionSummaryWithProjections(
+            Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId),
+            Sets.newHashSet(PlanExecutionSummaryKeys.planExecutionId));
+    assertThat(entity).isNotNull();
+    assertThat(entity.getStatus()).isNull();
+    assertThat(entity.getPlanExecutionId()).isEqualTo(planExecutionId);
   }
 }

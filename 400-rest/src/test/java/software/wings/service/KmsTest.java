@@ -152,6 +152,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -175,8 +177,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 9/29/17.
@@ -272,11 +272,12 @@ public class KmsTest extends WingsBaseTest {
     });
 
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
-    when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
-    when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
+    when(delegateProxyFactory.getV2(eq(EncryptionService.class), any(SyncTaskContext.class)))
         .thenReturn(encryptionService);
-    when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(delegateProxyFactory.getV2(eq(ContainerService.class), any(SyncTaskContext.class)))
+        .thenReturn(containerService);
     when(containerService.validate(any(ContainerServiceParams.class), anyBoolean())).thenReturn(true);
     doNothing().when(newRelicService).validateConfig(anyObject(), anyObject(), anyObject());
     FieldUtils.writeField(secretService, "kmsRegistry", kmsEncryptorsRegistry, true);

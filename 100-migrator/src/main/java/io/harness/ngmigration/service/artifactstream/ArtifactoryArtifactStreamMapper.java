@@ -18,7 +18,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
-import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -51,7 +51,6 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
       ArtifactoryArtifactStream artifactStream, NgEntityDetail connector) {
     return ArtifactoryRegistryArtifactConfig.builder()
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-        .primaryArtifact(true)
         .repository(ParameterField.createValueField(artifactStream.getJobname()))
         .repositoryUrl(ParameterField.createValueField(artifactStream.getDockerRepositoryServer()))
         .artifactPath(ParameterField.createValueField(artifactStream.getImageName()))
@@ -64,7 +63,6 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
       ArtifactoryArtifactStream artifactStream, NgEntityDetail connector) {
     return ArtifactoryRegistryArtifactConfig.builder()
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-        .primaryArtifact(true)
         .repository(ParameterField.createValueField(artifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField("generic"))
         .artifactDirectory(ParameterField.createValueField(artifactStream.getArtifactPattern()))

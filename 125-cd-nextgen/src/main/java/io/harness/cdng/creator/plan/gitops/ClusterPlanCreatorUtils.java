@@ -114,16 +114,18 @@ public class ClusterPlanCreatorUtils {
   private ClusterStepParameters getStepParams(EnvGroupPlanCreatorConfig config) {
     checkNotNull(config, "environment group must be present");
 
-    ClusterStepParametersBuilder clusterStepParametersBuilder = ClusterStepParameters.builder()
-                                                                    .envGroupRef(config.getIdentifier())
-                                                                    .envGroupName(config.getName())
-                                                                    .deployToAllEnvs(false);
+    ClusterStepParametersBuilder clusterStepParametersBuilder =
+        ClusterStepParameters.builder()
+            .envGroupRef(config.getIdentifier())
+            .envGroupName(config.getName())
+            .deployToAllEnvs(false)
+            .environmentGroupYaml(config.getEnvironmentGroupYaml());
 
     if (config.isDeployToAll()) {
       clusterStepParametersBuilder.deployToAllEnvs(true);
     }
 
-    checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
+    checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()) || config.getEnvironmentGroupYaml() != null,
         "list of environments must be provided when not deploying to all clusters");
 
     // Deploy to filtered list
@@ -161,7 +163,9 @@ public class ClusterPlanCreatorUtils {
       envClusterRefList.add(envClusterRefs);
     }
 
-    return clusterStepParametersBuilder.envClusterRefs(envClusterRefList).build();
+    return clusterStepParametersBuilder.envClusterRefs(envClusterRefList)
+        .environmentsYaml(envConfig.getEnvironmentsYaml())
+        .build();
   }
 
   private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {

@@ -22,7 +22,8 @@ public interface CompositeSLORecordService {
       String verificationTaskId, Instant startTime, Instant endTime);
 
   CompositeSLORecord getLatestCompositeSLORecord(String sloId);
-  CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion);
+  CompositeSLORecord getLatestCompositeSLORecordWithVersion(
+      String sloId, Instant startTimeForCurrentRange, int sloVersion);
   CompositeSLORecord getFirstCompositeSLORecord(String sloId, Instant startTimeStamp);
   CompositeSLORecord getLastCompositeSLORecord(String sloId, Instant startTimeStamp);
   List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp);

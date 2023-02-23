@@ -139,7 +139,7 @@ public class ServiceResource {
       @QueryParam("orgIdentifier") String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     return ResponseDTO.newResponse(serviceEntityManagementService.deleteService(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, ifMatch));
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, ifMatch, false));
   }
 
   @PUT

@@ -129,6 +129,8 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       String httpUrl = repository.getHttpURL().toLowerCase();
       String sshUrl = isEmpty(repository.getSshURL()) ? GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure(httpUrl)
                                                       : repository.getSshURL();
+      httpUrl = GitClientHelper.convertToNewHTTPUrlForAzure(httpUrl);
+      sshUrl = GitClientHelper.convertToNewSSHUrlForAzure(sshUrl);
       urls.add(httpUrl);
       urls.add(sshUrl);
       return urls;

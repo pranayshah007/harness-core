@@ -30,6 +30,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.OperationType;
+import dev.morphia.annotations.Entity;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -38,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Mongo Change Stream Manager, provides the functionality
@@ -87,8 +87,7 @@ public class ChangeTracker {
         MongoClientOptions.builder(MongoModule.getDefaultMongoClientOptions(mongoConfig))
             .readPreference(readPreference)
             .addConnectionPoolListener(harnessConnectionPoolListener)
-            .applicationName("cg_changestream")
-            .description("cg_changestream"));
+            .applicationName("cg_changestream"));
   }
 
   private void connectToMongoDatabase() {

@@ -15,11 +15,11 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -46,7 +46,7 @@ public class InfrastructureMapping {
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id private String id;
+  @Id @dev.morphia.annotations.Id private String id;
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;

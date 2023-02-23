@@ -10,6 +10,7 @@ package io.harness.cdng.azure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.lang.String.format;
@@ -60,6 +61,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -324,6 +326,25 @@ public class AzureHelperServiceTest extends CDNGTestBase {
         .hasMessageContaining(
             "Connector with identifier [identifier] with scope: [PROJECT] is not an Azure connector. Please check you configuration.");
   }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetConnectorWithRuntimeConnector() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountId")
+                                      .identifier("<+input>")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .scope(Scope.PROJECT)
+                                      .build();
+
+    assertThatThrownBy(() -> azureHelperService.getConnector(identifierRef))
+        .isInstanceOf(InvalidIdentifierRefException.class)
+        .hasMessageContaining(
+            "Azure Connector is required to fetch this field. You can make this field Runtime input otherwise.");
+  }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -443,7 +464,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                     .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                                     .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
     ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
         azureTaskParamsTaskParams, baseNGAccess, "Azure list registries task failure due to error");
 
@@ -487,7 +508,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                     .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                                     .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
     ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
         azureTaskParamsTaskParams, baseNGAccess, "Azure list registries task failure due to error", Optional.of(10));
 
@@ -530,7 +551,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                     .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                                     .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
     ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
         null, acrArtifactDelegateRequest, baseNGAccess, "Azure list registries task failure due to error");
 
@@ -570,7 +591,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .encryptionDetails(ls)
                                                     .build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage("Testing").build());
 
     assertThatThrownBy(()
@@ -618,7 +639,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                                     .build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
@@ -663,7 +684,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                          .errorSummary("Test failed")
                                                          .build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
@@ -708,7 +729,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                          .errorSummary("Test failed")
                                                          .build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
 
     when(exceptionManager.processException(any(), any(), any()))
