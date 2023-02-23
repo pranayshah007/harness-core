@@ -54,7 +54,7 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 
 @Slf4j
 @OwnedBy(CDP)
-public class AwsLambdaCommandTaskHelper {
+public class AwsLambdaTaskHelper {
   @Inject private AwsLambdaClient awsLambdaClient;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
 
