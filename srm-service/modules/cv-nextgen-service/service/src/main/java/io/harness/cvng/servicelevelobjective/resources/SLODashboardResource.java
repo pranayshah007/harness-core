@@ -14,7 +14,6 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;

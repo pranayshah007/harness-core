@@ -44,7 +44,6 @@ import io.harness.pms.plan.utils.PlanResourceUtility;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
-import io.harness.utils.PipelineExceptionsHelper;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PipelineYamlUtils;
 

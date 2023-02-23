@@ -25,19 +25,23 @@ import static software.wings.app.ManagerCacheRegistrar.APIKEY_RESTRICTION_CACHE;
 import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
+import io.harness.beans.SecretText;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.hash.HashUtils;
 import io.harness.persistence.HQuery;
+import io.harness.secrets.SecretService;
 import io.harness.security.SimpleEncryption;
 
 import software.wings.beans.Account;
@@ -45,18 +49,20 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApiKeyEntry.ApiKeyEntryKeys;
 import software.wings.beans.Base;
 import software.wings.beans.Event.Type;
+import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.ApiKeysFeature;
 import software.wings.features.api.RestrictedApi;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRestrictionInfo;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.UserGroupService;
-import software.wings.service.intfc.UserService;
+import software.wings.service.intfc.security.SecretManager;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
@@ -72,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -94,7 +101,8 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuthService authService;
   @Inject private ExecutorService executorService;
   @Inject private AuditServiceHelper auditServiceHelper;
-  @Inject private UserService userService;
+  @Inject private SecretManager secretManager;
+  @Inject SecretService secretService;
 
   private static String DELIMITER = "::";
 
@@ -111,16 +119,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     int KEY_LEN = 80;
     String randomKey = accountId + DELIMITER + CryptoUtils.secureRandAlphaNumString(KEY_LEN);
     String apiKey = Base64.getEncoder().encodeToString(randomKey.getBytes(Charsets.UTF_8));
-    ApiKeyEntry apiKeyEntryToBeSaved =
-        ApiKeyEntry.builder()
-            .uuid(generateUuid())
-            .userGroupIds(apiKeyEntry.getUserGroupIds())
-            .name(apiKeyEntry.getName())
-            .createdAt(currentTimeMillis())
-            .encryptedKey(getSimpleEncryption(accountId).encryptChars(apiKey.toCharArray()))
-            .sha256Hash(HashUtils.calculateSha256(apiKey))
-            .accountId(accountId)
-            .build();
+
+    EncryptedData encryptedKey = encryptApiKey(accountId, apiKey);
+
+    ApiKeyEntry apiKeyEntryToBeSaved = ApiKeyEntry.builder()
+                                           .uuid(generateUuid())
+                                           .userGroupIds(apiKeyEntry.getUserGroupIds())
+                                           .name(apiKeyEntry.getName())
+                                           .createdAt(currentTimeMillis())
+                                           .sha256Hash(HashUtils.calculateSha256(apiKey))
+                                           .accountId(accountId)
+                                           .encryptedDataId(encryptedKey.getUuid())
+                                           .build();
     String id = duplicateCheck(
         () -> wingsPersistence.save(apiKeyEntryToBeSaved), ApiKeyEntryKeys.name, apiKeyEntryToBeSaved.getName());
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryToBeSaved, Type.CREATE);
@@ -154,6 +164,55 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryAfterUpdate, Type.UPDATE);
     return apiKeyEntryAfterUpdate;
+  }
+
+  private EncryptedData encryptApiKey(String accountId, String apiKey) {
+    String name = String.format("apiKey_%s_%s", accountId, UUID.randomUUID());
+    SecretText secretText =
+        SecretText.builder().value(apiKey).hideFromListing(true).scopedToAccount(true).name(name).build();
+    return secretManager.encryptSecretUsingGlobalSM(accountId, secretText, false);
+  }
+
+  @Override
+  public ApiKeyEntry migrateToKMS(ApiKeyEntry apiKeyEntry) {
+    String uuid = apiKeyEntry.getUuid();
+    String accountId = apiKeyEntry.getAccountId();
+
+    if (!isNull(apiKeyEntry.getEncryptedDataId())) {
+      // Api key is already encrypted using KMS
+      log.info("Skipping migration for Api key with id: {} in account: {}", uuid, accountId);
+      return null;
+    }
+
+    try {
+      ApiKeyEntry decryptedApiKeyEntry = decryptUsingAccountKey(uuid, accountId);
+      String decryptedKey = decryptedApiKeyEntry.getDecryptedKey();
+      EncryptedData encryptedData = encryptApiKey(accountId, decryptedKey);
+
+      apiKeyEntry.setEncryptedDataId(encryptedData.getUuid());
+
+      log.info("Successfully migrated the api key: {} in account {} to KMS encryption", uuid, accountId);
+      return apiKeyEntry;
+    } catch (Exception ex) {
+      log.error(
+          "Failure occurred while migrating the api key: {} in account {} to KMS encryption", uuid, accountId, ex);
+    }
+    return null;
+  }
+
+  private ApiKeyEntry decryptApiKey(ApiKeyEntry apiKeyEntry) {
+    if (isNull(apiKeyEntry.getEncryptedDataId())) {
+      apiKeyEntry = decryptUsingAccountKey(apiKeyEntry.getUuid(), apiKeyEntry.getAccountId());
+    } else {
+      User user = UserThreadLocal.get();
+      UserThreadLocal.set(null);
+      EncryptedData encryptedData =
+          secretManager.getSecretById(apiKeyEntry.getAccountId(), apiKeyEntry.getEncryptedDataId());
+      UserThreadLocal.set(user);
+      String decryptedKey = String.valueOf(secretService.fetchSecretValue(encryptedData));
+      apiKeyEntry.setDecryptedKey(decryptedKey);
+    }
+    return apiKeyEntry;
   }
 
   private void validateApiKeyName(String name) {
@@ -233,9 +292,8 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     List<ApiKeyEntry> apiKeyEntryList = response.getResponse();
     if (decrypt) {
       apiKeyEntryList.forEach(apiKeyEntry -> {
-        String decryptedKey =
-            new String(getSimpleEncryption(apiKeyEntry.getAccountId()).decryptChars(apiKeyEntry.getEncryptedKey()));
-        apiKeyEntry.setDecryptedKey(decryptedKey);
+        ApiKeyEntry decryptedApiKey = decryptApiKey(apiKeyEntry);
+        apiKeyEntry.setDecryptedKey(decryptedApiKey.getDecryptedKey());
       });
     }
     if (loadUserGroups) {
@@ -245,7 +303,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   }
 
   private String decryptKey(ApiKeyEntry apiKeyEntry) {
-    return new String(getSimpleEncryption(apiKeyEntry.getAccountId()).decryptChars(apiKeyEntry.getEncryptedKey()));
+    return decryptApiKey(apiKeyEntry).getDecryptedKey();
   }
 
   @Override
@@ -257,9 +315,29 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     return buildApiKeyEntry(uuid, entry);
   }
 
+  private ApiKeyEntry decryptUsingAccountKey(String uuid, String accountId) {
+    ApiKeyEntry entry = wingsPersistence.createQuery(ApiKeyEntry.class)
+                            .filter(ApiKeyEntryKeys.accountId, accountId)
+                            .filter(ID_KEY, uuid)
+                            .get();
+    notNullCheck("apiKeyEntry is null for id: " + uuid, entry);
+
+    String decryptedKey = new String(getSimpleEncryption(entry.getAccountId()).decryptChars(entry.getEncryptedKey()));
+
+    return ApiKeyEntry.builder()
+        .uuid(entry.getUuid())
+        .userGroupIds(entry.getUserGroupIds())
+        .name(entry.getName())
+        .accountId(entry.getAccountId())
+        .decryptedKey(decryptedKey)
+        .userGroups(getUserGroupsForApiKey(
+            entry.getUserGroupIds() != null ? entry.getUserGroupIds() : emptyList(), entry.getAccountId()))
+        .build();
+  }
+
   private ApiKeyEntry buildApiKeyEntry(String uuid, ApiKeyEntry entry) {
     notNullCheck("apiKeyEntry is null for id: " + uuid, entry);
-    String decryptedKey = new String(getSimpleEncryption(entry.getAccountId()).decryptChars(entry.getEncryptedKey()));
+    String decryptedKey = decryptKey(entry);
 
     return ApiKeyEntry.builder()
         .uuid(entry.getUuid())

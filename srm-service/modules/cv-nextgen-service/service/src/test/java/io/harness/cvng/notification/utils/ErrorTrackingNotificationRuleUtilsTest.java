@@ -6,12 +6,20 @@
  */
 package io.harness.cvng.notification.utils;
 
+import static io.harness.rule.OwnerRule.JAMES_RICKS;
+
 import static junit.framework.TestCase.assertEquals;
 
+import io.harness.category.element.UnitTests;
+import io.harness.rule.Owner;
+
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 public class ErrorTrackingNotificationRuleUtilsTest {
   @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
   public void getSlackEventStringTest() {
     final ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent event =
         ErrorTrackingNotificationRuleUtils.ErrorTrackingEvent.builder()

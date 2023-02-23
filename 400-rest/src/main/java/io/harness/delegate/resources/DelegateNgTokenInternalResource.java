@@ -74,9 +74,11 @@ public class DelegateNgTokenInternalResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
+      @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName,
+      @Parameter(description = "Time after which delegate token will be auto revoked") @QueryParam(
+          "revokeAfter") Long revokeAfter) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
-    return new RestResponse<>(delegateTokenService.createToken(accountIdentifier, owner, tokenName));
+    return new RestResponse<>(delegateTokenService.createToken(accountIdentifier, owner, tokenName, revokeAfter));
   }
 
   @PUT
@@ -92,7 +94,7 @@ public class DelegateNgTokenInternalResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
-    return new RestResponse<>(delegateTokenService.revokeDelegateToken(accountIdentifier, owner, tokenName));
+    return new RestResponse<>(delegateTokenService.revokeDelegateToken(accountIdentifier, tokenName));
   }
 
   @GET

@@ -9,11 +9,7 @@ package io.harness.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.sdk.EntityGitDetails;
 
 import lombok.experimental.UtilityClass;
 

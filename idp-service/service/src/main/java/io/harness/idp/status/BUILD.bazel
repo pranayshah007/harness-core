@@ -33,5 +33,3 @@ java_library(
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
-
-run_analysis()

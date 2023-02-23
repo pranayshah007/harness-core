@@ -15,4 +15,6 @@ import java.util.List;
 
 public interface DataCollectionSLIInfoMapper<R extends DataCollectionInfo, T extends CVConfig> {
   R toDataCollectionInfo(List<T> cvConfig, ServiceLevelIndicator serviceLevelIndicator);
+
+  R toDataCollectionInfo(List<T> cvConfigs, List<String> metricIdentifiers);
 }

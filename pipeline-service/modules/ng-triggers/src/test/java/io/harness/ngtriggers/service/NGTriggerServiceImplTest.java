@@ -603,14 +603,14 @@ public class NGTriggerServiceImplTest extends CategoryTest {
 
     YamlField yamlField = YamlUtils.readTree(ngTrigger.getYaml());
     YamlNode triggerNode = yamlField.getNode().getField("trigger").getNode();
-    assertThat(((ObjectNode) triggerNode.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isNull();
+    assertThat((ObjectNode) triggerNode.getCurrJsonNode().get(PIPELINE_BRANCH_NAME)).isNull();
 
     ngTriggerServiceImpl.updateBranchName(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
         GitMoveOperationType.INLINE_TO_REMOTE, pipelineBranchName);
 
     YamlField yamlField1 = YamlUtils.readTree(ngTrigger.getYaml());
     YamlNode triggerNode1 = yamlField1.getNode().getField("trigger").getNode();
-    assertThat((triggerNode1.getCurrJsonNode().get(PIPELINE_BRANCH_NAME))).isEqualTo(new TextNode(pipelineBranchName));
+    assertThat(triggerNode1.getCurrJsonNode().get(PIPELINE_BRANCH_NAME)).isEqualTo(new TextNode(pipelineBranchName));
   }
 
   @Test

@@ -55,7 +55,6 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

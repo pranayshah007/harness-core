@@ -10,6 +10,7 @@ package io.harness.ccm.budgetGroup.service;
 import static io.harness.ccm.budget.BudgetBreakdown.MONTHLY;
 import static io.harness.ccm.budget.BudgetPeriod.YEARLY;
 import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
+import static io.harness.ccm.budgetGroup.CascadeType.NO_CASCADE;
 
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
@@ -157,7 +158,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       parentBudgetGroup = updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
       parentBudgetGroup = BudgetGroupUtils.updateBudgetGroupAmountOnChildEntityDeletion(parentBudgetGroup, budgetGroup);
       updateCostsOfParentBudgetGroupsOnEntityDeletion(parentBudgetGroup);
-      BudgetGroup rootBudgetGroup = BudgetGroupUtils.getRootBudgetGroup(budgetGroup);
+      BudgetGroup rootBudgetGroup = getRootBudgetGroup(budgetGroup);
       cascadeBudgetGroupAmount(rootBudgetGroup);
     }
     return budgetGroupDao.delete(uuid, accountId);
@@ -185,6 +186,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
     switch (parentBudgetGroup.getCascadeType()) {
       case EQUAL:
+      case NO_CASCADE:
         parentBudgetGroup.setChildEntities(updatedChildEntities);
         budgetGroupDao.updateChildEntities(parentBudgetGroup.getUuid(), updatedChildEntities);
         return parentBudgetGroup;
@@ -202,7 +204,6 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         parentBudgetGroup.setChildEntities(updatedChildEntitiesWithProportionsAdjusted);
         budgetGroupDao.updateChildEntities(parentBudgetGroup.getUuid(), updatedChildEntitiesWithProportionsAdjusted);
         return parentBudgetGroup;
-      case NO_CASCADE:
       default:
         return null;
     }
@@ -313,42 +314,50 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
   @Override
   public void cascadeBudgetGroupAmount(BudgetGroup budgetGroup) {
-    boolean isMonthlyBreakdownPresent = budgetGroup.getPeriod() == YEARLY
-        && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY;
-    boolean areChildEntitiesBudgetGroups =
-        BudgetGroupUtils.areChildEntitiesBudgetGroups(budgetGroup.getChildEntities());
     List<BudgetGroupChildEntityDTO> childEntities = budgetGroup.getChildEntities();
-    double totalNumberOfChildEntities = childEntities.size();
-    if (areChildEntitiesBudgetGroups) {
-      List<String> childEntityIds =
-          budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
-
-      if (isMonthlyBreakdownPresent) {
-        childEntities.forEach(childEntity
-            -> budgetGroupDao.updateBudgetGroupAmountInBreakdown(childEntity.getId(),
-                BudgetGroupUtils.getCascadedMonthlyAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
-                    childEntity.getProportion(),
-                    budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())));
+    boolean areChildEntitiesBudgetGroups = BudgetGroupUtils.areChildEntitiesBudgetGroups(childEntities);
+    if (budgetGroup.getCascadeType() == NO_CASCADE) {
+      if (areChildEntitiesBudgetGroups) {
+        List<String> childEntityIds =
+            childEntities.stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+        List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
+        childBudgetGroups.forEach(this::cascadeBudgetGroupAmount);
       }
-      childEntities.forEach(childEntity
-          -> budgetGroupDao.updateBudgetGroupAmount(childEntity.getId(),
-              BudgetGroupUtils.getCascadedAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
-                  childEntity.getProportion(), budgetGroup.getBudgetGroupAmount())));
-
-      List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
-      childBudgetGroups.forEach(this::cascadeBudgetGroupAmount);
     } else {
-      if (isMonthlyBreakdownPresent) {
+      boolean isMonthlyBreakdownPresent = budgetGroup.getPeriod() == YEARLY
+          && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY;
+      double totalNumberOfChildEntities = childEntities.size();
+      if (areChildEntitiesBudgetGroups) {
+        List<String> childEntityIds =
+            budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+
+        if (isMonthlyBreakdownPresent) {
+          childEntities.forEach(childEntity
+              -> budgetGroupDao.updateBudgetGroupAmountInBreakdown(childEntity.getId(),
+                  BudgetGroupUtils.getCascadedMonthlyAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
+                      childEntity.getProportion(),
+                      budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())));
+        }
         childEntities.forEach(childEntity
-            -> budgetDao.updateBudgetAmountInBreakdown(childEntity.getId(),
-                BudgetGroupUtils.getCascadedMonthlyAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
-                    childEntity.getProportion(),
-                    budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())));
+            -> budgetGroupDao.updateBudgetGroupAmount(childEntity.getId(),
+                BudgetGroupUtils.getCascadedAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
+                    childEntity.getProportion(), budgetGroup.getBudgetGroupAmount())));
+
+        List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
+        childBudgetGroups.forEach(this::cascadeBudgetGroupAmount);
+      } else {
+        if (isMonthlyBreakdownPresent) {
+          childEntities.forEach(childEntity
+              -> budgetDao.updateBudgetAmountInBreakdown(childEntity.getId(),
+                  BudgetGroupUtils.getCascadedMonthlyAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
+                      childEntity.getProportion(),
+                      budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())));
+        }
+        childEntities.forEach(childEntity
+            -> budgetDao.updateBudgetAmount(childEntity.getId(),
+                BudgetGroupUtils.getCascadedAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
+                    childEntity.getProportion(), budgetGroup.getBudgetGroupAmount())));
       }
-      childEntities.forEach(childEntity
-          -> budgetDao.updateBudgetAmount(childEntity.getId(),
-              BudgetGroupUtils.getCascadedAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
-                  childEntity.getProportion(), budgetGroup.getBudgetGroupAmount())));
     }
   }
 
@@ -420,13 +429,23 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   private void updateBudgetGroupAmount(BudgetGroup budgetGroup) {
     boolean isBreakdownMonthly = budgetGroup.getPeriod() == YEARLY
         && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY;
-    if (isBreakdownMonthly) {
-      budgetGroup.setBudgetGroupAmount(budgetGroup.getBudgetGroupMonthlyBreakdown()
-                                           .getBudgetMonthlyAmount()
-                                           .stream()
-                                           .map(ValueDataPoint::getValue)
-                                           .mapToDouble(Double::doubleValue)
-                                           .sum());
+
+    if (budgetGroup.getCascadeType() == NO_CASCADE) {
+      List<BudgetGroupChildEntityDTO> childEntities = budgetGroup.getChildEntities();
+      boolean areChildEntitiesBudgetGroups = BudgetGroupUtils.areChildEntitiesBudgetGroups(childEntities);
+      List<String> childEntityIds =
+          childEntities.stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+      List<ValueDataPoint> budgetAmount =
+          getAggregatedAmount(budgetGroup.getAccountId(), !areChildEntitiesBudgetGroups, childEntityIds);
+      budgetGroup.setBudgetGroupAmount(BudgetGroupUtils.getSumGivenTimeAndValueList(budgetAmount));
+      if (isBreakdownMonthly) {
+        budgetGroup.getBudgetGroupMonthlyBreakdown().setBudgetMonthlyAmount(budgetAmount);
+      }
+    } else {
+      if (isBreakdownMonthly) {
+        budgetGroup.setBudgetGroupAmount(BudgetGroupUtils.getSumGivenTimeAndValueList(
+            budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount()));
+      }
     }
   }
 
@@ -584,5 +603,13 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
             .map(Budget::getUuid)
             .collect(Collectors.toList());
     budgetDao.unsetParent(budgetsWithInvalidParents);
+  }
+
+  public BudgetGroup getRootBudgetGroup(BudgetGroup budgetGroup) {
+    BudgetGroup rootBudgetGroup = budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), budgetGroup.getAccountId());
+    while (rootBudgetGroup.getParentBudgetGroupId() != null) {
+      rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
+    }
+    return rootBudgetGroup;
   }
 }

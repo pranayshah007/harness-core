@@ -205,7 +205,7 @@ function setupDelegateJars() {
 
     done
 
-    for version in 1658d03e; do
+    for version in 91e2a39c; do
 
       echo "Copying scm ${version} binaries for ${platform}"
 

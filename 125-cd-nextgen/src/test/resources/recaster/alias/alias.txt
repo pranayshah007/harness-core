@@ -776,6 +776,9 @@ io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome
 io.harness.cdng.service.beans.AwsLambdaServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest
 io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome
+io.harness.cdng.artifact.bean.yaml.BambooArtifactConfig
+io.harness.ngpipeline.artifact.bean.BambooArtifactOutcome
+io.harness.cdng.artifact.BambooArtifactSummary
 io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome
 io.harness.cdng.infra.yaml.AwsSamInfrastructure
 io.harness.cdng.infra.beans.AwsSamInfraMapping

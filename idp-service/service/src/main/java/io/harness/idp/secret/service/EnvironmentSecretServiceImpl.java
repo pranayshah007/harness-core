@@ -164,7 +164,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     }
   }
 
-  private boolean syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) throws Exception {
+  public boolean syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) throws Exception {
     // TODO: get the namespace for the given account. Currently assuming it to be default. Needs to be fixed.
     Map<String, byte[]> secretData = new HashMap<>();
     for (EnvironmentSecret environmentSecret : environmentSecrets) {

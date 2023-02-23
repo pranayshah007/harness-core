@@ -7,7 +7,10 @@
 
 package io.harness.ngmigration.service.infra;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getValueFromExpression;
 import static io.harness.yaml.infra.HostConnectionTypeKind.HOSTNAME;
 import static io.harness.yaml.infra.HostConnectionTypeKind.PRIVATE_IP;
 import static io.harness.yaml.infra.HostConnectionTypeKind.PUBLIC_IP;
@@ -35,9 +38,11 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.api.DeploymentType;
+import software.wings.beans.AwsInstanceFilter.AwsInstanceFilterKeys;
 import software.wings.beans.AwsInstanceFilter.Tag;
 import software.wings.beans.AzureTag;
 import software.wings.infra.AwsInstanceInfrastructure;
+import software.wings.infra.AwsInstanceInfrastructure.AwsInstanceInfrastructureKeys;
 import software.wings.infra.AzureInstanceInfrastructure;
 import software.wings.infra.InfraMappingInfrastructureProvider;
 import software.wings.infra.InfrastructureDefinition;
@@ -120,12 +125,13 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       List<ElastigroupConfiguration> elastigroupConfiguration) {
     switch (infrastructureDefinition.getCloudProviderType()) {
       case AWS:
-        return getAwsSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
+        return getAwsSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure(),
+            infrastructureDefinition.getProvisionerId());
       case AZURE:
         return getAzureSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
       case PHYSICAL_DATA_CENTER:
         return getPdcSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure(),
-            infrastructureDefinition.getDeploymentType());
+            infrastructureDefinition.getDeploymentType(), infrastructureDefinition.getProvisionerId());
       default:
         throw new InvalidRequestException("Unsupported Infra for ssh deployment");
     }
@@ -150,33 +156,44 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
         .build();
   }
 
-  private Infrastructure getAwsSshInfra(
-      Map<CgEntityId, NGYamlFile> migratedEntities, InfraMappingInfrastructureProvider infrastructure) {
+  private Infrastructure getAwsSshInfra(Map<CgEntityId, NGYamlFile> migratedEntities,
+      InfraMappingInfrastructureProvider infrastructure, String provisionerId) {
     AwsInstanceInfrastructure awsInfra = (AwsInstanceInfrastructure) infrastructure;
     NgEntityDetail connectorDetail =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(awsInfra.getCloudProviderId()).build())
             .getNgEntityDetail();
     SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
+
+    AwsInstanceFilter awsInstanceFilter = AwsInstanceFilter.builder().build();
+
     if (awsInfra.getAwsInstanceFilter() != null) {
-      AwsInstanceFilter awsInstanceFilter =
-          AwsInstanceFilter.builder()
-              .vpcs(awsInfra.getAwsInstanceFilter().getVpcIds())
-              .tags(ParameterField.createValueField(getAwsTagsMap(awsInfra.getAwsInstanceFilter().getTags())))
-              .build();
-      builder.awsInstanceFilter(awsInstanceFilter);
+      awsInstanceFilter.setTags(getTags(awsInfra, provisionerId));
     }
+
+    builder.awsInstanceFilter(awsInstanceFilter);
     return builder
         .credentialsRef(ParameterField.createValueField(
             MigratorUtility.getSecretRef(migratedEntities, awsInfra.getHostConnectionAttrs(), CONNECTOR)
                 .toSecretRefStringValue()))
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-        .region(ParameterField.createValueField(awsInfra.getRegion()))
+        .region(getExpression(
+            awsInfra.getExpressions(), AwsInstanceInfrastructureKeys.region, awsInfra.getRegion(), provisionerId))
         .hostConnectionType(ParameterField.createValueField(awsInfra.isUsePublicDns() ? PUBLIC_IP : PRIVATE_IP))
         .build();
   }
 
+  private ParameterField<Map<String, String>> getTags(AwsInstanceInfrastructure awsInfra, String provisionerId) {
+    if (provisionerId != null && isNotEmpty(awsInfra.getExpressions())
+        && awsInfra.getExpressions().containsKey(AwsInstanceFilterKeys.tags)) {
+      return ParameterField.createExpressionField(
+          true, awsInfra.getExpressions().get(AwsInstanceFilterKeys.tags), null, false);
+    } else {
+      return ParameterField.createValueField(getAwsTagsMap(awsInfra.getAwsInstanceFilter().getTags()));
+    }
+  }
+
   private Infrastructure getPdcSshInfra(Map<CgEntityId, NGYamlFile> migratedEntities,
-      InfraMappingInfrastructureProvider infrastructure, @NotNull DeploymentType deploymentType) {
+      InfraMappingInfrastructureProvider infrastructure, @NotNull DeploymentType deploymentType, String provisionerId) {
     PdcInfrastructureBuilder builder = PdcInfrastructure.builder();
 
     if (deploymentType.equals(DeploymentType.WINRM)) {
@@ -192,27 +209,31 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       builder.credentialsRef(ParameterField.createValueField(
           MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getHostConnectionAttrs(), CONNECTOR)
               .toSecretRefStringValue()));
-      if (isNotEmpty(pdcInfra.getHostNames())) {
-        builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
-      }
+      builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());
 
-      Map<String, String> expressions = pdcInfra.getExpressions();
-      if (isNotEmpty(expressions) && expressions.containsKey(PhysicalInfra.hostname)
-          && expressions.containsKey(PhysicalInfra.hostArrayPath)) {
+      if (isEmpty(provisionerId)) {
+        if (isNotEmpty(pdcInfra.getHostNames())) {
+          builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
+        }
+      } else {
+        builder.hostObjectArray(
+            getExpression(pdcInfra.getExpressions(), PhysicalInfra.hostArrayPath, null, provisionerId));
+        builder.dynamicallyProvisioned(ParameterField.createValueField(true));
         Map<String, String> hostAttrs = new HashMap<>();
-        expressions.forEach((k, v) -> {
-          if (!isNotEmpty(v)) {
-            if (PhysicalInfra.hostArrayPath.equals(k) && isNotEmpty(v)) {
-              builder.hostObjectArray(ParameterField.createValueField(v));
+        hostAttrs.put(PhysicalInfra.hostname,
+            getValueFromExpression(pdcInfra.getExpressions(), PhysicalInfra.hostname, null, provisionerId));
+
+        Map<String, String> expressions = pdcInfra.getExpressions();
+        if (isNotEmpty(expressions)) {
+          expressions.forEach((k, v) -> {
+            if (!PhysicalInfra.hostname.equals(k) && !PhysicalInfra.hostArrayPath.equals(k)) {
+              hostAttrs.put(k, v);
             }
-            hostAttrs.put(k, v);
-          }
-        });
+          });
+        }
         builder.hostAttributes(ParameterField.createValueField(hostAttrs));
       }
     }
-
-    builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());
     return builder.build();
   }
 

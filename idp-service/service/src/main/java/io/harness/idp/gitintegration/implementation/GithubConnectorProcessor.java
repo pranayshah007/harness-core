@@ -7,6 +7,7 @@
 
 package io.harness.idp.gitintegration.implementation;
 
+import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -17,20 +18,19 @@ import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredenti
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.GitIntegrationConstants;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
-import io.harness.idp.secret.beans.dto.EnvironmentSecretDTO;
-import io.harness.idp.secret.beans.dto.EnvironmentSecretValueDTO;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class GithubConnectorProcessor extends ConnectorProcessor {
-  public List<EnvironmentSecretValueDTO> getConnectorSecretsInfo(
+  public List<EnvironmentSecret> getConnectorSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(
         connectorResourceClient.get(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
-    List<EnvironmentSecretValueDTO> resultList = new ArrayList<>();
+    List<EnvironmentSecret> resultList = new ArrayList<>();
 
     if (!connectorDTO.isPresent()) {
       throw new InvalidRequestException(
@@ -45,25 +45,28 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
-    if (apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
+
+    if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
-      EnvironmentSecretDTO appIdEnvironmentSecretDTO =
-          EnvironmentSecretDTO.builder().envName(GitIntegrationConstants.GITHUB_APP_ID).build();
-      EnvironmentSecretValueDTO appIdEnvironmentSecretValueDTO = EnvironmentSecretValueDTO.builder()
-                                                                     .environmentSecretDTO(appIdEnvironmentSecretDTO)
-                                                                     .decryptedValue(apiAccessSpec.getApplicationId())
-                                                                     .build();
-      resultList.add(appIdEnvironmentSecretValueDTO);
+      EnvironmentSecret appIDEnvironmentSecret = new EnvironmentSecret();
+      appIDEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_APP_ID);
+      appIDEnvironmentSecret.setDecryptedValue(apiAccessSpec.getApplicationId());
+      resultList.add(appIDEnvironmentSecret);
 
-      EnvironmentSecretDTO privateRefEnvironmentSecretDTO =
-          EnvironmentSecretDTO.builder()
-              .secretIdentifier(apiAccessSpec.getPrivateKeyRef().getIdentifier())
-              .envName(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF)
-              .build();
-      EnvironmentSecretValueDTO privateRefEnvironmentSecretValueDTO =
-          EnvironmentSecretValueDTO.builder().environmentSecretDTO(privateRefEnvironmentSecretDTO).build();
-      resultList.add(privateRefEnvironmentSecretValueDTO);
+      String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
+      EnvironmentSecret privateRefEnvironmentSecret = new EnvironmentSecret();
+      privateRefEnvironmentSecret.secretIdentifier(apiAccessSpec.getPrivateKeyRef().getIdentifier());
+      privateRefEnvironmentSecret.envName(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF);
+      DecryptedSecretValue privateKeyRefDecryptedValue = ngSecretService.getDecryptedSecretValue(
+          accountIdentifier, orgIdentifier, projectIdentifier, privateRefKeySecretIdentifier);
+      if (privateKeyRefDecryptedValue == null) {
+        throw new InvalidRequestException(
+            String.format("Private Key Ref Secret not found for identifier : [%s] ", connectorIdentifier));
+      }
+      privateRefEnvironmentSecret.setDecryptedValue(privateKeyRefDecryptedValue.getDecryptedValue());
+
+      resultList.add(privateRefEnvironmentSecret);
     }
 
     GithubHttpCredentialsOutcomeDTO outcome =
@@ -73,13 +76,24 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
           " Authentication is not Username and Token for Github Connector with id - [%s] ", connectorIdentifier));
     }
     GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
-    EnvironmentSecretDTO tokenEnvironmentSecretDTO = EnvironmentSecretDTO.builder()
-                                                         .secretIdentifier(spec.getTokenRef().getIdentifier())
-                                                         .envName(GitIntegrationConstants.GITHUB_TOKEN)
-                                                         .build();
-    EnvironmentSecretValueDTO tokenEnvironmentSecretValueDTO =
-        EnvironmentSecretValueDTO.builder().environmentSecretDTO(tokenEnvironmentSecretDTO).build();
-    resultList.add(tokenEnvironmentSecretValueDTO);
+
+    String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
+    if (tokenSecretIdentifier.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
+    }
+
+    EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
+    tokenEnvironmentSecret.secretIdentifier(tokenSecretIdentifier);
+    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_TOKEN);
+    DecryptedSecretValue tokenDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
+        accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
+    if (tokenDecryptedSecretValue == null) {
+      throw new InvalidRequestException(
+          String.format("Token Secret not found for identifier : [%s] ", connectorIdentifier));
+    }
+    tokenEnvironmentSecret.setDecryptedValue(tokenDecryptedSecretValue.getDecryptedValue());
+    resultList.add(tokenEnvironmentSecret);
     return resultList;
   }
 }

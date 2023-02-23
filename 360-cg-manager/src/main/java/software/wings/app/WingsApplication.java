@@ -1366,6 +1366,11 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
           15L, TimeUnit.SECONDS);
     }
+
+    delegateExecutor.scheduleWithFixedDelay(
+        new Schedulable("Failed while auto revoking delegate tokens",
+            () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
+        1L, 1L, TimeUnit.HOURS);
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {
