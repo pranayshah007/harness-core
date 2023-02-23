@@ -19,6 +19,7 @@ import io.harness.spec.server.idp.v1.model.EnvironmentSecretResponse;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -40,7 +41,7 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
     } catch (Exception e) {
       log.error("Could not create environment secret", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .entity(ResponseMessage.builder().message(Arrays.toString(e.getStackTrace())).build())
           .build();
     }
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
