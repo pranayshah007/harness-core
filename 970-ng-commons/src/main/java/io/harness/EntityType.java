@@ -540,7 +540,9 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY(
-      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY);
+      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY),
+  @JsonProperty(EntityTypeConstants.SSCA_ORCHESTRATION)
+  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class);
 
   private final ModuleType moduleType;
   String yamlName;

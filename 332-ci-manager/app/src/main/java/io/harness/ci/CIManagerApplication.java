@@ -105,6 +105,7 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.ssca.SscaBeansRegistrar;
 import io.harness.telemetry.CiTelemetryRecordsJob;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -250,7 +251,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       @Provides
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-        return ImmutableList.<YamlSchemaRootClass>builder().addAll(CiBeansRegistrars.yamlSchemaRegistrars).build();
+        return ImmutableList.<YamlSchemaRootClass>builder()
+            .addAll(CiBeansRegistrars.yamlSchemaRegistrars)
+            .addAll(SscaBeansRegistrar.yamlSchemaRegistrars)
+            .build();
       }
     });
 
