@@ -86,6 +86,7 @@ import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.ssca.execution.creator.variable.SscaStepVariableCreator;
 import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
@@ -187,6 +188,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
+    variableCreators.add(new SscaStepVariableCreator());
 
     return variableCreators;
   }
