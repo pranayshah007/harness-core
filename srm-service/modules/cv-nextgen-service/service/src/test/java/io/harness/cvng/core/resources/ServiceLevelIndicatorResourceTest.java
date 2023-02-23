@@ -9,8 +9,10 @@ package io.harness.cvng.core.resources;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,6 +28,7 @@ import io.harness.cvng.beans.SyncDataCollectionRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.sli.MetricOnboardingGraph;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
@@ -58,6 +61,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
@@ -69,6 +73,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   private static ServiceLevelIndicatorResource serviceLevelIndicatorResource = new ServiceLevelIndicatorResource();
@@ -80,6 +85,8 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
+
+  @Mock OnboardingService onboardingService;
   BuilderFactory builderFactory = BuilderFactory.getDefault();
   @Inject Clock clock;
 
@@ -89,6 +96,12 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
 
   private String connectorIdentifier;
   private String monitoredServiceIdentifier;
+  private OnboardingRequestDTO onboardingRequestDTO;
+  private String textLoad;
+  private ServiceLevelIndicatorDTO serviceLevelIndicatorDTO;
+
+  private String healthSourceRef;
+  private CVConfig cvConfig;
 
   @SneakyThrows
   @Before
@@ -97,25 +110,19 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
     connectorIdentifier = generateUuid();
     monitoredServiceIdentifier = "monitoredServiceIdentifier";
     createMonitoredService();
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testGetOnboardingGraph() throws IOException, IllegalAccessException {
     String tracingId = "tracingId";
     CorrelationContext.setCorrelationId(tracingId);
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
-        builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
+    serviceLevelIndicatorDTO = builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
+    healthSourceRef = serviceLevelIndicatorDTO.getHealthSourceRef();
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
-    CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
-                            .identifier(HealthSourceService.getNameSpacedIdentifier(
-                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
-                            .build();
+    cvConfig = builderFactory.appDynamicsCVConfigBuilder()
+                   .identifier(HealthSourceService.getNameSpacedIdentifier(
+                       monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
+                   .build();
     hPersistence.save(cvConfig);
     metricPackService.populateDataCollectionDsl(cvConfig.getType(), ((MetricCVConfig) cvConfig).getMetricPack());
 
-    String textLoad = Resources.toString(
+    textLoad = Resources.toString(
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
     ServiceLevelIndicator serviceLevelIndicator =
@@ -135,19 +142,23 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
                                         .startTime(startTime)
                                         .build();
 
-    OnboardingRequestDTO onboardingRequestDTO =
-        OnboardingRequestDTO.builder()
-            .dataCollectionRequest(request)
-            .connectorIdentifier(cvConfig.getConnectorIdentifier())
-            .accountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
-            .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
-            .tracingId(tracingId)
-            .build();
+    onboardingRequestDTO = OnboardingRequestDTO.builder()
+                               .dataCollectionRequest(request)
+                               .connectorIdentifier(cvConfig.getConnectorIdentifier())
+                               .accountId(builderFactory.getProjectParams().getAccountIdentifier())
+                               .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
+                               .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
+                               .tracingId(tracingId)
+                               .build();
+    onboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", onboardingService, true);
+  }
 
-    OnboardingService mockOnboardingService = mock(OnboardingService.class);
-    FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", mockOnboardingService, true);
-    when(mockOnboardingService.getOnboardingResponse(
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testGetOnboardingGraph() throws IOException, IllegalAccessException {
+    when(onboardingService.getOnboardingResponse(
              eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
@@ -179,6 +190,41 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getMetricIdentifier())
         .isEqualTo("Calls per Minute");
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getDataPoints().get(0).getValue())
+        .isEqualTo(343.0);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMetricGraph() throws IOException {
+    when(ServiceLevelIndicatorResourceTest.this.onboardingService.getOnboardingResponse(any(), any()))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    Response response =
+        RESOURCES.client()
+            .target("http://localhost:9998/monitored-service/" + monitoredServiceIdentifier
+                + "/sli/onboarding-metric-graphs")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+            .queryParam("healthSourceRef", healthSourceRef)
+            .queryParam("routingId", "tracingId")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .post(Entity.json(objectMapper.writeValueAsString(Collections.singletonList("identifier"))));
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    MetricOnboardingGraph metricOnboardingGraph =
+        response.readEntity(new GenericType<RestResponse<MetricOnboardingGraph>>() {}).getResource();
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().size()).isEqualTo(1);
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getStartTime()).isEqualTo(1595760600000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getEndTime()).isEqualTo(1595847000000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs()).hasSize(1);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricName()).isEqualTo("name");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricIdentifier()).isEqualTo("identifier");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getDataPoints().get(0).getValue())
         .isEqualTo(343.0);
   }
 
