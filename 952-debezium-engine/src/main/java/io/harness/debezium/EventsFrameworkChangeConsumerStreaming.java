@@ -9,9 +9,16 @@ package io.harness.debezium;
 
 import io.harness.cf.client.api.CfClient;
 
+import java.util.Optional;
+
 public class EventsFrameworkChangeConsumerStreaming extends EventsFrameworkChangeConsumer {
   public EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig changeConsumerConfig, CfClient cfClient,
       String collection, DebeziumProducerFactory debeziumProducerFactory) {
     super(changeConsumerConfig, cfClient, collection, debeziumProducerFactory);
+  }
+
+  @Override
+  public boolean shouldStop(Optional<OpType> opType) {
+    return false;
   }
 }

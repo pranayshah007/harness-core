@@ -13,6 +13,8 @@ import io.harness.cf.client.dto.Target;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
@@ -54,40 +56,48 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
-    log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
-    Collections.reverse(records);
-    Map<String, ChangeEvent<String, String>> recordsMap = new HashMap<>();
-    for (ChangeEvent<String, String> record : records) {
-      if (!recordsMap.containsKey(record.key())) {
-        recordsMap.put(record.key(), record);
-      }
-    }
-    // Add the batch records to the stream(s)
-    for (ChangeEvent<String, String> record : recordsMap.values()) {
-      cnt++;
-      Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
-      if (!opType.isEmpty()) {
-        DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
-                                                      .setKey(getKeyOrDefault(record))
-                                                      .setValue(getValueOrDefault(record))
-                                                      .setOptype(opType.get().toString())
-                                                      .setTimestamp(System.currentTimeMillis())
-                                                      .build();
-        String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
-        boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
-            Target.builder().identifier(collection + "." + mode).build(), false);
-        Producer producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
-        if (debeziumEnabled) {
-          producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+    try (AutoLogContext ignore = getAutoLogContext()) {
+      log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
+      Collections.reverse(records);
+      Map<String, ChangeEvent<String, String>> recordsMap = new HashMap<>();
+      for (ChangeEvent<String, String> record : records) {
+        if (!recordsMap.containsKey(record.key())) {
+          recordsMap.put(record.key(), record);
         }
       }
-      try {
-        recordCommitter.markProcessed(record);
-      } catch (InterruptedException e) {
-        log.error("Exception Occurred while marking record as committed", e);
+      // Add the batch records to the stream(s)
+      for (ChangeEvent<String, String> record : recordsMap.values()) {
+        cnt++;
+        Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
+        String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
+        if (!opType.isEmpty()) {
+          if (shouldStop(opType)) {
+            log.error("Stopping Debezium controller for collection {}, mode {}", collection, mode);
+            throw new InvalidRequestException(
+                "Stopping Debezium controller for collection: " + collection + " mode: " + mode);
+          }
+          DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
+                                                        .setKey(getKeyOrDefault(record))
+                                                        .setValue(getValueOrDefault(record))
+                                                        .setOptype(opType.get().toString())
+                                                        .setTimestamp(System.currentTimeMillis())
+                                                        .build();
+
+          boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
+              Target.builder().identifier(collection + "." + mode).build(), false);
+          Producer producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
+          if (debeziumEnabled) {
+            producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+          }
+        }
+        try {
+          recordCommitter.markProcessed(record);
+        } catch (InterruptedException e) {
+          log.error("Exception Occurred while marking record as committed", e);
+        }
       }
+      recordCommitter.markBatchFinished();
     }
-    recordCommitter.markBatchFinished();
   }
 
   @VisibleForTesting
@@ -107,5 +117,14 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
   @Override
   public String getCollection() {
     return collectionName;
+  }
+
+  public abstract boolean shouldStop(Optional<OpType> opType);
+
+  AutoLogContext getAutoLogContext() {
+    Map<String, String> map = new HashMap<>();
+    map.put("collection", collectionName);
+    map.put("mode", mode.toString());
+    return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 }

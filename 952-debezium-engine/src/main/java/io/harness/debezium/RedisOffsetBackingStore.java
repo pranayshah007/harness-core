@@ -7,6 +7,7 @@
 
 package io.harness.debezium;
 
+import io.harness.logging.AutoLogContext;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.serializer.JsonUtils;
@@ -58,16 +59,18 @@ public class RedisOffsetBackingStore extends MemoryOffsetBackingStore {
    */
   @VisibleForTesting
   public void load() {
-    this.data = new HashMap<>();
-    RMap<byte[], byte[]> offsets = redisson.getMap(this.redisKey);
-    if (offsets.size() > 0) {
-      for (Map.Entry<byte[], byte[]> mapEntry : offsets.entrySet()) {
-        ByteBuffer key = (mapEntry.getKey() != null) ? ByteBuffer.wrap(mapEntry.getKey()) : null;
-        ByteBuffer value = (mapEntry.getValue() != null) ? ByteBuffer.wrap(mapEntry.getValue()) : null;
-        data.put(key, value);
+    try (AutoLogContext ignore = getAutoLogContext(redisKey)) {
+      this.data = new HashMap<>();
+      RMap<byte[], byte[]> offsets = redisson.getMap(this.redisKey);
+      if (offsets.size() > 0) {
+        for (Map.Entry<byte[], byte[]> mapEntry : offsets.entrySet()) {
+          ByteBuffer key = (mapEntry.getKey() != null) ? ByteBuffer.wrap(mapEntry.getKey()) : null;
+          ByteBuffer value = (mapEntry.getValue() != null) ? ByteBuffer.wrap(mapEntry.getValue()) : null;
+          data.put(key, value);
+        }
+      } else {
+        log.info("No offset found in the database, will start a full sync.");
       }
-    } else {
-      log.info("No offset found in the database, will start a full sync.");
     }
   }
 
@@ -76,13 +79,21 @@ public class RedisOffsetBackingStore extends MemoryOffsetBackingStore {
    */
   @Override
   protected void save() {
-    for (Map.Entry<ByteBuffer, ByteBuffer> mapEntry : data.entrySet()) {
-      byte[] key = (mapEntry.getKey() != null) ? mapEntry.getKey().array() : null;
-      byte[] value = (mapEntry.getValue() != null) ? mapEntry.getValue().array() : null;
-      // set the value in Redis
-      RMap<byte[], byte[]> offsets_map = redisson.getMap(this.redisKey);
-      offsets_map.put(key, value);
-      log.info("Saved offset in Database");
+    try (AutoLogContext ignore = getAutoLogContext(redisKey)) {
+      for (Map.Entry<ByteBuffer, ByteBuffer> mapEntry : data.entrySet()) {
+        byte[] key = (mapEntry.getKey() != null) ? mapEntry.getKey().array() : null;
+        byte[] value = (mapEntry.getValue() != null) ? mapEntry.getValue().array() : null;
+        // set the value in Redis
+        RMap<byte[], byte[]> offsets_map = redisson.getMap(this.redisKey);
+        offsets_map.put(key, value);
+        log.info("Saved offset in Database");
+      }
     }
+  }
+
+  AutoLogContext getAutoLogContext(String redisKey) {
+    Map<String, String> map = new HashMap<>();
+    map.put("redisKey", redisKey);
+    return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 }

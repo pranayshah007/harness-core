@@ -15,13 +15,16 @@ import static io.harness.debezium.DebeziumConstants.DEBEZIUM_LOCK_PREFIX;
 
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.logging.AutoLogContext;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -57,43 +60,46 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   public void run() {
     while (!shouldStop.get()) {
       DebeziumEngine<ChangeEvent<String, String>> debeziumEngine = null;
-      try (AcquiredLock<?> aggregatorLock = acquireLock(true)) {
-        long start = System.currentTimeMillis();
-        if (aggregatorLock == null) {
-          TimeUnit.SECONDS.sleep(10);
-          continue;
-        }
-        RLock rLock = (RLock) aggregatorLock.getLock();
-        debeziumEngine = debeziumService.getEngine(
-            props, changeConsumer, changeConsumer.getCollection(), this, listOfErrorCodesForOffsetReset);
-        Future<?> future = executorService.submit(debeziumEngine);
-        log.info("Starting Debezium Engine for Collection {} at {}", changeConsumer.getCollection(),
-            System.currentTimeMillis());
-        while (!future.isDone() && rLock.isHeldByCurrentThread()) {
-          log.info("primary lock remaining ttl {}, isHeldByCurrentThread {}, holdCount {}, name {}",
-              rLock.remainTimeToLive(), rLock.isHeldByCurrentThread(), rLock.getHoldCount(), rLock.getName());
-          TimeUnit.SECONDS.sleep(30);
-          // Randomly releasing lock after 25-30 mins so that load can be distributed among the pods
-          int result = new Random().nextInt(5) + 25;
-          if (System.currentTimeMillis() - start >= result * 60 * 1000) {
-            log.info("releasing lock {} after {} minutes", getLockName(), result);
-            break;
+      try (AutoLogContext ignore = getAutoLogContext(
+               changeConsumer.getCollection(), props.get(DebeziumConfiguration.SNAPSHOT_MODE).toString())) {
+        try (AcquiredLock<?> aggregatorLock = acquireLock(true)) {
+          long start = System.currentTimeMillis();
+          if (aggregatorLock == null) {
+            TimeUnit.SECONDS.sleep(10);
+            continue;
           }
-        }
-      } catch (InterruptedException e) {
-        shouldStop.set(true);
-        log.warn("Thread interrupted, stopping controller for {}", changeConsumer.getCollection(), e);
-      } catch (Exception e) {
-        log.error("Primary sync stopped due to exception", e);
-      } finally {
-        try {
-          debeziumService.closeEngine(debeziumEngine, changeConsumer.getCollection());
-          TimeUnit.SECONDS.sleep(20);
+          RLock rLock = (RLock) aggregatorLock.getLock();
+          debeziumEngine = debeziumService.getEngine(
+              props, changeConsumer, changeConsumer.getCollection(), this, listOfErrorCodesForOffsetReset);
+          Future<?> future = executorService.submit(debeziumEngine);
+          log.info("Starting Debezium Engine for Collection {} at {}", changeConsumer.getCollection(),
+              System.currentTimeMillis());
+          while (!future.isDone() && rLock.isHeldByCurrentThread()) {
+            log.info("primary lock remaining ttl {}, isHeldByCurrentThread {}, holdCount {}, name {}",
+                rLock.remainTimeToLive(), rLock.isHeldByCurrentThread(), rLock.getHoldCount(), rLock.getName());
+            TimeUnit.SECONDS.sleep(30);
+            // Randomly releasing lock after 25-30 mins so that load can be distributed among the pods
+            int result = new Random().nextInt(5) + 25;
+            if (System.currentTimeMillis() - start >= result * 60 * 1000) {
+              log.info("releasing lock {} after {} minutes", getLockName(), result);
+              break;
+            }
+          }
         } catch (InterruptedException e) {
           shouldStop.set(true);
           log.warn("Thread interrupted, stopping controller for {}", changeConsumer.getCollection(), e);
         } catch (Exception e) {
-          log.error("Failed to close debezium engine due to exception", e);
+          log.error("Primary sync stopped due to exception", e);
+        } finally {
+          try {
+            debeziumService.closeEngine(debeziumEngine, changeConsumer.getCollection());
+            TimeUnit.SECONDS.sleep(20);
+          } catch (InterruptedException e) {
+            shouldStop.set(true);
+            log.warn("Thread interrupted, stopping controller for {}", changeConsumer.getCollection(), e);
+          } catch (Exception e) {
+            log.error("Failed to close debezium engine due to exception", e);
+          }
         }
       }
     }
@@ -124,5 +130,12 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
 
   public void stopDebeziumController() {
     shouldStop.set(true);
+  }
+
+  AutoLogContext getAutoLogContext(String collection, String mode) {
+    Map<String, String> map = new HashMap<>();
+    map.put("collection", collection);
+    map.put("mode", mode);
+    return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 }

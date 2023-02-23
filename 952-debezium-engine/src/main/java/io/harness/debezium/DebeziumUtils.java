@@ -8,13 +8,16 @@
 package io.harness.debezium;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.serializer.JsonUtils;
 
 import com.mongodb.MongoCommandException;
 import io.debezium.engine.DebeziumEngine;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
@@ -22,36 +25,43 @@ import org.redisson.api.RedissonClient;
 @UtilityClass
 @Slf4j
 public class DebeziumUtils {
-  public DebeziumEngine.ConnectorCallback getConnectorCallback(String collection) {
-    return new DebeziumEngine.ConnectorCallback() {
-      @Override
-      public void connectorStopped() {
-        log.info("Debezium connector stopped for collection {}", collection);
-      }
-      @Override
-      public void taskStopped() {
-        log.info("Task stopped for collection {}", collection);
-      }
-    };
+  public DebeziumEngine.ConnectorCallback getConnectorCallback(String collection, String mode) {
+    try (AutoLogContext ignore = getAutoLogContext(collection, mode)) {
+      return new DebeziumEngine.ConnectorCallback() {
+        @Override
+        public void connectorStopped() {
+          log.info("Debezium connector stopped for collection {}", collection);
+        }
+
+        @Override
+        public void taskStopped() {
+          log.info("Task stopped for collection {}", collection);
+        }
+      };
+    }
   }
 
   // Stopping the Debezium engine when snapshot is completed (this will only happen if engine running in snapshot only
   // mode) and resetting the offset only when error code is in the listOfErrorCodesForOffsetReset
   public DebeziumEngine.CompletionCallback getCompletionCallback(String redisConfigJson, String redisKey,
-      DebeziumController debeziumController, String collection, List<Integer> listOfErrorCodesForOffsetReset) {
-    return (success, message, error) -> {
-      if (error instanceof InvalidRequestException && error.getMessage().equals("Snapshot completed")) {
-        log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
-        debeziumController.stopDebeziumController();
-      } else if (!success && error != null && isErrorForOplogRotation(error, listOfErrorCodesForOffsetReset)) {
-        resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
-        log.error(String.format("Offset reset for key: %s at %s", redisKey, System.currentTimeMillis()), error);
-      } else if (error != null) {
-        log.error(String.format("error in callback, message: %s", message), error);
-      } else {
-        log.info("Success: {}, message: {}, error: {}", success, message, error);
-      }
-    };
+      DebeziumController debeziumController, String collection, List<Integer> listOfErrorCodesForOffsetReset,
+      String mode) {
+    try (AutoLogContext ignore = getAutoLogContext(collection, mode)) {
+      return (success, message, error) -> {
+        if (error instanceof InvalidRequestException
+            && error.getMessage().contains("Stopping Debezium controller for collection:")) {
+          log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
+          debeziumController.stopDebeziumController();
+        } else if (!success && error != null && isErrorForOplogRotation(error, listOfErrorCodesForOffsetReset)) {
+          resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
+          log.error(String.format("Offset reset for key: %s at %s", redisKey, System.currentTimeMillis()), error);
+        } else if (error != null) {
+          log.error(String.format("error in callback, message: %s", message), error);
+        } else {
+          log.info("Success: {}, message: {}, error: {}", success, message, error);
+        }
+      };
+    }
   }
 
   public void resetOffset(RedisConfig redisConfig, String redisKey) {
@@ -63,5 +73,12 @@ public class DebeziumUtils {
     return error.getCause() != null && error.getCause().getCause() != null
         && error.getCause().getCause() instanceof MongoCommandException
         && listOfErrorCodesForOffsetReset.contains(((MongoCommandException) error.getCause().getCause()).getCode());
+  }
+
+  AutoLogContext getAutoLogContext(String collection, String mode) {
+    Map<String, String> map = new HashMap<>();
+    map.put("mode", mode);
+    map.put("collection", collection);
+    return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 }

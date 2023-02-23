@@ -23,11 +23,12 @@ public class DebeziumServiceImpl implements DebeziumService {
       List<Integer> listOfErrorCodesForOffsetReset) {
     return DebeziumEngine.create(Json.class)
         .using(props)
-        .using(DebeziumUtils.getConnectorCallback(collection))
+        .using(
+            DebeziumUtils.getConnectorCallback(collection, props.get(DebeziumConfiguration.SNAPSHOT_MODE).toString()))
         .using(DebeziumUtils.getCompletionCallback(
             props.get(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME).toString(),
             props.get(DebeziumConfiguration.OFFSET_STORAGE_KEY).toString(), debeziumController, collection,
-            listOfErrorCodesForOffsetReset))
+            listOfErrorCodesForOffsetReset, props.get(DebeziumConfiguration.SNAPSHOT_MODE).toString()))
         .notifying(changeConsumer)
         .build();
   }
