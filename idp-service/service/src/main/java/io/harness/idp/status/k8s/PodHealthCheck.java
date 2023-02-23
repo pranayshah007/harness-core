@@ -11,7 +11,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.status.enums.Status;
 import io.harness.k8s.KubernetesHelperService;
-import io.harness.k8s.client.K8sApiClient;
+import io.harness.k8s.client.K8sClient;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
@@ -32,6 +32,7 @@ import org.apache.commons.collections.CollectionUtils;
 public class PodHealthCheck implements HealthCheck {
   @Inject private KubernetesHelperService kubernetesHelperService;
   @Inject private NamespaceService namespaceService;
+  @Inject private K8sClient k8sClient;
 
   private static final String LABEL_SELECTOR = "app=idp-ui";
   public static final String MESSAGE_SEPARATOR = ". ";
@@ -41,7 +42,7 @@ public class PodHealthCheck implements HealthCheck {
     StatusInfo statusInfo = new StatusInfo();
     try {
       String namespace = getNamespaceForAccountId(accountId);
-      ApiClient apiClient = kubernetesHelperService.getApiClient(K8sApiClient.getKubernetesConfig(namespace));
+      ApiClient apiClient = kubernetesHelperService.getApiClient(k8sClient.getKubernetesConfig(namespace));
       CoreV1Api api = new CoreV1Api(apiClient);
       // TODO: Implement logic for pod restart scenarios
       V1PodList podList =
