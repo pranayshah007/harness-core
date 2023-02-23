@@ -3111,4 +3111,5 @@
 10000508:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig
 10000509:io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig
 10000510:io.harness.delegate.task.aws.lambda.AwsLambda
+10000511:io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig
 

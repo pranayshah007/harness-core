@@ -494,6 +494,7 @@ import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
@@ -2379,5 +2380,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaArtifactConfig.class, 10000508);
     kryo.register(AwsLambdaS3ArtifactConfig.class, 10000509);
     kryo.register(AwsLambda.class, 10000510);
+    kryo.register(AwsLambdaEcrArtifactConfig.class, 10000511);
   }
 }
