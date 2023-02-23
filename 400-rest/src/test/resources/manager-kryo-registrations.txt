@@ -2329,6 +2329,11 @@
 98407:io.harness.delegate.task.helm.HelmReleaseHistoryCmdResponseNG
 98408:io.harness.delegate.task.helm.HelmCmdExecResponseNG
 100030:java.util.LinkedHashSet
+109112:io.harness.delegate.beans.connector.bamboo.BambooAuthCredentialsDTO
+109113:io.harness.delegate.beans.connector.bamboo.BambooAuthenticationDTO
+109114:io.harness.delegate.beans.connector.bamboo.BambooAuthType
+109115:io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO
+109116:io.harness.delegate.beans.connector.bamboo.BambooUserNamePasswordDTO
 150001:io.harness.delegatetasks.ValidateSecretReferenceTaskParameters
 150002:io.harness.delegatetasks.UpsertSecretTaskParameters
 150003:io.harness.delegatetasks.FetchSecretTaskParameters
@@ -2898,6 +2903,12 @@
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
 680010:io.harness.delegate.beans.terraformcloud.RollbackType
 680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
+873572:io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams
+873573:io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse
+873574:io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper
+873575:io.harness.delegate.beans.connector.bamboo.BambooValidationParams
+873576:io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest
+873577:io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData

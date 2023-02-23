@@ -456,6 +456,7 @@
             "GithubPackageRegistry",
             "AzureArtifacts",
             "AmazonMachineImage",
+            "Bamboo",
             "GoogleCloudStorage",
             "GoogleCloudSource"
           ]
@@ -539,6 +540,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureArtifactsConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bamboo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooArtifactConfig"
               }
             }
           }
@@ -2192,6 +2209,47 @@
                 }
               ],
               "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BambooArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "planKey"
+          ],
+          "properties": {
+            "artifactPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "build": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "planKey": {
+              "type": "string"
             }
           }
         }
@@ -10320,6 +10378,7 @@
             "GithubPackageRegistry",
             "AzureArtifacts",
             "AmazonMachineImage",
+            "Bamboo",
             "GoogleCloudStorage",
             "GoogleCloudSource"
           ]
@@ -10403,6 +10462,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureArtifactsConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bamboo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooArtifactConfig"
               }
             }
           }
@@ -11746,6 +11821,7 @@
             "GithubPackageRegistry",
             "AzureArtifacts",
             "AmazonMachineImage",
+            "Bamboo",
             "GoogleCloudStorage",
             "GoogleCloudSource"
           ]
@@ -11829,6 +11905,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureArtifactsConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bamboo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BambooArtifactConfig"
               }
             }
           }

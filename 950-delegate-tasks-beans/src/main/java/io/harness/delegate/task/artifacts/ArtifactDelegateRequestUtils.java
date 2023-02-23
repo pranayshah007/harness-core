@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -33,6 +34,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -255,6 +257,20 @@ public class ArtifactDelegateRequestUtils {
         .jobDetails(jobDetails)
         .parentJobName(parentJobName)
         .jobName(jobName)
+        .artifactPaths(artifactPath)
+        .buildNumber(BuildNumber)
+        .build();
+  }
+
+  public BambooArtifactDelegateRequest getBambooDelegateArtifactRequest(String connectorRef,
+      BambooConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, String planKey, List<String> artifactPath, String BuildNumber) {
+    return BambooArtifactDelegateRequest.builder()
+        .connectorRef(connectorRef)
+        .bambooConnectorDTO(jenkinsConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .planKey(planKey)
         .artifactPaths(artifactPath)
         .buildNumber(BuildNumber)
         .build();
