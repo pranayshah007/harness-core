@@ -9,13 +9,13 @@ package io.harness.pms.plan.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,17 +35,17 @@ public class RollbackModeExecutionHelper {
   public Plan transformPlanForRollbackMode(Plan plan, String previousExecutionId, List<String> nodeIDsToPreserve) {
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
     List<Node> updatedPlanNodes = nodeExecutions.stream()
-                                      .map(nodeExecution -> {
-                                        if (nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
-                                          return nodeExecution.getNode();
-                                        } else {
-                                          return IdentityPlanNode.mapPlanNodeToIdentityNode(nodeExecution.getNode(),
-                                              nodeExecution.getStepType(), nodeExecution.getUuid());
-                                        }
-                                      })
+                                      .map(nodeExecution
+                                          -> IdentityPlanNode.mapPlanNodeToIdentityNode(nodeExecution.getNode(),
+                                              nodeExecution.getStepType(), nodeExecution.getUuid()))
+                                      .filter(node -> node.getStepType().getStepCategory() != StepCategory.STAGE)
                                       .collect(Collectors.toList());
     plan.getPlanNodes().forEach(planNode -> {
       if (nodeIDsToPreserve.contains(planNode.getUuid())) {
+        updatedPlanNodes.add(planNode);
+      } else if (EmptyPredicate.isEmpty(planNode.getStageFqn())) {
+        updatedPlanNodes.add(planNode);
+      } else if (planNode.getStepType().getStepCategory() == StepCategory.STAGE) {
         updatedPlanNodes.add(planNode);
       }
     });
