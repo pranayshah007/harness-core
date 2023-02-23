@@ -467,7 +467,8 @@ public enum TaskType {
   GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Traffic Shift Task"),
   ECS_TASK_ARN_ROLLING_DEPLOY_NG(TaskGroup.ECS, "ECS Rolling Task"),
   ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
-  ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task");
+  ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
+  AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Prepare Rollback Task NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;

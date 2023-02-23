@@ -19,6 +19,7 @@ import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -41,7 +42,9 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
@@ -51,6 +54,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -66,6 +70,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -164,6 +169,11 @@ public class AwsLambdaHelper extends CDStepHelper {
         GitTaskNGResponse gitTaskResponse = (GitTaskNGResponse) responseData;
         taskChainResponse =
             handleGitFetchFilesResponse(ambiance, stepElementParameters, gitTaskResponse, awsLambdaStepPassThroughData);
+      } else if (responseData instanceof AwsLambdaPrepareRollbackResponse) {
+        AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse =
+            (AwsLambdaPrepareRollbackResponse) responseData;
+        taskChainResponse = handlePrepareRollbackDataResponse(
+            awsLambdaPrepareRollbackResponse, ambiance, stepElementParameters, awsLambdaStepPassThroughData);
       }
     } catch (Exception e) {
       return TaskChainResponse.builder()
@@ -176,6 +186,31 @@ public class AwsLambdaHelper extends CDStepHelper {
     }
 
     return taskChainResponse;
+  }
+
+  private TaskChainResponse handlePrepareRollbackDataResponse(
+      AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse, Ambiance ambiance,
+      StepElementParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
+    if (awsLambdaPrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData =
+          AwsLambdaStepExceptionPassThroughData.builder()
+              .errorMsg(awsLambdaPrepareRollbackResponse.getErrorMessage())
+              .unitProgressData(awsLambdaPrepareRollbackResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().passThroughData(awsLambdaStepExceptionPassThroughData).chainEnd(true).build();
+    }
+
+    AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
+        AwsLambdaPrepareRollbackOutcome.builder()
+            .manifestContent(awsLambdaPrepareRollbackResponse.getManifestContent())
+            .build();
+
+    executionSweepingOutputService.consume(ambiance,
+        OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME, awsLambdaPrepareRollbackOutcome,
+        StepOutcomeGroup.STEP.name());
+
+    return executeTask(ambiance, stepElementParameters, awsLambdaStepPassThroughData,
+        awsLambdaPrepareRollbackResponse.getUnitProgressData());
   }
 
   private TaskChainResponse handleGitFetchFilesResponse(Ambiance ambiance, StepElementParameters stepParameters,
@@ -199,7 +234,24 @@ public class AwsLambdaHelper extends CDStepHelper {
             .unitProgressData(awsLambdaStepPassThroughData.getUnitProgressData())
             .build();
 
-    return executeTask(ambiance, stepParameters, awsLambdaStepPassThroughDataWithManifestContent);
+    return executePrepareRollbackTask(ambiance, stepParameters, awsLambdaStepPassThroughDataWithManifestContent,
+        awsLambdaStepPassThroughData.getUnitProgressData());
+  }
+
+  private TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
+    InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
+
+    AwsLambdaPrepareRollbackRequest awsLambdaPrepareRollbackRequest =
+        AwsLambdaPrepareRollbackRequest.builder()
+            .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK)
+            .commandName(AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .awsLambdaFunctionsInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
+            .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
+            .build();
+
+    return queueTask(stepParameters, awsLambdaPrepareRollbackRequest, ambiance, awsLambdaStepPassThroughData, false);
   }
 
   private String getManifestContentFromGitResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
@@ -381,15 +433,14 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 
     AwsLambdaDeployRequest awsLambdaDeployRequest =
         AwsLambdaDeployRequest.builder()
             .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY)
             .commandName(AWS_LAMBDA_DEPLOY_COMMAND_NAME)
-            .commandUnitsProgress(
-                UnitProgressDataMapper.toCommandUnitsProgress(awsLambdaStepPassThroughData.getUnitProgressData()))
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .awsLambdaInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
             .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
