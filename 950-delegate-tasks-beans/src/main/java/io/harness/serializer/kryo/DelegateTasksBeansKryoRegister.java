@@ -378,6 +378,7 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.RollbackType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
@@ -484,6 +485,15 @@ import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -630,6 +640,9 @@ import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -954,6 +967,7 @@ import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
@@ -2133,6 +2147,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskRequest.class, 573542);
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
+    kryo.register(EcsTaskArnRollingDeployRequest.class, 573645);
+    kryo.register(EcsTaskArnCanaryDeployRequest.class, 573646);
+    kryo.register(EcsTaskArnBlueGreenCreateServiceRequest.class, 573647);
 
     // ASG
     kryo.register(AsgCanaryDeployRequest.class, 573571);
@@ -2337,7 +2354,18 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudCommandUnit.class, 680007);
     kryo.register(PlanType.class, 680008);
     kryo.register(TerraformCloudRunTaskResponse.class, 680009);
+    kryo.register(RollbackType.class, 680010);
+    kryo.register(TerraformCloudRollbackTaskResponse.class, 680011);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
+    kryo.register(AwsLambdaDeployRequest.class, 10000502);
+    kryo.register(AwsLambdaDeployResponse.class, 10000503);
+    kryo.register(AwsLambdaPrepareRollbackRequest.class, 10000504);
+    kryo.register(AwsLambdaCommandTypeNG.class, 10000505);
+    kryo.register(AwsLambdaInfraConfig.class, 10000506);
+    kryo.register(AwsLambdaFunctionsInfraConfig.class, 10000507);
+    kryo.register(AwsLambdaArtifactConfig.class, 10000508);
+    kryo.register(AwsLambdaS3ArtifactConfig.class, 10000509);
+    kryo.register(AwsLambda.class, 10000510);
   }
 }

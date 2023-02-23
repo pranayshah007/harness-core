@@ -28,7 +28,7 @@ import lombok.Value;
 @OwnedBy(CI)
 public class PlatformV1 {
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.V1.os")
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.V1.OS")
   ParameterField<OS> os;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.V1.Arch")

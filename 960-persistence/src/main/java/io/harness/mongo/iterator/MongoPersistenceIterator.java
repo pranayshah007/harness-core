@@ -97,6 +97,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
   private boolean unsorted;
+
+  private boolean isDelegateTaskMigrationEnabled;
   private PersistentLocker persistentLocker;
 
   public interface Handler<T> {
@@ -147,8 +149,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         T entity = null;
         try {
-          entity = persistenceProvider.obtainNextInstance(
-              base, throttled, clazz, fieldName, schedulingType, targetInterval, filterExpander, unsorted);
+          entity = persistenceProvider.obtainNextInstance(base, throttled, clazz, fieldName, schedulingType,
+              targetInterval, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
         } finally {
           semaphore.release();
         }
@@ -192,7 +194,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           break;
         }
 
-        T next = persistenceProvider.findInstance(clazz, fieldName, filterExpander);
+        T next = persistenceProvider.findInstance(clazz, fieldName, filterExpander, isDelegateTaskMigrationEnabled);
 
         long sleepMillis = calculateSleepDuration(next).toMillis();
         // Do not sleep with 0, it is actually infinite sleep

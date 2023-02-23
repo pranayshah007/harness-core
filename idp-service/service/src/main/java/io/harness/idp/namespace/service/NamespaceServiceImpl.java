@@ -7,10 +7,10 @@
 
 package io.harness.idp.namespace.service;
 
-import io.harness.idp.namespace.beans.dto.Namespace;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.repositories.NamespaceRepository;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import java.util.Optional;
 import javax.inject.Inject;
@@ -19,13 +19,13 @@ public class NamespaceServiceImpl implements NamespaceService {
   @Inject private NamespaceRepository namespaceRepository;
 
   @Override
-  public Optional<Namespace> getNamespaceForAccountIdentifier(String accountId) {
+  public Optional<NamespaceInfo> getNamespaceForAccountIdentifier(String accountId) {
     Optional<NamespaceEntity> namespaceName = namespaceRepository.findByAccountIdentifier(accountId);
     return namespaceName.map(NamespaceMapper::toDTO);
   }
 
   @Override
-  public Optional<Namespace> getAccountIdForNamespace(String namespace) {
+  public Optional<NamespaceInfo> getAccountIdForNamespace(String namespace) {
     Optional<NamespaceEntity> namespaceName = namespaceRepository.findById(namespace);
     return namespaceName.map(NamespaceMapper::toDTO);
   }

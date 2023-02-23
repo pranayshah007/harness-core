@@ -15,6 +15,7 @@ import io.harness.timescaledb.tables.BillingData;
 import io.harness.timescaledb.tables.CeRecommendations;
 import io.harness.timescaledb.tables.Environments;
 import io.harness.timescaledb.tables.KubernetesUtilizationData;
+import io.harness.timescaledb.tables.ModuleLicenses;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
@@ -64,6 +65,11 @@ public class Public extends SchemaImpl {
    * The table <code>public.environments</code>.
    */
   public final Environments ENVIRONMENTS = Environments.ENVIRONMENTS;
+
+  /**
+   * The table <code>public.module_licenses</code>.
+   */
+  public final ModuleLicenses MODULE_LICENSES = ModuleLicenses.MODULE_LICENSES;
 
   /**
    * The table <code>public.kubernetes_utilization_data</code>.
@@ -144,7 +150,8 @@ public class Public extends SchemaImpl {
   public final List<Table<?>> getTables() {
     return Arrays.<Table<?>>asList(Anomalies.ANOMALIES, BillingData.BILLING_DATA, CeRecommendations.CE_RECOMMENDATIONS,
         Environments.ENVIRONMENTS, KubernetesUtilizationData.KUBERNETES_UTILIZATION_DATA,
-        NgInstanceStats.NG_INSTANCE_STATS, NodeInfo.NODE_INFO, NodePoolAggregated.NODE_POOL_AGGREGATED,
+        ModuleLicenses.MODULE_LICENSES, NgInstanceStats.NG_INSTANCE_STATS, NgInstanceStats.NG_INSTANCE_STATS,
+        NodeInfo.NODE_INFO, NodePoolAggregated.NODE_POOL_AGGREGATED,
         PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,
         PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI, Pipelines.PIPELINES, PodInfo.POD_INFO,
         ServiceInfraInfo.SERVICE_INFRA_INFO, Services.SERVICES, UtilizationData.UTILIZATION_DATA,

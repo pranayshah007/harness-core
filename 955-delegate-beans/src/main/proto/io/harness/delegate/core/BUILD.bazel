@@ -1,0 +1,37 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
+
+proto_library(
+    name = "955_delegate_core_task_proto",
+    srcs = [
+        "acquire_task.proto",
+        "plugin.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+# FixMe: Don't use harness_grpc_library, use java_proto_library instead
+harness_grpc_library(
+    name = "955_delegate_core_task_java_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "955_delegate_core_task_proto",
+    ],
+)
+
+#java_proto_library(
+#    name = "955_delegate_core_task_java_proto",
+#    visibility = ["//visibility:public"],
+#    deps = [
+#        "955_delegate_core_task_proto",
+#    ],
+#)

@@ -52,6 +52,7 @@ import io.harness.migrations.all.AddDeploymentFreezeReferenceToUserGroups;
 import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
+import io.harness.migrations.all.AddIsCrossGenerationAccessEnabledToAccountMigration;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
 import io.harness.migrations.all.AddMisfireInstructionToQuartz;
 import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
@@ -413,6 +414,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(239, AddValidUntilToDelegateGroupMigration.class))
         .add(Pair.of(240, ArtifactSourceCollectionEnabledMigration.class))
         .add(Pair.of(241, CleanupInfraMappingsForDeletedServices.class))
+        .add(Pair.of(242, AddIsCrossGenerationAccessEnabledToAccountMigration.class))
         .build();
   }
 }

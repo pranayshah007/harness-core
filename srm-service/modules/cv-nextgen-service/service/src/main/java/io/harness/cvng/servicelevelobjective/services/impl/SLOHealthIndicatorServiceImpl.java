@@ -17,7 +17,6 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
@@ -64,7 +63,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   }
 
   @Override
-  public SLOHealthIndicator getBySLOEntity(ServiceLevelObjective serviceLevelObjective) {
+  public SLOHealthIndicator getBySLOEntity(AbstractServiceLevelObjective serviceLevelObjective) {
     return hPersistence.createQuery(SLOHealthIndicator.class)
         .filter(SLOHealthIndicatorKeys.accountId, serviceLevelObjective.getAccountId())
         .filter(SLOHealthIndicatorKeys.orgIdentifier, serviceLevelObjective.getOrgIdentifier())

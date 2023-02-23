@@ -157,15 +157,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "Attestation": {
-      "type": "object",
-      "properties": {
-        "privateKey": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "BackgroundStepInfo": {
       "allOf": [
         {
@@ -855,45 +846,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ImageSbomSource": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/SbomSourceSpec"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "connector": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "image": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
                 }
               ]
             }
@@ -1962,43 +1914,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "SbomSource": {
-      "type": "object",
-      "required": [
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "image"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "image"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ImageSbomSource"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "SbomSourceSpec": {
-      "type": "object",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "SecurityStepInfo": {
       "allOf": [
         {
@@ -2072,56 +1987,6 @@
               "oneOf": [
                 {
                   "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SscaOrchestrationStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CIStepInfo"
-        },
-        {
-          "type": "object",
-          "required": [
-            "format",
-            "source",
-            "tool"
-          ],
-          "properties": {
-            "attestation": {
-              "$ref": "#/definitions/Attestation"
-            },
-            "format": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/SbomSource"
-            },
-            "tool": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
                 },
                 {
                   "type": "string"

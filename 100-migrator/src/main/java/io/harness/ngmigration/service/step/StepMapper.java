@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -50,6 +51,10 @@ public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
   @Inject SecretRefUtils secretRefUtils;
+
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return null;
+  }
 
   public List<CgEntityId> getReferencedEntities(
       String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {

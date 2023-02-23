@@ -16,7 +16,6 @@ import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
 import io.harness.beans.OrchestrationWorkflowType;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -76,12 +75,5 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
       return buildMultiStagePipelineTemplate(context);
     }
     return buildCanaryStageTemplate(context);
-  }
-
-  @Override
-  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
-    // We can infer the type based on the service, infra & sometimes based on the steps used.
-    // TODO: Deepak Puthraya
-    return ServiceDefinitionType.KUBERNETES;
   }
 }

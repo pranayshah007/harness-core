@@ -4658,8 +4658,8 @@
         {
           "type": "object",
           "required": [
-            "jiraUrl",
-            "passwordRef"
+            "auth",
+            "jiraUrl"
           ],
           "properties": {
             "auth": {
@@ -4685,20 +4685,6 @@
               "type": "string"
             }
           }
-        },
-        {
-          "oneOf": [
-            {
-              "required": [
-                "usernameRef"
-              ]
-            },
-            {
-              "required": [
-                "username"
-              ]
-            }
-          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

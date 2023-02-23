@@ -42,12 +42,12 @@ public class EnvironmentSecretEntity implements PersistentEntity {
                  .name("unique_account_name_secretId")
                  .unique(true)
                  .field(EnvironmentSecretsEntityKeys.accountIdentifier)
-                 .field(EnvironmentSecretsEntityKeys.name)
+                 .field(EnvironmentSecretsEntityKeys.envName)
                  .build())
         .build();
   }
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  private String name;
+  private String envName;
   private String accountIdentifier;
   private String secretIdentifier;
   @CreatedDate Long createdAt;

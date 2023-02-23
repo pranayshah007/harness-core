@@ -269,7 +269,6 @@ public class BitbucketServiceImpl implements BitbucketService {
     }
   }
 
-  @VisibleForTesting
   public BitbucketRestClient getBitbucketClient(
       BitbucketConfig bitbucketConfig, List<EncryptedDataDetail> encryptionDetails) {
     try {

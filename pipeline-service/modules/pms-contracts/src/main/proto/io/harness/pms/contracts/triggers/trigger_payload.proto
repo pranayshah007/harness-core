@@ -9,7 +9,7 @@ package io.harness.pms.contracts.triggers;
 
 option java_multiple_files = true;
 
-import "product/ci/scm/proto/scm.proto";
+import "product/ci/scm/proto/scm_service.proto";
 
 message TriggerPayload {
   ParsedPayload parsedPayload = 2;

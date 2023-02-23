@@ -7,17 +7,17 @@
 
 package io.harness.cvng.notification.jobs;
 
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 
 import com.google.inject.Inject;
 
-public class SLONotificationHandler implements Handler<ServiceLevelObjective> {
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+public class SLONotificationHandler implements Handler<AbstractServiceLevelObjective> {
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
   @Override
-  public void handle(ServiceLevelObjective serviceLevelObjective) {
-    serviceLevelObjectiveService.handleNotification(serviceLevelObjective);
+  public void handle(AbstractServiceLevelObjective serviceLevelObjective) {
+    serviceLevelObjectiveV2Service.handleNotification(serviceLevelObjective);
   }
 }

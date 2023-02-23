@@ -30,6 +30,10 @@ public final class EventsFrameworkMetadataConstants {
   public static final String ORGANIZATION_ENTITY = "organization";
   public static final String CONNECTOR_ENTITY = "connector";
   public static final String SERVICEACCOUNT_ENTITY = "serviceaccount";
+  public static final String TERRAFORM_CONFIG_ENTITY = "terraformconfig";
+  public static final String TERRAGRUNT_CONFIG_ENTITY = "terragruntconfig";
+  public static final String CLOUDFORMATION_CONFIG_ENTITY = "cloudformationconfig";
+  public static final String AZURE_ARM_CONFIG_ENTITY = "azurearmconfig";
   public static final String SECRET_ENTITY = "secret";
   public static final String VARIABLE_ENTITY = "variable";
   public static final String USER_ENTITY = "user";

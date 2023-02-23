@@ -47,6 +47,7 @@ import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -559,6 +560,40 @@ public class AccountServiceTest extends WingsBaseTest {
     account.setDefaultExperience(DefaultExperience.NG);
     accountService.update(account);
     assertThat(wingsPersistence.get(Account.class, account.getUuid())).isEqualTo(account);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_forIsCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    account.isCrossGenerationAccessEnabled(Boolean.TRUE);
+    accountService.update(account);
+
+    assertThat(wingsPersistence.get(Account.class, account.getUuid())).isEqualTo(account);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateCrossGenerationAccessEnabled(account.getUuid(), true);
+    Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
+
+    assertTrue(updatedAccount.isCrossGenerationAccessEnabled());
   }
 
   @Test
