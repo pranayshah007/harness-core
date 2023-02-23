@@ -116,7 +116,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
-    initMetrics(injector);
+    //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
   }
