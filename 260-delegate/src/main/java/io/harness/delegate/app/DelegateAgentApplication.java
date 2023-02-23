@@ -10,7 +10,6 @@ package io.harness.delegate.app;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.app.modules.DelegateAgentModule;
@@ -19,6 +18,7 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.metrics.DelegateAgentMetricResource;
 import io.harness.delegate.metrics.DelegateAgentMetrics;
 import io.harness.delegate.service.DelegateAgentService;
+import io.harness.delegate.utils.ProxyUtils;
 import io.harness.event.client.EventPublisher;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
@@ -69,16 +69,7 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
   }
 
   private static void setupProxyConfig() {
-    final String proxyUser = System.getenv("PROXY_USER");
-    if (isNotBlank(proxyUser)) {
-      System.setProperty("http.proxyUser", proxyUser);
-      System.setProperty("https.proxyUser", proxyUser);
-    }
-    final String proxyPassword = System.getenv("PROXY_PASSWORD");
-    if (isNotBlank(proxyPassword)) {
-      System.setProperty("http.proxyPassword", proxyPassword);
-      System.setProperty("https.proxyPassword", proxyPassword);
-    }
+    ProxyUtils.initProxyConfig();
   }
 
   @Override

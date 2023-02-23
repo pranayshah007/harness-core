@@ -10,6 +10,8 @@ package software.wings.helpers.ext.nexus;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.network.Http.getProxyHostName;
+import static io.harness.network.Http.getProxyPort;
 import static io.harness.nexus.NexusHelper.isSuccessful;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
@@ -53,8 +55,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -767,19 +770,24 @@ public class NexusThreeServiceImpl {
   public Pair<String, InputStream> downloadArtifactByUrl(
       NexusRequest nexusConfig, String artifactName, String artifactUrl) {
     try {
-      if (nexusConfig.isHasCredentials()) {
-        Authenticator.setDefault(new NexusThreeServiceImpl.MyAuthenticator(
-            nexusConfig.getUsername(), new String(nexusConfig.getPassword())));
-      }
       URL url = new URL(artifactUrl);
-      URLConnection conn = url.openConnection();
-      if (conn instanceof HttpsURLConnection) {
-        HttpsURLConnection conn1 = (HttpsURLConnection) url.openConnection();
-        conn1.setHostnameVerifier((hostname, session) -> true);
-        conn1.setSSLSocketFactory(Http.getSslContext().getSocketFactory());
-        return ImmutablePair.of(artifactName, conn1.getInputStream());
-      } else {
+      String proxyHost = getProxyHostName();
+
+      if (isNotEmpty(proxyHost)) {
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.valueOf(getProxyPort())));
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection(proxy);
+        conn.connect();
         return ImmutablePair.of(artifactName, conn.getInputStream());
+      } else {
+        URLConnection conn = url.openConnection();
+        if (conn instanceof HttpsURLConnection) {
+          HttpsURLConnection conn1 = (HttpsURLConnection) url.openConnection();
+          conn1.setHostnameVerifier((hostname, session) -> true);
+          conn1.setSSLSocketFactory(Http.getSslContext().getSocketFactory());
+          return ImmutablePair.of(artifactName, conn1.getInputStream());
+        } else {
+          return ImmutablePair.of(artifactName, conn.getInputStream());
+        }
       }
     } catch (IOException ex) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(ex), ex);
@@ -801,19 +809,5 @@ public class NexusThreeServiceImpl {
     }
     log.info(format("Computed file size: [%d] bytes for artifact Path: [%s]", size, artifactUrl));
     return size;
-  }
-
-  static class MyAuthenticator extends Authenticator {
-    private String username, password;
-
-    MyAuthenticator(String user, String pass) {
-      username = user;
-      password = pass;
-    }
-
-    @Override
-    protected PasswordAuthentication getPasswordAuthentication() {
-      return new PasswordAuthentication(username, password.toCharArray());
-    }
   }
 }
