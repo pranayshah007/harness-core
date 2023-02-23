@@ -19,11 +19,10 @@ import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTaskHelper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -46,12 +45,11 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class AwsLambdaPrepareRollbackCommandTaskHandler extends AwsLambdaCommandTaskHandler {
+public class AwsLambdaPrepareRollbackTaskHandler {
   @Inject private AwsLambdaClient awsLambdaClient;
-  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+  @Inject private AwsLambdaTaskHelper awsLambdaTaskHelper;
 
-  @Override
-  protected AwsLambdaCommandResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
+  public AwsLambdaPrepareRollbackResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
     if (!(awsLambdaCommandRequest instanceof AwsLambdaPrepareRollbackRequest)) {
       throw new InvalidArgumentsException(Pair.of("awsLambdaCommandRequest",
@@ -67,9 +65,9 @@ public class AwsLambdaPrepareRollbackCommandTaskHandler extends AwsLambdaCommand
 
     executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
 
-    CreateFunctionRequest.Builder createFunctionRequestBuilder = awsLambdaCommandTaskHelper.parseYamlAsObject(
-        awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent(),
-        CreateFunctionRequest.serializableBuilderClass());
+    CreateFunctionRequest.Builder createFunctionRequestBuilder =
+        awsLambdaTaskHelper.parseYamlAsObject(awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent(),
+            CreateFunctionRequest.serializableBuilderClass());
 
     CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
 
@@ -85,7 +83,7 @@ public class AwsLambdaPrepareRollbackCommandTaskHandler extends AwsLambdaCommand
           format("Fetching Function Details for function: %s", createFunctionRequest.functionName()), LogLevel.INFO);
 
       Optional<GetFunctionResponse> existingFunctionOptional = awsLambdaClient.getFunction(
-          awsLambdaCommandTaskHelper.getAwsInternalConfig(
+          awsLambdaTaskHelper.getAwsInternalConfig(
               awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
           getFunctionRequest);
 

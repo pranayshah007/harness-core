@@ -117,16 +117,15 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
-      AwsLambdaCommandRequest awsLambdaCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
-      boolean isChainEnd) {
+      AwsLambdaCommandRequest awsLambdaCommandRequest, TaskType taskType, Ambiance ambiance,
+      PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {awsLambdaCommandRequest})
-                            .taskType(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG.name())
+                            .taskType(taskType.name())
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .async(true)
                             .build();
-    String taskName =
-        TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
+    String taskName = taskType.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
     AwsLambdaSpecParameters awsLambdaSpecParameters = (AwsLambdaSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
         referenceFalseKryoSerializer, awsLambdaSpecParameters.getCommandUnits(), taskName,
@@ -202,7 +201,7 @@ public class AwsLambdaHelper extends CDStepHelper {
 
     AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
         AwsLambdaPrepareRollbackOutcome.builder()
-            .manifestContent(awsLambdaPrepareRollbackResponse.getManifestContent())
+            .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackResponse.getManifestContent())
             .build();
 
     executionSweepingOutputService.consume(ambiance,
@@ -231,7 +230,7 @@ public class AwsLambdaHelper extends CDStepHelper {
             .manifestContent(manifestContent)
             .manifestsOutcome(awsLambdaStepPassThroughData.getManifestsOutcome())
             .infrastructureOutcome(awsLambdaStepPassThroughData.getInfrastructureOutcome())
-            .unitProgressData(awsLambdaStepPassThroughData.getUnitProgressData())
+            .unitProgressData(gitTaskResponse.getUnitProgressData())
             .build();
 
     return executePrepareRollbackTask(ambiance, stepParameters, awsLambdaStepPassThroughDataWithManifestContent,
@@ -251,7 +250,8 @@ public class AwsLambdaHelper extends CDStepHelper {
             .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
             .build();
 
-    return queueTask(stepParameters, awsLambdaPrepareRollbackRequest, ambiance, awsLambdaStepPassThroughData, false);
+    return queueTask(stepParameters, awsLambdaPrepareRollbackRequest,
+        TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG, ambiance, awsLambdaStepPassThroughData, false);
   }
 
   private String getManifestContentFromGitResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
@@ -406,6 +406,7 @@ public class AwsLambdaHelper extends CDStepHelper {
                                             .gitRequestFileConfigs(Collections.singletonList(gitRequestFileConfig))
                                             .shouldOpenLogStream(shouldOpenLogStream)
                                             .commandUnitName(AwsLambdaCommandUnitConstants.fetchManifests.toString())
+                                            .closeLogStream(true)
                                             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -448,7 +449,8 @@ public class AwsLambdaHelper extends CDStepHelper {
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
             .build();
 
-    return queueTask(stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepPassThroughData, true);
+    return queueTask(stepParameters, awsLambdaDeployRequest, TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG, ambiance,
+        awsLambdaStepPassThroughData, true);
   }
 
   private ArtifactOutcome getArtifactOutcome(Ambiance ambiance) {

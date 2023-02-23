@@ -99,9 +99,6 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
-import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
-import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
-import io.harness.delegate.aws.lambda.AwsLambdaPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -239,7 +236,6 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
 import io.harness.delegate.task.aws.lambda.AwsLambdaPrepareRollbackTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
@@ -2095,14 +2091,6 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
     googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
-
-    // AWS Lambda NG
-    MapBinder<String, AwsLambdaCommandTaskHandler> awsCommandTaskHandler =
-        MapBinder.newMapBinder(binder(), String.class, AwsLambdaCommandTaskHandler.class);
-    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
-        .to(AwsLambdaDeployTaskCommandHandler.class);
-    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK.name())
-        .to(AwsLambdaPrepareRollbackCommandTaskHandler.class);
 
     // AWS ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
