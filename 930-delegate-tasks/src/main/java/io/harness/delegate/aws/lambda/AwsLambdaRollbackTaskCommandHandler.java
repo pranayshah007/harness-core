@@ -16,7 +16,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTaskHelper;
+import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
@@ -42,11 +42,10 @@ import static software.wings.beans.LogHelper.color;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class AwsLambdaRollbackTaskCommandHandler extends AwsLambdaCommandTaskHandler {
-  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+public class AwsLambdaRollbackTaskCommandHandler {
+  @Inject private AwsLambdaTaskHelper awsLambdaTaskHelper;
 
-  @Override
-  protected AwsLambdaCommandResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
+  public AwsLambdaRollbackResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
     if (!(awsLambdaCommandRequest instanceof AwsLambdaCommandRequest)) {
       throw new InvalidArgumentsException(Pair.of("awsLambdaCommandRequest",
@@ -63,7 +62,7 @@ public class AwsLambdaRollbackTaskCommandHandler extends AwsLambdaCommandTaskHan
       executionLogCallback.saveExecutionLog(format("Starting Rollback..%n%n"), LogLevel.INFO);
 
       if(awsLambdaRollbackRequest.isFirstDeployment()) {
-        awsLambdaCommandTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
+        awsLambdaTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
                 awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
@@ -72,7 +71,7 @@ public class AwsLambdaRollbackTaskCommandHandler extends AwsLambdaCommandTaskHan
                 .build();
 
       } else {
-        CreateFunctionResponse createFunctionResponse = awsLambdaCommandTaskHelper.rollbackFunction(
+        CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.rollbackFunction(
                 awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
                 awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), awsLambdaRollbackRequest.getQualifier(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

@@ -58,6 +58,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.beans.TaskType;
 import software.wings.sm.states.AwsLambdaRollback;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -141,7 +142,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
                     .build();
 
     return awsLambdaHelper.queueTask(
-            stepParameters, awsLambdaRollbackRequest, ambiance, AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true).getTaskRequest();
+            stepParameters, awsLambdaRollbackRequest, TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG, ambiance, AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true).getTaskRequest();
   }
 
   @Override
