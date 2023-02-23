@@ -33,6 +33,7 @@ import static software.wings.service.impl.security.AbstractSecretServiceImpl.enc
 
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Projection.projection;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -790,6 +791,14 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Override
   public String saveSecretText(String accountId, SecretText secretText, boolean validateScopes) {
     return createHarnessSecret(accountId, secretText, validateScopes);
+  }
+
+  @Override
+  public EncryptedData encryptSecretUsingGlobalSM(String accountId, SecretText secretText, boolean validateScopes) {
+    SecretManagerConfig secretManagerConfig = secretManagerConfigService.getGlobalSecretManager(accountId);
+    String kmsId = isNull(secretManagerConfig) ? null : secretManagerConfig.getUuid();
+    secretText.setKmsId(kmsId);
+    return secretService.createSecret(accountId, secretText, validateScopes);
   }
 
   @Override
