@@ -38,6 +38,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.BooleanUtils;
 
 @OwnedBy(PL)
 @Getter
@@ -66,7 +67,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
   private AzureEnvironmentType azureEnvironmentType = AZURE;
 
-  @Schema(description = "Boolean value to indicate if managed identity is used") private boolean useManagedIdentity;
+  @Schema(description = "Boolean value to indicate if managed identity is used") private Boolean useManagedIdentity;
   @JsonProperty("managedIdentityType") private AzureManagedIdentityType azureManagedIdentityType;
   @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
 
@@ -83,7 +84,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
 
   @Override
   public void validate() {
-    if (useManagedIdentity) {
+    if (BooleanUtils.isTrue(useManagedIdentity)) {
       Preconditions.checkNotNull(this.azureManagedIdentityType, "managedIdentityType cannot be empty");
       if (AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY.equals(this.azureManagedIdentityType)) {
         Preconditions.checkNotNull(this.managedClientId, "managedClientId cannot be empty");

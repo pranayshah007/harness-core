@@ -45,7 +45,7 @@ public class AzureKeyVaultConnector extends Connector {
   String secretKeyRef;
   String subscription;
   boolean isDefault;
-  boolean useManagedIdentity;
+  Boolean useManagedIdentity;
   AzureManagedIdentityType azureManagedIdentityType;
   String managedClientId;
 
