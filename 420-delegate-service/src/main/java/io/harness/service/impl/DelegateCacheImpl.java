@@ -314,6 +314,7 @@ public class DelegateCacheImpl implements DelegateCache {
     if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
       Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
       delegateRedisCache.put(delegateId, delegate);
+      log.info("[DC]: Update delegate in cache");
     }
     return delegateRedisCache.get(delegateId);
   }
@@ -325,6 +326,7 @@ public class DelegateCacheImpl implements DelegateCache {
                                         .filter(DelegateGroupKeys.uuid, delegateGroupId)
                                         .get();
       delegateGroupRedisCache.put(delegateGroupId, delegateGroup);
+      log.info("[DC]: Update delegate group in cache");
     }
     return delegateGroupRedisCache.get(delegateGroupId);
   }
@@ -337,6 +339,7 @@ public class DelegateCacheImpl implements DelegateCache {
                                         .filter(DelegateKeys.delegateGroupId, delegateGroupId)
                                         .asList();
       delegatesFromGroupRedisCache.put(delegateGroupId, delegateList);
+      log.info("[DC]: Update delegate from group in cache");
     }
     return delegatesFromGroupRedisCache.get(delegateGroupId);
   }
