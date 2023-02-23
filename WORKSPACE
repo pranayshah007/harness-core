@@ -5133,7 +5133,7 @@ plain_artifacts = [
     "org.cloudfoundry:cloudfoundry-client:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-operations:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-util:5.9.0.RELEASE",
-    "org.codehaus.groovy:groovy:3.0.7",
+    "org.codehaus.groovy:groovy:3.0.15",
     "org.codehaus.jackson:jackson-core-asl:1.9.11",
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",
