@@ -325,7 +325,6 @@ public class ExecutionHelper {
 
   public String getPipelineYamlWithUnResolvedTemplates(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfigForSchemaValidations;
-    ;
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfigForSchemaValidations = new YamlConfig(pipelineEntity.getYaml());
     } else {
