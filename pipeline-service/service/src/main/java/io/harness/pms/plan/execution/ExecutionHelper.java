@@ -370,7 +370,7 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+          pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
               BOOLEAN_FALSE_VALUE);
