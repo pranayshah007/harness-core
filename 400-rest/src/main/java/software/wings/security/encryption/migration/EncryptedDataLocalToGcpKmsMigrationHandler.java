@@ -24,7 +24,7 @@ import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.MigrateSecretTask;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EncryptedDataLocalToGcpKmsMigrationHandler
-    extends IteratorPumpModeHandler implements Handler<EncryptedData> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<EncryptedData> {
   public static final int MAX_RETRY_COUNT = 3;
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(40);
   private final List<SettingVariableTypes> secretTypes;

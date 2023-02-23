@@ -9,11 +9,12 @@ package io.harness.iterator;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class IteratorPumpModeHandler extends IteratorBaseHandler {
+public abstract class IteratorPumpAndRedisModeHandler extends IteratorBaseHandler {
   /**
    * This method returns true if executor service is terminated and vice versa.
    * If the child class extending this Base class doesn't initialize iterator,
@@ -42,7 +43,23 @@ public abstract class IteratorPumpModeHandler extends IteratorBaseHandler {
       return;
     }
 
-    log.info("Shutting down the executor for iterator {}", iteratorName);
+    stopMainExecutor();
+    if (PersistenceIterator.ProcessMode.REDIS_BATCH.equals(iterator.getMode())) {
+      stopWorkerExecutor();
+    }
+  }
+
+  @Override protected abstract void registerIterator(IteratorExecutionHandler iteratorExecutionHandler);
+
+  @Override
+  protected abstract void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval);
+
+  /**
+   * Helper method to stop the main executor service of the iterator
+   */
+  private void stopMainExecutor() {
+    log.info("Shutting down the main executor for iterator {}", iteratorName);
     ExecutorService executorService = iterator.getExecutorService();
     executorService.shutdown();
     try {
@@ -55,9 +72,20 @@ public abstract class IteratorPumpModeHandler extends IteratorBaseHandler {
     }
   }
 
-  @Override protected abstract void registerIterator(IteratorExecutionHandler iteratorExecutionHandler);
-
-  @Override
-  protected abstract void createAndStartIterator(
-      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval);
+  /**
+   * Helper method to stop the worker thread pool of the iterator
+   */
+  private void stopWorkerExecutor() {
+    log.info("Shutting down the worker executor for iterator {}", iteratorName);
+    ScheduledThreadPoolExecutor workerExecutor = iterator.getWorkerThreadPoolExecutor();
+    workerExecutor.shutdown();
+    try {
+      // Wait for 2s to allow all the current executing tasks to terminate.
+      if (!workerExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+        workerExecutor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      workerExecutor.shutdownNow();
+    }
+  }
 }

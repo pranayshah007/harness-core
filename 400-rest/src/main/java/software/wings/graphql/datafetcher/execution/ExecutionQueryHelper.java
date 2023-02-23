@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -346,6 +347,10 @@ public class ExecutionQueryHelper {
   }
 
   public BasicDBObject getIndexHint(List<QLExecutionFilter> filters) {
+    Optional<QLExecutionFilter> executionIdFilter = filters.stream().filter(f -> f.getExecution() != null).findFirst();
+    if (executionIdFilter.isPresent()) {
+      return null;
+    }
     final List<MongoIndex> wfIndexes = WorkflowExecution.mongoIndexes();
     for (QLBaseExecutionFilter filter : filters) {
       if (filter.getEnvironment() != null) {

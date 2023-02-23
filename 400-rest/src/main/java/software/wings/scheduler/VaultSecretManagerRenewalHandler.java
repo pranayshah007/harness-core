@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -44,7 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Slf4j
-public class VaultSecretManagerRenewalHandler extends IteratorPumpModeHandler implements Handler<SecretManagerConfig> {
+public class VaultSecretManagerRenewalHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<SecretManagerConfig> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(62);
 
   @Inject private AccountService accountService;
