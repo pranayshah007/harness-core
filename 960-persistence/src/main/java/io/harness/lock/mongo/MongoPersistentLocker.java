@@ -86,7 +86,7 @@ public class MongoPersistentLocker implements PersistentLocker, HealthMonitor, M
 
     try {
       if (lock.tryLock()) {
-        log.debug("Lock acquired on {} for timeout {}", name, timeout);
+        log.info("Lock acquired on {} for timeout {}", name, timeout);
         long start = AcquiredDistributedLock.monotonicTimestamp();
         return builder.lock(lock).startTimestamp(start).build();
       }

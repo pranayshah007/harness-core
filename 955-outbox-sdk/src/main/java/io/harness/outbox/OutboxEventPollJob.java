@@ -72,12 +72,15 @@ public class OutboxEventPollJob implements Runnable {
 
   private void pollAndHandleOutboxEvents() {
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(outboxLockId, Duration.ofMinutes(2))) {
+      log.info("[OutboxEventPollJobDebug] Starting to poll");
       if (lock == null) {
         log.warn("Could not acquire lock for outbox poll job");
         return;
       }
+      log.info("[OutboxEventPollJobDebug] lock acquired");
       List<OutboxEvent> outboxEvents;
       try {
+        log.info("[OutboxEventPollJobDebug] Fetching outbox event from db");
         outboxEvents = outboxService.list(outboxEventFilter);
         log.info("[OutboxEventPollJobDebug] Fetched {} events", outboxEvents.size());
       } catch (InstantiationError error) {
@@ -106,6 +109,8 @@ public class OutboxEventPollJob implements Runnable {
               exception);
         }
       }
+    } catch (Exception exception) {
+      log.error("[OutboxEventPollJobDebug] Exception occurred", exception);
     }
   }
 

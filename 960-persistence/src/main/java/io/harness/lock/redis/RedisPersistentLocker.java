@@ -64,7 +64,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
       RLock lock = client.getLock(name);
       boolean locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
       if (locked) {
-        log.debug("Lock acquired on {} for timeout {}", name, timeout);
+        log.info("Lock acquired on {} for timeout {}", name, timeout);
         return RedisAcquiredLock.builder().lock(lock).build();
       }
     } catch (Exception ex) {
