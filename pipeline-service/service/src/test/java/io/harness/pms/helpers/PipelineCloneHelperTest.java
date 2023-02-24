@@ -64,6 +64,7 @@ public class PipelineCloneHelperTest {
   private final String DEST_PIPELINE_DESCRIPTION = "test description_d";
   private String SOURCE_PIPELINE_YAML;
   private String SOURCE_PIPELINE_YAML_V1;
+  private String SOURCE_PIPELINE_YAML_WITHOUT_NAME_V1;
 
   @Before
   public void setUp() throws IOException {
@@ -92,6 +93,9 @@ public class PipelineCloneHelperTest {
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
     SOURCE_PIPELINE_YAML_V1 =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline-v1.yaml")), StandardCharsets.UTF_8);
+
+    SOURCE_PIPELINE_YAML_WITHOUT_NAME_V1 = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("pipeline-without-name-v1.yaml")), StandardCharsets.UTF_8);
   }
 
   @Test
@@ -216,7 +220,19 @@ public class PipelineCloneHelperTest {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  public void testUpdateSourceV1YamlWithoutName() {
+  public void testUpdateSourceV1YamlWithoutName() throws IOException {
+    String updatedYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(
+        clonePipelineDTO, SOURCE_PIPELINE_YAML_WITHOUT_NAME_V1);
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = objectMapper.readTree(updatedYaml);
+    assertThat(updatedYaml).isNotNull();
+    assertThat(jsonNode.get("name")).isNull();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSourceV1YamlWithoutCloneName() {
     clonePipelineDTO.getDestinationConfig().setPipelineName(null);
     assertThatThrownBy(
         () -> pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, SOURCE_PIPELINE_YAML_V1))

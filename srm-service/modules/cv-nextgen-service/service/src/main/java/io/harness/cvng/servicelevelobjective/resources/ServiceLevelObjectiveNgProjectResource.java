@@ -94,7 +94,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   public static final String VIEW_PERMISSION = "chi_slo_view";
   public static final String DELETE_PERMISSION = "chi_slo_delete";
 
-  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject SLODashboardService sloDashboardService;
 
   @POST
@@ -113,7 +113,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   getOnboardingGraphNg(@Valid @BeanParam ProjectPathParams projectPathParams,
       @Parameter(description = "Composite SLO spec which consists of list of SLO details") @ApiParam(required = true)
       @NotNull @Valid @Body CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
-    return new RestResponse<>(serviceLevelObjectiveService.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
   }
 
   @POST
@@ -131,7 +131,7 @@ public class ServiceLevelObjectiveNgProjectResource {
     validations(
         projectPathParams.getOrgIdentifier(), projectPathParams.getProjectIdentifier(), serviceLevelObjectiveDTO);
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
-    return new RestResponse<>(serviceLevelObjectiveService.create(projectParams, serviceLevelObjectiveDTO));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.create(projectParams, serviceLevelObjectiveDTO));
   }
 
   @GET
@@ -145,7 +145,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   public RestResponse<ServiceLevelObjectiveV2Response>
   getServiceLevelObjectiveNg(@Valid @BeanParam ResourcePathParams resourcePathParams) {
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
-    return new RestResponse<>(serviceLevelObjectiveService.get(projectParams, resourcePathParams.getIdentifier()));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.get(projectParams, resourcePathParams.getIdentifier()));
   }
 
   @GET
@@ -163,7 +163,7 @@ public class ServiceLevelObjectiveNgProjectResource {
       @NotNull Integer pageSize, @BeanParam ServiceLevelObjectiveFilter serviceLevelObjectiveFilter) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(
-        serviceLevelObjectiveService.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
+        serviceLevelObjectiveV2Service.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
   }
 
   @PUT
@@ -182,7 +182,7 @@ public class ServiceLevelObjectiveNgProjectResource {
     validations(
         resourcePathParams.getOrgIdentifier(), resourcePathParams.getProjectIdentifier(), serviceLevelObjectiveDTO);
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
-    return new RestResponse<>(serviceLevelObjectiveService.update(
+    return new RestResponse<>(serviceLevelObjectiveV2Service.update(
         projectParams, resourcePathParams.getIdentifier(), serviceLevelObjectiveDTO));
   }
 
@@ -198,7 +198,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   public RestResponse<Boolean>
   deleteSLODataNg(@Valid @BeanParam ResourcePathParams resourcePathParams) {
     ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
-    return new RestResponse<>(serviceLevelObjectiveService.delete(projectParams, resourcePathParams.getIdentifier()));
+    return new RestResponse<>(serviceLevelObjectiveV2Service.delete(projectParams, resourcePathParams.getIdentifier()));
   }
 
   @POST

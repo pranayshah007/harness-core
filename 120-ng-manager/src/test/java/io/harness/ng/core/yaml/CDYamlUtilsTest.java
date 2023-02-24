@@ -15,6 +15,8 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -25,7 +27,10 @@ public class CDYamlUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testWriteString() throws JsonProcessingException {
     assertThat(CDYamlUtils.writeString(Map.of("k", "Some Name")).replaceFirst("---\n", "")).isEqualTo("k: Some Name\n");
-    assertThat(CDYamlUtils.writeString(Map.of("k", "42")).replaceFirst("---\n", "")).isEqualTo("k: 42\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", "42")).replaceFirst("---\n", "")).isEqualTo("k: \"42\"\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", new IntNode(42))).replaceFirst("---\n", "")).isEqualTo("k: 42\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", new TextNode("42"))).replaceFirst("---\n", ""))
+        .isEqualTo("k: \"42\"\n");
     assertThat(CDYamlUtils.writeString(Map.of("k", "true")).replaceFirst("---\n", "")).isEqualTo("k: \"true\"\n");
     assertThat(CDYamlUtils.writeString(Map.of("k", "Some \n Name")).replaceFirst("---\n", ""))
         .isEqualTo("k: \"Some \\n Name\"\n");
@@ -38,7 +43,11 @@ public class CDYamlUtilsTest extends CategoryTest {
     // should not quote a simple string
     assertThat(CDYamlUtils.writeYamlString(Map.of("k", "foobar"))).isEqualTo("k: foobar\n");
     assertThat(CDYamlUtils.writeYamlString(Map.of("k", "Some Name"))).isEqualTo("k: Some Name\n");
-    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "42"))).isEqualTo("k: 42\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "42"))).isEqualTo("k: \"42\"\n");
+    // should not quote an int node
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", new IntNode(42)))).isEqualTo("k: 42\n");
+    // should not remove quotes from a text node containing an int
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", new TextNode("42")))).isEqualTo("k: \"42\"\n");
     // should quote a boolean
     assertThat(CDYamlUtils.writeYamlString(Map.of("k", "true"))).isEqualTo("k: \"true\"\n");
     assertThat(CDYamlUtils.writeYamlString(Map.of("k", "Some \n Name"))).isEqualTo("k: \"Some \\n Name\"\n");

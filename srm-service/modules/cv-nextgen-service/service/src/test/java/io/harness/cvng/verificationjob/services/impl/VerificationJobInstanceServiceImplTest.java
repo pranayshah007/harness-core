@@ -886,7 +886,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     Optional<Risk> riskScore =
         verificationJobInstanceAnalysisService.getLatestRiskScore(accountId, verificationJobInstanceIds.get(0));
     assertThat(riskScore).isPresent();
-    assertThat(riskScore.get()).isEqualTo(Risk.UNHEALTHY);
+    assertThat(riskScore.get()).isEqualTo(Risk.HEALTHY);
   }
 
   @Test

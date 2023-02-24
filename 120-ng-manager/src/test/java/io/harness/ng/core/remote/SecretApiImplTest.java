@@ -9,10 +9,13 @@ package io.harness.ng.core.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BOOPESH;
 
 import static java.util.Optional.of;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -22,7 +25,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.api.impl.NGEncryptedDataServiceImpl;
 import io.harness.ng.core.api.impl.SecretCrudServiceImpl;
 import io.harness.ng.core.api.impl.SecretPermissionValidator;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -34,6 +39,8 @@ import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
 import io.harness.spec.server.ng.v1.model.SecretSpec;
 import io.harness.spec.server.ng.v1.model.SecretTextSpec;
+import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
+import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +58,7 @@ import org.springframework.data.domain.PageImpl;
 @OwnedBy(PL)
 public class SecretApiImplTest extends CategoryTest {
   private SecretCrudService ngSecretService;
+  private NGEncryptedDataService ngEncryptedDataService;
 
   private AccountSecretApiImpl accountSecretApi;
   private OrgSecretApiImpl orgSecretApi;
@@ -72,14 +80,18 @@ public class SecretApiImplTest extends CategoryTest {
   @Before
   public void setup() {
     ngSecretService = mock(SecretCrudServiceImpl.class);
+    ngEncryptedDataService = mock(NGEncryptedDataServiceImpl.class);
 
     doNothing().when(mock(SecretPermissionValidator.class)).checkForAccessOrThrow(any(), any(), any(), any());
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     secretApiUtils = new SecretApiUtils(validator);
-    accountSecretApi = new AccountSecretApiImpl(ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils);
-    orgSecretApi = new OrgSecretApiImpl(ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils);
-    projectSecretApi = new ProjectSecretApiImpl(ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils);
+    accountSecretApi = new AccountSecretApiImpl(
+        ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils, ngEncryptedDataService);
+    orgSecretApi = new OrgSecretApiImpl(
+        ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils, ngEncryptedDataService);
+    projectSecretApi = new ProjectSecretApiImpl(
+        ngSecretService, mock(SecretPermissionValidator.class), secretApiUtils, ngEncryptedDataService);
   }
 
   @Test
@@ -481,6 +493,66 @@ public class SecretApiImplTest extends CategoryTest {
     assertThat(secretResponse.getSecret().getProject()).isNull();
     assertThat(secretResponse.getSecret().getIdentifier()).isEqualTo(identifier);
     assertThat(secretResponse.getSecret().getName()).isEqualTo(name);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateProjectSecretRef_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretValidationMetadata secretValidationMetaData =
+        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(true);
+    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretValidationMetaData, account);
+    SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
+    assertThat(secretValidationResponse.isSuccess());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateProjectSecretRef_Negative() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretValidationMetadata secretValidationMetaData =
+        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(false);
+    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretValidationMetaData, account);
+    SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
+    assertThat(!secretValidationResponse.isSuccess());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateOrgSecretRef_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretValidationMetadata secretValidationMetaData =
+        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(true);
+    Response response = orgSecretApi.validateOrgSecretRef(org, secretValidationMetaData, account);
+    SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
+    assertThat(secretValidationResponse.isSuccess());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testValidateAccountSecretRef_Success() {
+    String secretManagerIdentifier = randomAlphabetic(10);
+    String secretRefPath = randomAlphabetic(10);
+    SecretValidationMetadata secretValidationMetaData =
+        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(true);
+    Response response = accountSecretApi.validateAccountSecretRef(secretValidationMetaData, account);
+    SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
+    assertThat(secretValidationResponse.isSuccess());
   }
 
   private Secret getTextSecret(String org, String project) {

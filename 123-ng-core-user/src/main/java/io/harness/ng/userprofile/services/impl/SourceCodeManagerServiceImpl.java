@@ -23,8 +23,8 @@ import io.harness.repositories.ng.userprofile.spring.SourceCodeManagerRepository
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.hazelcast.internal.util.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

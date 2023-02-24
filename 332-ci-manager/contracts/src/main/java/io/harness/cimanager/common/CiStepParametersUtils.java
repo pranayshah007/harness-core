@@ -25,7 +25,7 @@ public class CiStepParametersUtils {
     stepBuilder.description(stepNode.getDescription());
     stepBuilder.skipCondition(stepNode.getSkipCondition());
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())));
-    stepBuilder.when(stepNode.getWhen());
+    stepBuilder.when(stepNode.getWhen() != null ? stepNode.getWhen().getValue() : null);
     stepBuilder.type(stepNode.getType());
     stepBuilder.uuid(stepNode.getUuid());
     stepBuilder.enforce(stepNode.getEnforce());

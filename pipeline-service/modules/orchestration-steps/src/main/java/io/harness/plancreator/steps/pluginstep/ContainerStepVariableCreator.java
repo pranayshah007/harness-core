@@ -22,4 +22,9 @@ public class ContainerStepVariableCreator extends GenericStepVariableCreator<Con
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.CONTAINER_STEP);
   }
+
+  @Override
+  public Class<ContainerStepNode> getFieldClass() {
+    return ContainerStepNode.class;
+  }
 }

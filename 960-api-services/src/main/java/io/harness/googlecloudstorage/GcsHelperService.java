@@ -13,9 +13,12 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gcp.helpers.GcpHttpTransportHelperService;
 import io.harness.network.Http;
@@ -47,6 +50,9 @@ public class GcsHelperService {
 
   @Inject private GcpHttpTransportHelperService gcpHttpTransportHelperService;
   @Inject private GcpCredentialsHelper gcpCredentialsHelper;
+  private static final String INVALID_BUCKET_PROJECT__ERROR =
+      "Unable to checkout bucket: %s in Google Cloud Storage. Please "
+      + "ensure that provided project and bucket exists in GCP";
 
   /**
    * Gets a GCS Service
@@ -84,6 +90,9 @@ public class GcsHelperService {
     Storage storage = getGcsStorageService(gcsInternalConfig.getServiceAccountKeyFileContent(),
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
+    if (bucket == null) {
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+    }
     if (bucket.versioningEnabled() != null) {
       isVersioningEnabled = bucket.versioningEnabled();
     }

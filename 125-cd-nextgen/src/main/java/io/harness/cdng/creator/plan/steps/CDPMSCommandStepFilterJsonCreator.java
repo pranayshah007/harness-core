@@ -66,8 +66,9 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
         && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
             || (strategy.getParallelism() != null
                 && (strategy.getParallelism().getValue() != null
-                    || strategy.getParallelism().getExpressionValue() != null)))) {
-      throw new InvalidYamlException("Command step supports only repeat strategy.");
+                    || strategy.getParallelism().getExpressionValue() != null))
+            || strategy.getRepeat() == null || ParameterField.isNull(strategy.getRepeat().getItems()))) {
+      throw new InvalidYamlException("Command step support repeat strategy with items syntax.");
     }
   }
 

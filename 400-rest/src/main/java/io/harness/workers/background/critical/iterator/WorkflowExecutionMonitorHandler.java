@@ -33,7 +33,7 @@ import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AutoLogContext;
@@ -69,7 +69,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler implements Handler<WorkflowExecution> {
+public class WorkflowExecutionMonitorHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<WorkflowExecution> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;

@@ -508,6 +508,7 @@ public class AwsApiHelperService {
                     .withAcceptedMediaTypes("application/vnd.docker.distribution.manifest.v1+json")))
         .flatMap(batchGetImageResult -> batchGetImageResult.getImages().stream())
         .map(Image::getImageManifest)
+        .filter(imageManifest -> (JsonUtils.asObject(imageManifest, HashMap.class).get("history")) != null)
         .flatMap(imageManifest
             -> ((List<Map<String, Object>>) JsonUtils.asObject(imageManifest, HashMap.class).get("history"))
                    .stream()

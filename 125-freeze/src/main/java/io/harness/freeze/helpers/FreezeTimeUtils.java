@@ -11,6 +11,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeDuration;
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceType;
@@ -275,7 +276,7 @@ public class FreezeTimeUtils {
     return date.toInstant(zoneOffset).toEpochMilli();
   }
 
-  public void validateTimeRange(FreezeWindow freezeWindow) throws ParseException {
+  public void validateTimeRange(FreezeWindow freezeWindow, FreezeStatus freezeStatus) throws ParseException {
     if (EmptyPredicate.isEmpty(freezeWindow.getTimeZone())) {
       throw new InvalidRequestException("Time zone cannot be empty");
     }
@@ -310,13 +311,13 @@ public class FreezeTimeUtils {
       if (recurrence.getSpec() != null && recurrence.getSpec().getUntil() != null) {
         LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
         Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
-        if (untilMs < getCurrentTime()) {
+        if (untilMs < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
           throw new InvalidRequestException("End time for recurrence cannot be less than current time");
         }
       }
     } else {
       Long endTime = getEpochValue(null, firstWindowEndTime, timeZone, 0);
-      if (endTime < getCurrentTime()) {
+      if (endTime < getCurrentTime() && FreezeStatus.ENABLED.equals(freezeStatus)) {
         throw new InvalidRequestException("Freeze Window is already expired");
       }
     }

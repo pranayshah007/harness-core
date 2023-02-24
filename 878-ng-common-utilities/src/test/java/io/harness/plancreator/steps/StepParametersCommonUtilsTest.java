@@ -54,7 +54,7 @@ public class StepParametersCommonUtilsTest extends CategoryTest {
     assertThat(stepElementParameters.getDescription()).isEqualTo(stepElementConfig.getDescription());
     assertThat(stepElementParameters.getType()).isEqualTo(stepElementConfig.getType());
     assertThat(stepElementParameters.getSkipCondition()).isEqualTo(stepElementConfig.getSkipCondition());
-    assertThat(stepElementParameters.getWhen()).isEqualTo(stepElementConfig.getWhen());
+    assertThat(stepElementParameters.getWhen()).isEqualTo(stepElementConfig.getWhen().getValue());
   }
 
   @Test
@@ -77,7 +77,7 @@ public class StepParametersCommonUtilsTest extends CategoryTest {
     assertThat(stageParameters.getDescription()).isEqualTo(config.getDescription());
     assertThat(stageParameters.getType()).isEqualTo(config.getType());
     assertThat(stageParameters.getSkipCondition()).isEqualTo(config.getSkipCondition());
-    assertThat(stageParameters.getWhen()).isEqualTo(config.getWhen());
+    assertThat(stageParameters.getWhen()).isEqualTo(config.getWhen().getValue());
   }
 
   @Test

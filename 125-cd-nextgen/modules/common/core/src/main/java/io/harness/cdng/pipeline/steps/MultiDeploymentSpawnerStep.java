@@ -21,6 +21,8 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -67,6 +69,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,6 +79,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private NGServiceEntityHelper serviceEntityHelper;
   @Inject private AccessControlClient accessControlClient;
+  @Inject private EnvironmentGroupService environmentGroupService;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
@@ -100,9 +104,19 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         throw new UnresolvedExpressionsException(List.of(envGroupRef.getExpressionValue()));
       }
       if (isNotBlank(envGroupRef.getValue())) {
-        IdentifierRef envGroupIdentifierRef =
-            IdentifierRefHelper.getIdentifierRef(envGroupRef.getValue(), AmbianceUtils.getAccountId(ambiance),
-                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+        String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+        String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+        String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+        Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
+            accountIdentifier, orgIdentifier, projectIdentifier, envGroupRef.getValue(), false);
+        if (environmentGroupEntity.isEmpty()) {
+          throw new InvalidRequestException(
+              String.format("Could not find environment group with identifier: %s", envGroupRef.getValue()));
+        }
+
+        IdentifierRef envGroupIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+            envGroupRef.getValue(), accountIdentifier, orgIdentifier, projectIdentifier);
 
         final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
         final String principal = executionPrincipalInfo.getPrincipal();

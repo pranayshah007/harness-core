@@ -23,7 +23,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.beans.entities.IACMServiceConfig;
-import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -58,6 +57,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.iacmserviceclient.IACMServiceClient;
 import io.harness.iacmserviceclient.IACMServiceClientFactory;
 import io.harness.impl.scm.ScmServiceClientImpl;
@@ -243,7 +243,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .liteEngineImage("harness/ci-lite-engine:1.4.0")
                                                  .pvcDefaultStorageSize(25600)
                                                  .stepConfig(ciStepConfig)
-                                                 .queueServiceClient(QueueServiceClient.builder().build())
+                                                 .queueServiceClientConfig(QueueServiceClientConfig.builder().build())
                                                  .build(),
         false));
 

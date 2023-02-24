@@ -470,6 +470,8 @@ replace_key_value iteratorsConfig.approvalInstanceIteratorConfig.targetIntervalI
 replace_key_value orchestrationStepConfig.ffServerBaseUrl "$FF_SERVER_BASE_URL"
 replace_key_value orchestrationStepConfig.ffServerApiKey "$FF_SERVER_API_KEY"
 
+replace_key_value orchestrationStepConfig.containerStepConfig.logStreamingContainerStepBaseUrl "$LOG_STREAMING_CONTAINER_STEP_BASE_URL"
+
 replace_key_value shouldDeployWithGitSync "$ENABLE_GIT_SYNC"
 
 replace_key_value enableAudit "$ENABLE_AUDIT"

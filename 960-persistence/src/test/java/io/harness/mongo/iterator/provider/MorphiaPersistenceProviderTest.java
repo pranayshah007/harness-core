@@ -31,16 +31,15 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void testCreateQueryWithNoFilter() {
-    final Query<TestIterableEntity> query =
-        persistenceProvider.createQuery(TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false);
+    final Query<TestIterableEntity> query = persistenceProvider.createQuery(
+        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false, false);
 
     assertThat(query.toString().replace(" ", "")).isEqualTo("{{}}");
-    assertThat(
-        persistenceProvider.createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false)
-            .toString()
-            .replace(" ", ""))
-        .isEqualTo(
-            "{{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+    assertThat(persistenceProvider
+                   .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false, false)
+                   .toString()
+                   .replace(" ", ""))
+        .isEqualTo("{{\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -51,16 +50,16 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
         query -> query.filter(TestIterableEntityKeys.name, "foo");
 
     final Query<TestIterableEntity> query = persistenceProvider.createQuery(
-        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
+        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false, false);
 
     assertThat(query.toString().replace(" ", "")).isEqualTo("{{\"name\":\"foo\"}}");
-    assertThat(
-        persistenceProvider
-            .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
-            .toString()
-            .replace(" ", ""))
+    assertThat(persistenceProvider
+                   .createQuery(
+                       5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false, false)
+                   .toString()
+                   .replace(" ", ""))
         .isEqualTo(
-            "{{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -72,16 +71,19 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
             query.criteria(TestIterableEntityKeys.name).equal("foo"));
 
     final Query<TestIterableEntity> query = persistenceProvider.createQuery(
-        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
+        TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false, false);
 
     assertThat(query.toString().replace(" ", ""))
         .isEqualTo("{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]}}");
-    assertThat(
-        persistenceProvider
-            .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
-            .toString()
-            .replace(" ", ""))
+
+    final String stringQuery = persistenceProvider
+                                   .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations,
+                                       filterExpander, false, false)
+                                   .toString()
+                                   .replace(" ", "");
+
+    assertThat(stringQuery)
         .isEqualTo(
-            "{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}],\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}],\"$or\":[{\"nextIterations\":{\"$lt\":5}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 }

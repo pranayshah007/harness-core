@@ -81,9 +81,14 @@ public class FileReferenceServiceImpl implements FileReferenceService {
   @Override
   public void validateReferenceByAndThrow(NGFile fileOrFolder) {
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
+      Long count = countEntitiesReferencingFile(fileOrFolder);
+      if (count > 0L) {
+        throw new ReferencedEntityException(
+            format("Folder [%s] is referenced by %s other entities and can not be deleted.",
+                fileOrFolder.getIdentifier(), count));
+      }
       List<String> folderChildrenFQNs = fileStructureService.listFolderChildrenFQNs(fileOrFolder);
-
-      Long count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
+      count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
           fileOrFolder.getAccountIdentifier(), folderChildrenFQNs);
       if (count > 0L) {
         throw new ReferencedEntityException(format(

@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.validation.async.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -21,6 +22,9 @@ import java.util.Optional;
 @OwnedBy(PIPELINE)
 public interface PipelineAsyncValidationService {
   PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action);
+
+  PipelineValidationEvent createRecordForSuccessfulSyncValidation(
+      PipelineEntity pipelineEntity, String branch, GovernanceMetadata governanceMetadata, Action action);
 
   PipelineValidationEvent updateEvent(String uuid, ValidationStatus status, ValidationResult result);
 

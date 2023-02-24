@@ -6,6 +6,8 @@
  */
 package io.harness.cvng.downtime.transformer;
 
+import static java.lang.Math.max;
+
 import io.harness.cvng.downtime.beans.DowntimeDuration;
 import io.harness.cvng.downtime.beans.DowntimeRecurrence;
 import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
@@ -57,11 +59,12 @@ public class RecurringDowntimeSpecDetailsTransformer
   public List<Pair<Long, Long>> getStartAndEndTimesForFutureInstances(RecurringDowntimeSpec spec) {
     long startTime = spec.getStartTime();
     long endTime = spec.getRecurrenceEndTime();
+    long currentTime = clock.millis() / 1000;
     List<Pair<Long, Long>> futureInstances = new ArrayList<>();
     for (long currentStartTime = startTime; currentStartTime < endTime;) {
       long currentEndTime = getEndTime(currentStartTime, spec.getDowntimeDuration());
-      if (currentStartTime >= clock.millis() / 1000 && currentEndTime <= endTime) {
-        futureInstances.add(Pair.of(currentStartTime, currentEndTime));
+      if (currentEndTime <= endTime && currentEndTime >= currentTime) {
+        futureInstances.add(Pair.of(max(currentStartTime, currentTime), currentEndTime));
       }
       currentStartTime = getNextStartTime(currentStartTime, spec.getDowntimeRecurrence());
     }

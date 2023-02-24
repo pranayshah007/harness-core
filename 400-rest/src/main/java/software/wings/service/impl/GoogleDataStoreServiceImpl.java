@@ -63,7 +63,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   public GoogleDataStoreServiceImpl(WingsPersistence wingsPersistence) {
     String googleCredentialsPath = System.getenv(GOOGLE_APPLICATION_CREDENTIALS_PATH);
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv(ENV_VARIABLE_WORKLOAD_IDENTITY));
-    if (!usingWorkloadIdentity && isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists()) {
+    if (!usingWorkloadIdentity && (isEmpty(googleCredentialsPath) || !new File(googleCredentialsPath).exists())) {
       throw new WingsException("Invalid credentials found at " + googleCredentialsPath);
     }
     mongoDataStoreService = new MongoDataStoreServiceImpl(wingsPersistence);
@@ -215,8 +215,6 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
             long correctValidUntil = createdAt + retentionData;
             // if the correct valid until is in the future lets update and bail
             if (correctValidUntil >= now) {
-              log.warn("Updating entity in gcp datastore is expensive. "
-                  + "Make sure you have the right validUntil at first place");
               Entity updatedEntity = Entity.newBuilder(datastore.get(entity.getKey()))
                                          .set(AccountDataRetentionEntity.VALID_UNTIL_KEY, correctValidUntil)
                                          .build();

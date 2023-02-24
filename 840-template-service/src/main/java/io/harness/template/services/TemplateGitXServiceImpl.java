@@ -10,7 +10,6 @@ package io.harness.template.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
@@ -50,60 +49,6 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   NGTemplateRepository templateRepository;
 
   GitAwareEntityHelper gitAwareEntityHelper;
-
-  public String getWorkingBranch(String entityRepoURL) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    Scope scope = buildScope(gitEntityInfo);
-    String branchName = gitEntityInfo.getBranch();
-    if (isParentReferenceEntityNotPresent(gitEntityInfo)) {
-      return branchName;
-    }
-    String parentEntityRepoUrl = getRepoUrl(scope);
-    if (gitEntityInfo.isNewBranch()) {
-      branchName = gitEntityInfo.getBaseBranch();
-    }
-    if (null != parentEntityRepoUrl && !parentEntityRepoUrl.equals(entityRepoURL)) {
-      branchName = "";
-    }
-    return branchName;
-  }
-
-  private String getRepoUrl(Scope scope) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoUrl())) {
-      return gitEntityInfo.getParentEntityRepoUrl();
-    }
-    String parentEntityRepoUrl = scmGitSyncHelper
-                                     .getRepoUrl(scope, gitEntityInfo.getParentEntityRepoName(),
-                                         gitEntityInfo.getParentEntityConnectorRef(), Collections.emptyMap())
-                                     .getRepoUrl();
-
-    gitEntityInfo.setParentEntityRepoUrl(parentEntityRepoUrl);
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-
-    return parentEntityRepoUrl;
-  }
-
-  private Scope buildScope(GitEntityInfo gitEntityInfo) {
-    ScopeBuilder scope = Scope.builder();
-    if (gitEntityInfo != null) {
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityAccountIdentifier())) {
-        scope.accountIdentifier(gitEntityInfo.getParentEntityAccountIdentifier());
-      }
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityOrgIdentifier())) {
-        scope.orgIdentifier(gitEntityInfo.getParentEntityOrgIdentifier());
-      }
-      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityProjectIdentifier())) {
-        scope.projectIdentifier(gitEntityInfo.getParentEntityProjectIdentifier());
-      }
-    }
-    return scope.build();
-  }
-
-  private boolean isParentReferenceEntityNotPresent(GitEntityInfo gitEntityInfo) {
-    return GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoName())
-        && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef());
-  }
 
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),

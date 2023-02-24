@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 44
+version: 45
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -88,6 +88,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - gitops_agent_view
         - gitops_agent_edit
         - gitops_agent_delete
@@ -168,6 +171,7 @@ roles:
         - core_governancePolicySets_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view
@@ -270,6 +274,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - ff_featureflag_edit
         - ff_featureflag_delete
         - ff_featureflag_view
@@ -367,6 +374,7 @@ roles:
         - core_pipeline_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view
@@ -486,6 +494,9 @@ roles:
         - chi_slo_view
         - chi_slo_edit
         - chi_slo_delete
+        - chi_downtime_view
+        - chi_downtime_edit
+        - chi_downtime_delete
         - ff_featureflag_edit
         - ff_featureflag_delete
         - ff_featureflag_view
@@ -616,6 +627,7 @@ roles:
         - core_pipeline_view
         - chi_monitoredservice_view
         - chi_slo_view
+        - chi_downtime_view
         - ff_featureflag_view
         - ff_targetgroup_view
         - ff_target_view

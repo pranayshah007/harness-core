@@ -36,6 +36,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
@@ -77,6 +78,7 @@ import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
+import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRequestConfig.CfRequestConfigBuilder;
 import io.harness.pcf.model.CloudFoundryConfig;
@@ -137,6 +139,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     List<ApplicationSummary> previousReleases =
         cfDeploymentManager.getPreviousReleases(cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix());
     TasApplicationInfo currentProdInfo = null;
+    List<TasApplicationInfo> renames = null;
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(basicSetupRequestNG);
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
@@ -159,7 +162,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       deleteOlderApplications(previousReleases, cfRequestConfig, basicSetupRequestNG, cfAppAutoscalarRequestData,
           logCallback, currentProdInfo);
 
-      renameProductionApplication(previousReleases, basicSetupRequestNG, cfRequestConfig, logCallback, currentProdInfo);
+      renames = renameProductionApplication(
+          previousReleases, basicSetupRequestNG, cfRequestConfig, logCallback, currentProdInfo);
 
       boolean varsYmlPresent = checkIfVarsFilePresent(basicSetupRequestNG);
       CfCreateApplicationRequestData requestData =
@@ -209,6 +213,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]", basicSetupRequestNG,
           sanitizedException);
       Misc.logAllMessages(sanitizedException, logCallback);
+      handleRollbackForSetup(basicSetupRequestNG.getReleaseNamePrefix(), renames, cfRequestConfig, logCallback);
       logCallback.saveExecutionLog(
           "\n\n ----------  PCF Setup process failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
@@ -224,6 +229,44 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
+  private void handleRollbackForSetup(String releaseNamePrefix, List<TasApplicationInfo> renames,
+      CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException {
+    try {
+      if (!isNull(renames)) {
+        deleteNewProdAppIfExist(releaseNamePrefix, cfRequestConfig, logCallback);
+        renamePreviousProdApp(renames, cfRequestConfig, logCallback);
+      } else {
+        logCallback.saveExecutionLog(
+            "Revert not required as no application got created or renamed", ERROR, CommandExecutionStatus.FAILURE);
+      }
+    } catch (Exception e) {
+      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", e);
+      logCallback.saveExecutionLog(format("\n\n ----------  Failed to revert app names : %s",
+                                       ExceptionMessageSanitizer.sanitizeMessage(e.getMessage())),
+          ERROR, CommandExecutionStatus.FAILURE);
+    }
+  }
+  private void renamePreviousProdApp(List<TasApplicationInfo> renames, CfRequestConfig cfRequestConfig,
+      LogCallback logCallback) throws PivotalClientApiException {
+    if (renames.isEmpty()) {
+      return;
+    }
+    TasApplicationInfo applicationInfo = renames.get(0);
+    cfDeploymentManager.renameApplication(new CfRenameRequest(cfRequestConfig, applicationInfo.getApplicationGuid(),
+                                              applicationInfo.getApplicationName(), applicationInfo.getOldName()),
+        logCallback);
+  }
+
+  private void deleteNewProdAppIfExist(String releaseNamePrefix, CfRequestConfig cfRequestConfig,
+      LogCallback logCallback) throws PivotalClientApiException {
+    List<ApplicationSummary> releases = cfDeploymentManager.getPreviousReleases(cfRequestConfig, releaseNamePrefix);
+    if (releases.stream().anyMatch(release -> release.getName().equals(releaseNamePrefix))) {
+      cfRequestConfig.setApplicationName(releaseNamePrefix);
+      logCallback.saveExecutionLog(format("\n Deleting the newly created App: %s", releaseNamePrefix));
+      cfDeploymentManager.deleteApplication(cfRequestConfig);
+      logCallback.saveExecutionLog("App deleted successfully");
+    }
+  }
   private CfRequestConfigBuilder clonePcfRequestConfig(CfRequestConfig cfRequestConfig) {
     return CfRequestConfig.builder()
         .orgName(cfRequestConfig.getOrgName())
@@ -279,13 +322,13 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     return newApplication;
   }
 
-  private void renameProductionApplication(List<ApplicationSummary> previousReleases,
+  private List<TasApplicationInfo> renameProductionApplication(List<ApplicationSummary> previousReleases,
       CfBasicSetupRequestNG basicSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       TasApplicationInfo currentProdInfo) throws PivotalClientApiException {
     ApplicationSummary currentProdApplicationSummary = getCurrentProdApplicationSummary(previousReleases);
 
     if (EmptyPredicate.isEmpty(previousReleases) || currentProdApplicationSummary == null) {
-      return;
+      return Collections.emptyList();
     }
     int latestVersionUsed = getHighestVersionAppName(previousReleases);
     String revision = latestVersionUsed == -1 ? "0" : String.valueOf(latestVersionUsed + 1);
@@ -297,6 +340,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     if (!isNull(currentProdInfo)) {
       currentProdInfo.setApplicationName(newName);
     }
+    return Collections.singletonList(currentProdInfo);
   }
 
   private int getHighestVersionAppName(List<ApplicationSummary> previousReleases) {

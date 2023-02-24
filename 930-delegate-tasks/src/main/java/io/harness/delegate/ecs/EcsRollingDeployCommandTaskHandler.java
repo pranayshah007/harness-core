@@ -13,18 +13,13 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.EcsNGException;
-import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
-import io.harness.delegate.task.ecs.EcsInfraConfigHelper;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
-import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -35,24 +30,17 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
-import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
-import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
 public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler {
   @Inject private EcsTaskHelperBase ecsTaskHelperBase;
-  @Inject private EcsInfraConfigHelper ecsInfraConfigHelper;
-  @Inject private EcsCommandTaskNGHelper ecsCommandTaskHelper;
-  private EcsInfraConfig ecsInfraConfig;
-  private long timeoutInMillis;
+  @Inject private EcsDeploymentHelper ecsDeploymentHelper;
 
   @Override
   protected EcsCommandResponse executeTaskInternal(EcsCommandRequest ecsCommandRequest,
@@ -62,70 +50,18 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
     }
     EcsRollingDeployRequest ecsRollingDeployRequest = (EcsRollingDeployRequest) ecsCommandRequest;
 
-    timeoutInMillis = ecsRollingDeployRequest.getTimeoutIntervalInMin() * 60000;
-    ecsInfraConfig = ecsRollingDeployRequest.getEcsInfraConfig();
-
     LogCallback deployLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
-      deployLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
-      String ecsTaskDefinitionManifestContent = ecsRollingDeployRequest.getEcsTaskDefinitionManifestContent();
-      String ecsServiceDefinitionManifestContent = ecsRollingDeployRequest.getEcsServiceDefinitionManifestContent();
-      List<String> ecsScalableTargetManifestContentList =
-          ecsRollingDeployRequest.getEcsScalableTargetManifestContentList();
-      List<String> ecsScalingPolicyManifestContentList =
-          ecsRollingDeployRequest.getEcsScalingPolicyManifestContentList();
-
-      ecsCommandTaskHelper.printEcsManifestsContent(ecsTaskDefinitionManifestContent,
-          ecsServiceDefinitionManifestContent, ecsScalableTargetManifestContentList,
-          ecsScalingPolicyManifestContentList, deployLogCallback);
-
-      RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
-          ecsCommandTaskHelper.parseYamlAsObject(
-              ecsTaskDefinitionManifestContent, RegisterTaskDefinitionRequest.serializableBuilderClass());
-      RegisterTaskDefinitionRequest registerTaskDefinitionRequest = registerTaskDefinitionRequestBuilder.build();
-      CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
-          ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
-
-      deployLogCallback.saveExecutionLog(
-          format("Creating Task Definition with family %s %n", registerTaskDefinitionRequest.family()), LogLevel.INFO);
-
-      RegisterTaskDefinitionResponse registerTaskDefinitionResponse = ecsCommandTaskHelper.createTaskDefinition(
-          registerTaskDefinitionRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-      TaskDefinition taskDefinition = registerTaskDefinitionResponse.taskDefinition();
-      String taskDefinitionName = taskDefinition.family() + ":" + taskDefinition.revision();
-      String taskDefinitionArn = taskDefinition.taskDefinitionArn();
-
-      deployLogCallback.saveExecutionLog(
-          format("Created Task Definition %s with Arn %s..%n", taskDefinitionName, taskDefinitionArn), LogLevel.INFO);
-
-      // replace cluster and task definition
-      CreateServiceRequest createServiceRequest =
-          createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster())
-              .taskDefinition(registerTaskDefinitionResponse.taskDefinition().taskDefinitionArn())
-              .build();
-
-      ecsCommandTaskHelper.createOrUpdateService(createServiceRequest, ecsScalableTargetManifestContentList,
-          ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback, timeoutInMillis,
+      CreateServiceRequest createServiceRequest = ecsDeploymentHelper.createServiceDefinitionRequest(deployLogCallback,
+          ecsRollingDeployRequest.getEcsInfraConfig(), ecsRollingDeployRequest.getEcsTaskDefinitionManifestContent(),
+          ecsRollingDeployRequest.getEcsServiceDefinitionManifestContent(),
+          ecsRollingDeployRequest.getEcsScalableTargetManifestContentList(),
+          ecsRollingDeployRequest.getEcsScalingPolicyManifestContentList(), null);
+      return ecsDeploymentHelper.deployRollingService(deployLogCallback, createServiceRequest, ecsCommandRequest,
+          ecsRollingDeployRequest.getEcsScalableTargetManifestContentList(),
+          ecsRollingDeployRequest.getEcsScalingPolicyManifestContentList(),
           ecsRollingDeployRequest.isSameAsAlreadyRunningInstances(), ecsRollingDeployRequest.isForceNewDeployment());
-
-      EcsRollingDeployResult ecsRollingDeployResult =
-          EcsRollingDeployResult.builder()
-              .region(ecsInfraConfig.getRegion())
-              .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
-                  ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
-              .build();
-
-      EcsRollingDeployResponse ecsRollingDeployResponse = EcsRollingDeployResponse.builder()
-                                                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                                              .ecsRollingDeployResult(ecsRollingDeployResult)
-                                                              .build();
-
-      deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
-      return ecsRollingDeployResponse;
-
     } catch (Exception ex) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

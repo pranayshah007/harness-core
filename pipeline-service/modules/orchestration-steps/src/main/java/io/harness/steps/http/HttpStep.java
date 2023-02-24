@@ -40,7 +40,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
@@ -85,10 +84,11 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
           (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
     }
     HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
-    HttpTaskParametersNgBuilder httpTaskParametersNgBuilder = HttpTaskParametersNg.builder()
-                                                                  .url(httpStepParameters.getUrl().getValue())
-                                                                  .method(httpStepParameters.getMethod().getValue())
-                                                                  .socketTimeoutMillis(socketTimeoutMillis);
+    HttpTaskParametersNgBuilder httpTaskParametersNgBuilder =
+        HttpTaskParametersNg.builder()
+            .url((String) httpStepParameters.getUrl().fetchFinalValue())
+            .method(httpStepParameters.getMethod().getValue())
+            .socketTimeoutMillis(socketTimeoutMillis);
 
     if (EmptyPredicate.isNotEmpty(httpStepParameters.getHeaders())) {
       List<HttpHeaderConfig> headers = new ArrayList<>();
@@ -98,7 +98,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
 
     if (httpStepParameters.getRequestBody() != null) {
-      httpTaskParametersNgBuilder.body(httpStepParameters.getRequestBody().getValue());
+      httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
 
     boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(

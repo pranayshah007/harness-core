@@ -25,7 +25,9 @@ import io.harness.ngmigration.service.entity.InfraProvisionerMigrationService;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.service.entity.SecretManagerMigrationService;
+import io.harness.ngmigration.service.entity.SecretManagerTemplateMigrationService;
 import io.harness.ngmigration.service.entity.SecretMigrationService;
+import io.harness.ngmigration.service.entity.ServiceCommandTemplateMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
 import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
@@ -58,9 +60,10 @@ public class NgMigrationFactory {
   @Inject AmiStartupScriptMigrationService amiServiceSpecMigrationService;
   @Inject ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
   @Inject ContainerTaskMigrationService containerTaskMigrationService;
-
+  @Inject ServiceCommandTemplateMigrationService serviceCommandTemplateMigrationService;
   @Inject InfraProvisionerMigrationService infraProvisionerMigrationService;
   @Inject TriggerMigrationService triggerMigrationService;
+  @Inject SecretManagerTemplateMigrationService secretManagerTemplateMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -78,6 +81,8 @@ public class NgMigrationFactory {
         return connectorMigrationService;
       case TEMPLATE:
         return templateMigrationService;
+      case SERVICE_COMMAND_TEMPLATE:
+        return serviceCommandTemplateMigrationService;
       case SERVICE:
         return serviceMigrationService;
       case ARTIFACT_STREAM:
@@ -108,6 +113,8 @@ public class NgMigrationFactory {
         return infraProvisionerMigrationService;
       case TRIGGER:
         return triggerMigrationService;
+      case SECRET_MANAGER_TEMPLATE:
+        return secretManagerTemplateMigrationService;
       default:
         throw new IllegalStateException();
     }

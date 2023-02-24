@@ -363,8 +363,8 @@ public class ServiceAllInOnePlanCreatorUtils {
     try {
       YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(serviceField, stage);
       if (propagatedFromStageConfig == null) {
-        throw new InvalidArgumentsException("Invalid identifier [" + stage
-            + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        throw new InvalidArgumentsException(
+            "Stage with identifier [" + stage + "] given for service propagation does not exist.");
       }
 
       DeploymentStageNode stageElementConfig =

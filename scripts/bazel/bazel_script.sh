@@ -64,8 +64,8 @@ if [ "${RUN_CHECKS}" == "true" ]; then
   TARGETS=()
   for module in "${PR_MODULES[@]}"
   do
-    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"':*)') ]];then
-      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"':*)'))
+    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"'/...)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"'/...)'))
     fi
   done
 

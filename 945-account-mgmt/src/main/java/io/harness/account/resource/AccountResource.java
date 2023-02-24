@@ -29,6 +29,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.security.annotations.AuthRule;
@@ -38,6 +39,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -169,6 +171,34 @@ public class AccountResource {
       throw new InvalidRequestException("Operation is not supported");
     }
     AccountDTO accountDTO = CGRestUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
+
+    return ResponseDTO.newResponse(accountDTO);
+  }
+
+  @PUT
+  @Hidden
+  @Path("{accountIdentifier}/cross-generation-access")
+  @ApiOperation(
+      value = "Update Cross Generation Access Enabled", nickname = "updateAccountCrossGenerationAccessEnabledNG")
+  @Operation(operationId = "updateAccountCrossGenerationAccessEnabledNG",
+      summary = "Update Cross Generation Access Enabled",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns an account")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
+  @InternalApi
+  public ResponseDTO<AccountDTO>
+  updateCrossGenerationAccessEnabled(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+                                         "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "This is details of the Account. isCrossGenerationAccessEnabled is mandatory") AccountDTO dto) {
+    if (DeployVariant.isCommunity(deployVersion)) {
+      throw new InvalidRequestException("Operation is not supported");
+    }
+    AccountDTO accountDTO =
+        CGRestUtils.getResponse(accountClient.updateCrossGenerationAccessEnabled(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
   }

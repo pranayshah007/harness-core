@@ -17,6 +17,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
+import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
+import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
@@ -41,6 +43,8 @@ import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -332,6 +336,35 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(
             tanzuInfrastructureOutcome, tanzuInfrastructure.getInfraIdentifier(), tanzuInfrastructure.getInfraName());
         infrastructureOutcome = tanzuInfrastructureOutcome;
+        break;
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        AwsSamInfrastructureOutcome awsSamInfrastructureOutcome =
+            AwsSamInfrastructureOutcome.builder()
+                .connectorRef(awsSamInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .region(awsSamInfrastructure.getRegion().getValue())
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, awsSamInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(awsSamInfrastructureOutcome, awsSamInfrastructure.getInfraIdentifier(),
+            awsSamInfrastructure.getInfraName());
+        infrastructureOutcome = awsSamInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        AwsLambdaInfrastructureOutcome awsLambdaInfrastructureOutcome =
+            AwsLambdaInfrastructureOutcome.builder()
+                .connectorRef(awsLambdaInfrastructure.getConnectorRef().getValue())
+                .region(awsLambdaInfrastructure.getRegion().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, awsLambdaInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(awsLambdaInfrastructureOutcome, awsLambdaInfrastructure.getInfraIdentifier(),
+            awsLambdaInfrastructure.getInfraName());
+        infrastructureOutcome = awsLambdaInfrastructureOutcome;
         break;
 
       default:

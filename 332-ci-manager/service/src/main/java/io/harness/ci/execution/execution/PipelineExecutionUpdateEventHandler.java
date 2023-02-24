@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.outcomes.VmDetailsOutcome;
-import io.harness.ci.execution.queue.QueueClient;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
@@ -29,6 +28,8 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -78,8 +79,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
   @Inject private QueueExecutionUtils queueExecutionUtils;
-
-  @Inject private QueueClient queueClient;
+  @Inject private HsqsClientService hsqsClientService;
 
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
@@ -115,7 +115,13 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
                 queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
             if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
               // ack the request so that its not processed again.
-              queueClient.ack(accountId, ciExecutionMetadata.getQueueId());
+              AckRequest ackRequest = AckRequest.builder()
+                                          .itemID(ciExecutionMetadata.getQueueId())
+                                          .consumerName(SERVICE_NAME_CI)
+                                          .topic(SERVICE_NAME_CI)
+                                          .subTopic(accountId)
+                                          .build();
+              hsqsClientService.ack(ackRequest);
             }
           } catch (Exception ex) {
             log.info("failed to remove execution record from db", ex);
@@ -145,6 +151,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
+        } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+          log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status and pipeline {}",
+              ambiance.getStageExecutionId(), level.getStepType().getStepCategory(), status,
+              ambiance.getMetadata().getPipelineIdentifier());
         }
       });
     } catch (Exception ex) {

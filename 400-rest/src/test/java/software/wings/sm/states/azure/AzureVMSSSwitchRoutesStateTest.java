@@ -43,6 +43,7 @@ import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeploy
 import io.harness.delegate.task.azure.request.AzureVMSSSwitchRouteTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSSwitchRoutesResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -77,6 +78,7 @@ public class AzureVMSSSwitchRoutesStateTest extends WingsBaseTest {
   @Mock private ActivityService activityService;
   @Mock private LogService logService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks
   private final AzureVMSSSwitchRoutesState switchRoutesState = new AzureVMSSSwitchRoutesState("switch-route-state");
   @InjectMocks

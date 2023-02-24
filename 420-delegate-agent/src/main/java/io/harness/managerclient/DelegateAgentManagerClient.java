@@ -30,6 +30,7 @@ import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
+import io.harness.delegate.core.AcquireTasksResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.logging.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
@@ -207,6 +208,11 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @GET("agent/delegates/perpetual-task/context")
   Call<PerpetualTaskContextResponse> perpetualTaskContext(
+      @Query("taskId") String taskId, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @GET("agent/delegates/perpetual-task/context/v2")
+  Call<PerpetualTaskContextResponse> perpetualTaskContextV2(
       @Query("taskId") String taskId, @Query("accountId") String accountId);
 
   @Consumes({"application/x-protobuf"})

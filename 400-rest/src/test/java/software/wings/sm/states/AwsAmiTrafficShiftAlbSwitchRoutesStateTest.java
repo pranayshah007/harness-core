@@ -44,6 +44,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
@@ -83,6 +84,7 @@ public class AwsAmiTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest {
   @Mock private ActivityService activityService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private final List<LbDetailsForAlbTrafficShift> lbDetails = getLbDetailsForAlbTrafficShifts();
   @InjectMocks

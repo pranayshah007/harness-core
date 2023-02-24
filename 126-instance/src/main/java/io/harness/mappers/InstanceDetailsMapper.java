@@ -24,6 +24,7 @@ import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
+import io.harness.entities.ArtifactDetails;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
@@ -54,9 +55,10 @@ public class InstanceDetailsMapper {
   private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO, Boolean isGitops) {
     AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
-    String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
-    String artifactName =
-        StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : instanceDTO.getPrimaryArtifact().getTag();
+    ArtifactDetails primaryArtifact = instanceDTO.getPrimaryArtifact();
+    String artifactDisplayName = primaryArtifact == null ? null : primaryArtifact.getDisplayName();
+    String tag = primaryArtifact == null ? null : primaryArtifact.getTag();
+    String artifactName = StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : tag;
     return InstanceDetailsDTO.builder()
         .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())

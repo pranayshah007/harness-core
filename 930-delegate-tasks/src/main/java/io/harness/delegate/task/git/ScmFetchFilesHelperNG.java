@@ -110,7 +110,7 @@ public class ScmFetchFilesHelperNG {
             .getFileContentsList()
             .stream()
             .filter(fileContent -> {
-              if (fileContent.getStatus() != 200) {
+              if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
                 throwFailedToFetchFileException(useBranch, branch, commitId, fileContent);
                 return false;
               } else {

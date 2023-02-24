@@ -107,7 +107,8 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private TerragruntDestroyTaskResponse runDestroyTask(TerragruntDestroyTaskParameters destroyTaskParameters,
-      CommandUnitsProgress commandUnitsProgress, LogCallback destroyLogCallback, String baseDir) throws IOException {
+      CommandUnitsProgress commandUnitsProgress, LogCallback destroyLogCallback, String baseDir)
+      throws IOException, InterruptedException {
     try {
       taskService.decryptTaskParameters(destroyTaskParameters);
       LogCallback fetchFilesLogCallback =

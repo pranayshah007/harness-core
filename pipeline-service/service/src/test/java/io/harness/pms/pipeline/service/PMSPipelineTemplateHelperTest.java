@@ -95,7 +95,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(anyString(), anyString(), anyString(), any(), any(), any(), any(), any(), any(),
-            any(), any(), any(), any(TemplateApplyRequestDTO.class));
+            any(), any(), any(), any(TemplateApplyRequestDTO.class), any());
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -110,14 +110,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testInValidTemplateInPipelineWhenDoesNotContainTemplateRef() throws IOException {
-    String errorYaml = "ERROR_YAML";
     String fileName = "pipeline-with-template-ref.yaml";
     String givenYaml = readFile(fileName);
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null,
-            "false", TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
+            "false", TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build(), false);
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
@@ -158,11 +157,11 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .getRefreshedYaml(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, refreshRequest);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, "false", refreshRequest);
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
 
     RefreshResponseDTO refreshedResponse =
-        pipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null);
+        pipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null, "false");
     assertThat(refreshedResponse).isEqualTo(refreshResponseDTO);
   }
 
@@ -180,12 +179,12 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .validateTemplateInputsForGivenYaml(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, refreshRequest);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, "false", refreshRequest);
     when(callRequest.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(validateTemplateInputsResponseDTO)));
 
-    ValidateTemplateInputsResponseDTO responseDTO =
-        pipelineTemplateHelper.validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null);
+    ValidateTemplateInputsResponseDTO responseDTO = pipelineTemplateHelper.validateTemplateInputsForGivenYaml(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null, "false");
     assertThat(responseDTO).isEqualTo(validateTemplateInputsResponseDTO);
   }
 
@@ -200,11 +199,11 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .refreshAllTemplatesForYaml(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, refreshRequest);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null, "false", refreshRequest);
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
 
     YamlFullRefreshResponseDTO refreshedResponse =
-        pipelineTemplateHelper.refreshAllTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null);
+        pipelineTemplateHelper.refreshAllTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML, null, "false");
     assertThat(refreshedResponse).isEqualTo(refreshResponseDTO);
   }
 }

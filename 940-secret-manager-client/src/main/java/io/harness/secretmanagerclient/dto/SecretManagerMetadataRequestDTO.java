@@ -26,7 +26,8 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PL)
 @Data
 @NoArgsConstructor
-@Schema(name = "Invite", description = "This is the view of the SecretManagerMetadataRequest entity defined in Harness")
+@Schema(name = "SecretManagerMetadataRequest",
+    description = "This is the view of the SecretManagerMetadataRequest entity defined in Harness")
 public class SecretManagerMetadataRequestDTO implements DecryptableEntity {
   @Schema(description = "This specifies the type of encryption used by the Secret Manager to encrypt Secrets.")
   @NotNull

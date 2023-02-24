@@ -27,6 +27,9 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.sam.AwsSamDeployStep;
+import io.harness.cdng.aws.sam.AwsSamRollbackStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -100,6 +103,7 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRollbackStep;
 import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
@@ -270,6 +274,14 @@ public class NgStepRegistrar {
     engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
     engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
     engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
+    engineSteps.put(TerraformCloudRollbackStep.STEP_TYPE, TerraformCloudRollbackStep.class);
+
+    // AWS Lambda
+    engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaDeployStep.class);
+
+    // AWS SAM
+    engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
+    engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
 
     return engineSteps;
   }

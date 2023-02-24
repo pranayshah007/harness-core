@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.resources;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -61,6 +62,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -96,11 +98,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
+    Optional<InputSetEntity> optionalInputSetEntity =
+        pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+            false, pipelineBranch, pipelineRepoId, false, loadFromFallbackBranch);
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
@@ -116,12 +120,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      String pipelineBranch, String pipelineRepoId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false);
+    Optional<InputSetEntity> optionalInputSetEntity =
+        pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+            false, pipelineBranch, pipelineRepoId, false, loadFromFallbackBranch);
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
@@ -255,9 +261,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;
     try {
-      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
-          mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
+      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch,
+          pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
     } catch (InvalidInputSetException e) {
       InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
       return ResponseDTO.newResponse(
@@ -356,6 +362,10 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo) {
+    if (!inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(accountId)
+        && EmptyPredicate.isEmpty(pipelineBranch)) {
+      throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
+    }
     return ResponseDTO.newResponse(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService,
         pipelineService, validateAndMergeHelper, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         inputSetIdentifier, pipelineBranch, pipelineRepoID));
@@ -395,5 +405,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                 .build());
     return ResponseDTO.newResponse(
         InputSetMoveConfigResponseDTO.builder().identifier(movedInputSet.getIdentifier()).build());
+  }
+
+  @Override
+  public ResponseDTO<PMSInputSetListRepoResponse> getListRepos(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return ResponseDTO.newResponse(
+        pmsInputSetService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier));
   }
 }

@@ -36,6 +36,7 @@ public class TasInstanceSelectionWrapper {
   String uuid;
   @NotNull TasInstanceUnitType type;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  @NotNull
   TasInstanceSelectionBase spec;
   @Builder
   public TasInstanceSelectionWrapper(TasInstanceUnitType type, TasInstanceSelectionBase spec) {

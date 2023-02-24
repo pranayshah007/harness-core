@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceBlockingStub;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobRequest;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobResponse;
@@ -70,6 +71,19 @@ public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
             ExpressionEvaluateBlobRequest.newBuilder().setAmbiance(ambiance).setExpression(expression).build()))
         .thenReturn(expressionRenderBlobResponse);
     assertThat(engineGrpcExpressionService.evaluateExpression(ambiance, expression))
+        .isEqualTo(RecastOrchestrationUtils.fromJson(null, Object.class));
+
+    String expression1 = "{'test1':'test1'}";
+    ExpressionMode expressionMode = ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
+
+    Mockito
+        .when(engineExpressionProtoServiceBlockingStub.evaluateExpression(ExpressionEvaluateBlobRequest.newBuilder()
+                                                                              .setAmbiance(ambiance)
+                                                                              .setExpressionMode(expressionMode)
+                                                                              .setExpression(expression1)
+                                                                              .build()))
+        .thenReturn(expressionRenderBlobResponse);
+    assertThat(engineGrpcExpressionService.evaluateExpression(ambiance, expression1, expressionMode))
         .isEqualTo(RecastOrchestrationUtils.fromJson(null, Object.class));
   }
 }

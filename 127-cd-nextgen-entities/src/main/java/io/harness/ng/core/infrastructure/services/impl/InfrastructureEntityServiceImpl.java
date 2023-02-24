@@ -330,8 +330,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String infraIdentifier) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envRef,
+      String infraIdentifier, boolean forceDelete) {
     InfrastructureEntity infraEntity = InfrastructureEntity.builder()
                                            .accountId(accountId)
                                            .orgIdentifier(orgIdentifier)
@@ -339,8 +339,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                            .envIdentifier(envRef)
                                            .identifier(infraIdentifier)
                                            .build();
-    // todo: check for infra usage in pipelines
-    // todo: outbox events
+
+    if (!forceDelete) {
+      infrastructureEntitySetupUsageHelper.checkThatInfraIsNotReferredByOthers(infraEntity);
+    }
+
     Criteria criteria = getInfrastructureEqualityCriteria(infraEntity);
     Optional<InfrastructureEntity> infraEntityOptional =
         get(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
@@ -365,7 +368,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                .orgIdentifier(orgIdentifier)
                                .projectIdentifier(projectIdentifier)
                                .oldInfrastructureEntity(infraEntityOptional.get())
-                               .status(EnvironmentUpdatedEvent.Status.DELETED)
+                               .status(forceDelete ? EnvironmentUpdatedEvent.Status.FORCE_DELETED
+                                                   : EnvironmentUpdatedEvent.Status.DELETED)
                                .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
                                .build());
         return true;

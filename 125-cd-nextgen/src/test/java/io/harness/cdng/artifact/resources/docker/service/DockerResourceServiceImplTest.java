@@ -129,7 +129,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                 .build());
 
     DockerResponseDTO dockerResponseDTO =
-        dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
     assertThat(dockerResponseDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
@@ -320,8 +320,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     when(exceptionManager.processException(any(), any(), any()))
         .thenThrow(new WingsException("wings exception message"));
 
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("wings exception message");
   }
@@ -347,8 +348,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(encryptedDataDetail));
 
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Docker Get Builds task failure due to error - Testing");
   }
@@ -375,8 +377,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                         .exception(InvalidRequestException.builder().message("Testing").build())
                         .returnValue(obj)
                         .build());
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Unexpected error during authentication to docker server " + obj);
   }
@@ -424,8 +427,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                     ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
                 .build());
 
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Docker Get Builds task failure due to error - Test failed with error code: DEFAULT_ERROR_CODE");
   }
@@ -453,8 +457,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     when(exceptionManager.processException(any(), any(), any()))
         .thenThrow(new WingsException("wings exception message"));
 
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please ensure DockerHub credentials are valid");
   }
@@ -483,8 +488,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     when(exceptionManager.processException(any(), any(), any()))
         .thenThrow(new WingsException("wings exception message"));
 
-    assertThatThrownBy(
-        () -> dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Connector not found for identifier : [identifier] with scope: [PROJECT]");
   }

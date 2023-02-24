@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.infrastructure.resource;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
@@ -283,14 +284,16 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE, required = true) @QueryParam(
-          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier) {
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_UPDATE_PERMISSION, "delete");
 
     return ResponseDTO.newResponse(infrastructureEntityService.delete(
-        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier));
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, forceDelete));
   }
 
   @PUT

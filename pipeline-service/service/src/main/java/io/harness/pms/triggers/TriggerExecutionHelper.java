@@ -298,8 +298,9 @@ public class TriggerExecutionHelper {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
           TemplateMergeResponseDTO templateMergeResponseDTO =
-              pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
-                  pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
+              pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
+                  pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                  pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
                   featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
                   BOOLEAN_FALSE_VALUE);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
@@ -347,9 +348,16 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-            pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-                ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
+            String yamlForValidatingSchema;
+            try {
+              yamlForValidatingSchema = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
+            } catch (Exception ex) {
+              log.error("Exception occurred while removing inputs from pipeline yaml", ex);
+              yamlForValidatingSchema =
+                  executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            }
+            pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;
           default:
         }

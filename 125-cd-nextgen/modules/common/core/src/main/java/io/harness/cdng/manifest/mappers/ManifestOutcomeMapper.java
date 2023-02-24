@@ -12,7 +12,7 @@ import static io.harness.cdng.manifest.ManifestType.AsgConfiguration;
 import static io.harness.cdng.manifest.ManifestType.AsgLaunchTemplate;
 import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
 import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
-import static io.harness.cdng.manifest.ManifestType.AwsLambda;
+import static io.harness.cdng.manifest.ManifestType.AwsLambdaFunctionDefinition;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
@@ -149,7 +149,7 @@ public class ManifestOutcomeMapper {
         return getAsgScheduledUpdateGroupActionOutcome(manifestAttributes);
       case GoogleCloudFunctionDefinition:
         return getGoogleCloudFunctionDefinitionManifestOutcome(manifestAttributes);
-      case AwsLambda:
+      case AwsLambdaFunctionDefinition:
         return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(

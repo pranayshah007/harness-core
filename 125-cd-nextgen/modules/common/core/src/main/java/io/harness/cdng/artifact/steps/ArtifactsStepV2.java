@@ -10,7 +10,6 @@ package io.harness.cdng.artifact.steps;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
@@ -31,6 +30,7 @@ import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.validator.EntityIdentifierValidator;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -43,9 +43,6 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
-import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
@@ -55,9 +52,6 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -98,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -133,7 +128,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
-    NGServiceConfig ngServiceConfig = null;
+    NGServiceConfig ngServiceConfig;
     try {
       // get service merged with service inputs
       String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
@@ -182,6 +177,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       ACTION actionForPrimaryArtifact =
           shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
       if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
+        checkAndWarnIfDoesNotFollowIdentifierRegex(
+            artifacts.getPrimary().getSpec().getIdentifier(), "Primary", logCallback);
         primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
         taskIds.add(primaryArtifactTaskId);
@@ -198,11 +195,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         ACTION actionForSidecar =
             shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
         if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
+          checkAndWarnIfDoesNotFollowIdentifierRegex(
+              sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
         } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
+          checkAndWarnIfDoesNotFollowIdentifierRegex(
+              sidecar.getSidecar().getSpec().getIdentifier(), "Sidecar", logCallback);
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
         }
       }
@@ -214,16 +215,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
-  enum ACTION {
-    CREATE_DELEGATE_TASK,
-    RUN_SYNC,
-    SKIP;
-  }
+  enum ACTION { CREATE_DELEGATE_TASK, RUN_SYNC, SKIP }
 
-  private boolean isSpecAndSourceTypePresent(ArtifactListConfig artifacts) {
-    return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
-  }
-  void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
+  private void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
     Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
         ? Set.of()
         : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
@@ -245,28 +239,11 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                     .originalEntityYaml(yaml)
                     .checkForAccess(true)
                     .getMergedYamlWithTemplateField(false)
-                    .build()));
+                    .build(),
+                false));
         return templateMergeResponseDTO.getMergedPipelineYaml();
-      } catch (InvalidRequestException e) {
-        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
-          throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
-        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
-          throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
-        } else {
-          throw new NGTemplateException(e.getMessage(), e);
-        }
-      } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
-      } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
-      } catch (UnexpectedException e) {
-        log.error("Error connecting to Template Service", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
-      } catch (Exception e) {
-        log.error("Unknown exception in resolving templates", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+      } catch (Exception ex) {
+        throw new InvalidRequestException(TEMPLATE_RESOLVE_EXCEPTION_MSG, ex);
       } finally {
         log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
             System.currentTimeMillis() - start, projectId, orgId, accountId);
@@ -439,7 +416,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           LogColor.Cyan, LogWeight.Bold));
     }
     if (taskResponse != null && taskResponse.getArtifactTaskExecutionResponse() != null
-        && EmptyPredicate.isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
+        && isNotEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
       logCallback.saveExecutionLog(LogHelper.color(
           taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
           LogColor.Green, LogWeight.Bold));
@@ -472,7 +449,22 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
   private boolean nonDelegateTaskArtifactsExist(OptionalSweepingOutput outputOptional) {
     return outputOptional != null && outputOptional.isFound()
-        && EmptyPredicate.isNotEmpty(
+        && isNotEmpty(
             ((ArtifactsStepV2SweepingOutput) outputOptional.getOutput()).getArtifactConfigMapForNonDelegateTaskTypes());
+  }
+
+  private void checkAndWarnIfDoesNotFollowIdentifierRegex(String str, String warnMsgPrefix, NGLogCallback logCallback) {
+    if (isNotEmpty(str)) {
+      final Pattern identifierPattern = EntityIdentifierValidator.IDENTIFIER_PATTERN;
+      if (!identifierPattern.matcher(str).matches()) {
+        logCallback.saveExecutionLog(
+            LogHelper.color(
+                String.format(
+                    "%s artifact identifier [%s] is not valid as per Harness Identifier Regex %s. Using this identifier in harness expressions might not work",
+                    warnMsgPrefix, str, identifierPattern.pattern()),
+                LogColor.Yellow, LogWeight.Bold),
+            LogLevel.WARN);
+      }
+    }
   }
 }

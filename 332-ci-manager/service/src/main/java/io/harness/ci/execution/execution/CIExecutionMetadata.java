@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -46,9 +45,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class CIExecutionMetadata {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
-  @FdIndex String accountId;
+  String accountId;
   OSType buildType;
-  @FdIndex String stageExecutionId;
+  String stageExecutionId;
   String queueId;
   Infrastructure.Type infraType;
   @Builder.Default
@@ -63,9 +62,9 @@ public class CIExecutionMetadata {
                  .field(CIExecutionMetadataKeys.buildType)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdAndStageExecutionId")
-                 .field(CIExecutionMetadataKeys.accountId)
+                 .name("stageExecutionIdAndAccountId")
                  .field(CIExecutionMetadataKeys.stageExecutionId)
+                 .field(CIExecutionMetadataKeys.accountId)
                  .build())
         .build();
   }

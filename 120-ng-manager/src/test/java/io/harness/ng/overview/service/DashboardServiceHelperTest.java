@@ -35,6 +35,10 @@ public class DashboardServiceHelperTest {
   private static final String INFRA_2 = "infra2";
   private static final String DISPLAY_NAME_1 = "displayName1";
   private static final String DISPLAY_NAME_2 = "displayName2";
+  private static final String ACCOUNT_ID = "accountId";
+  private static final String ORG_ID = "orgId";
+  private static final String PROJECT_ID = "projectId";
+  private static final String SERVICE_ID = "serviceId";
 
   private Map<String, String> envIdToNameMap;
   private Map<String, String> infraIdToNameMap;
@@ -496,5 +500,15 @@ public class DashboardServiceHelperTest {
         DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
             getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true);
     assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(true));
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_buildOpenTaskQuery() {
+    String query =
+        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = 'accountId' and orgidentifier = 'orgId' and projectidentifier = 'projectId' and service_id = 'serviceId' and service_startts > 1000";
+    assertThat(query).isEqualTo(
+        DashboardServiceHelper.buildOpenTaskQuery(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l));
   }
 }

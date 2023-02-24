@@ -857,7 +857,7 @@ public class TasStepHelper {
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
     if (tasStepPassThroughData.getShouldExecuteCustomFetch()) {
       return prepareCustomFetchManifestsTaskChainResponse(storeConfig, ambiance, stepElementParameters,
-          tasStepPassThroughData.getManifestOutcomeList(), tasStepPassThroughData);
+          tasStepPassThroughData, combineManifestOutcomes(tasStepPassThroughData));
     }
     if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       return prepareGitFetchTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData, storeConfig);
@@ -866,9 +866,19 @@ public class TasStepHelper {
         tasStepPassThroughData.getTasManifestOutcome());
   }
 
+  private List<ManifestOutcome> combineManifestOutcomes(TasStepPassThroughData tasStepPassThroughData) {
+    List<ManifestOutcome> combinedManifestOutcomes = new ArrayList<>();
+    if (!isNull(tasStepPassThroughData.getAutoScalerManifestOutcome())) {
+      combinedManifestOutcomes.add(tasStepPassThroughData.getAutoScalerManifestOutcome());
+    }
+    combinedManifestOutcomes.add(tasStepPassThroughData.getTasManifestOutcome());
+    combinedManifestOutcomes.addAll(tasStepPassThroughData.getVarsManifestOutcomeList());
+    return combinedManifestOutcomes;
+  }
+
   protected TaskChainResponse prepareCustomFetchManifestsTaskChainResponse(StoreConfig storeConfig, Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<ManifestOutcome> manifestOutcomeList,
-      TasStepPassThroughData tasStepPassThroughData) {
+      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      List<ManifestOutcome> manifestOutcomeList) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
     if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
@@ -1139,7 +1149,7 @@ public class TasStepHelper {
   public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
-    LogCallback logCallback = getLogCallback(CfCommandUnitConstants.VerifyManifests, ambiance, true);
+    LogCallback logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.VerifyManifests, ambiance, true);
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
                                             .setStartTime(System.currentTimeMillis())
                                             .setUnitName(CfCommandUnitConstants.VerifyManifests);

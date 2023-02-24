@@ -30,7 +30,7 @@ import io.harness.encryption.Encryptable;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -63,7 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class SettingAttributesSecretsMigrationHandler
-    extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<SettingAttribute> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(1);
 
   @Inject private AccountService accountService;

@@ -7,7 +7,9 @@
 
 package io.harness.k8s.client;
 
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.exception.ClusterCredentialsNotFoundException;
 import io.harness.k8s.model.KubernetesConfig;
@@ -15,12 +17,14 @@ import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -29,14 +33,14 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 public class K8sApiClient implements K8sClient {
-  private static final String MASTER_URL = "MASTER_URL";
-  private static final String TOKEN = "TOKEN";
-  private static final String CA_CRT = "CA_CRT";
+  @Inject @Named("backstageSaToken") private String backstageSaToken;
+  @Inject @Named("backstageSaCaCrt") private String backstageSaCaCrt;
+  @Inject @Named("backstageMasterUrl") private String backstageMasterUrl;
   @Inject private KubernetesHelperService kubernetesHelperService;
 
   @Override
   public boolean updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace)
-      throws ApiException {
+      throws Exception {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
@@ -53,7 +57,7 @@ public class K8sApiClient implements K8sClient {
 
   @Override
   public boolean updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace)
-      throws ApiException {
+      throws Exception {
     KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
@@ -67,20 +71,30 @@ public class K8sApiClient implements K8sClient {
     return replaceConfigMap(coreV1Api, configMap);
   }
 
-  private V1Secret getSecret(CoreV1Api coreV1Api, String namespace, String secretName) throws ApiException {
+  @Override
+  public void removeSecretData(String namespace, String secretName, List<String> envNames) throws Exception {
+    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
+    ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+    CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+    V1Secret secret = getSecret(coreV1Api, namespace, secretName);
+    Map<String, byte[]> secretData = secret.getData();
+    if (secretData != null) {
+      envNames.forEach(secretData::remove);
+    }
+    secret.setData(secretData);
+    replaceSecret(coreV1Api, secret);
+    log.info(
+        "Successfully removed [{}] environment secrets from [{}/Secret/{}]", envNames.size(), namespace, secretName);
+  }
+
+  private V1Secret getSecret(CoreV1Api coreV1Api, String namespace, String secretName) throws Exception {
     try {
       return coreV1Api.readNamespacedSecret(secretName, namespace, null);
     } catch (ApiException e) {
-      log.error("Error fetching Secret {} in namespace {}", secretName, namespace, e);
-      throw e;
-    }
-  }
-
-  private V1ConfigMap getConfigMap(CoreV1Api coreV1Api, String namespace, String configMapName) throws ApiException {
-    try {
-      return coreV1Api.readNamespacedConfigMap(configMapName, namespace, null);
-    } catch (ApiException e) {
-      log.error("Error fetching config map {} in namespace {}", configMapName, namespace, e);
+      ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
+      String errorMessage = String.format("Failed to update secret [%s] in namespace [%s] ", secretName, namespace)
+          + ExceptionUtils.getMessage(ex);
+      log.error(errorMessage, ex);
       throw e;
     }
   }
@@ -91,10 +105,22 @@ public class K8sApiClient implements K8sClient {
     try {
       coreV1Api.replaceNamespacedSecret(secretName, namespace, secret, null, null, null, null);
     } catch (ApiException e) {
-      log.error("Error updating secret {} in namespace {}", secretName, namespace, e);
+      ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
+      String errorMessage = String.format("Failed to update secret [%s] in namespace [%s] ", secretName, namespace)
+          + ExceptionUtils.getMessage(ex);
+      log.error(errorMessage, ex);
       throw e;
     }
     return true;
+  }
+
+  private V1ConfigMap getConfigMap(CoreV1Api coreV1Api, String namespace, String configMapName) throws ApiException {
+    try {
+      return coreV1Api.readNamespacedConfigMap(configMapName, namespace, null);
+    } catch (ApiException e) {
+      log.error("Error fetching config map {} in namespace {}", configMapName, namespace, e);
+      throw e;
+    }
   }
 
   private boolean replaceConfigMap(CoreV1Api coreV1Api, V1ConfigMap configMap) throws ApiException {
@@ -109,25 +135,23 @@ public class K8sApiClient implements K8sClient {
     return true;
   }
 
-  private KubernetesConfig getKubernetesConfig(String namespace) {
+  @Override
+  public KubernetesConfig getKubernetesConfig(String namespace) {
     if (StringUtils.isBlank(namespace)) {
       throw new InvalidRequestException("Empty namespace");
     }
-    String masterURL = System.getenv(MASTER_URL);
-    String token = System.getenv(TOKEN);
-    if (StringUtils.isBlank(masterURL)) {
+    if (StringUtils.isBlank(backstageMasterUrl)) {
       throw new ClusterCredentialsNotFoundException("Master URL not found");
     }
-    if (StringUtils.isBlank(token)) {
+    if (StringUtils.isBlank(backstageSaToken)) {
       throw new ClusterCredentialsNotFoundException("Service Account Token not found");
     }
     KubernetesConfigBuilder builder = KubernetesConfig.builder();
-    builder.masterUrl(masterURL);
-    builder.serviceAccountTokenSupplier(() -> token);
+    builder.masterUrl(backstageMasterUrl);
+    builder.serviceAccountTokenSupplier(() -> backstageSaToken);
 
-    String caCert = System.getenv(CA_CRT);
-    if (StringUtils.isNotBlank(caCert)) {
-      builder.clientCert(caCert.toCharArray());
+    if (StringUtils.isNotBlank(backstageSaCaCrt)) {
+      builder.clientCert(backstageSaCaCrt.toCharArray());
     }
     return builder.build();
   }

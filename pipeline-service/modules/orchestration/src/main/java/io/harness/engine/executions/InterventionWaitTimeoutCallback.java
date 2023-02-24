@@ -87,6 +87,7 @@ public class InterventionWaitTimeoutCallback implements TimeoutCallback {
         return interruptPackageBuilder.interruptType(InterruptType.IGNORE)
             .interruptConfig(interruptConfigBuilder.build())
             .build();
+      case MARK_AS_FAILURE:
       case ON_FAIL:
         return interruptPackageBuilder.interruptType(InterruptType.MARK_FAILED)
             .interruptConfig(interruptConfigBuilder.build())

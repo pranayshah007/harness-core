@@ -60,7 +60,6 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -111,8 +110,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
@@ -127,8 +126,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
-    PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml, isDraft, pipelineVersion);
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
+        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -272,7 +271,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, true);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
@@ -288,7 +287,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
-        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, pipelineName, yaml, ifMatch, isDraft, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -546,15 +545,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<PipelineValidationResponseBody> getPipelineValidateResult(
+  public ResponseDTO<PipelineValidationResponseDTO> getPipelineValidateResult(
       String accountId, String orgId, String projectId, String uuid) {
     Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
     if (eventByUuid.isEmpty()) {
       throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
     }
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
-    PipelineValidationResponseBody pipelineValidationResponseBody =
-        PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
-    return ResponseDTO.newResponse(pipelineValidationResponseBody);
+    PipelineValidationResponseDTO response =
+        PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
+    return ResponseDTO.newResponse(response);
   }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -38,7 +39,7 @@ public class AsgBlueGreenSwapServiceBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @NotNull
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   ParameterField<Boolean> downsizeOldAsg;
 

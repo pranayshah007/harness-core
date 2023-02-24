@@ -17,7 +17,7 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -34,7 +34,7 @@ import com.google.inject.Inject;
 import java.time.Duration;
 
 @OwnedBy(PL)
-public class DeleteAccountHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class DeleteAccountHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(Integer.MAX_VALUE);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(120);
 

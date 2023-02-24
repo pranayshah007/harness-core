@@ -44,3 +44,23 @@ commonPoolConfig:
   maxPoolSize: ${COMMON_POOL_MAX_SIZE:-1000}
   idleTime: ${COMMON_POOL_IDLE_TIME:-500}
   timeUnit: ${COMMON_POOL_IDLE_TIME_TIME_UNIT:-MILLISECONDS}
+
+mongo:
+  uri: mongodb://localhost:27017/harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  traceMode: DISABLED
+  mongoSSLConfig:
+    mongoSSLEnabled: false
+    mongoTrustStorePath:
+    mongoTrustStorePassword:
+  aliasDBName: harness
+
+cacheConfig:
+  cacheBackend: HAZELCAST
+  cacheNamespace: ""
+  disabledCaches: []

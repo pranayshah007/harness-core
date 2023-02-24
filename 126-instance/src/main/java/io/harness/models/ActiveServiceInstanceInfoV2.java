@@ -10,10 +10,14 @@ package io.harness.models;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
+@FieldNameConstants(innerTypeName = "Keys")
 public class ActiveServiceInstanceInfoV2 {
   private String serviceIdentifier;
   private String serviceName;
@@ -29,4 +33,36 @@ public class ActiveServiceInstanceInfoV2 {
   private String tag;
   private String displayName;
   private Integer count;
+
+  public static ProjectionOperation getProjection() {
+    return Aggregation.project()
+        .andExpression("_id." + Keys.serviceIdentifier)
+        .as(Keys.serviceIdentifier)
+        .andExpression("_id." + Keys.serviceName)
+        .as(Keys.serviceName)
+        .andExpression("_id." + Keys.envIdentifier)
+        .as(Keys.envIdentifier)
+        .andExpression("_id." + Keys.envName)
+        .as(Keys.envName)
+        .andExpression("_id." + Keys.infraIdentifier)
+        .as(Keys.infraIdentifier)
+        .andExpression("_id." + Keys.infraName)
+        .as(Keys.infraName)
+        .andExpression("_id." + Keys.clusterIdentifier)
+        .as(Keys.clusterIdentifier)
+        .andExpression("_id." + Keys.agentIdentifier)
+        .as(Keys.agentIdentifier)
+        .andExpression("_id." + Keys.lastPipelineExecutionId)
+        .as(Keys.lastPipelineExecutionId)
+        .andExpression("_id." + Keys.lastPipelineExecutionName)
+        .as(Keys.lastPipelineExecutionName)
+        .andExpression("_id." + Keys.lastDeployedAt)
+        .as(Keys.lastDeployedAt)
+        .andExpression("_id." + Keys.tag)
+        .as(Keys.tag)
+        .andExpression("_id." + Keys.displayName)
+        .as(Keys.displayName)
+        .andExpression(Keys.count)
+        .as(Keys.count);
+  }
 }

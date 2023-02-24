@@ -51,8 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
@@ -101,6 +103,21 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {
@@ -378,8 +395,23 @@ public class YamlUtils {
     return qualifiedNameList;
   }
 
-  public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
+  private String getStageFQNPathForV1Yaml(List<String> qualifiedNames, YamlNode yamlNode) {
+    if (qualifiedNames.size() == 1) {
+      if (!EmptyPredicate.isEmpty(yamlNode.getName())) {
+        return qualifiedNames.get(0) + "." + yamlNode.getName();
+      }
+      return qualifiedNames.get(0);
+    }
+    return qualifiedNames.get(0) + "." + qualifiedNames.get(1);
+  }
+
+  public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
+    // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode,
+        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+      return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
+    }
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }

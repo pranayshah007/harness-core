@@ -85,8 +85,8 @@ import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
@@ -1052,11 +1052,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     HelmChartManifestDelegateConfig helmManifest =
         (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
 
-    // sub-chart name will be non-empty only if FF is on and some value has been set
-    int index = isEmpty(helmManifest.getSubChartName())
-        ? -1
-        : helmTaskHelperBase.checkForDependencyUpdateFlag(
-            helmManifest.getHelmCommandFlag().getValueMap(), cliResponse.getOutput());
+    int index = helmTaskHelperBase.checkForDependencyUpdateFlag(
+        helmManifest.getHelmCommandFlag().getValueMap(), cliResponse.getOutput());
 
     return new HelmCommandResponseNG(cliResponse.getCommandExecutionStatus(),
         index == -1 ? cliResponse.getOutput() : cliResponse.getOutput().substring(index));

@@ -542,4 +542,24 @@ public class MergeHelperTest extends CategoryTest {
                  .getYaml();
     assertThat(merged).isEqualTo(runtime);
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeWithServiceAsAxisNameAndRuntimeInput() {
+    String base = "stage:\n"
+        + "  strategy:\n"
+        + "    matrix:\n"
+        + "      service: <+input>\n";
+    String runtime = "stage:\n"
+        + "  strategy:\n"
+        + "    matrix:\n"
+        + "      service:\n"
+        + "      - name: \"svc1\"\n"
+        + "      - name: \"svc2\"\n"
+        + "      - name: \"svc3\"\n"
+        + "      - name: \"svc4\"\n";
+    String result = mergeRuntimeInputValuesIntoOriginalYaml(base, runtime, false);
+    assertThat(result).isEqualTo(runtime);
+  }
 }

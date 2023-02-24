@@ -11,15 +11,18 @@ import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class EntityIdentifiersRule extends EntitiesRule {
-  public List<EntityDetails> entityIdentifiers;
+  @NotNull public List<EntityDetails> entityIdentifiers;
 
   @Override
   public RuleType getType() {

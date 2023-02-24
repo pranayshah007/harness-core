@@ -7,10 +7,13 @@
 
 package io.harness.batch.processing.billing.timeseries.service.impl;
 
+import static io.harness.batch.processing.tasklet.util.ClickHouseConstants.GET_CLUSTER_DATA_ENTRIES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.avro.ClusterBillingData;
 import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.batch.processing.entities.ClusterDataDetails;
 import io.harness.batch.processing.tasklet.util.ClickHouseConstants;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
@@ -20,12 +23,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Singleton;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -234,5 +237,22 @@ public class ClickHouseClusterDataService {
     Map<String, String> labelMap = jsonLabels.stream().collect(
         Collectors.toMap(label -> label.get(KEY).getAsString(), label -> label.get(VALUE).getAsString(), (a, b) -> b));
     return labelMap;
+  }
+
+  public ClusterDataDetails getClusterDataEntriesDetails(String accountId, long startTime) throws SQLException {
+    String query = String.format(GET_CLUSTER_DATA_ENTRIES, accountId, startTime);
+
+    Connection connection = clickHouseService.getConnection(batchMainConfig.getClickHouseConfig(), new Properties());
+    try (Statement statement = connection.createStatement()) {
+      try (ResultSet resultSet = statement.executeQuery(query)) {
+        while (resultSet.next()) {
+          return ClusterDataDetails.builder()
+              .entriesCount(resultSet.getInt("ENTRIESCOUNT"))
+              .billingAmountSum(resultSet.getDouble("BILLINGAMOUNTSUM"))
+              .build();
+        }
+      }
+    }
+    return null;
   }
 }

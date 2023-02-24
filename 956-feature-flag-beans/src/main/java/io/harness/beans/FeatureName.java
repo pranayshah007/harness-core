@@ -22,6 +22,7 @@ public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
+  SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
@@ -89,6 +90,7 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
+  FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -99,6 +101,7 @@ public enum FeatureName {
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
+  FFM_6683_ALL_ENVIRONMENTS_FLAGS,
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -231,6 +234,7 @@ public enum FeatureName {
   DISABLE_DEPLOYMENTS_SEARCH_AND_LIMIT_DEPLOYMENT_STATS,
   RATE_LIMITED_TOTP,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
+  DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
   ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS,
   TERRAFORM_AWS_CP_AUTHENTICATION,
   CI_DOCKER_INFRASTRUCTURE,
@@ -275,7 +279,6 @@ public enum FeatureName {
   AZURE_BLOB_SM,
   CONSIDER_ORIGINAL_STATE_VERSION,
   SINGLE_MANIFEST_SUPPORT,
-  ENV_GROUP,
   REDUCE_DELEGATE_MEMORY_SIZE("Reduce CG delegate memory to 4GB", HarnessTeam.DEL),
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   DISABLE_LOCAL_LOGIN,
@@ -327,6 +330,7 @@ public enum FeatureName {
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   AZURE_ARTIFACTS_NG,
+  BAMBOO_ARTIFACT_NG("Bamboo Artifact Connector NG", HarnessTeam.CDC),
   CD_AMI_ARTIFACTS_NG("AMI Artifact Source NG", HarnessTeam.CDC),
   GITHUB_PACKAGES,
   DO_NOT_RENEW_APPROLE_TOKEN(
@@ -415,15 +419,11 @@ public enum FeatureName {
       "FF to enable Jenkins as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   AZURE_WEBAPP_NG_AZURE_DEVOPS_ARTIFACTS(
       "FF to enable Azure DevOps Artifacts as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
-  DEL_EVALUATE_SECRET_EXPRESSION_SYNC(
-      "FF to disable asynchronous evaluation of secrets. With FF set to true and pipeline has more than one secret, they will get evaluate one after other",
-      HarnessTeam.DEL),
   SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS("UI FF to enable CloudWatch Metrics healthsource", HarnessTeam.CV),
   SRM_ENABLE_VERIFY_STEP_LONG_DURATION("Enable longer duration for verify step", HarnessTeam.CV),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
-  LOOKER_ENTITY_RECONCILIATION,
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
   NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
@@ -432,7 +432,6 @@ public enum FeatureName {
   SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
       "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
-  PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
   SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG),
   SPG_DISABLE_SEARCH_DEPLOYMENTS_PAGE("Disable search on deployment page in CG.", HarnessTeam.SPG),
   WINRM_SCRIPT_COMMAND_SPLIT(
@@ -473,10 +472,9 @@ public enum FeatureName {
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
   SRM_ET_RESOLVED_EVENTS("Feature flag for Error Tracking resolved events", HarnessTeam.CV),
   SRM_ET_CRITICAL_EVENTS("Enable code errors critical events configuration", HarnessTeam.CV),
+  SRM_ET_JIRA_INTEGRATION("Enable code errors JIRA integration", HarnessTeam.CV),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
-  DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
-      "FF to enable verbose logging for the manager process when secret gets evaluated", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
   CF_ROLLBACK_CUSTOM_STACK_NAME(
@@ -513,7 +511,6 @@ public enum FeatureName {
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE(
       "Create a binding with Workflow/Pipeline RBAC on triggers resource", HarnessTeam.SPG),
-  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS(
       "Flag that enables populating WorkflowExecution with ids of freeze windows that rejected the execution",
@@ -526,8 +523,6 @@ public enum FeatureName {
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
-  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
-
   PIE_NG_BATCH_GET_TEMPLATES(
       "FF to enable batching of templates to improve loading time of pipeline and template studio",
       HarnessTeam.PIPELINE),
@@ -605,6 +600,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
       "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC),
+  DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
+      "Enables the fetching of delegate selection records from google data store instead of mongo", HarnessTeam.DEL),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CCM_CLUSTER_ORCH("Show/ Hide navigation link for cluster orchestrator page", HarnessTeam.CE),
   SPG_DISABLE_SECRET_DETAILS("Disable secret management logs show in CG", HarnessTeam.SPG),
@@ -612,11 +609,23 @@ public enum FeatureName {
           + "This flag only works with Service and Environments v2",
       HarnessTeam.CDP),
   CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
+  IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
+  SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER("Validate the pipeline runtime input for triggers", HarnessTeam.SPG),
+  SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
+      "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
+  PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
+  SRM_ELK_LOGS_V2("Will enable Elasticsearch logs v2 health source in SRM", HarnessTeam.CV),
+  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+  PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
+  CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
+  CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
+  PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY(
+      "Allow different Service Principal in Auth Token and Request Body. Used for Internal purpose only.",
+      HarnessTeam.PL),
+  CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
-  IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
-  SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
-      "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG);
+  SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA);
 
   @Deprecated
   FeatureName() {
