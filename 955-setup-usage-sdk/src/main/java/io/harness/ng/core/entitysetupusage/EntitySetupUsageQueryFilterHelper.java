@@ -82,7 +82,6 @@ public class EntitySetupUsageQueryFilterHelper {
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;
   }
-
   private Criteria createCriteriaForDefaultReferredEntity() {
     return new Criteria().orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityIsDefault).is(true),
         Criteria.where(EntitySetupUsageKeys.referredEntityIsDefault).exists(false));

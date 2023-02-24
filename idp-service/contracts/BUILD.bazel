@@ -19,5 +19,3 @@ java_library(
         "@maven//:javax_validation_validation_api",
     ],
 )
-
-run_analysis()

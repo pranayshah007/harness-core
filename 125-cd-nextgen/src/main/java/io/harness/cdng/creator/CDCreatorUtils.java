@@ -60,6 +60,7 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK, StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY,
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC,
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT,
-        StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK, StepSpecTypeConstants.AWS_LAMBDA_DEPLOY);
+        StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK, StepSpecTypeConstants.AWS_LAMBDA_DEPLOY,
+        StepSpecTypeConstants.AWS_SAM_DEPLOY, StepSpecTypeConstants.AWS_SAM_ROLLBACK);
   }
 }

@@ -967,6 +967,7 @@ public class IntegrationStageUtils {
         ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
         String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
         return isNotEmpty(tagString) && !tagString.equals(TAG_EXPRESSION);
+      default:
     }
     return false;
   }

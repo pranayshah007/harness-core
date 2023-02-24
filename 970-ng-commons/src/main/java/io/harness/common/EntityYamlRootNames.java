@@ -222,4 +222,8 @@ public class EntityYamlRootNames {
   public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+
+  // AWS SAM
+  public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 }

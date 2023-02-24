@@ -27,6 +27,7 @@ public class ServiceLevelIndicatorSpec {
   @Valid
   @NotNull
   SLIMetricSpec spec;
+  SLIMissingDataType sliMissingDataType;
 
   public SLIMetricType getType() {
     return spec.getType();

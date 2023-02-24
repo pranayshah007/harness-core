@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 46
+version: 47
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -739,6 +739,30 @@ permissions:
       - project
   - identifier: chi_slo_delete
     name: Delete a SLO
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_view
+    name: View Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_edit
+    name: Create or Edit a Downtime
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chi_downtime_delete
+    name: Delete a Downtime
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:

@@ -21,7 +21,13 @@ import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
-import io.harness.exception.*;
+import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.DuplicateFileImportException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -180,6 +186,39 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
     }
     return optionalInputSetEntity;
+  }
+
+  @Override
+  public Optional<InputSetEntity> getMetadataWithoutValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
+      boolean loadFromFallbackBranch, boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          identifier, !deleted, getMetadata, loadFromFallbackBranch);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while retrieving input set [%s]", identifier), e);
+      throw new InvalidRequestException(
+          String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
+    }
+    return optionalInputSetEntity;
+  }
+
+  @Override
+  public InputSetEntity getMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetMetadataEntity = getMetadataWithoutValidations(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, true);
+    if (optionalInputSetMetadataEntity.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+    return optionalInputSetMetadataEntity.get();
   }
 
   @Override

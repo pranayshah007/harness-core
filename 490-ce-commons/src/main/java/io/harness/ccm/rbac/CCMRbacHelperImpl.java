@@ -53,6 +53,10 @@ import java.util.stream.Collectors;
 public class CCMRbacHelperImpl implements CCMRbacHelper {
   @Inject AccessControlClient accessControlClient;
   public static final String PERMISSION_MISSING_MESSAGE = "Missing permission %s on %s";
+  private static final String DESCRIPTIVE_PERMISSION_MISSING_MESSAGE =
+      "You do not have Permission to view %s. Permission to view %s is obtained by providing %s Permission against %s.";
+  private static final String ANOMALIES = "Anomalies";
+  private static final String RECOMMENDATIONS = "Recommendations";
   private static final String VIEW_PERMISSION = "View";
   private static final String EDIT_PERMISSION = "Create/Edit";
   private static final String DELETE_PERMISSION = "Delete";
@@ -199,14 +203,15 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, COST_OVERVIEW_VIEW, ALL_RESOURCES));
+        String.format(DESCRIPTIVE_PERMISSION_MISSING_MESSAGE, RECOMMENDATIONS, RECOMMENDATIONS, COST_OVERVIEW_VIEW,
+            ALL_RESOURCES));
   }
 
   @Override
   public void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW,
-        String.format(PERMISSION_MISSING_MESSAGE, COST_OVERVIEW_VIEW, ALL_RESOURCES));
+        String.format(DESCRIPTIVE_PERMISSION_MISSING_MESSAGE, ANOMALIES, ANOMALIES, COST_OVERVIEW_VIEW, ALL_RESOURCES));
   }
 
   @Override

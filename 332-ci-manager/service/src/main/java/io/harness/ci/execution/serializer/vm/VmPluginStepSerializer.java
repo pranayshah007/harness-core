@@ -163,6 +163,7 @@ public class VmPluginStepSerializer {
         pluginStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
     }
+    pluginStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(pluginStepInfo.getPrivileged(), false));
     return pluginStepBuilder.build();
   }
 

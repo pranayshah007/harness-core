@@ -1043,6 +1043,8 @@ components:
           format: int32
           description: The Execution number of this Pipeline.
           example: 0
+        parent_stage_info:
+          $ref: '#/components/schemas/ParentStageInfo'
       x-examples:
         example-recent:
           executor_info:
@@ -1788,6 +1790,35 @@ components:
                 required: true
                 type: string
       description: Response Body for Pipeline Inputs
+    ParentStageInfo:
+      title: ParentStageInfo
+      x-stoplight:
+        id: t0ci6ngiieo6c
+      type: object
+      description: 'Information about parent pipeline '
+      properties:
+        has_parent_pipeline:
+          type: boolean
+          description: boolean to describe whether or not this was executed through pipeline chaining
+        execution_id:
+          type: string
+          description: planExecutionId of parent pipeline execution
+        identifier:
+          type: string
+          description: pipeline identifier of parent pipeline
+        project_id:
+          type: string
+          description: project identifier
+        org_id:
+          type: string
+          description: org identifier
+        run_sequence:
+          type: integer
+          description: run sequence of parent pipeline execution
+          format: int32
+        stage_node_id:
+          type: string
+          description: node id of parent pipeline stage
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2062,6 +2093,14 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
+                      parent_stage_info:
+                        has_parent_pipeline: true
+                        execution_id: example_parent_execution_identifier
+                        identifier: example_parent_pipeline_id
+                        project_id: example_project_id
+                        org_id: example_org_id
+                        run_sequence: 12671687
+                        stage_node_id: example_stage_node_id
                   store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
@@ -2102,6 +2141,14 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
+                      parent_stage_info:
+                        has_parent_pipeline: true
+                        execution_id: example_parent_execution_identifier
+                        identifier: example_parent_pipeline_id
+                        project_id: example_project_id
+                        org_id: example_org_id
+                        run_sequence: 12671687
+                        stage_node_id: example_stage_node_id
                   store_type: REMOTE
                   connector_ref: example_connector
                   valid: true

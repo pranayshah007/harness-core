@@ -28,6 +28,8 @@ import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
+import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
@@ -40,6 +42,7 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
+import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
 import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -55,11 +58,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -761,5 +767,81 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     } finally {
       deleteFileIfExists(licenseUsageCSVReport.getPath());
     }
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsageInvalidAccountArgument() {
+    assertThatThrownBy(
+        () -> cdLicenseUsage.getServiceInstancesDateUsage(null, ServiceInstancesDateUsageParams.builder().build()))
+        .hasMessage(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG)
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsageNotValidaFromDate() {
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
+                               ServiceInstancesDateUsageParams.builder()
+                                   .fromDate("2022-14-01")
+                                   .toDate("2022-01-08")
+                                   .reportType(ServiceInstanceReportType.DAILY)
+                                   .build()))
+        .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-01")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsageNotValidaToDate() {
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
+                               ServiceInstancesDateUsageParams.builder()
+                                   .fromDate("2022-01-01")
+                                   .toDate("2022-14-08")
+                                   .reportType(ServiceInstanceReportType.DAILY)
+                                   .build()))
+        .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-08")
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetServiceInstancesDateUsage() {
+    when(utils.fetchServiceInstancesDateUsage(any())).thenReturn(getDailyServiceUsage());
+
+    ServiceInstancesDateUsageDTO serviceInstancesDateUsage =
+        cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
+            ServiceInstancesDateUsageParams.builder()
+                .fromDate("2022-01-01")
+                .toDate("2022-01-08")
+                .reportType(ServiceInstanceReportType.DAILY)
+                .build());
+
+    assertThat(serviceInstancesDateUsage).isNotNull();
+    assertThat(serviceInstancesDateUsage.getServiceInstancesUsage().size()).isEqualTo(7);
+    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getServiceInstancesUsage();
+    Integer serviceInstancesFirstDay = serviceInstances.get("2022-01-01");
+    assertThat(serviceInstancesFirstDay).isEqualTo(1);
+    Integer serviceInstancesLastDay = serviceInstances.get("2022-01-07");
+    assertThat(serviceInstancesLastDay).isEqualTo(10);
+  }
+
+  @NotNull
+  private Map<String, Integer> getDailyServiceUsage() {
+    Map<String, Integer> serviceInstancesUsage = new HashMap<>();
+    serviceInstancesUsage.put("2022-01-01", 1);
+    serviceInstancesUsage.put("2022-01-02", 2);
+    serviceInstancesUsage.put("2022-01-03", 3);
+    serviceInstancesUsage.put("2022-01-04", 4);
+    serviceInstancesUsage.put("2022-01-05", 5);
+    serviceInstancesUsage.put("2022-01-06", 1);
+    serviceInstancesUsage.put("2022-01-07", 10);
+    return serviceInstancesUsage;
   }
 }

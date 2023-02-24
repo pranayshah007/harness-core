@@ -281,9 +281,9 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     expectedVal = "1674468000000";
     assertThat(parsedVal).isEqualTo(expectedVal);
 
-    fieldValue = "2014-12-03T10:05:59.5646+09:00";
+    fieldValue = "2023-01-23T10:10:00.0000-03:00";
     parsedVal = jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
-    expectedVal = "1417568759000";
+    expectedVal = "1674479400000";
     assertThat(parsedVal).isEqualTo(expectedVal);
 
     JiraCreateUpdate jiraObjSpy = Mockito.spy(new JiraCreateUpdate("test"));

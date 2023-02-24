@@ -8,10 +8,11 @@
 package io.harness.ngmigration.expressions;
 
 import io.harness.expression.LateBindingMap;
+import io.harness.ngmigration.utils.MigratorUtility;
 
 public class AppVariablesMigratorFunctor extends LateBindingMap {
   @Override
   public synchronized Object get(Object key) {
-    return "<+variable." + key + ">";
+    return "<+variable." + MigratorUtility.generateIdentifier((String) key) + ">";
   }
 }

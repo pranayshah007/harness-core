@@ -20,7 +20,7 @@ import io.harness.TelemetryConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(DEL)
-public class DelegateTelemetryPublisher extends IteratorPumpModeHandler implements Handler<Account> {
+public class DelegateTelemetryPublisher extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String ACCOUNT = "Account";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(4);
