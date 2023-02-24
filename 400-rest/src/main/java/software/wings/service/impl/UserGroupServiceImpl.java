@@ -1093,8 +1093,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void removeUserGroupFromInvites(String accountId, String userGroupId) {
-    List<UserInvite> invites = userService.getInvitesFromAccountIdAndUserGroupId(accountId, userGroupId);
-    wingsPersistence.save(invites);
+    userService.updateUserInvitesForAccountIdAndUserGroupId(accountId, userGroupId);
   }
 
   @Override

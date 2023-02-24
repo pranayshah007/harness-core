@@ -288,6 +288,10 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.joda.time.DateTime;
+import org.springframework.data.mongodb.core.BulkOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
@@ -371,6 +375,7 @@ public class UserServiceImpl implements UserService {
   @Inject private UserServiceHelper userServiceHelper;
 
   @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
+  @Inject private MongoTemplate mongoTemplate;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -2418,12 +2423,31 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId) {
+  public void updateUserInvitesForAccountIdAndUserGroupId(String accountId, String userGroupId) {
     Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class)
                                             .filter(UserInvite.ACCOUNT_ID_KEY2, accountId)
                                             .field(UserInviteKeys.userGroups)
                                             .hasThisOne(userGroupId);
-    return userInviteQuery.asList();
+    List<UserInvite> inviteList = userInviteQuery.asList();
+
+    List<org.springframework.data.util.Pair<org.springframework.data.mongodb.core.query.Query, Update>> updates =
+        new ArrayList<>(inviteList.size());
+    inviteList.forEach(invite -> {
+      org.springframework.data.mongodb.core.query.Query inviteQuery =
+          new org.springframework.data.mongodb.core.query.Query(
+              Criteria.where(UserInvite.ACCOUNT_ID_KEY2).is(accountId).and(UserInvite.UUID_KEY).is(invite.getUuid()));
+
+      if (isNotEmpty(invite.getUserGroups())) {
+        invite.getUserGroups().remove(userGroupId);
+      }
+      Update update = new Update();
+      update.set(UserInviteKeys.userGroups, invite.getUserGroups());
+      updates.add(org.springframework.data.util.Pair.of(inviteQuery, update));
+    });
+
+    BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "userInvites");
+    bulkOperations.updateMulti(updates);
+    bulkOperations.execute();
   }
 
   @Override
