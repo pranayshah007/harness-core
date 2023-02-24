@@ -56,7 +56,8 @@ public class RollbackModeExecutionHelper {
   public PlanExecutionMetadata transformPlanExecutionMetadata(
       PlanExecutionMetadata planExecutionMetadata, String planExecutionID) {
     return planExecutionMetadata.withPlanExecutionId(planExecutionID)
-        .withProcessedYaml(transformProcessedYaml(planExecutionMetadata.getProcessedYaml()));
+        .withProcessedYaml(transformProcessedYaml(planExecutionMetadata.getProcessedYaml()))
+        .withUuid(null); // this uuid is the mongo uuid
   }
 
   private String transformProcessedYaml(String processedYaml) {
@@ -72,7 +73,8 @@ public class RollbackModeExecutionHelper {
     for (Node planNode : plan.getPlanNodes()) {
       if (nodeIDsToPreserve.contains(planNode.getUuid())
           || planNode.getStepType().getStepCategory() == StepCategory.STAGE
-          || EmptyPredicate.isEmpty(planNode.getStageFqn())) {
+          || EmptyPredicate.isEmpty(planNode.getStageFqn())
+          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
         updatedPlanNodes.add(planNode);
         continue;
       }

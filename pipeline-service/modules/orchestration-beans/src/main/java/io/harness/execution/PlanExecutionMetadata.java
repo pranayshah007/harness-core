@@ -46,7 +46,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNodeExecutionMetadata {
   public static final long TTL_MONTHS = 6;
 
-  @Id @dev.morphia.annotations.Id private String uuid;
+  @With @Id @dev.morphia.annotations.Id private String uuid;
 
   @With private String planExecutionId;
 
