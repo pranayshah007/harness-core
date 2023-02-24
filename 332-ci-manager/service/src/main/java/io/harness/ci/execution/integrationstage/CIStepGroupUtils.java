@@ -272,7 +272,7 @@ public class CIStepGroupUtils {
       }
     }
 
-    if (depth != null && depth != 0) {
+    if (depth != null) {
       settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(depth.toString()));
     }
 
