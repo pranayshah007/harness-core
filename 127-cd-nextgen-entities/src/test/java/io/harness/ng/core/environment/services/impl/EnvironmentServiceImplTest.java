@@ -47,6 +47,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -83,6 +84,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ClusterService clusterService;
   @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock Producer producer;
+  @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private EnvironmentRepository environmentRepository;
   @Inject private OutboxService outboxService;
@@ -96,6 +98,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Before
   public void setup() {
     Reflect.on(environmentService).set("transactionTemplate", transactionTemplate);
+    Reflect.on(environmentService).set("environmentEntitySetupUsageHelper", environmentEntitySetupUsageHelper);
     Reflect.on(environmentService).set("entitySetupUsageService", entitySetupUsageService);
     Reflect.on(environmentService).set("environmentRepository", environmentRepository);
     Reflect.on(environmentService).set("outboxService", outboxService);

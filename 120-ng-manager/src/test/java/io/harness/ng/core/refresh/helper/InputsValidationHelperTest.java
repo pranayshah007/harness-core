@@ -45,6 +45,7 @@ import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
@@ -86,6 +87,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
 
   @Mock HPersistence hPersistence;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   CDYamlFacade cdYamlFacade = new CDYamlFacade();
   ServiceEntityServiceImpl serviceEntityService;
   EnvironmentServiceImpl environmentService;
@@ -100,7 +102,7 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService, accountClient, settingsClient));
+        serviceEntityService, accountClient, settingsClient, environmentEntitySetupUsageHelper));
     environmentRefreshHelper = spy(new EnvironmentRefreshHelper(
         environmentService, infrastructureEntityService, serviceOverrideService, cdYamlFacade));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);
