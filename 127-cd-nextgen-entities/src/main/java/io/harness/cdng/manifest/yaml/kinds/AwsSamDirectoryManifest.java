@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.yaml.kinds;
 
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 
 import io.harness.annotation.RecasterAlias;
@@ -62,6 +63,8 @@ public class AwsSamDirectoryManifest implements ManifestAttributes, Visitable {
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> templateFilePath;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> configFilePath;
   // For Visitor Framework Impl
   String metadata;
 

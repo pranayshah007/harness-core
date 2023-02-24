@@ -7,8 +7,6 @@
 
 package io.harness.delegate.aws.sam;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,11 +20,13 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.AwsCliConfig;
 import io.harness.delegate.task.aws.sam.AwsSamDelegateTaskParams;
 import io.harness.delegate.task.aws.sam.AwsSamInfraConfig;
-import io.harness.delegate.task.aws.sam.AwsSamPublishConfig;
+import io.harness.delegate.task.aws.sam.AwsSamManifestConfig;
+import io.harness.delegate.task.aws.sam.AwsSamValidateBuildPackageConfig;
 import io.harness.delegate.task.aws.sam.request.AwsSamCommandRequest;
 import io.harness.delegate.task.aws.sam.request.AwsSamPublishRequest;
+import io.harness.delegate.task.aws.sam.request.AwsSamValidateBuildPackageRequest;
 import io.harness.delegate.task.aws.sam.response.AwsSamCommandResponse;
-import io.harness.delegate.task.aws.sam.response.AwsSamPublishResponse;
+import io.harness.delegate.task.aws.sam.response.AwsSamValidateBuildPackageResponse;
 import io.harness.delegate.task.sam.AwsSamCommandTaskHelper;
 import io.harness.delegate.task.sam.AwsSamInfraConfigHelper;
 import io.harness.exception.InvalidArgumentsException;
@@ -43,33 +43,38 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
+public class AwsSamValidateBuildPackageTaskHandler extends AwsSamCommandTaskHandler {
   private AwsSamClient awsSamClient;
   private long timeoutInMillis;
   private Map<String, String> envVariables;
 
   @Inject private AwsSamCommandTaskHelper awsSamCommandTaskHelper;
   @Inject private AwsSamInfraConfigHelper awsSamInfraConfigHelper;
+
   @Override
   protected AwsSamCommandResponse executeTaskInternal(AwsSamCommandRequest awsSamCommandRequest,
       AwsSamDelegateTaskParams awsSamDelegateTaskParams, ILogStreamingTaskClient iLogStreamingTaskClient,
       CommandUnitsProgress commandUnitsProgress) throws Exception {
-    if (!(awsSamCommandRequest instanceof AwsSamPublishRequest)) {
-      throw new InvalidArgumentsException(Pair.of("(awsSamCommandRequest", "Must be instance of AwsSamPublishRequest"));
+    if (!(awsSamCommandRequest instanceof AwsSamValidateBuildPackageRequest)) {
+      throw new InvalidArgumentsException(
+          Pair.of("(awsSamCommandRequest", "Must be instance of AwsSamValidateBuildPackageRequest"));
     }
-    AwsSamPublishRequest awsSamPublishRequest = (AwsSamPublishRequest) awsSamCommandRequest;
-    if (!(awsSamPublishRequest.getAwsSamInfraConfig() instanceof AwsSamInfraConfig)) {
+    AwsSamValidateBuildPackageRequest awsSamValidateBuildPackageRequest =
+        (AwsSamValidateBuildPackageRequest) awsSamCommandRequest;
+    if (!(awsSamValidateBuildPackageRequest.getAwsSamInfraConfig() instanceof AwsSamInfraConfig)) {
       throw new InvalidArgumentsException(Pair.of("AwsSamInfraConfig", "Must be instance of AwsSamInfraConfig"));
     }
 
-    if (isEmpty(awsSamPublishRequest.getTemplateFileContent())) {
-      throw new InvalidArgumentsException(Pair.of("AwsSamPublishRequest", "Template File Content shouldn't be empty"));
+    if (!(awsSamValidateBuildPackageRequest.getAwsSamManifestConfig() instanceof AwsSamManifestConfig)) {
+      throw new InvalidArgumentsException(Pair.of("AwsSamManifestConfig", "Must be instance of AwsSamManifestConfig"));
     }
 
-    AwsSamInfraConfig awsSamInfraConfig = awsSamPublishRequest.getAwsSamInfraConfig();
-    AwsSamPublishConfig awsSamPublishConfig = awsSamPublishRequest.getAwsSamPublishConfig();
+    AwsSamInfraConfig awsSamInfraConfig = awsSamValidateBuildPackageRequest.getAwsSamInfraConfig();
+    AwsSamValidateBuildPackageConfig awsSamValidateBuildPackageConfig =
+        awsSamValidateBuildPackageRequest.getAwsSamValidateBuildPackageConfig();
+    AwsSamManifestConfig awsSamManifestConfig = awsSamValidateBuildPackageRequest.getAwsSamManifestConfig();
 
-    timeoutInMillis = awsSamPublishRequest.getTimeoutIntervalInMin() * 60000;
+    timeoutInMillis = awsSamValidateBuildPackageRequest.getTimeoutIntervalInMin() * 60000;
     awsSamClient = new AwsSamClient();
     envVariables =
         awsSamCommandTaskHelper.getAwsCredentialsEnvironmentVariables(awsSamDelegateTaskParams.getWorkingDirectory());
@@ -79,13 +84,11 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
 
     LogCallback setupDirectoryLogCallback = new NGDelegateLogCallback(
         iLogStreamingTaskClient, AwsSamCommandUnitConstants.setupDirectory.toString(), true, commandUnitsProgress);
+    awsSamCommandTaskHelper.printCommandRequestFilesContent(
+        awsSamValidateBuildPackageRequest, setupDirectoryLogCallback);
     try {
-      // Setup Directory
-      setupDirectoryLogCallback.saveExecutionLog(format("Setting up AWS SAM directory..%n%n"), LogLevel.INFO);
-      awsSamCommandTaskHelper.saveTemplateAndConfigFileToDirectory(awsSamDelegateTaskParams.getWorkingDirectory(),
-          awsSamPublishRequest.getTemplateFileContent(), awsSamPublishRequest.getConfigFileContent(),
-          setupDirectoryLogCallback);
-      setupDirectoryLogCallback.saveExecutionLog("Done ..", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      awsSamCommandTaskHelper.setupDirectory(
+          awsSamValidateBuildPackageRequest, setupDirectoryLogCallback, awsSamDelegateTaskParams);
     } catch (Exception ex) {
       awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
           ex, setupDirectoryLogCallback, "Failed to setup AWS SAM directory ");
@@ -93,6 +96,7 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
 
     LogCallback configureCredLogCallback = new NGDelegateLogCallback(
         iLogStreamingTaskClient, AwsSamCommandUnitConstants.configureCred.toString(), true, commandUnitsProgress);
+
     try {
       // Configure Credentials
       awsSamCommandTaskHelper.setUpConfigureCredential(awsSamDelegateTaskParams.getWorkingDirectory(),
@@ -103,21 +107,44 @@ public class AwsSamPublishCommandTaskHandler extends AwsSamCommandTaskHandler {
           ex, configureCredLogCallback, "Configure Credentials failed");
     }
 
-    LogCallback publishLogCallback = new NGDelegateLogCallback(
-        iLogStreamingTaskClient, AwsSamCommandUnitConstants.publish.toString(), true, commandUnitsProgress);
+    LogCallback validateBuildPackageLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
+        AwsSamCommandUnitConstants.validateBuildPackage.toString(), true, commandUnitsProgress);
     try {
-      // Publish
-      awsSamCommandTaskHelper.printCommandRequestFilesContent(awsSamPublishRequest, publishLogCallback);
-      awsSamCommandTaskHelper.publish(awsSamClient, awsSamPublishConfig.getPublishCommandOptions(),
-          awsSamDelegateTaskParams, awsSamInfraConfig, timeoutInMillis, envVariables, publishLogCallback);
-      publishLogCallback.saveExecutionLog(format("Done...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      awsSamCommandTaskHelper.validate(awsSamClient, awsSamValidateBuildPackageConfig.getValidateCommandOptions(),
+          awsSamDelegateTaskParams, awsSamInfraConfig, timeoutInMillis, awsSamManifestConfig, envVariables,
+          validateBuildPackageLogCallback);
+      validateBuildPackageLogCallback.saveExecutionLog(format("Validate command successful..%n"), LogLevel.INFO);
     } catch (Exception ex) {
-      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(ex, publishLogCallback, "Publish Failed");
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
+          ex, validateBuildPackageLogCallback, "Validate Command Failed");
     }
 
-    return AwsSamPublishResponse.builder()
+    try {
+      awsSamCommandTaskHelper.build(awsSamClient, awsSamValidateBuildPackageConfig.getBuildCommandOptions(),
+          awsSamDelegateTaskParams, awsSamInfraConfig, timeoutInMillis, awsSamManifestConfig, envVariables,
+          validateBuildPackageLogCallback);
+      validateBuildPackageLogCallback.saveExecutionLog(format("Build command successful...%n"), LogLevel.INFO);
+    } catch (Exception ex) {
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
+          ex, validateBuildPackageLogCallback, "Build Command Failed");
+    }
+
+    String packageTemplateContent = null;
+    try {
+      packageTemplateContent = awsSamCommandTaskHelper.packagee(awsSamClient,
+          awsSamValidateBuildPackageConfig.getPackageCommandOptions(), awsSamDelegateTaskParams, awsSamInfraConfig,
+          timeoutInMillis, awsSamManifestConfig, envVariables, validateBuildPackageLogCallback);
+
+      validateBuildPackageLogCallback.saveExecutionLog(
+          format("Package command successful...%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception ex) {
+      awsSamCommandTaskHelper.saveErrorLogAndCloseLogStream(
+          ex, validateBuildPackageLogCallback, "Package Command Failed");
+    }
+    return AwsSamValidateBuildPackageResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .templateContent(packageTemplateContent)
         .build();
   }
 }

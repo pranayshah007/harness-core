@@ -485,10 +485,18 @@ import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.sam.AwsSamCommandType;
+import io.harness.delegate.task.aws.sam.AwsSamGitFetchFileConfig;
+import io.harness.delegate.task.aws.sam.AwsSamGitFetchFilesResult;
 import io.harness.delegate.task.aws.sam.AwsSamInfraConfig;
+import io.harness.delegate.task.aws.sam.AwsSamManifestConfig;
 import io.harness.delegate.task.aws.sam.AwsSamPublishConfig;
+import io.harness.delegate.task.aws.sam.AwsSamValidateBuildPackageConfig;
+import io.harness.delegate.task.aws.sam.request.AwsSamGitFetchRequest;
 import io.harness.delegate.task.aws.sam.request.AwsSamPublishRequest;
+import io.harness.delegate.task.aws.sam.request.AwsSamValidateBuildPackageRequest;
+import io.harness.delegate.task.aws.sam.response.AwsSamGitFetchResponse;
 import io.harness.delegate.task.aws.sam.response.AwsSamPublishResponse;
+import io.harness.delegate.task.aws.sam.response.AwsSamValidateBuildPackageResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2349,5 +2357,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsSamInfraConfig.class, 10000404);
     kryo.register(AwsSamPublishConfig.class, 10000405);
     kryo.register(AwsSamPublishResponse.class, 10000406);
+    kryo.register(AwsSamValidateBuildPackageRequest.class, 10000407);
+    kryo.register(AwsSamManifestConfig.class, 10000408);
+    kryo.register(AwsSamGitFetchFileConfig.class, 10000409);
+    kryo.register(AwsSamValidateBuildPackageConfig.class, 10000410);
+    kryo.register(AwsSamValidateBuildPackageResponse.class, 10000411);
+    kryo.register(AwsSamGitFetchRequest.class, 10000412);
+    kryo.register(AwsSamGitFetchResponse.class, 10000413);
+    kryo.register(AwsSamGitFetchFilesResult.class, 10000414);
   }
 }

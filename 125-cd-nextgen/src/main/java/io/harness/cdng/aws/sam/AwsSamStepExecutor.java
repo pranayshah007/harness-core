@@ -10,6 +10,7 @@ package io.harness.cdng.aws.sam;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.sam.beans.AwsSamStepExecutorParams;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -17,7 +18,4 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 @OwnedBy(CDP)
-public interface AwsSamStepExecutor {
-  TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, UnitProgressData unitProgressData);
-}
+public interface AwsSamStepExecutor {}

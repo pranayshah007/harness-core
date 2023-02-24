@@ -36,6 +36,7 @@ public class AwsSamDelegateTaskHelper {
 
   @Inject private Map<String, AwsSamCommandTaskHandler> commandTaskTypeToTaskHandlerMap;
   @Inject private AwsSamInfraConfigHelper awsSamInfraConfigHelper;
+  @Inject private AwsSamCommandTaskHelper awsSamCommandTaskHelper;
   public AwsSamCommandResponse getCommandResponse(
       AwsSamCommandRequest awsSamCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = awsSamCommandRequest.getCommandUnitsProgress() != null
@@ -66,6 +67,8 @@ public class AwsSamDelegateTaskHelper {
           sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+    } finally {
+      awsSamCommandTaskHelper.cleanup(workingDirectory);
     }
   }
 

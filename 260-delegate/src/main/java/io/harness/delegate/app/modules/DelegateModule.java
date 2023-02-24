@@ -102,6 +102,7 @@ import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
 import io.harness.delegate.aws.sam.AwsSamCommandTaskHandler;
 import io.harness.delegate.aws.sam.AwsSamPublishCommandTaskHandler;
+import io.harness.delegate.aws.sam.AwsSamValidateBuildPackageTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -359,7 +360,9 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.sam.AwsSamGitFetchTask;
 import io.harness.delegate.task.sam.AwsSamPublishCommandTask;
+import io.harness.delegate.task.sam.AwsSamValidateBuildPackageCommandTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
@@ -1617,6 +1620,8 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, AwsSamCommandTaskHandler.class);
     awsSamTaskTypeToTaskHandlerMap.addBinding(AwsSamCommandType.AWS_SAM_PUBLISH.name())
         .to(AwsSamPublishCommandTaskHandler.class);
+    awsSamTaskTypeToTaskHandlerMap.addBinding(AwsSamCommandType.AWS_SAM_VALIDATE_BUILD_PACKAGE.name())
+        .to(AwsSamValidateBuildPackageTaskHandler.class);
 
     // Artifact handlers
     MapBinder<SshWinRmArtifactType, ArtifactDownloadHandler> artifactHandlers =
@@ -2161,6 +2166,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
     mapBinder.addBinding(TaskType.AWS_SAM_PUBLISH).toInstance(AwsSamPublishCommandTask.class);
+    mapBinder.addBinding(TaskType.AWS_SAM_GIT_FETCH).toInstance(AwsSamGitFetchTask.class);
+    mapBinder.addBinding(TaskType.AWS_SAM_VALIDATE_BUILD_PACKAGE)
+        .toInstance(AwsSamValidateBuildPackageCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {

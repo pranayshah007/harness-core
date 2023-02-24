@@ -5,30 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aws.sam;
+package io.harness.cdng.aws.sam.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Builder;
+import lombok.Value;
+
 @OwnedBy(HarnessTeam.CDP)
-public enum SamOption {
-  templatePath {
-    @Override
-    public String toString() {
-      return "template";
-    }
-  },
-  region,
-  configPath {
-    @Override
-    public String toString() {
-      return "config-file";
-    }
-  },
-  outputTemplateFilePath {
-    @Override
-    public String toString() {
-      return "output-template-file";
-    }
-  }
+@Value
+@Builder
+public class AwsSamStepExecutorParams {
+  boolean shouldOpenFetchFilesLogStream;
+  String templateFilePath;
+  String templateFileContent;
+  String configFilePath;
+  String configFileContent;
 }

@@ -19,6 +19,14 @@ public class AwsSamClient {
     return new AwsSamValidateCommand(this);
   }
 
+  public AwsSamBuildCommand build() {
+    return new AwsSamBuildCommand(this);
+  }
+
+  public AwsSamPackageCommand packagee() {
+    return new AwsSamPackageCommand(this);
+  }
+
   public AwsSamPublishCommand publish() {
     return new AwsSamPublishCommand(this);
   }

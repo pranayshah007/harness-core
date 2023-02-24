@@ -34,6 +34,8 @@ public interface AwsSamCommandRequest extends TaskParameters, ExecutionCapabilit
   CommandUnitsProgress getCommandUnitsProgress();
   AwsSamInfraConfig getAwsSamInfraConfig();
   Integer getTimeoutIntervalInMin();
+  String getTemplateFileContent();
+  String getConfigFileContent();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

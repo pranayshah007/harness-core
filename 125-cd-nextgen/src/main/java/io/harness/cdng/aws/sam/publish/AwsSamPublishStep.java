@@ -135,7 +135,7 @@ public class AwsSamPublishStep extends CdTaskExecutable<AwsSamCommandResponse> {
     OptionalSweepingOutput awsSamValidateBuildPackageDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(awsSamPublishStepParameters.getAwsSamValidateBuildPackageFqn()
-                + "." + OutcomeExpressionConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE_OUTCOME));
+                + "." + OutcomeExpressionConstants.AWS_SAM_VALIDATE_BUILD_PACKAGE_OUTPUT));
 
     if (!awsSamValidateBuildPackageDataOptionalOutput.isFound()) {
       return skipTaskRequestOrThrowException(ambiance);

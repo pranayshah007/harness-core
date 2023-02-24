@@ -8,6 +8,12 @@
 package io.harness.aws.sam.command;
 
 public enum AwsSamCommandUnitConstants {
+  fetchFiles {
+    @Override
+    public String toString() {
+      return "Fetch Files";
+    }
+  },
   setupDirectory {
     @Override
     public String toString() {
@@ -26,22 +32,10 @@ public enum AwsSamCommandUnitConstants {
       return "Publish";
     }
   },
-  validate {
+  validateBuildPackage {
     @Override
     public String toString() {
-      return "Validate";
-    }
-  },
-  build {
-    @Override
-    public String toString() {
-      return "Build";
-    }
-  },
-  Package {
-    @Override
-    public String toString() {
-      return "Package";
+      return "Validate Build Package";
     }
   }
 }

@@ -7,4 +7,14 @@
 
 package io.harness.delegate.task.aws.sam;
 
-public enum AwsSamCommandType { AWS_SAM_PUBLISH, AWS_SAM_VALIDATE_BUILD_PACKAGE }
+import io.harness.git.model.FetchFilesResult;
+
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+public class AwsSamGitFetchFilesResult {
+  FetchFilesResult templateFileResult;
+  FetchFilesResult configFileResult;
+}

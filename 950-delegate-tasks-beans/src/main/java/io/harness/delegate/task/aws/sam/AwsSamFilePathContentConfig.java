@@ -5,30 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aws.sam;
+package io.harness.delegate.task.aws.sam;
+
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
 
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.NonFinal;
+
+@Value
+@Builder
 @OwnedBy(HarnessTeam.CDP)
-public enum SamOption {
-  templatePath {
-    @Override
-    public String toString() {
-      return "template";
-    }
-  },
-  region,
-  configPath {
-    @Override
-    public String toString() {
-      return "config-file";
-    }
-  },
-  outputTemplateFilePath {
-    @Override
-    public String toString() {
-      return "output-template-file";
-    }
-  }
+public class AwsSamFilePathContentConfig {
+  @NonFinal @Expression(ALLOW_SECRETS) String filePath;
+  @NonFinal @Expression(ALLOW_SECRETS) String fileContent;
 }

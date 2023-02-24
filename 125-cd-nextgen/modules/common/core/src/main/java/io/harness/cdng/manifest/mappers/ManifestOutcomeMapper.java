@@ -13,6 +13,7 @@ import static io.harness.cdng.manifest.ManifestType.AsgLaunchTemplate;
 import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
 import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.cdng.manifest.ManifestType.AwsLambda;
+import static io.harness.cdng.manifest.ManifestType.AwsSamDirectory;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
@@ -41,6 +42,7 @@ import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
@@ -66,6 +68,7 @@ import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
 import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.AwsLambdaDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
@@ -151,6 +154,8 @@ public class ManifestOutcomeMapper {
         return getGoogleCloudFunctionDefinitionManifestOutcome(manifestAttributes);
       case AwsLambda:
         return getAwsLambdaDefinitionManifestOutcome(manifestAttributes);
+      case AwsSamDirectory:
+        return getAwsSamDirectoryManifestOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Manifest Config type: [%s]", manifestAttributes.getKind()));
@@ -385,6 +390,16 @@ public class ManifestOutcomeMapper {
     return AwsLambdaDefinitionManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private AwsSamDirectoryManifestOutcome getAwsSamDirectoryManifestOutcome(ManifestAttributes manifestAttributes) {
+    AwsSamDirectoryManifest attributes = (AwsSamDirectoryManifest) manifestAttributes;
+    return AwsSamDirectoryManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .templateFilePath(attributes.getTemplateFilePath())
+        .configFilePath(attributes.getConfigFilePath())
         .build();
   }
 }

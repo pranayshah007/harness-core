@@ -39,7 +39,8 @@ public class AwsSamValidateBuildPackageStepParameters
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(AwsSamCommandUnitConstants.validate.toString(), AwsSamCommandUnitConstants.build.toString(),
-        AwsSamCommandUnitConstants.Package.toString());
+    return Arrays.asList(AwsSamCommandUnitConstants.fetchFiles.toString(),
+        AwsSamCommandUnitConstants.setupDirectory.toString(), AwsSamCommandUnitConstants.configureCred.toString(),
+        AwsSamCommandUnitConstants.validateBuildPackage.toString());
   }
 }

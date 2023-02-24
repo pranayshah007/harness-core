@@ -155,7 +155,7 @@ public class ServerlessTaskHelperBase {
     }
   }
 
-  private void downloadFilesFromGit(GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback,
+  public void downloadFilesFromGit(GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback,
       String accountId, String workingDirectory) {
     try {
       if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
@@ -273,7 +273,7 @@ public class ServerlessTaskHelperBase {
     }
   }
 
-  private void printFilesInExecutionLogs(
+  public void printFilesInExecutionLogs(
       GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback) {
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
     executionLogCallback.saveExecutionLog(
