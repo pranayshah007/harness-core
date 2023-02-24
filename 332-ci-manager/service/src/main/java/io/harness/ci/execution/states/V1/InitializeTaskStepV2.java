@@ -219,17 +219,18 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     AsyncExecutableResponse.Builder responseBuilder =
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
 
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     }
 
