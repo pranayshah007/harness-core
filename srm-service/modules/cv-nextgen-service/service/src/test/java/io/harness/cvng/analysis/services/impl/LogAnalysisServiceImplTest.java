@@ -9,12 +9,15 @@ package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.cvng.CVConstants.BULK_OPERATION_THRESHOLD;
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_RESOURCE;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,6 +73,7 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -83,6 +87,7 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -556,6 +561,17 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(logAnalysisService.getPreviousDeploymentAnalysis(
                    verificationTaskId, instant.minus(Duration.ofMinutes(9)), instant))
         .isNotNull();
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testGetLogFeedbackURL() throws URISyntaxException {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(LOG_ANALYSIS_RESOURCE + "/" + LOG_FEEDBACK_LIST);
+    uriBuilder.addParameter("verificationTaskId", verificationTaskId);
+    String url = uriBuilder.build().toString();
+    assertThat(url).isEqualTo("/log-analysis/log-feedbacks?verificationTaskId=" + verificationTaskId);
   }
 
   private List<ClusteredLog> createClusteredLogRecords(Instant startTime, Instant endTime) {

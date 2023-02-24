@@ -13,6 +13,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.ANALYSIS_RISK_RESULTS
 import static io.harness.cvng.analysis.CVAnalysisConstants.DEPLOYMENT_LOG_ANALYSIS_SAVE_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_RESOURCE;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_SAVE_PATH;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_ANALYSIS_URL;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_LOG_ANALYSIS_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TEST_DATA_PATH;
@@ -306,7 +307,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
 
   private String getLogFeedbackForDeploymentLog(AnalysisInput input) {
     URIBuilder uriBuilder = new URIBuilder();
-    uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + TEST_DATA_PATH);
+    uriBuilder.setPath(LOG_ANALYSIS_RESOURCE + "/" + LOG_FEEDBACK_LIST);
+    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
     return getUriString(uriBuilder);
   }
 

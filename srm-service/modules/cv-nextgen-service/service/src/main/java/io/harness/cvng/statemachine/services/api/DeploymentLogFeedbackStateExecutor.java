@@ -44,7 +44,7 @@ public class DeploymentLogFeedbackStateExecutor extends LogAnalysisStateExecutor
 
   @Override
   public AnalysisState execute(DeploymentLogFeedbackState analysisState) {
-    String workerTaskId = logAnalysisService.scheduleDeploymentLogAnalysisTask(analysisState.getInputs());
+    String workerTaskId = logAnalysisService.scheduleDeploymentLogFeedbackTask(analysisState.getInputs());
     analysisState.setWorkerTaskId(workerTaskId);
     Preconditions.checkNotNull(analysisState.getWorkerTaskId(), "workerId can not be null");
     analysisState.setStatus(AnalysisStatus.RUNNING);
