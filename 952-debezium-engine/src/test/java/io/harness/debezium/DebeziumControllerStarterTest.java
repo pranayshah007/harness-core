@@ -50,17 +50,17 @@ public class DebeziumControllerStarterTest extends CategoryTest {
   public void testStartDebeziumController() {
     List<String> collections = new ArrayList<>();
     doReturn(collections).when(debeziumConfig).getMonitoredCollections();
-    debeziumControllerStarter.startDebeziumController(debeziumConfig, null, null, null, new ArrayList<>());
+    debeziumControllerStarter.startDebeziumController(debeziumConfig, null, null, null, new ArrayList<>(), "");
     verify(executorService, times(0)).submit(any(Runnable.class));
     collections.add("coll1");
     collections.add("coll2");
     doReturn(collections).when(debeziumConfig).getMonitoredCollections();
-    doReturn(null).when(changeConsumerFactory).get(any(), any(), anyString());
+    doReturn(null).when(changeConsumerFactory).get(any(), any(), anyString(), anyString());
     MockedStatic<DebeziumConfiguration> utilities = Mockito.mockStatic(DebeziumConfiguration.class);
     utilities.when(() -> DebeziumConfiguration.getDebeziumProperties(any(DebeziumConfig.class), any(RedisConfig.class)))
         .thenReturn(null);
     when(executorService.submit(any(Callable.class))).thenReturn(ConcurrentUtils.constantFuture(""));
-    debeziumControllerStarter.startDebeziumController(debeziumConfig, null, null, null, new ArrayList<>());
+    debeziumControllerStarter.startDebeziumController(debeziumConfig, null, null, null, new ArrayList<>(), "");
     verify(executorService, times(2)).submit(any(Runnable.class));
   }
 }
