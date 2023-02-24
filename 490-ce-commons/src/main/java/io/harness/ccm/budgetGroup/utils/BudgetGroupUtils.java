@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -491,7 +492,7 @@ public class BudgetGroupUtils {
 
   private static List<ValueDataPoint> getAggregatedBudgetAmountForBudgets(List<Budget> budgets) {
     List<ValueDataPoint> aggregatedBudgetAmounts = new ArrayList<>();
-    Map<Long, Double> aggregatedBudgetAmountPerTimestamp = new HashMap<>();
+    Map<Long, Double> aggregatedBudgetAmountPerTimestamp = new TreeMap<>();
     for (Budget budget : budgets) {
       List<ValueDataPoint> budgetAmounts = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
       budgetAmounts.forEach(budgetAmount -> {
@@ -516,7 +517,7 @@ public class BudgetGroupUtils {
 
   private static List<ValueDataPoint> getAggregatedBudgetGroupAmountsForBudgetGroups(List<BudgetGroup> budgetGroups) {
     List<ValueDataPoint> aggregatedBudgetGroupAmounts = new ArrayList<>();
-    Map<Long, Double> aggregatedBudgetGroupAmountPerTimestamp = new HashMap<>();
+    Map<Long, Double> aggregatedBudgetGroupAmountPerTimestamp = new TreeMap<>();
     for (BudgetGroup budgetGroup : budgetGroups) {
       List<ValueDataPoint> budgetGroupAmounts = budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount();
       budgetGroupAmounts.forEach(budgetGroupAmount -> {
