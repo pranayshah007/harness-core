@@ -57,6 +57,7 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
     String pipeline = metadata.getYaml().toStringUtf8();
     ResponseDTO<CDStageMetaDataDTO> responseDTO =
         cdStageMetaDataService.getServiceAndEnvironmentRef(stageIdentifier, pipeline);
+    log.info("Received CDStageMetaDataDTO responseDTO {}", responseDTO);
     List<ServiceEnvRef> serviceEnvRefList = responseDTO.getData().getServiceEnvRefList();
     if (isEmpty(serviceEnvRefList)) {
       return ExpansionResponse.builder()
@@ -107,7 +108,7 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
       }
     }
     ExpandedValue value = SLOPolicyExpandedValue.builder().sloPolicyDTO(sloPolicyDTO).build();
-
+    log.info("Expanded SLOPolicy value {}", value);
     return ExpansionResponse.builder()
         .success(true)
         .key(value.getKey())
