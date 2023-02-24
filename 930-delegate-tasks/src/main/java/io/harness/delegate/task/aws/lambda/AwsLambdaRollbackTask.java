@@ -9,7 +9,6 @@ package io.harness.delegate.task.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.aws.lambda.AwsLambdaPrepareRollbackTaskHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaRollbackTaskCommandHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -19,7 +18,6 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
