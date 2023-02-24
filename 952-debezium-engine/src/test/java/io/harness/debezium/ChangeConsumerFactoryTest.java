@@ -44,7 +44,7 @@ public class ChangeConsumerFactoryTest extends CategoryTest {
                                       .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                       .eventsFrameworkConfiguration(null)
                                       .build(),
-            null, "coll");
+            null, "coll", "");
     assertNotNull(eventsFrameworkChangeConsumerStreaming);
     assertThat(eventsFrameworkChangeConsumerStreaming).isInstanceOf(EventsFrameworkChangeConsumerStreaming.class);
     assertThatThrownBy(()
@@ -53,7 +53,7 @@ public class ChangeConsumerFactoryTest extends CategoryTest {
                                                             .consumerType(null)
                                                             .eventsFrameworkConfiguration(null)
                                                             .build(),
-                               null, "coll"))
+                               null, "coll", ""))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

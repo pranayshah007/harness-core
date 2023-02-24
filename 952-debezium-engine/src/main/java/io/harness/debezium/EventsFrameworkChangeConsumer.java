@@ -15,6 +15,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
+import io.harness.redis.RedissonClientFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
@@ -29,6 +30,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.redisson.api.RMap;
+import org.redisson.api.RedissonClient;
 
 @Slf4j
 public abstract class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsumer {
@@ -41,16 +44,20 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
   int redisStreamSize;
   CfClient cfClient;
   EventsFrameworkConfiguration configuration;
+  EventsFrameworkConfiguration globalEventsFrameworkConfiguration;
   ConsumerMode mode;
+  String connectorName;
 
   public EventsFrameworkChangeConsumer(ChangeConsumerConfig changeConsumerConfig, CfClient cfClient, String collection,
-      DebeziumProducerFactory debeziumProducerFactory) {
+      DebeziumProducerFactory debeziumProducerFactory, String connectorName) {
     this.mode = changeConsumerConfig.getConsumerMode();
     this.configuration = changeConsumerConfig.getEventsFrameworkConfiguration();
     this.collectionName = collection;
     this.producerFactory = debeziumProducerFactory;
     this.redisStreamSize = changeConsumerConfig.getRedisStreamSize();
+    this.globalEventsFrameworkConfiguration = changeConsumerConfig.getGlobalEventsFrameworkConfiguration();
     this.cfClient = cfClient;
+    this.connectorName = connectorName;
   }
 
   @Override
@@ -73,6 +80,7 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
         if (!opType.isEmpty()) {
           if (shouldStop(opType)) {
             log.error("Stopping Debezium controller for collection {}, mode {}", collection, mode);
+            disableSnapshot();
             throw new InvalidRequestException(
                 "Stopping Debezium controller for collection: " + collection + " mode: " + mode);
           }
@@ -126,5 +134,12 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
     map.put("collection", collectionName);
     map.put("mode", mode.toString());
     return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  void disableSnapshot() {
+    RedissonClient redissonClient =
+        RedissonClientFactory.getClient(globalEventsFrameworkConfiguration.getRedisConfig());
+    RMap<String, String> isSnapshotEnabledMap = redissonClient.getMap("isSnapshotEnabled");
+    isSnapshotEnabledMap.put(connectorName, "false");
   }
 }

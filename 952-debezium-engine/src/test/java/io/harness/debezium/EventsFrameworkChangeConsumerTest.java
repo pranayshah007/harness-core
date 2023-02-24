@@ -61,7 +61,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
                                                      .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                                      .eventsFrameworkConfiguration(null)
                                                      .build(),
-          null, "coll", null);
+          null, "coll", null, "");
   private static final String key = "key";
   private static final String value = "value";
   ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null);
@@ -112,7 +112,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
                                                        .eventsFrameworkConfiguration(null)
                                                        .consumerMode(mode)
                                                        .build(),
-            cfClient, "coll.mode", producerFactory);
+            cfClient, "coll.mode", producerFactory, "");
     List<ChangeEvent<String, String>> records = new ArrayList<>();
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);

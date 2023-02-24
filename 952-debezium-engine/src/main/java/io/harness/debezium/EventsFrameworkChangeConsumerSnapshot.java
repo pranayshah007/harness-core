@@ -15,8 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EventsFrameworkChangeConsumerSnapshot extends EventsFrameworkChangeConsumer {
   public EventsFrameworkChangeConsumerSnapshot(ChangeConsumerConfig changeConsumerConfig, CfClient cfClient,
-      String collection, DebeziumProducerFactory producerFactory) {
-    super(changeConsumerConfig, cfClient, collection, producerFactory);
+      String collection, DebeziumProducerFactory producerFactory, String connectorName) {
+    super(changeConsumerConfig, cfClient, collection, producerFactory, connectorName);
   }
   @Override
   public boolean shouldStop(Optional<OpType> opType) {

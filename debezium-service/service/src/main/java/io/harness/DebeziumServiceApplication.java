@@ -24,6 +24,7 @@ import io.harness.health.HealthService;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.redis.RedisPersistentLocker;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.reflection.HarnessReflections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +47,8 @@ import javax.ws.rs.Path;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.model.Resource;
+import org.redisson.api.RMap;
+import org.redisson.api.RedissonClient;
 
 @Slf4j
 public class DebeziumServiceApplication extends Application<DebeziumServiceConfiguration> {
@@ -143,25 +146,37 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
         EventsFrameworkConfiguration eventsFrameworkConfiguration = debeziumConfig.getEventsFrameworkConfiguration();
         if (debeziumConfig.getSnapshotMode().equals("initial")) {
           consumerMode = ConsumerMode.SNAPSHOT;
-          if (debeziumConfig.getEventsFrameworkConfiguration() == null) {
+          if (eventsFrameworkConfiguration == null) {
             log.error("EventsFramework Configuration should be mentioned for snapshotting");
+            continue;
+          }
+          if (!shouldTakeSnapshot(appConfig.getEventsFrameworkConfiguration(), debeziumConfig.getConnectorName())) {
+            log.info("snapshot already taken for configuration with name {}", debeziumConfig.getConnectorName());
             continue;
           }
         }
         if (eventsFrameworkConfiguration == null) {
           eventsFrameworkConfiguration = appConfig.getEventsFrameworkConfiguration();
         }
-        ChangeConsumerConfig changeConsumerConfig = ChangeConsumerConfig.builder()
-                                                        .consumerMode(consumerMode)
-                                                        .consumerType(ConsumerType.EVENTS_FRAMEWORK)
-                                                        .eventsFrameworkConfiguration(eventsFrameworkConfiguration)
-                                                        .redisStreamSize(debeziumConfig.getRedisStreamSize())
-                                                        .build();
+        ChangeConsumerConfig changeConsumerConfig =
+            ChangeConsumerConfig.builder()
+                .consumerMode(consumerMode)
+                .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                .eventsFrameworkConfiguration(eventsFrameworkConfiguration)
+                .redisStreamSize(debeziumConfig.getRedisStreamSize())
+                .globalEventsFrameworkConfiguration(appConfig.getEventsFrameworkConfiguration())
+                .build();
 
         starter.startDebeziumController(debeziumConfig, changeConsumerConfig, locker, appConfig.getRedisLockConfig(),
-            appConfig.getListOfErrorCodesForOffsetReset());
+            appConfig.getListOfErrorCodesForOffsetReset(), debeziumConfig.getConnectorName());
       }
     }
     MaintenanceController.forceMaintenance(false);
+  }
+
+  boolean shouldTakeSnapshot(EventsFrameworkConfiguration eventsFrameworkConfiguration, String name) {
+    RedissonClient redissonClient = RedissonClientFactory.getClient(eventsFrameworkConfiguration.getRedisConfig());
+    RMap<String, String> isSnapshotEnabledMap = redissonClient.getMap("isSnapshotEnabled");
+    return !isSnapshotEnabledMap.containsKey(name) || isSnapshotEnabledMap.get(name).equals("true");
   }
 }

@@ -46,7 +46,7 @@ public class DebeziumControllerTest extends CategoryTest {
                                                      .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                                      .eventsFrameworkConfiguration(null)
                                                      .build(),
-          null, "coll", null);
+          null, "coll", null, "");
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)

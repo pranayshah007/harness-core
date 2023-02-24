@@ -17,17 +17,17 @@ public class ChangeConsumerFactory {
 
   @SuppressWarnings("unchecked")
   public <T extends MongoCollectionChangeConsumer> T get(
-      ChangeConsumerConfig changeConsumerConfig, CfClient cfClient, String collection) {
+      ChangeConsumerConfig changeConsumerConfig, CfClient cfClient, String collection, String connectorName) {
     ConsumerType consumerType = changeConsumerConfig.getConsumerType();
     if (consumerType != null) {
       switch (consumerType) {
         case EVENTS_FRAMEWORK:
           if (changeConsumerConfig.getConsumerMode() == ConsumerMode.SNAPSHOT) {
             return (T) new EventsFrameworkChangeConsumerSnapshot(
-                changeConsumerConfig, cfClient, collection, producerFactory);
+                changeConsumerConfig, cfClient, collection, producerFactory, connectorName);
           } else {
             return (T) new EventsFrameworkChangeConsumerStreaming(
-                changeConsumerConfig, cfClient, collection, producerFactory);
+                changeConsumerConfig, cfClient, collection, producerFactory, connectorName);
           }
         default:
           throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());

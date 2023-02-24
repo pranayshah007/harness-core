@@ -13,8 +13,8 @@ import java.util.Optional;
 
 public class EventsFrameworkChangeConsumerStreaming extends EventsFrameworkChangeConsumer {
   public EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig changeConsumerConfig, CfClient cfClient,
-      String collection, DebeziumProducerFactory debeziumProducerFactory) {
-    super(changeConsumerConfig, cfClient, collection, debeziumProducerFactory);
+      String collection, DebeziumProducerFactory debeziumProducerFactory, String connectorName) {
+    super(changeConsumerConfig, cfClient, collection, debeziumProducerFactory, connectorName);
   }
 
   @Override
