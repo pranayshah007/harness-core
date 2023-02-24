@@ -272,7 +272,6 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                               .orgIdentifier(UUID.randomUUID().toString())
                                               .accountIdentifier(UUID.randomUUID().toString())
                                               .build();
-
     LogFeedback.LogFeedbackBuilder logFeedbackBuilder1 = LogFeedback.builder()
                                                              .environmentIdentifier("env1")
                                                              .serviceIdentifier("svc1")
