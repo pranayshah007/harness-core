@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 16
+version: 17
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -61,3 +61,4 @@ roles:
       - ccm_cloudAssetGovernanceEnforcement_view
       - ccm_cloudAssetGovernanceRuleSet_view
       - ccm_cloudAssetGovernanceRule_view
+      - core_file_view
