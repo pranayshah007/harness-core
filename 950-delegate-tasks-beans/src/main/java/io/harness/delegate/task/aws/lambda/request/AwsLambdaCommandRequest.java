@@ -19,6 +19,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
@@ -58,6 +59,11 @@ public interface AwsLambdaCommandRequest extends TaskParameters, ExecutionCapabi
 
     if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
       AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((AwsLambdaS3ArtifactConfig) awsLambdaArtifactConfig)
+                                               .getConnectorDTO()
+                                               .getConnectorConfig();
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+      AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((AwsLambdaEcrArtifactConfig) awsLambdaArtifactConfig)
                                                .getConnectorDTO()
                                                .getConnectorConfig();
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));

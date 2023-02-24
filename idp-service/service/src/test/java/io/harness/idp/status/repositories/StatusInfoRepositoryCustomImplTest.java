@@ -7,6 +7,7 @@
 
 package io.harness.idp.status.repositories;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -18,7 +19,6 @@ import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,13 +46,13 @@ public class StatusInfoRepositoryCustomImplTest {
     when(mongoTemplate.findOne(any(Query.class), eq(StatusInfoEntity.class))).thenReturn(null);
     when(mongoTemplate.save(any(StatusInfoEntity.class))).thenReturn(statusInfoEntity);
     StatusInfoEntity entity = statusInfoRepositoryCustomImpl.saveOrUpdate(statusInfoEntity);
-    Assert.assertNotNull(entity);
+    assertNotNull(entity);
 
     when(mongoTemplate.findOne(any(Query.class), eq(StatusInfoEntity.class))).thenReturn(statusInfoEntity);
     when(mongoTemplate.findAndModify(any(Query.class), any(Update.class), any(), eq(StatusInfoEntity.class)))
         .thenReturn(statusInfoEntity);
     entity = statusInfoRepositoryCustomImpl.saveOrUpdate(statusInfoEntity);
-    Assert.assertNotNull(entity);
+    assertNotNull(entity);
   }
 
   StatusInfoEntity initializeStatusInfoEntity() {

@@ -23,7 +23,7 @@ cp /harness/${MODULE}/config/key.pem .
 cp /harness/${MODULE}/config/cert.pem .
 
 if [[ ${MODULE} == 332-ci-manager ]];then
-  cp /harness/${MODULE}/config/ci-manager-config.yml .
+  cp /harness/${MODULE}/config/ci-manager-config.yml ./config.yml
 else
   cp /harness/${MODULE}/config/config.yml .
 fi

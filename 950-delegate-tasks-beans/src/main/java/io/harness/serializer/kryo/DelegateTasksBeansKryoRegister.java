@@ -213,6 +213,10 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
+import io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse;
+import io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.bamboo.BambooValidationParams;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
@@ -422,6 +426,8 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -489,6 +495,7 @@ import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
@@ -644,6 +651,9 @@ import io.harness.delegate.task.ecs.request.EcsRunTaskArnRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnBlueGreenCreateServiceRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnCanaryDeployRequest;
+import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -2148,6 +2158,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskRequest.class, 573542);
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
+    kryo.register(EcsTaskArnRollingDeployRequest.class, 573645);
+    kryo.register(EcsTaskArnCanaryDeployRequest.class, 573646);
+    kryo.register(EcsTaskArnBlueGreenCreateServiceRequest.class, 573647);
 
     // ASG
     kryo.register(AsgCanaryDeployRequest.class, 573571);
@@ -2342,6 +2355,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitFileLocationDetails.class, 673571);
     kryo.register(ScmBatchGetFileTaskResponseData.class, 673572);
 
+    kryo.register(BambooTestConnectionTaskParams.class, 873572);
+    kryo.register(BambooConnectionTaskResponse.class, 873573);
+    kryo.register(BambooCapabilityHelper.class, 873574);
+    kryo.register(BambooValidationParams.class, 873575);
+    kryo.register(BambooArtifactDelegateRequest.class, 873576);
+    kryo.register(BambooArtifactDelegateResponse.class, 873577);
     kryo.register(TerraformCloudTaskParams.class, 680000);
     kryo.register(TerraformCloudTaskType.class, 680001);
     kryo.register(TerraformCloudDelegateTaskResponse.class, 680002);
@@ -2365,9 +2384,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaArtifactConfig.class, 10000508);
     kryo.register(AwsLambdaS3ArtifactConfig.class, 10000509);
     kryo.register(AwsLambda.class, 10000510);
-      kryo.register(AwsLambdaException.class, 10000511);
-      kryo.register(AwsLambdaRollbackRequest.class, 10000512);
-      kryo.register(AwsLambdaRollbackResponse.class, 10000513);
-      kryo.register(AwsLambdaPrepareRollbackResponse.class, 10000514);
+    kryo.register(AwsLambdaEcrArtifactConfig.class, 10000511);
+    kryo.register(AwsLambdaException.class, 10000512);
+    kryo.register(AwsLambdaRollbackRequest.class, 10000513);
+    kryo.register(AwsLambdaRollbackResponse.class, 10000514);
+    kryo.register(AwsLambdaPrepareRollbackResponse.class, 10000515);
   }
 }

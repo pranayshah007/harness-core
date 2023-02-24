@@ -24,6 +24,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.PolicyMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
@@ -44,6 +45,7 @@ import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
+import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
@@ -274,6 +276,7 @@ public class PipelinesApiUtils {
     recentExecutionInfo.setEnded(executionInfo.getEndTs());
     recentExecutionInfo.setExecutionStatus(getExecutionStatus(executionInfo.getStatus()));
     recentExecutionInfo.setExecutorInfo(getExecutorInfo(executionInfo.getExecutorInfo()));
+    recentExecutionInfo.setParentStageInfo(getParentStageInfo(executionInfo.getParentStageInfo()));
     return recentExecutionInfo;
   }
 
@@ -293,6 +296,24 @@ public class PipelinesApiUtils {
     executorInfo.setEmail(infoDTO.getEmail());
     executorInfo.setTriggerType(getTrigger(infoDTO.getTriggerType()));
     return executorInfo;
+  }
+
+  public static ParentStageInfo getParentStageInfo(PipelineStageInfo pipelineStageInfo) {
+    if (pipelineStageInfo == null) {
+      return null;
+    }
+    ParentStageInfo parentStageInfo = new ParentStageInfo();
+    parentStageInfo.setHasParentPipeline(pipelineStageInfo.getHasParentPipeline());
+    if (!pipelineStageInfo.getHasParentPipeline()) {
+      return parentStageInfo;
+    }
+    parentStageInfo.setExecutionId(pipelineStageInfo.getExecutionId());
+    parentStageInfo.setIdentifier(pipelineStageInfo.getIdentifier());
+    parentStageInfo.setStageNodeId(pipelineStageInfo.getStageNodeId());
+    parentStageInfo.setRunSequence(pipelineStageInfo.getRunSequence());
+    parentStageInfo.setProjectId(pipelineStageInfo.getProjectId());
+    parentStageInfo.setOrgId(pipelineStageInfo.getOrgId());
+    return parentStageInfo;
   }
 
   public static TriggerTypeEnum getTrigger(TriggerType triggerType) {

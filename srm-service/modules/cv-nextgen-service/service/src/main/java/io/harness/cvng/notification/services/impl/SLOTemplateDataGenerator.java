@@ -15,8 +15,14 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+
 public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCondition>
     extends NotificationRuleTemplateDataGenerator<T> {
+  public static final String MONITORED_SERVICE_URL = "MONITORED_SERVICE_URL";
+
   @Override
   public String getEntityName() {
     return SLO_NAME;
@@ -30,9 +36,30 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
         projectParams.getProjectIdentifier(), identifier, endTime);
   }
 
+  public String getMonitoredServiceUrl(String baseUrl, ProjectParams projectParams, String monitoredServiceIdentifier) {
+    Instant currentInstant = this.clock.instant();
+    Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
+    return String.format(
+        "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&endTime=%s&duration=FOUR_HOURS",
+        baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME, projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), monitoredServiceIdentifier, endTime);
+  }
+
   @Override
   public String getAnomalousMetrics(
       ProjectParams projectParams, String identifier, long startTime, SLONotificationRuleCondition condition) {
     return "";
+  }
+
+  @Override
+  public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
+      String serviceIdentifier, String monitoredServiceIdentifier, T condition,
+      Map<String, String> notificationDataMap) {
+    String vanityUrl = getVanityUrl(projectParams.getAccountIdentifier());
+    String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
+    final Map<String, String> templateData = super.getTemplateData(
+        projectParams, name, identifier, serviceIdentifier, monitoredServiceIdentifier, condition, notificationDataMap);
+    templateData.put(MONITORED_SERVICE_URL, getMonitoredServiceUrl(baseUrl, projectParams, monitoredServiceIdentifier));
+    return templateData;
   }
 }

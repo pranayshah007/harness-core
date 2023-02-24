@@ -22,7 +22,9 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
 import io.harness.configuration.ConfigurationType;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
+import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.delegate.beans.StartupMode;
@@ -56,6 +58,7 @@ import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UserProvider;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rest.RestResponse;
 import io.harness.scm.ScmSecret;
@@ -64,6 +67,8 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.morphia.EventServerMorphiaRegistrar;
+import io.harness.service.impl.DelegateCacheImpl;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testframework.framework.ManagerExecutor;
@@ -134,6 +139,8 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -316,7 +323,43 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
                                                   .cacheNamespace("harness-cache")
                                                   .build());
     modules.add(0, cacheModule);
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("delegate")
+      @Singleton
+      public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
+        return mock(RLocalCachedMap.class);
+      }
 
+      @Provides
+      @Named("delegate_group")
+      @Singleton
+      public RLocalCachedMap<String, DelegateGroup> getDelegateGroupCache(DelegateRedissonCacheManager cacheManager) {
+        return mock(RLocalCachedMap.class);
+      }
+
+      @Provides
+      @Named("delegates_from_group")
+      @Singleton
+      public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
+          DelegateRedissonCacheManager cacheManager) {
+        return mock(RLocalCachedMap.class);
+      }
+
+      @Provides
+      @Singleton
+      @Named("enableRedisForDelegateService")
+      boolean isEnableRedisForDelegateService() {
+        return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("redissonClient")
+      RedissonClient redissonClient() {
+        return mock(RedissonClient.class);
+      }
+    });
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
@@ -324,6 +367,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
         bind(BroadcasterFactory.class).toInstance(mock(BroadcasterFactory.class));
         bind(MetricRegistry.class);
         bind(CommandLibraryServiceHttpClient.class).toInstance(mock(CommandLibraryServiceHttpClient.class));
+        bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });
     modules.add(new ValidationModule(validatorFactory));

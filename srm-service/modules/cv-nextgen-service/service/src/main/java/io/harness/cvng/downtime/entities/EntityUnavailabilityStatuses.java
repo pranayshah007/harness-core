@@ -70,6 +70,12 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
                  .field(EntityUnavailabilityStatusesKeys.startTime)
                  .field(EntityUnavailabilityStatusesKeys.endTime)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_org_project_idx")
+                 .field(EntityUnavailabilityStatusesKeys.accountId)
+                 .field(EntityUnavailabilityStatusesKeys.orgIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
+                 .build())
         .build();
   }
 }

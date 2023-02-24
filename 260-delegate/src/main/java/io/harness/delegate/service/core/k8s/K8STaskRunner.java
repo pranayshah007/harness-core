@@ -7,20 +7,13 @@
 
 package io.harness.delegate.service.core.k8s;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
-
-import io.harness.delegate.beans.DelegateTaskPackage;
-import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.serializer.KryoSerializer;
+import io.harness.delegate.core.ExecutionEnvironment;
+import io.harness.delegate.core.PluginDescriptor;
+import io.harness.delegate.core.PluginSecret;
 import io.harness.serializer.YamlUtils;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
@@ -30,78 +23,85 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class K8STaskRunner {
   private static final String HARNESS_DELEGATE_NG = "harness-delegate-ng";
-  private static final String DELEGATE_FIELD_MANAGER = "delegate-field-manager";
-  private static final String K8S_TASK_TEMPLATE =
-      "/io/harness/delegate/service/core/k8s/resources/k8s_task_template.yaml";
+  private static final String SECRETS_INPUT_MNT_PATH = "/opt/harness/secrets/input/";
   private static final String SECRETS_OUT_MNT_PATH = "/opt/harness/secrets/out/";
   private static final String DELEGATE_CONFIG_MNT_PATH = "/etc/delegate-config";
   private static final String TASK_INPUT_MNT_PATH = "/etc/config";
-  private static final String SECRETS_INPUT_MNT_PATH = "/opt/harness/secrets/input/";
-  private static final String SECRETS_INPUT_FILE = "secrets.bin";
   private static final String DELEGATE_CONFIG_FILE = "config.yaml";
+  private static final String TASK_INPUT_FILE = "task-data.bin";
+
+  private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
 
   private final BatchV1Api batchApi;
   private final CoreV1Api coreApi;
   private final DelegateConfiguration delegateConfiguration;
-  @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer;
 
   @Inject
-  public K8STaskRunner(final DelegateConfiguration delegateConfiguration, final ApiClient apiClient,
-      final KryoSerializer kryoSerializer) throws IOException {
+  public K8STaskRunner(final DelegateConfiguration delegateConfiguration, final ApiClient apiClient)
+      throws IOException {
     this.batchApi = new BatchV1Api(apiClient);
     this.coreApi = new CoreV1Api(apiClient);
     this.delegateConfiguration = delegateConfiguration;
-    this.kryoSerializer = kryoSerializer;
   }
 
   /**
    * Launches a K8S Job for the task with DelegateTaskPackage
-   * @param taskPackage DelegateTaskPackage for the job
-   * @throws IOException thrown in case of an issue serializing yaml objects
+   *
+   * @param pluginDescriptor DelegateTaskPackage for the job
+   * @throws IOException  thrown in case of an issue serializing yaml objects
    * @throws ApiException thrown in case of an issue invoking K8S API
    */
-  public void launchTask(final DelegateTaskPackage taskPackage) throws IOException, ApiException {
-    // TODO: Check how to refresh service account token
-    taskPackage.getEncryptionConfigs().values().forEach(config -> log.info("Config: {}", config));
-
-    log.info("Creating delegate config for task {}", taskPackage.getDelegateTaskId());
-    final V1ConfigMap delegateConfigConfMap = createDelegateConfig(taskPackage.getDelegateTaskId());
+  public void launchTask(final PluginDescriptor pluginDescriptor) throws IOException, ApiException {
+    // TODO: Check how to refresh service account toke
+    log.info("Creating delegate config for task {}", pluginDescriptor.getId());
+    final var delegateConfigConfMap = createDelegateConfig(pluginDescriptor.getId());
     final var delegateConfigVol = K8SVolumeUtils.fromConfigMap(delegateConfigConfMap, "delegate-configuration");
 
-    log.info("Creating task input for task {}", taskPackage.getDelegateTaskId());
-    final V1ConfigMap taskPackageConfMap = createTaskConfig(taskPackage.getDelegateTaskId(), taskPackage);
+    log.info("Creating task input for task {}", pluginDescriptor.getId());
+    final var taskPackageConfMap = createTaskConfig(pluginDescriptor.getId(), pluginDescriptor);
     final var taskPackageVol = K8SVolumeUtils.fromConfigMap(taskPackageConfMap, "task-package");
 
-    final var secretVolume = createSecretInputVolume(taskPackage);
+    final var jobSpec =
+        createTaskSpec(pluginDescriptor.getId(), pluginDescriptor.getRuntime(), taskPackageVol, delegateConfigVol);
+    if (!pluginDescriptor.getInputSecretsList().isEmpty()) {
+      log.info("Creating secret input for task {}", pluginDescriptor.getId());
+      // At this point all secrets should be for K8SRunner, and each PluginSecret of different type (but could be same
+      // image). E.g. We can have image that has several secret providers implemented
+      final var secretsByPlugin = pluginDescriptor.getInputSecretsList().stream().collect(
+          Collectors.groupingBy(secret -> secret.getRuntime().getUsing(), Collectors.toList()));
 
-    createTaskJob(taskPackage.getDelegateTaskId(), taskPackageVol, delegateConfigVol, secretVolume);
-
-    log.info("Task job created for id {}!!!", taskPackage.getDelegateTaskId());
-  }
-
-  private Optional<V1Volume> createSecretInputVolume(final DelegateTaskPackage taskPackage) throws ApiException {
-    final var secretInput = createSecretInput(taskPackage.getEncryptionConfigs(), taskPackage.getSecretDetails());
-    if (secretInput.isEmpty()) {
-      return Optional.empty();
+      for (final var entry : secretsByPlugin.entrySet()) {
+        final var secret = createTaskSecrets(pluginDescriptor.getId(), entry.getValue());
+        final var secretVol = K8SVolumeUtils.fromSecret(secret, "secret-input");
+        jobSpec
+            .addInitContainer("secret-decryption", entry.getKey(),
+                entry.getValue().get(0).getRuntime().getResource().getMemory(),
+                entry.getValue().get(0).getRuntime().getResource().getCpu())
+            .addVolume(secretVol, SECRETS_INPUT_MNT_PATH)
+            .addVolume(K8SVolumeUtils.emptyDir("secret-output"), SECRETS_OUT_MNT_PATH);
+      }
     }
 
-    log.info("Creating secret input for task {}", taskPackage.getDelegateTaskId());
-    final V1Secret secret = createTaskSecrets(taskPackage.getDelegateTaskId(), secretInput);
-    return Optional.of(K8SVolumeUtils.fromSecret(secret, "secret-input"));
+    log.debug("Creating Task Job with YAML:\n{}", Yaml.dump(jobSpec));
+    jobSpec.create(batchApi, HARNESS_DELEGATE_NG);
+
+    log.info("Task job created for id {}!!!", pluginDescriptor.getId());
   }
 
   /**
    * Cleans up K8S resources after the task is launched.
+   *
    * @param taskId taskId for which cleanup is needed
    * @throws ApiException exception in case there is an issue calling K8S API
    */
@@ -113,54 +113,42 @@ public class K8STaskRunner {
     log.info("Task data cleaned up for {}", taskId);
   }
 
-  private void createTaskJob(final String taskId, final V1Volume taskPackageVolume, final V1Volume delegateConfigVolume,
-      final Optional<V1Volume> secretVolume) throws ApiException {
-    final var jobTemplate = getClass().getResourceAsStream(K8S_TASK_TEMPLATE);
-
-    if (jobTemplate == null) {
-      throw new IllegalStateException("K8S Task template not found at " + K8S_TASK_TEMPLATE);
-    }
-
-    final var job = Yaml.loadAs(new InputStreamReader(jobTemplate), K8SJob.class)
-                        .name(getJobName(taskId))
-                        .namespace(HARNESS_DELEGATE_NG);
-
-    if (secretVolume.isPresent()) {
-      job.addInitContainer("secret-decryption", "us.gcr.io/gcr-play/secret-provider:secrets")
-          .addVolume(secretVolume.get(), SECRETS_INPUT_MNT_PATH)
-          .addVolume(K8SVolumeUtils.emptyDir("secret-output"), SECRETS_OUT_MNT_PATH);
-    }
-
-    job.addVolume(taskPackageVolume, TASK_INPUT_MNT_PATH)
+  private K8SJob createTaskSpec(final String taskId, final ExecutionEnvironment runtime,
+      final V1Volume taskPackageVolume, final V1Volume delegateConfigVolume) {
+    return new K8SJob(getJobName(taskId), HARNESS_DELEGATE_NG)
+        .addContainer(
+            "delegate-task", runtime.getUsing(), runtime.getResource().getMemory(), runtime.getResource().getCpu())
+        .addVolume(taskPackageVolume, TASK_INPUT_MNT_PATH) // FixMe: Volume should be property of container, not job
         .addVolume(delegateConfigVolume, DELEGATE_CONFIG_MNT_PATH)
-        .addEnvVar("ACCOUNT_ID", delegateConfiguration.getAccountId())
+        .addEnvVar("ACCOUNT_ID",
+            delegateConfiguration.getAccountId()) // FixMe: EnvVar should be property of container, not job
         .addEnvVar("TASK_ID", taskId)
         .addEnvVar("DELEGATE_NAME", "");
-
-    log.debug("Creating Task Job with YAML:\n{}", Yaml.dump(job));
-
-    batchApi.createNamespacedJob(HARNESS_DELEGATE_NG, job, null, null, DELEGATE_FIELD_MANAGER, "Warn");
   }
 
-  private V1Secret createTaskSecrets(final String taskId, final Map<EncryptionConfig, List<EncryptedRecord>> secrets)
-      throws ApiException {
-    final var secretBytes = kryoSerializer.asBytes(secrets);
-    log.info("Serialized {} secrets", secrets.size());
+  private V1Secret createTaskSecrets(final String taskId, final List<PluginSecret> secrets) throws ApiException {
+    final var k8sSecret = new K8SSecret(getSecretName(taskId), HARNESS_DELEGATE_NG);
 
-    final var secret =
-        new K8SSecret(getSecretName(taskId), HARNESS_DELEGATE_NG).putDataItem(SECRETS_INPUT_FILE, secretBytes);
-
-    return coreApi.createNamespacedSecret(HARNESS_DELEGATE_NG, secret, null, null, DELEGATE_FIELD_MANAGER, "Warn");
+    for (final var secret : secrets) {
+      final var secretFilename = UUID.randomUUID().toString();
+      if (secret.getConfig().hasBinaryData()) {
+        k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getBinaryData().toByteArray())
+            .putDataItem(secretFilename + ".bin", secret.getSecrets().getBinaryData().toByteArray());
+      } else {
+        k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getProtoData().toByteArray())
+            .putDataItem(secretFilename + ".bin", secret.getSecrets().getProtoData().toByteArray());
+      }
+    }
+    return k8sSecret.create(coreApi, HARNESS_DELEGATE_NG);
   }
 
-  private V1ConfigMap createTaskConfig(final String taskId, final DelegateTaskPackage taskData)
-      throws IOException, ApiException {
-    final var configYaml = new YamlUtils().dump(taskData);
+  private V1ConfigMap createTaskConfig(final String taskId, final PluginDescriptor descriptor) throws ApiException {
+    final var taskData = descriptor.getInput().hasBinaryData() ? descriptor.getInput().getBinaryData().toByteArray()
+                                                               : descriptor.getInput().getProtoData().toByteArray();
     final var configMap =
-        new K8SConfigMap(getConfigName(taskId), HARNESS_DELEGATE_NG).putDataItem(DELEGATE_CONFIG_FILE, configYaml);
+        new K8SConfigMap(getConfigName(taskId), HARNESS_DELEGATE_NG).putBinaryDataItem(TASK_INPUT_FILE, taskData);
 
-    return coreApi.createNamespacedConfigMap(
-        HARNESS_DELEGATE_NG, configMap, null, null, DELEGATE_FIELD_MANAGER, "Warn");
+    return configMap.create(coreApi, HARNESS_DELEGATE_NG);
   }
 
   private V1ConfigMap createDelegateConfig(final String taskId) throws IOException, ApiException {
@@ -168,35 +156,27 @@ public class K8STaskRunner {
     final var configMap = new K8SConfigMap(getConfigName(taskId + "-delegate-config"), HARNESS_DELEGATE_NG)
                               .putDataItem(DELEGATE_CONFIG_FILE, configYaml);
 
-    return coreApi.createNamespacedConfigMap(
-        HARNESS_DELEGATE_NG, configMap, null, null, DELEGATE_FIELD_MANAGER, "Warn");
-  }
-
-  private Map<EncryptionConfig, List<EncryptedRecord>> createSecretInput(
-      final Map<String, EncryptionConfig> encryptionConfigs, final Map<String, SecretDetail> secretDetails) {
-    log.info("Got {} configs and {} secret details", encryptionConfigs.values().size(), secretDetails.keySet().size());
-    return secretDetails.values().stream().collect(groupingBy(
-        secret -> encryptionConfigs.get(secret.getConfigUuid()), mapping(SecretDetail::getEncryptedRecord, toList())));
+    return configMap.create(coreApi, HARNESS_DELEGATE_NG);
   }
 
   @NonNull
-  private String getJobName(final String taskId) {
-    return normalizeResourceName("task-" + taskId + "-job");
+  private static String getJobName(final String taskId) {
+    return normalizeResourceName(taskId + "-job");
   }
 
   @NonNull
-  private String getSecretName(final String taskId) {
-    return normalizeResourceName("task-" + taskId + "-secret");
+  private static String getSecretName(final String taskId) {
+    return normalizeResourceName(taskId + "-secret");
   }
 
   @NonNull
-  private String getConfigName(final String taskId) {
-    return normalizeResourceName("task-" + taskId + "-config");
+  private static String getConfigName(final String taskId) {
+    return normalizeResourceName(taskId + "-config");
   }
 
-  // K8S resource name needs to contain only lowercase alphanumerics . and _, but must start and end with alphanumerics
+  // K8S resource name needs to contain only lowercase alphanumerics . and -, but must start and end with alphanumerics
   // Regex used by K8S for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
-  private String normalizeResourceName(final String resourceName) {
-    return resourceName.trim().toLowerCase().replaceAll("_", ".");
+  private static String normalizeResourceName(final String resourceName) {
+    return "task-" + RESOURCE_NAME_NORMALIZER.matcher(resourceName.trim().toLowerCase(Locale.ROOT)).replaceAll(".");
   }
 }

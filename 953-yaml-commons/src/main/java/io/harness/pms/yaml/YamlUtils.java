@@ -51,8 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
@@ -101,6 +103,21 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {

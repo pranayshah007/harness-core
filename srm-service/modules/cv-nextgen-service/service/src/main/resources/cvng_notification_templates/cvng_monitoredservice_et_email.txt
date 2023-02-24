@@ -1,14 +1,14 @@
 subject: Harness SRM
 body: "<html>
-<div style=\"display: flex !important; flex-direction: column !important; align-items: flex-start; border-style: solid; border-top-color: #c31f17; border-top-width: 5px; border-bottom-color: #c31f17; border-bottom-width: 5px; width: 600px; height: auto; margin-top: 3px;\">
+<div style=\"display: block !important; align-items: flex-start; border-style: solid; border-top-color: #c31f17; border-top-width: 5px; border-bottom-color: #c31f17; border-bottom-width: 5px; width: 600px; height: auto; margin-top: 3px;\">
   <span style=\"width: 550px; height: 20px; font-weight: 600;
-                     font-size: 13px; line-height: 20px; color: #cf2318; margin-left: 16px; margin-top: 14px;\">
+                     font-size: 13px; line-height: 20px; color: #cf2318; margin-left: 16px; display: block !important; padding-top: 15.5px !important;\">
     ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has observed new error events.</span>
   <span style=\"width: 550px; height: 20px; font-weight: 600;
-                     font-size: 13px; line-height: 20px; margin-bottom: 20px; margin-left: 16px; margin-top: 16px;\">
+                     font-size: 13px; line-height: 20px; margin-bottom: 20px; margin-left: 16px; margin-top: 16px; display:block !important; padding-bottom: 20px !important;\">
     Monitored Service ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has detected new <span style=\"color: #cf2318;\">${NOTIFICATION_EVENT_TRIGGER_LIST}</span> events for code errors.</span>
-  <div style=\"margin-left: 16px; margin-top: 10px; display: flex !important;
-                      flex-direction: column !important;\">
+  <div style=\"margin-left: 16px; margin-top: 10px; display: block !important;
+                      padding-top: 20px;\">
     <div>
       <span style=\"color: #4f5162;\">Environment </span>
       <span style=\"font-weight: bold; color: black;\">${ENVIRONMENT_NAME}</span>
@@ -29,14 +29,13 @@ body: "<html>
   <div style=\"width: 568px !important; height: 0px !important; border: 1px solid #b0b1c4 !important;
                       flex: none !important; order: 0 !important; align-self: stretch !important;
                       flex-grow: 0 !important; margin: 16px !important;\"></div>
-  <div style=\"margin-left: 16px; display: flex !important;flex-direction: column !important;\">
+  <div style=\"margin-left: 16px; display: block !important;\">
     ${EMAIL_FORMATTED_VERSION_LIST}
   </div>
   <div style=\"width: 568px !important; height: 0px !important; border: 1px solid #b0b1c4 !important;
                       flex: none !important; order: 0 !important; align-self: stretch !important;
-                      flex-grow: 0 !important; margin: 16px !important;\ margin-top: 0px !important;"></div>
-  <div style=\"width: 520px; margin-left: 16px; display: flex !important;
-                      flex-direction: column !important;\">
+                      flex-grow: 0 !important; margin: 16px !important; margin-top: 0px !important;\"></div>
+  <div style=\"width: 520px; margin-left: 16px; display: block !important;\">
     <div style=\"margin-bottom: 8.5px\">
       <span style=\"color: #4f5162;\">Notification Name </span>
       <span>${EMAIL_NOTIFICATION_NAME_HYPERLINK}</span>

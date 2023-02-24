@@ -172,7 +172,7 @@ paths:
         in: path
         required: true
     post:
-      summary: 'Saves Status Info by type'
+      summary: Saves Status Info by type
       tags:
         - StatusInfo
       operationId: save-status-info-by-type
@@ -186,6 +186,54 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
+  '/v1/namespace-info/{accountIdentifier}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      operationId: get-namespace-info
+      description: Get the corresponding customer namepsace using account id.
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - Namespace
+    parameters:
+      - schema:
+          type: string
+        name: accountIdentifier
+        in: path
+        required: true
+    post:
+      summary: Create Namespace
+      operationId: create-namespace
+      description: Create Namespace from accountId
+      security:
+        - x-api-key: []
+      x-internal: true
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      tags:
+        - Namespace
+  '/v1/account-info/{namespace}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      operationId: get-account-for-namespace
+      security:
+        - x-api-key: []
+      tags:
+        - AccountInfo
+    parameters:
+      - schema:
+          type: string
+        name: namespace
+        in: path
+        required: true
 components:
   schemas:
     EnvironmentSecret:
@@ -253,6 +301,20 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusInfo'
+    NamespaceInfo:
+      title: NamespaceInfo
+      x-stoplight:
+        id: 8ba4gj00yfwre
+      type: object
+      properties:
+        accountIdentifier:
+          type: string
+        namespace:
+          type: string
+      description: Namespace response body content
+    NamepsaceResponse:
+      $ref: '#/components/schemas/NamespaceInfo'
+      description: Namespace response body
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -363,6 +425,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    NamespaceResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NamepsaceResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NamepsaceResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

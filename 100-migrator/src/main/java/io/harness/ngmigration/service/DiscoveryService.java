@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -174,8 +173,8 @@ public class DiscoveryService {
         ngMigrationService = migrationFactory.getMethod(entityType);
         DiscoveryNode node = ngMigrationService.discover(accountId, appId, entityId);
         if (node == null) {
-          throw new InvalidRequestException(
-              String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          log.warn(String.format("Entity not found! - Type: %s & ID: %s", child.getType(), entityId));
+          continue;
         }
         // We add the node the dummy head's children & to the graph
         head.getChildren().add(node.getEntityNode().getEntityId());

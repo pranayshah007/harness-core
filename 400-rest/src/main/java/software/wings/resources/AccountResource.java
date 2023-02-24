@@ -378,7 +378,7 @@ public class AccountResource {
   public RestResponse<Account> updateCrossGenerationAccessEnabled(@PathParam("accountId") @NotEmpty String accountId,
       @QueryParam("crossGenerationAccessEnabled") @DefaultValue("false") boolean isCrossGenerationAccessEnabled) {
     return new RestResponse<>(
-        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled));
+        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled, false));
   }
 
   @POST

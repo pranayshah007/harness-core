@@ -100,7 +100,7 @@ public class EnvironmentResource {
     if (details) {
       return new RestResponse<>(environmentService.listWithSummary(pageRequest, withTags, tagFilter, appIds));
     } else {
-      return new RestResponse<>(environmentService.list(pageRequest, withTags, tagFilter));
+      return new RestResponse<>(environmentService.list(pageRequest, withTags, tagFilter, true));
     }
   }
 

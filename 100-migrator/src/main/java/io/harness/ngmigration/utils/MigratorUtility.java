@@ -10,6 +10,7 @@ package io.harness.ngmigration.utils;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +34,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.steps.wait.WaitStepInfo;
 import io.harness.steps.wait.WaitStepNode;
+import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -82,7 +84,9 @@ public class MigratorUtility {
   private static final String[] schemes = {"https", "http"};
 
   private static final int APPLICATION = 0;
-  private static final int SECRET_MANAGER = 1;
+
+  private static final int SECRET_MANAGER_TEMPLATE = 1;
+  private static final int SECRET_MANAGER = 2;
   private static final int SECRET = 5;
   private static final int TEMPLATE = 7;
   private static final int SERVICE_COMMAND_TEMPLATE = 8;
@@ -106,6 +110,7 @@ public class MigratorUtility {
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
           .put(NGMigrationEntityType.APPLICATION, APPLICATION)
+          .put(NGMigrationEntityType.SECRET_MANAGER_TEMPLATE, SECRET_MANAGER_TEMPLATE)
           .put(NGMigrationEntityType.SECRET_MANAGER, SECRET_MANAGER)
           .put(NGMigrationEntityType.TEMPLATE, TEMPLATE)
           .put(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE, SERVICE_COMMAND_TEMPLATE)
@@ -506,7 +511,7 @@ public class MigratorUtility {
     return stepYamls;
   }
 
-  private static List<GraphNode> getStepsFromPhases(List<WorkflowPhase> phases) {
+  public static List<GraphNode> getStepsFromPhases(List<WorkflowPhase> phases) {
     return phases.stream()
         .filter(phase -> isNotEmpty(phase.getPhaseSteps()))
         .flatMap(phase -> phase.getPhaseSteps().stream())
@@ -530,12 +535,18 @@ public class MigratorUtility {
         .collect(Collectors.toList());
   }
 
-  public static WaitStepNode getWaitStepNode(String name, int waitInterval) {
+  public static WaitStepNode getWaitStepNode(String name, int waitInterval, boolean skipAlways) {
     WaitStepNode waitStepNode = new WaitStepNode();
     waitStepNode.setName(name);
     waitStepNode.setIdentifier(generateIdentifier(name));
     waitStepNode.setWaitStepInfo(
         WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+    if (skipAlways) {
+      waitStepNode.setWhen(ParameterField.createValueField(StepWhenCondition.builder()
+                                                               .condition(ParameterField.createValueField("false"))
+                                                               .stageStatus(SUCCESS)
+                                                               .build()));
+    }
     return waitStepNode;
   }
 }

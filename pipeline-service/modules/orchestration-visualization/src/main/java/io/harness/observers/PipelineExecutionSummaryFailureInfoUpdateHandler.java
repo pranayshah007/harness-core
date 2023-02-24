@@ -9,7 +9,6 @@ package io.harness.observers;
 
 import io.harness.beans.ExecutionErrorInfo;
 import io.harness.dto.converter.FailureInfoDTOConverter;
-import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.utils.OrchestrationUtils;

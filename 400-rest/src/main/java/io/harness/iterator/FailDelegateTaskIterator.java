@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._870_ORCHESTRATION)
 public class FailDelegateTaskIterator
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<DelegateTask> persistenceProvider;
   @Inject private ConfigurationController configurationController;

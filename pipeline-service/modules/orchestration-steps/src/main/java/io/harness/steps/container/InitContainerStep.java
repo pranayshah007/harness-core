@@ -67,7 +67,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    ContainerStepInfo stepParameter = ((ContainerStepInfo) stepParameters.getSpec());
+    ContainerStepInfo stepParameter = (ContainerStepInfo) stepParameters.getSpec();
     containerStepRbacHelper.validateResources(stepParameter, ambiance);
   }
 
@@ -122,7 +122,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     String logPrefix = getLogPrefix(ambiance);
-    ContainerStepInfo containerStepInfo = ((ContainerStepInfo) stepElementParameters.getSpec());
+    ContainerStepInfo containerStepInfo = (ContainerStepInfo) stepElementParameters.getSpec();
     CIInitializeTaskParams buildSetupTaskParams =
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();

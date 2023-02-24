@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -37,7 +37,7 @@ import java.time.Duration;
 import java.util.List;
 
 @OwnedBy(PL)
-public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements Handler<AuditRecord> {
+public class EntityAuditRecordHandler extends IteratorPumpAndRedisModeHandler implements Handler<AuditRecord> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
 
   @Inject private AccountService accountService;

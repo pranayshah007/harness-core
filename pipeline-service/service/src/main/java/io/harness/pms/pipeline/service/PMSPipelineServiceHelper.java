@@ -54,7 +54,7 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
-import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
@@ -539,13 +539,13 @@ public class PMSPipelineServiceHelper {
 
   public Criteria getPipelineMetadataV2Criteria(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    return Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+    return Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
         .is(accountIdentifier)
-        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+        .and(PipelineMetadataV2Keys.orgIdentifier)
         .is(orgIdentifier)
-        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+        .and(PipelineMetadataV2Keys.projectIdentifier)
         .is(projectIdentifier)
-        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+        .and(PipelineMetadataV2Keys.identifier)
         .is(pipelineIdentifier);
   }
   public Update getPipelineUpdateForInlineToRemote(

@@ -25,6 +25,7 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
 import io.harness.ccm.audittrails.events.RuleSetDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleSetUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 // import io.harness.ccm.rbac.CCMRbacHelper
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreateRuleSetDTO;
@@ -110,7 +111,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class GovernanceRuleSetResource {
   public static final String ACCOUNT_ID = "accountId";
-  //  private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final RuleSetService ruleSetService;
   private final GovernanceRuleService ruleService;
   private final TelemetryReporter telemetryReporter;
@@ -124,9 +125,9 @@ public class GovernanceRuleSetResource {
   @Inject
   public GovernanceRuleSetResource(RuleSetService ruleSetService, GovernanceRuleService ruleService,
       TelemetryReporter telemetryReporter, OutboxService outboxService,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      CENextGenConfiguration configuration) {
-    //    this rbacHelper  rbacHelper
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, CENextGenConfiguration configuration,
+      CCMRbacHelper rbacHelper) {
+    this.rbacHelper = rbacHelper;
     this.ruleSetService = ruleSetService;
     this.ruleService = ruleService;
     this.telemetryReporter = telemetryReporter;
@@ -150,7 +151,7 @@ public class GovernanceRuleSetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing rule Set object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    // rbacHelper checkRuleSetEditPermission(accountId, null, null)
+    rbacHelper.checkRuleSetEditPermission(accountId, null, null);
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -200,7 +201,7 @@ public class GovernanceRuleSetResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
+    rbacHelper.checkRuleSetEditPermission(accountId, null, null);
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -248,7 +249,6 @@ public class GovernanceRuleSetResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
-    //  rbacHelper checkRuleSetEditPermission(accountId, null, null)
     if (createRuleSetDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -283,7 +283,7 @@ public class GovernanceRuleSetResource {
           description = "Request body containing rule packs object") @Valid CreateRuleSetDTO createRuleSetDTO,
       @PathParam("id") @Parameter(
           required = true, description = "Unique identifier for the rule packs") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleSetViewPermission(accountId, null, null)
+    rbacHelper.checkRuleSetViewPermission(accountId, null, null);
     RuleSet query = createRuleSetDTO.getRuleSet();
     List<Rule> rules = new ArrayList<>();
     ruleSetService.fetchByName(accountId, query.getName(), false);
@@ -307,7 +307,7 @@ public class GovernanceRuleSetResource {
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule pack object")
       @Valid CreateRuleSetFilterDTO createRuleSetFilterDTO) {
-    // rbacHelper checkRuleSetPermission(accountId, null, null)
+    rbacHelper.checkRuleSetViewPermission(accountId, null, null);
     if (createRuleSetFilterDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -334,7 +334,7 @@ public class GovernanceRuleSetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleSetId") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleSetDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleSetDeletePermission(accountId, null, null);
     RuleSet ruleSet = ruleSetService.fetchById(accountId, uuid, false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);

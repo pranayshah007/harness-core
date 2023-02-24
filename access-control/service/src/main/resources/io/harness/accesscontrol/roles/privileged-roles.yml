@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 15
+version: 16
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -37,6 +37,7 @@ roles:
       - core_governancePolicySets_view
       - chi_monitoredservice_view
       - chi_slo_view
+      - chi_downtime_view
       - gitops_agent_view
       - gitops_application_view
       - gitops_repository_view
