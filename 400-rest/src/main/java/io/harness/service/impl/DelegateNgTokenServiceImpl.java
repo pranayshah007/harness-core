@@ -15,6 +15,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.authenticator.DelegateTokenServiceBase;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -56,7 +57,8 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @ValidateOnExecution
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, AccountCrudObserver {
+public class DelegateNgTokenServiceImpl
+    extends DelegateTokenServiceBase implements DelegateNgTokenService, AccountCrudObserver {
   private static final String DEFAULT_TOKEN_NAME = "default_token";
   private final HPersistence persistence;
   private final OutboxService outboxService;
@@ -69,13 +71,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name, Long revokeAfter) {
+    String token = encodeBase64(Misc.generateSecretKey());
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .owner(owner)
                                       .name(name.trim())
                                       .isNg(true)
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .value(encodeBase64(Misc.generateSecretKey()))
+                                      .value(token)
+                                      .encryptedTokenId(encryptedTokenId(accountId, token))
                                       .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
                                       .revokeAfter(revokeAfter)
                                       .build();

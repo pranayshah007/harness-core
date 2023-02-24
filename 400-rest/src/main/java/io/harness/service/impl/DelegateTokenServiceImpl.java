@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.authenticator.DelegateTokenServiceBase;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
@@ -43,7 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
-public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
+public class DelegateTokenServiceImpl
+    extends DelegateTokenServiceBase implements DelegateTokenService, AccountCrudObserver, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private AuditServiceHelper auditServiceHelper;
 
@@ -51,12 +53,14 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
 
   @Override
   public DelegateTokenDetails createDelegateToken(String accountId, String name) {
+    String token = Misc.generateSecretKey();
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .createdAt(System.currentTimeMillis())
                                       .name(name.trim())
                                       .status(DelegateTokenStatus.ACTIVE)
-                                      .value(Misc.generateSecretKey())
+                                      .value(token)
+                                      .encryptedTokenId(encryptedTokenId(accountId, token))
                                       .build();
 
     try {
@@ -138,7 +142,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
                                       .equal(tokenName)
                                       .get();
 
-    return delegateToken != null ? delegateToken.getValue() : null;
+    return delegateToken != null ? getDelegateTokenValue(delegateToken) : null;
   }
 
   @Override
@@ -180,7 +184,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(delegateToken.getValue());
+      delegateTokenDetailsBuilder.value(getDelegateTokenValue(delegateToken));
     }
 
     return delegateTokenDetailsBuilder.build();
