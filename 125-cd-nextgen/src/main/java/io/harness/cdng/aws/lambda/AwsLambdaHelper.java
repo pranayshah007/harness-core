@@ -371,11 +371,11 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
       StepElementParameters stepElementParameters, ManifestOutcome manifestOutcome) {
-    GitRequestFileConfig gitRequestFileConfig = null;
-
-    if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-      gitRequestFileConfig = getGitFetchFilesConfigFromManifestOutcome(manifestOutcome, ambiance);
+    if (!ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
+      throw new InvalidRequestException("Invalid kind of storeConfig for Aws Lambda step", USER);
     }
+
+    GitRequestFileConfig gitRequestFileConfig = getGitFetchFilesConfigFromManifestOutcome(manifestOutcome, ambiance);
 
     AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder()
                                                                     .manifestsOutcome(manifestOutcome)

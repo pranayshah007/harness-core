@@ -16,8 +16,6 @@ import io.harness.pms.contracts.steps.StepType;
 public interface SscaConstants {
   String SSCA_ORCHESTRATION_STEP_NODE = "SscaOrchestrationStepNode";
   String SSCA_ORCHESTRATION_STEP = "SscaOrchestration";
-  String SYFT = "Syft";
-  String SPDX_JSON = "spdx-json";
 
   StepType SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ORCHESTRATION_STEP).setStepCategory(StepCategory.STEP).build();

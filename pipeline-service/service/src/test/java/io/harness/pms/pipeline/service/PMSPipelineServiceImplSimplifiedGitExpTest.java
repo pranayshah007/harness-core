@@ -26,13 +26,18 @@ import io.harness.CategoryTest;
 import io.harness.NoopPipelineSettingServiceImpl;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -114,6 +119,36 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     verify(pipelineAsyncValidationService, times(1))
         .createRecordForSuccessfulSyncValidation(
             pipelineEntitySaved, null, GovernanceMetadata.newBuilder().build(), Action.CRUD);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePipelineWith__DEFAULT__InGitContext() throws IOException {
+    setupGitContext(GitEntityInfo.builder().branch(GitAwareContextHelper.DEFAULT).build());
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .harnessVersion(PipelineVersion.V0)
+                                        .build();
+    PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToSave.withStageCount(0);
+    PipelineEntity pipelineEntitySaved = pipelineToSaveWithUpdatedInfo.withVersion(0L);
+    doReturn(pipelineToSaveWithUpdatedInfo)
+        .when(pipelineServiceHelper)
+        .updatePipelineInfo(pipelineToSave, PipelineVersion.V0);
+    doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
+
+    PipelineEntity pipelineEntity =
+        pipelineService.validateAndCreatePipeline(pipelineToSave, false).getPipelineEntity();
+    assertThat(pipelineEntity).isEqualTo(pipelineEntitySaved);
+    verify(pipelineServiceHelper, times(1))
+        .sendPipelineSaveTelemetryEvent(pipelineEntitySaved, "creating new pipeline");
+    verify(pipelineAsyncValidationService, times(1))
+        .createRecordForSuccessfulSyncValidation(
+            pipelineEntitySaved, "", GovernanceMetadata.newBuilder().build(), Action.CRUD);
   }
 
   @Test
@@ -288,6 +323,43 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
+    verify(pipelineAsyncValidationService, times(1))
+        .createRecordForSuccessfulSyncValidation(
+            pipelineEntityUpdated, null, GovernanceMetadata.newBuilder().build(), Action.CRUD);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineWith__DEFAULT__InGitContext() throws IOException {
+    setupGitContext(GitEntityInfo.builder().branch(GitAwareContextHelper.DEFAULT).build());
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .yaml(pipelineYaml)
+                                          .harnessVersion(PipelineVersion.V0)
+                                          .build();
+    PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineServiceHelper)
+        .validatePipeline(eq(pipelineToUpdate), any(), anyBoolean());
+    doReturn(pipelineToSaveWithUpdatedInfo)
+        .when(pipelineServiceHelper)
+        .updatePipelineInfo(pipelineToUpdate, PipelineVersion.V0);
+
+    PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
+    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
+
+    PipelineEntity pipelineEntity =
+        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true).getPipelineEntity();
+    assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
+    verify(pipelineServiceHelper, times(1))
+        .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
+    verify(pipelineAsyncValidationService, times(1))
+        .createRecordForSuccessfulSyncValidation(
+            pipelineEntityUpdated, "", GovernanceMetadata.newBuilder().build(), Action.CRUD);
   }
 
   @Test
@@ -355,5 +427,12 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     } catch (IOException ex) {
     }
     return request;
+  }
+
+  private void setupGitContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

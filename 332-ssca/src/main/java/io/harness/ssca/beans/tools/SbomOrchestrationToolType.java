@@ -5,17 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans;
+package io.harness.ssca.beans.tools;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum SbomGenerationFormat {
-  @JsonProperty(SscaConstants.SPDX_JSON) SPDX_JSON(SscaConstants.SPDX_JSON);
+public enum SbomOrchestrationToolType {
+  @JsonProperty(SbomToolConstants.SYFT) SYFT(SbomToolConstants.SYFT);
 
   private String name;
 
-  SbomGenerationFormat(String name) {
+  SbomOrchestrationToolType(String name) {
     this.name = name;
   }
 

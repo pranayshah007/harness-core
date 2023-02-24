@@ -625,7 +625,9 @@ public enum FeatureName {
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
-  SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA);
+  SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
+  PL_JPMC_SCIM_REQUIREMENTS(
+      "This flag relates to all the changes requested by JPMC towards SCIM API calls", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

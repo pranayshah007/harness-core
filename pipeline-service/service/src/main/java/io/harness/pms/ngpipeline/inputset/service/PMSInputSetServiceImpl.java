@@ -189,6 +189,39 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   @Override
+  public Optional<InputSetEntity> getMetadataWithoutValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
+      boolean loadFromFallbackBranch, boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          identifier, !deleted, getMetadata, loadFromFallbackBranch);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while retrieving input set [%s]", identifier), e);
+      throw new InvalidRequestException(
+          String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
+    }
+    return optionalInputSetEntity;
+  }
+
+  @Override
+  public InputSetEntity getMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetMetadataEntity = getMetadataWithoutValidations(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, true);
+    if (optionalInputSetMetadataEntity.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+    return optionalInputSetMetadataEntity.get();
+  }
+
+  @Override
   public InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
