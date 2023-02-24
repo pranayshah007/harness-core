@@ -46,6 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
+  private static final String CHEWY_ACCOUNT_ID = "8M1tvFxMTW-FW2EC3uywQg";
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
   private final Gson gson = new Gson();
   private final BigQueryHelper bigQueryHelper;
@@ -100,6 +101,11 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private boolean processCostCategoryUpdateMessage(BigQueryUpdateMessage.Message message) {
     if (!validateBigQueryUpdateMessage(message)) {
       log.error("Please check for empty or null values in message");
+      return true;
+    }
+    if (!message.getAccountId().equals(CHEWY_ACCOUNT_ID)) {
+      log.info("Cost Category in Dashboards is enabled only for Chewy. Skipping the message.");
+      return true;
     }
     String tableName = bigQueryHelper.getCloudProviderTableName(message.getAccountId(), UNIFIED_TABLE);
     Instant startTime;
