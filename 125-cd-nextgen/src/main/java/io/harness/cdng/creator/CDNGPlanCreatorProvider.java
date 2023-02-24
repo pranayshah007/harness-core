@@ -334,7 +334,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.OpenshiftParam, ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER,
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
       ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
-      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsSamDirectory);
+      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
+      ManifestType.AwsSamDirectory);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -905,14 +906,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
-    StepInfo awsLambdaDeploy =
-        StepInfo.newBuilder()
-            .setName("Aws Lambda Deploy")
-            .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("AwsLambdaDeploy").setFolderPath("Aws Lambda").build())
-            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
-            .build();
+    StepInfo awsLambdaDeploy = StepInfo.newBuilder()
+                                   .setName("Aws Lambda Deploy")
+                                   .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
+                                   .setStepMetaData(StepMetaData.newBuilder()
+                                                        .addCategory(StepSpecTypeConstants.AWS_LAMBDA)
+                                                        .setFolderPath("Aws Lambda")
+                                                        .build())
+                                   .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+                                   .build();
 
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")

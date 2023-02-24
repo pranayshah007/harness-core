@@ -796,3 +796,5 @@ io.harness.cdng.aws.sam.AwsSamRollbackStepNode
 io.harness.cdng.aws.sam.AwsSamRollbackStepParameters
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
+io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest
+io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome

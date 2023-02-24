@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -96,7 +97,7 @@ public class EnvironmentsPlanCreatorHelper {
         }
       }
     }
-    EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfigBuilder =
+    EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfigBuilder =
         EnvironmentsPlanCreatorConfig.builder()
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
