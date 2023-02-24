@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -45,7 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class ApprovalPollingHandler extends IteratorPumpModeHandler implements Handler<ApprovalPollingJobEntity> {
+public class ApprovalPollingHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<ApprovalPollingJobEntity> {
   /*
    * TARGET_INTERVAL and PUMP_INTERVAL are not being used to start the executor
    * service for the iterator as its being configured from K8s configMap. Any

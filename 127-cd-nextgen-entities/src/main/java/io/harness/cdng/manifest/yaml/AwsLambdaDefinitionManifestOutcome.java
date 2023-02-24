@@ -22,11 +22,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("AwsLambdaDefinitionManifestOutcome")
-@JsonTypeName(ManifestType.AwsLambda)
+@JsonTypeName(ManifestType.AwsLambdaFunctionDefinition)
 @RecasterAlias("io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome")
 public class AwsLambdaDefinitionManifestOutcome implements ManifestOutcome {
   String identifier;
-  String type = ManifestType.AwsLambda;
+  String type = ManifestType.AwsLambdaFunctionDefinition;
   StoreConfig store;
   int order;
 }

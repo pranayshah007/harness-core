@@ -8,7 +8,6 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveSecretRefWithDefaultValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;

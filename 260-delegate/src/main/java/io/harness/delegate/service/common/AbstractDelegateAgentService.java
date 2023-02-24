@@ -7,7 +7,6 @@
 
 package io.harness.delegate.service.common;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -44,16 +43,16 @@ import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
-import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.PluginDescriptor;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
+import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.UnexpectedException;
 import io.harness.grpc.util.RestartableServiceManager;
-import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.network.FibonacciBackOff;
 import io.harness.rest.RestResponse;
@@ -96,7 +95,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
@@ -144,9 +142,9 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   @Inject @Named("healthMonitorExecutor") private ScheduledExecutorService healthMonitorExecutor;
 
   @Inject @Getter(AccessLevel.PROTECTED) private DelegateConfiguration delegateConfiguration;
-  @Inject @Getter(AccessLevel.PROTECTED) private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject @Getter(AccessLevel.PROTECTED) private HarnessMetricRegistry metricRegistry;
   @Inject @Getter(AccessLevel.PROTECTED) private Clock clock;
+  @Inject private DelegateCoreManagerClient managerClient;
   @Inject private RestartableServiceManager restartableServiceManager;
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private AsyncHttpClient asyncHttpClient;
@@ -171,7 +169,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(@NonNull DelegateTaskPackage taskPackage);
+  protected abstract void executeTask(@NonNull PluginDescriptor pluginDescriptor);
   protected abstract ImmutableList<String> getCurrentlyExecutingTaskIds();
   protected abstract ImmutableList<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -252,17 +250,21 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
       onPreResponseSent(taskResponse);
 
       for (int attempt = 0; attempt < NUM_RESPONSE_RETRIES; attempt++) {
-        final Response<ResponseBody> response = getDelegateAgentManagerClient()
-                                                    .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(),
-                                                        taskId, getDelegateConfiguration().getAccountId(), taskResponse)
-                                                    .execute();
-        if (response.isSuccessful()) {
-          log.info("Task {} response sent to manager", taskId);
-          break;
-        }
-        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId, response.code(),
-            response.errorBody() == null ? "null" : response.errorBody().string(), response.raw().request().url(),
-            attempt < (NUM_RESPONSE_RETRIES - 1) ? "Retrying." : "Giving up.");
+        //        FIXME: This is done in separate PR
+        //        final Response<ResponseBody> response = managerClient
+        //                                                    .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(),
+        //                                                        taskId, getDelegateConfiguration().getAccountId(),
+        //                                                        taskResponse)
+        //                                                    .execute();
+        //        if (response.isSuccessful()) {
+        //          log.info("Task {} response sent to manager", taskId);
+        //          break;
+        //        }
+        //        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+        //        response.code(),
+        //            response.errorBody() == null ? "null" : response.errorBody().string(),
+        //            response.raw().request().url(), attempt < (NUM_RESPONSE_RETRIES - 1) ? "Retrying." : "Giving
+        //            up.");
         if (attempt < NUM_RESPONSE_RETRIES - 1) {
           // Do not sleep for last loop round, as we are going to fail.
           sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
@@ -300,8 +302,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         currentlyAcquiringTasks.add(delegateTaskId);
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
-        final DelegateTaskPackage delegateTaskPackage = acquireTask(delegateTaskId);
-        executeTask(delegateTaskPackage);
+        final var pluginDescriptors = acquireTask(delegateTaskId);
+        pluginDescriptors.forEach(this::executeTask);
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -313,30 +315,14 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
-  protected DelegateTaskPackage acquireTask(final String delegateTaskId) throws IOException {
-    final var delegateTaskPackage =
-        executeRestCall(getDelegateAgentManagerClient().acquireTask(DelegateAgentCommonVariables.getDelegateId(),
-            delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
+  protected List<PluginDescriptor> acquireTask(final String delegateTaskId) throws IOException {
+    final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
+        delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
 
-    if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-      if (delegateTaskPackage == null) {
-        log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
-            getDelegateConfiguration().getAccountId());
-      } else {
-        log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-            getDelegateConfiguration().getAccountId());
-      }
-      throw new IllegalStateException("Delegate received invalid task package for taskId " + delegateTaskId);
-    } else if (!isEmpty(delegateTaskPackage.getDelegateInstanceId())
-        && !DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
-      throw new IllegalArgumentException("Delegate received a task intended for delegate with instanceId "
-          + delegateTaskPackage.getDelegateInstanceId());
-    } else {
-      log.info("{} Delegate {} received task package {} for delegateInstance {}",
-          delegateTaskPackage.getData().getTaskType(), DelegateAgentCommonVariables.getDelegateId(),
-          delegateTaskPackage, DELEGATE_INSTANCE_ID);
-      return delegateTaskPackage;
-    }
+    final var pluginDescriptors = response.getTasksList();
+    log.info("Delegate {} received tasks {} for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
+        pluginDescriptors, DELEGATE_INSTANCE_ID);
+    return pluginDescriptors;
   }
 
   private void shutdownExecutors() throws InterruptedException {
@@ -365,7 +351,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
             DELEGATE_TYPE, getLocalHostAddress(), DELEGATE_ORG_IDENTIFIER, DELEGATE_PROJECT_IDENTIFIER);
     try {
       log.info("Unregistering delegate {}", DelegateAgentCommonVariables.getDelegateId());
-      executeRestCall(delegateAgentManagerClient.unregisterDelegate(delegateConfiguration.getAccountId(), request));
+      executeRestCall(managerClient.unregisterDelegate(delegateConfiguration.getAccountId(), request));
     } catch (final IOException e) {
       log.error("Failed unregistering delegate {}", DelegateAgentCommonVariables.getDelegateId(), e);
     }
@@ -422,7 +408,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
 
       delegateHealthTimeLimiter = HTimeLimiter.create(healthMonitorExecutor);
       DelegateStackdriverLogAppender.setTimeLimiter(delegateHealthTimeLimiter);
-      DelegateStackdriverLogAppender.setManagerClient(getDelegateAgentManagerClient());
+      // FIXME: ReIntroduce remote stackdriver logging
+      //      DelegateStackdriverLogAppender.setManagerClient(getDelegateAgentManagerClient());
 
       logProxyConfiguration();
 
@@ -543,8 +530,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     try {
       if (getDelegateConfiguration().isPollForTasks()) {
         RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
-            executeRestCall(getDelegateAgentManagerClient().delegateHeartbeat(
-                getDelegateConfiguration().getAccountId(), delegateParams));
+            executeRestCall(managerClient.delegateHeartbeat(getDelegateConfiguration().getAccountId(), delegateParams));
 
         long now = getClock().millis();
         log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
@@ -570,9 +556,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
                                                                     .build();
         HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
             ()
-                -> executeRestCall(
-                    getDelegateAgentManagerClient().doConnectionHeartbeat(DelegateAgentCommonVariables.getDelegateId(),
-                        getDelegateConfiguration().getAccountId(), connectionHeartbeat)));
+                -> executeRestCall(managerClient.doConnectionHeartbeat(DelegateAgentCommonVariables.getDelegateId(),
+                    getDelegateConfiguration().getAccountId(), connectionHeartbeat)));
         lastHeartbeatSentAt.set(getClock().millis());
       } else {
         if (socket.status() == Socket.STATUS.OPEN || socket.status() == Socket.STATUS.REOPENED) {
@@ -875,8 +860,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
                                             .heartbeatAsObject(true)
                                             .build();
-        restResponse = executeRestCall(getDelegateAgentManagerClient().registerDelegate(
-            getDelegateConfiguration().getAccountId(), delegateParams));
+        restResponse =
+            executeRestCall(managerClient.registerDelegate(getDelegateConfiguration().getAccountId(), delegateParams));
       } catch (Exception e) {
         String msg = "Unknown error occurred while registering Delegate [" + getDelegateConfiguration().getAccountId()
             + "] with manager";
@@ -922,7 +907,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         DelegateTaskEventsResponse taskEventsResponse =
             HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
                 ()
-                    -> executeRestCall(getDelegateAgentManagerClient().pollTaskEvents(
+                    -> executeRestCall(managerClient.pollTaskEvents(
                         DelegateAgentCommonVariables.getDelegateId(), getDelegateConfiguration().getAccountId())));
         if (shouldProcessDelegateTaskEvents(taskEventsResponse)) {
           List<DelegateTaskEvent> taskEvents = taskEventsResponse.getDelegateTaskEvents();

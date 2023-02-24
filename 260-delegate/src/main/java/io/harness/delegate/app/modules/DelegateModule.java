@@ -38,12 +38,12 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.lambda.AwsLambdaClient;
-import io.harness.aws.lambda.AwsLambdaClientImpl;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.lambda.AwsLambdaClient;
+import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
 import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -99,6 +99,7 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
+import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
 import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -197,6 +198,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskHandler;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsTaskNG;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactTaskNG;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactTaskNG;
@@ -238,6 +240,7 @@ import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -265,6 +268,8 @@ import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsTestConnectionDelegateTask;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsValidationHandler;
+import io.harness.delegate.task.bamboo.BambooTestConnectionDelegateTask;
+import io.harness.delegate.task.bamboo.BambooValidationHandler;
 import io.harness.delegate.task.buildsource.BuildSourceTask;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
@@ -1976,6 +1981,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_HOST_CONNECTIVITY_TASK).toInstance(HostConnectivityValidationDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_CONNECTIVITY_TEST_TASK).toInstance(DockerTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.JENKINS_CONNECTIVITY_TEST_TASK).toInstance(JenkinsTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.BAMBOO_CONNECTIVITY_TEST_TASK).toInstance(BambooTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.AZURE_ARTIFACTS_CONNECTIVITY_TEST_TASK)
         .toInstance(AzureArtifactsTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AWS_TASK).toInstance(AwsDelegateTask.class);
@@ -2093,9 +2099,9 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
 
     // AWS Lambda NG
-    MapBinder<String, AwsLambdaDeployTaskCommandHandler> awsLambdaDeployTaskCommandHandlerMapBinder =
-        MapBinder.newMapBinder(binder(), String.class, AwsLambdaDeployTaskCommandHandler.class);
-    awsLambdaDeployTaskCommandHandlerMapBinder.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
+    MapBinder<String, AwsLambdaCommandTaskHandler> awsCommandTaskHandler =
+        MapBinder.newMapBinder(binder(), String.class, AwsLambdaCommandTaskHandler.class);
+    awsCommandTaskHandler.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
         .to(AwsLambdaDeployTaskCommandHandler.class);
 
     // AWS ASG NG
@@ -2155,7 +2161,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
-
+    mapBinder.addBinding(TaskType.BAMBOO_ARTIFACT_TASK_NG).toInstance(BambooArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
     mapBinder.addBinding(TaskType.GCP_PROJECTS_TASK_NG).toInstance(GcpProjectTask.class);
     mapBinder.addBinding(TaskType.GCS_BUCKETS_TASK_NG).toInstance(GcsBucketPerProjectTask.class);
@@ -2166,6 +2172,9 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+
+    // AWS Lambda
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -2252,6 +2261,8 @@ public class DelegateModule extends AbstractModule {
         .to(DockerValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.JENKINS.getDisplayName())
         .to(JenkinsValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.BAMBOO.getDisplayName())
+        .to(BambooValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_ARTIFACTS.getDisplayName())
         .to(AzureArtifactsValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.HTTP_HELM_REPO.getDisplayName())

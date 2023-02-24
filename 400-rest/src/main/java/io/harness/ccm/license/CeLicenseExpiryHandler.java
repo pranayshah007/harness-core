@@ -14,7 +14,7 @@ import static java.time.Duration.ofMinutes;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -31,7 +31,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 @OwnedBy(CE)
-public class CeLicenseExpiryHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class CeLicenseExpiryHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(5);
 

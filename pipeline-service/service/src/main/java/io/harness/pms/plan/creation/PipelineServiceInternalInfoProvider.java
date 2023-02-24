@@ -16,7 +16,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
-import static io.harness.steps.StepSpecTypeConstants.BARRIER;
 import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
 

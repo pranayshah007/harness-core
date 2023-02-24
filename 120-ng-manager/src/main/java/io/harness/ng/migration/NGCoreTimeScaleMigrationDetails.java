@@ -12,6 +12,7 @@ import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraInfoTable;
 import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
+import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -33,6 +34,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, AddRollbackDurationToServiceInfraInfoTable.class))
         .add(Pair.of(2, CreateModuleLicensesTable.class))
+        .add(Pair.of(3, GetServiceInstancesByDateFunction.class))
         .build();
   }
 }

@@ -61,7 +61,7 @@ import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
-import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
@@ -824,11 +824,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForInlineToRemote(
           accountIdentifier, orgIdentifier, projectIdentifier, moveConfigDTO);
-      metadataUpdate = metadataUpdate.set(PipelineMetadataV2.PipelineMetadataV2Keys.branch, moveConfigDTO.getBranch());
+      metadataUpdate = metadataUpdate.set(PipelineMetadataV2Keys.branch, moveConfigDTO.getBranch());
 
     } else if (REMOTE_TO_INLINE.equals(moveConfigDTO.getMoveConfigOperationType())) {
       pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForRemoteToInline();
-      metadataUpdate = metadataUpdate.unset(PipelineMetadataV2.PipelineMetadataV2Keys.entityGitDetails);
+      metadataUpdate = metadataUpdate.unset(PipelineMetadataV2Keys.entityGitDetails);
     } else {
       log.error("Invalid move config operation provided: {}", moveConfigDTO.getMoveConfigOperationType().name());
       throw new InvalidRequestException(String.format(

@@ -76,9 +76,11 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams,
       NodeExecutionKeys.module, NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.stepType);
 
-  public static final Set<String> fieldsForExpressionEngine = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,
-      NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry);
+  // NodeId is added to resolve expression within same step
+  public static final Set<String> fieldsForExpressionEngine =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.mode,
+          NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
+          NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);

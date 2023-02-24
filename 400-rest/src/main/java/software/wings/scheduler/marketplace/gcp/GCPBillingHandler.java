@@ -12,7 +12,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class GCPBillingHandler extends IteratorPumpModeHandler implements Handler<GCPBillingJobEntity> {
+public class GCPBillingHandler extends IteratorPumpAndRedisModeHandler implements Handler<GCPBillingJobEntity> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);
   private static final int ITERATOR_SCHEDULE_INITIAL_DELAY = 0;
 

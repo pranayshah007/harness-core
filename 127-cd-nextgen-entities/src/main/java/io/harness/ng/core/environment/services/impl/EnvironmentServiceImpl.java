@@ -37,6 +37,7 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
@@ -71,6 +72,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -85,11 +87,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -126,6 +130,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final ServiceEntityService serviceEntityService;
   private final AccountClient accountClient;
   private final NGSettingsClient settingsClient;
+  private final EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
@@ -133,7 +138,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       OutboxService outboxService, TransactionTemplate transactionTemplate,
       InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
       ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService,
-      AccountClient accountClient, NGSettingsClient settingsClient) {
+      AccountClient accountClient, NGSettingsClient settingsClient,
+      EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -145,6 +151,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.serviceEntityService = serviceEntityService;
     this.accountClient = accountClient;
     this.settingsClient = settingsClient;
+    this.environmentEntitySetupUsageHelper = environmentEntitySetupUsageHelper;
   }
 
   @Override
@@ -152,7 +159,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     try {
       validatePresenceOfRequiredFields(environment.getAccountId(), environment.getIdentifier());
       modifyEnvironmentRequest(environment);
-
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(environment);
       Environment createdEnvironment =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             Environment tempEnvironment = environmentRepository.save(environment);
@@ -164,6 +171,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                    .build());
             return tempEnvironment;
           }));
+      environmentEntitySetupUsageHelper.createSetupUsages(createdEnvironment, referredEntities);
       publishEvent(environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier(),
           environment.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdEnvironment;
@@ -214,7 +222,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
     modifyEnvironmentRequest(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
-
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestEnvironment);
     Optional<Environment> environmentOptional =
         get(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
             requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(), false);
@@ -239,6 +247,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                    .build());
             return tempResult;
           }));
+      environmentEntitySetupUsageHelper.updateSetupUsages(
+          updatedResult, referredEntities, getReferredEntitytypes(environmentOptional.get()));
       publishEvent(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
           requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(),
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
@@ -254,7 +264,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
     modifyEnvironmentRequest(requestEnvironment);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
+    Optional<Environment> environmentOptional =
+        get(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
+            requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(), false);
     Environment updatedResult = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Environment tempResult = environmentRepository.upsert(criteria, requestEnvironment);
       if (tempResult == null) {
@@ -273,6 +287,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       }
       return tempResult;
     }));
+
+    if (environmentOptional.isPresent()) {
+      environmentEntitySetupUsageHelper.updateSetupUsages(
+          updatedResult, referredEntities, getReferredEntitytypes(environmentOptional.get()));
+    } else {
+      environmentEntitySetupUsageHelper.createSetupUsages(updatedResult, referredEntities);
+    }
     publishEvent(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(),
         EventsFrameworkMetadataConstants.UPSERT_ACTION);
@@ -306,6 +327,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       checkThatEnvironmentIsNotReferredByOthers(environment);
     }
     Criteria criteria = getEnvironmentEqualityCriteria(environment, false);
+
     Optional<Environment> environmentOptional =
         get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isPresent()) {
@@ -334,6 +356,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
         return true;
       }));
+      environmentEntitySetupUsageHelper.deleteSetupUsagesWithOnlyIdentifierInfo(
+          environmentIdentifier, accountId, orgIdentifier, projectIdentifier);
       publishEvent(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
           EventsFrameworkMetadataConstants.DELETE_ACTION);
       processDownstreamDeletions(accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
@@ -377,6 +401,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       boolean deleted = environmentRepository.delete(criteria);
       if (deleted) {
         for (String environmentId : environments) {
+          environmentEntitySetupUsageHelper.deleteSetupUsagesWithOnlyIdentifierInfo(
+              environmentId, accountId, orgIdentifier, projectIdentifier);
           publishEvent(accountId, orgIdentifier, projectIdentifier, environmentId,
               EventsFrameworkMetadataConstants.DELETE_ACTION);
         }
@@ -779,5 +805,23 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
+  }
+  private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(Environment environment) {
+    try {
+      return environmentEntitySetupUsageHelper.getAllReferredEntities(environment);
+    } catch (RuntimeException ex) {
+      throw new InvalidRequestException(
+          String.format(
+              "Exception while retrieving referred entities for environment: [%s]. ", environment.getIdentifier())
+          + ex.getMessage());
+    }
+  }
+  private Set<String> getReferredEntitytypes(Environment environment) {
+    Set<EntityDetailProtoDTO> olderreferredEntities = getAndValidateReferredEntities(environment);
+    Set<String> olderreferredEntityTypes = new HashSet<>();
+    for (EntityDetailProtoDTO entityDetailProtoDTO : olderreferredEntities) {
+      olderreferredEntityTypes.add(entityDetailProtoDTO.getType().name());
+    }
+    return olderreferredEntityTypes;
   }
 }

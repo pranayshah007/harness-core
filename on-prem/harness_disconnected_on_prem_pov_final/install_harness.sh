@@ -510,7 +510,7 @@ function setupClientUtils() {
       cp images/oc/${platform}/$ocversion/oc ${STORAGE_DIR_LOCATION}/harness-download/harness-oc/release/$ocversion/bin/${platform}/amd64/
     done
 
-    for scmVersion in 1658d03e; do
+    for scmVersion in 91e2a39c; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
       cp images/scm/${platform}/$scmVersion/scm ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
     done
