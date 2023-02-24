@@ -108,7 +108,8 @@ public class AwsLambdaPrepareRollbackTaskHandler {
       } else {
         // if function doesn't exist
         executionLogCallback.saveExecutionLog(format("Function %s doesn't exist. Skipping Prepare Rollback Data...",
-            createFunctionRequest.functionName(), LogLevel.INFO, CommandExecutionStatus.SUCCESS));
+            createFunctionRequest.functionName(), LogLevel.INFO));
+        executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         return AwsLambdaPrepareRollbackResponse.builder()
             .manifestContent(awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent())
             .firstDeployment(true)

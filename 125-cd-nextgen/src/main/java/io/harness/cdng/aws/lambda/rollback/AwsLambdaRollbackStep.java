@@ -96,9 +96,9 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
-      //      stepResponse =
-      //              googleFunctionsHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder,
-      //              ambiance);
+      stepResponse =
+                    awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder,
+                    ambiance);
     } catch (Exception e) {
       log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;

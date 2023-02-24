@@ -22,6 +22,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
@@ -34,6 +35,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -43,12 +45,15 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
@@ -294,17 +299,20 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   public static StepResponseBuilder getFailureResponseBuilder(
-      AwsLambdaDeployResponse awsLambdaDeployResponse, StepResponseBuilder stepResponseBuilder) {
+      AwsLambdaCommandResponse awsLambdaCommandResponse, StepResponseBuilder stepResponseBuilder) {
     stepResponseBuilder.status(Status.FAILED)
         .failureInfo(
             FailureInfo.newBuilder()
                 .setErrorMessage(
-                    awsLambdaDeployResponse.getErrorMessage() == null ? "" : awsLambdaDeployResponse.getErrorMessage())
+                        awsLambdaCommandResponse.getErrorMessage() == null ? "" : awsLambdaCommandResponse.getErrorMessage())
                 .build());
     return stepResponseBuilder;
   }
 
   public AwsLambdaStepOutcome getAwsLambdaStepOutcome(AwsLambda awsLambda) {
+    if(awsLambda == null) {
+      return AwsLambdaStepOutcome.builder().build();
+    }
     return AwsLambdaStepOutcome.builder()
         .functionName(awsLambda.getFunctionName())
         .runtime(awsLambda.getRuntime())
@@ -475,5 +483,29 @@ public class AwsLambdaHelper extends CDStepHelper {
       }
     }
     throw new InvalidRequestException("Aws Lambda Artifact is mandatory.", USER);
+  }
+
+  public StepResponse generateStepResponse(AwsLambdaCommandResponse awsLambdaCommandResponse,
+                                           StepResponseBuilder stepResponseBuilder, Ambiance ambiance) {
+    if (awsLambdaCommandResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return getFailureResponseBuilder(awsLambdaCommandResponse, stepResponseBuilder).build();
+    } else {
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+              ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
+              (AwsLambdaFunctionsInfraConfig) getInfraConfig(infrastructureOutcome, ambiance);
+//      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfo(
+//              googleFunctionCommandResponse, gcpGoogleFunctionInfraConfig, infrastructureOutcome.getInfrastructureKey());
+//      instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      AwsLambdaStepOutcome awsLambdaStepOutcome =
+              getAwsLambdaStepOutcome(awsLambdaCommandResponse.getAwsLambda());
+
+      return stepResponseBuilder.status(Status.SUCCEEDED)
+              .stepOutcome(StepResponse.StepOutcome.builder()
+                      .name(OutcomeExpressionConstants.OUTPUT)
+                      .outcome(awsLambdaStepOutcome)
+                      .build())
+              .build();
+    }
   }
 }

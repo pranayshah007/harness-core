@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
@@ -28,6 +29,7 @@ public class AwsLambdaPrepareRollbackResponse implements AwsLambdaCommandRespons
   String manifestContent;
   boolean firstDeployment;
   String functionName;
+  AwsLambda awsLambda;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {
