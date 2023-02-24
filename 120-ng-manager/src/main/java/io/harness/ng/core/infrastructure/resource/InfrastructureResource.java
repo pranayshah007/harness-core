@@ -40,7 +40,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
-import io.harness.ng.core.beans.Constants;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -206,8 +206,9 @@ public class InfrastructureResource {
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @RequestBody(required = true, description = "Details of the Infrastructure to be created", content = {
-        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
-                     value = Constants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+        @Content(
+            examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
       }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
@@ -307,8 +308,9 @@ public class InfrastructureResource {
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @RequestBody(required = true, description = "Details of the Infrastructure to be updated", content = {
-        @Content(examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure Update Body",
-                     value = Constants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+        @Content(
+            examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure Update Body",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
       }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
@@ -340,8 +342,9 @@ public class InfrastructureResource {
   upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @RequestBody(required = true, description = "Details of the Infrastructure to be upsert", content = {
-        @Content(examples = @ExampleObject(name = "Upsert", summary = "Sample Infrastructure Upsert Body",
-                     value = Constants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
+        @Content(
+            examples = @ExampleObject(name = "Upsert", summary = "Sample Infrastructure Upsert Body",
+                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
       }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
