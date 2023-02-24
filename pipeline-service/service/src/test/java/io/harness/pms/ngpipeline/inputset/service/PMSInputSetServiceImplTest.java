@@ -307,7 +307,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testList() {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
-    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
     pmsInputSetService.create(inputSetEntity, false);
     pmsInputSetService.create(overlayInputSetEntity, false);
 
@@ -950,7 +950,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                   .identifier(INPUT_SET_IDENTIFIER)
                                   .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                   .build();
-    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
     PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
 
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
@@ -974,7 +974,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                   .identifier(INPUT_SET_IDENTIFIER)
                                   .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                   .build();
-    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(true);
+    when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
     PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
 
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
@@ -982,6 +982,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                       .connectorRef("connectorRef")
                                       .isNewBranch(true)
                                       .branch("branch")
+                                      .storeType(StoreType.REMOTE)
                                       .build();
     GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
 
@@ -999,7 +1000,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                   .identifier(INPUT_SET_IDENTIFIER)
                                   .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                   .build();
-    when(inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
+    when(inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(any())).thenReturn(false);
     PipelineEntity pipeline = PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).repo(REPO_NAME).build();
 
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
