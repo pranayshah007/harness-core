@@ -18,6 +18,7 @@ import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.checks.ModuleLicenseState;
