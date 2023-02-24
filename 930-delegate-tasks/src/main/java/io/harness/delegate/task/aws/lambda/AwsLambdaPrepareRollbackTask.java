@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws.lambda;
 
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.aws.lambda.AwsLambdaPrepareRollbackTaskHandler;
@@ -22,12 +23,11 @@ import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResp
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-
-import com.google.inject.Inject;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

@@ -9,7 +9,6 @@ package io.harness.cdng.creator.variables.aws;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepNode;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;

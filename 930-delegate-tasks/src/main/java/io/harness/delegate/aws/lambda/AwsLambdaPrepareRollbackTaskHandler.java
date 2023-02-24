@@ -39,7 +39,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
-import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 

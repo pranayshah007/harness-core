@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.aws.lambda;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.aws.lambda.AwsLambdaPrepareRollbackTaskHandler;
@@ -25,11 +24,12 @@ import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 
+import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -37,9 +37,8 @@ public class AwsLambdaRollbackTask extends AbstractDelegateRunnableTask {
   @Inject private AwsLambdaRollbackTaskCommandHandler awsLambdaRollbackTaskCommandHandler;
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
 
-  public AwsLambdaRollbackTask(DelegateTaskPackage delegateTaskPackage,
-                               ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
-                               BooleanSupplier preExecute) {
+  public AwsLambdaRollbackTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+      Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -59,9 +58,8 @@ public class AwsLambdaRollbackTask extends AbstractDelegateRunnableTask {
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaCommandRequest.getAwsLambdaInfraConfig());
 
     try {
-      AwsLambdaRollbackResponse awsLambdaRollbackResponse =
-              awsLambdaRollbackTaskCommandHandler.executeTaskInternal(
-              awsLambdaCommandRequest, getLogStreamingTaskClient(), commandUnitsProgress);
+      AwsLambdaRollbackResponse awsLambdaRollbackResponse = awsLambdaRollbackTaskCommandHandler.executeTaskInternal(
+          awsLambdaCommandRequest, getLogStreamingTaskClient(), commandUnitsProgress);
       awsLambdaRollbackResponse.setCommandUnitsProgress(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return awsLambdaRollbackResponse;

@@ -7,7 +7,11 @@
 
 package io.harness.delegate.aws.lambda;
 
-import com.google.inject.Inject;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
@@ -18,26 +22,21 @@ import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
-import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
+import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
-import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
-import software.wings.beans.LogColor;
-import software.wings.beans.LogWeight;
-
-import static java.lang.String.format;
-import static software.wings.beans.LogColor.Green;
-import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -61,36 +60,35 @@ public class AwsLambdaRollbackTaskCommandHandler {
     try {
       executionLogCallback.saveExecutionLog(format("Starting Rollback..%n%n"), LogLevel.INFO);
 
-      if(awsLambdaRollbackRequest.isFirstDeployment()) {
-        awsLambdaTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
-                awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
+      if (awsLambdaRollbackRequest.isFirstDeployment()) {
+        awsLambdaTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(),
+            awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
+            awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
-        return AwsLambdaRollbackResponse.builder()
-                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                .build();
+        return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
       } else {
         CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.rollbackFunction(
-                awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
-                awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), awsLambdaRollbackRequest.getQualifier(), executionLogCallback);
+            awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
+            awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), awsLambdaRollbackRequest.getQualifier(),
+            executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
         return AwsLambdaRollbackResponse.builder()
-                .awsLambda(AwsLambda.builder()
-                        .functionName(createFunctionResponse.functionName())
-                        .runtime(createFunctionResponse.runtimeAsString())
-                        .version(createFunctionResponse.version())
-                        .functionArn(createFunctionResponse.functionArn())
-                        .build())
-                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                .build();
+            .awsLambda(AwsLambda.builder()
+                           .functionName(createFunctionResponse.functionName())
+                           .runtime(createFunctionResponse.runtimeAsString())
+                           .version(createFunctionResponse.version())
+                           .functionArn(createFunctionResponse.functionArn())
+                           .build())
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
       }
     } catch (AwsLambdaException exception) {
-      executionLogCallback.saveExecutionLog(exception.getLocalizedMessage(), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      return AwsLambdaRollbackResponse.builder()
-              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .build();
+      executionLogCallback.saveExecutionLog(
+          exception.getLocalizedMessage(), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     } catch (Exception exception) {
       executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

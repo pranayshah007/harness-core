@@ -7,16 +7,10 @@
 
 package io.harness.cdng.aws.lambda.rollback;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployBaseStepInfo;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.aws.AwsLambdaDeployStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.AwsLambdaRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -27,15 +21,17 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -54,7 +50,8 @@ public class AwsLambdaRollbackStepInfo extends AwsLambdaRollbackBaseStepInfo imp
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsLambdaRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
+  public AwsLambdaRollbackStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
     super(delegateSelectors, awsLambdaDeployStepFnq);
   }
 

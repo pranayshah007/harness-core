@@ -9,38 +9,23 @@ package io.harness.cdng.aws.lambda.rollback;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
-import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.googlefunctions.GoogleFunctionsHelper;
-import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
-import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
-import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepParameters;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
-import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
-import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionRollbackRequest;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
-import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -50,19 +35,14 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
-import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
-import software.wings.sm.states.AwsLambdaRollback;
 
 import com.google.inject.Inject;
-import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -96,9 +76,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
-      stepResponse =
-                    awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder,
-                    ambiance);
+      stepResponse = awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
