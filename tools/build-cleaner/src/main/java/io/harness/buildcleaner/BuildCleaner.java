@@ -27,6 +27,7 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class BuildCleaner {
@@ -51,6 +53,7 @@ public class BuildCleaner {
   private MavenManifest mavenManifest;
   private MavenManifest mavenManifestOverride;
   private PackageParser packageParser;
+  private HashMap<String, ModuleDependencyInfo> perModuleDependencyMap;
 
   BuildCleaner(String[] args) {
     this.options = getCommandLineOptions(args);
@@ -66,6 +69,7 @@ public class BuildCleaner {
     }
 
     this.packageParser = new PackageParser(workspace());
+    this.perModuleDependencyMap = new HashMap<>();
   }
 
   public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -79,6 +83,19 @@ public class BuildCleaner {
     SymbolDependencyMap harnessSymbolMap = buildHarnessSymbolMap();
     log.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
 
+    if (options.hasOption("computeOnlyModuleComplexity")) {
+      Files
+          .find(workspace().resolve(module()), options.hasOption("recursive") ? Integer.MAX_VALUE : 0,
+              (filePath, fileAttr) -> fileAttr.isDirectory())
+          .forEach(path -> {
+            Path modulePath = workspace().relativize(path);
+            buildPerModuleDependencyMap(modulePath, harnessSymbolMap);
+          });
+
+      computeModuleComplexity();
+      return;
+    }
+
     // If recursive option is set, generate build file for each folder inside.
     Files
         .find(workspace().resolve(module()), options.hasOption("recursive") ? Integer.MAX_VALUE : 0,
@@ -86,6 +103,7 @@ public class BuildCleaner {
         .forEach(path -> {
           try {
             Path modulePath = workspace().relativize(path);
+
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
             if (buildFile.isEmpty()) {
               log.error("Could not generate build file for {}", modulePath);
@@ -170,6 +188,42 @@ public class BuildCleaner {
   }
 
   /**
+   * Helper method to resolve the import statement to get
+   * the dependencies for the module using the symbol map.
+   *
+   * @param path relative to the workspace.
+   * @param classpathParser classpath parser to get imports for java files.
+   * @param harnessSymbolMap having mapping from Harness classes to build paths.
+   * @return dependencies for the module as a set.
+   */
+  private Set<String> getModuleDependencies(
+      Path path, ClasspathParser classpathParser, SymbolDependencyMap harnessSymbolMap) {
+    Set<String> dependencies = new TreeSet<>();
+    for (String importStatement : classpathParser.getUsedTypes()) {
+      if (importStatement.startsWith("java.")) {
+        continue;
+      }
+
+      Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
+
+      // Skip the symbols from the same package. Resolved symbol starts with "//" and ends with ":module" and rest of
+      // it is just a path - therefore, removing first two characters before comparing.
+      if (resolvedSymbol.isPresent()
+          && resolvedSymbol.get().substring(2, resolvedSymbol.get().length() - 7).equals(path.toString())) {
+        continue;
+      }
+
+      resolvedSymbol.ifPresent(symbol -> log.debug("Adding dependency to {} for import {}", symbol, importStatement));
+      resolvedSymbol.ifPresent(dependencies::add);
+      if (resolvedSymbol.isEmpty()) {
+        log.error("No build dependency found for {}", importStatement);
+      }
+    }
+
+    return dependencies;
+  }
+
+  /**
    * Generate build file for the path relative the workspace. Takes care of resolving symbols for
    * all source files matching the srcsGlob pattern.
    *
@@ -197,27 +251,7 @@ public class BuildCleaner {
     String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path + "/" + srcsGlob();
     classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
-    Set<String> dependencies = new TreeSet<>();
-    for (String importStatement : classpathParser.getUsedTypes()) {
-      if (importStatement.startsWith("java.")) {
-        continue;
-      }
-
-      Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
-
-      // Skip the symbols from the same package. Resolved symbol starts with "//" and ends with ":module" and rest of
-      // it is just a path - therefore, removing first two characters before comparing.
-      if (resolvedSymbol.isPresent()
-          && resolvedSymbol.get().substring(2, resolvedSymbol.get().length() - 7).equals(path.toString())) {
-        continue;
-      }
-
-      resolvedSymbol.ifPresent(symbol -> log.debug("Adding dependency to {} for import {}", symbol, importStatement));
-      resolvedSymbol.ifPresent(dependencies::add);
-      if (resolvedSymbol.isEmpty()) {
-        log.error("No build dependency found for {}", importStatement);
-      }
-    }
+    Set<String> dependencies = getModuleDependencies(path, classpathParser, harnessSymbolMap);
 
     final BuildFile buildFile = new BuildFile();
     // We run analysis even for test only targets, but it will skip PMD & sonar. Will run only checkstyle
@@ -237,6 +271,85 @@ public class BuildCleaner {
     }
 
     return Optional.of(buildFile);
+  }
+
+  /**
+   * Helper method to compute the depth of the path.
+   *
+   * @param path
+   * @return
+   */
+  private int computePathDepth(String path) {
+    return StringUtils.countMatches(path, "/");
+  }
+
+  /**
+   * Helper method to build the dependency map to be used for module complexity computation.
+   * This map is different from the harnessSymbolMap as below -
+   *
+   * 1. harnessSymbolMap maps the full-qualified class name to the build path.
+   *    Ex: The class { io.harness.exception.TaskFailureException } is mapped to
+   *        its build path { 980-commons/src/main/java/io/harness/exception }.
+   *
+   * 2. perModuleDependencyMap maps the build path to all the dependencies.
+   *   Ex: The build path { 970-grpc/src/main/java/io/harness/grpc/auth } contains
+   *       the dependencies [ //970-grpc/src/main/java/io/harness/grpc/utils:module,
+   *                          //970-grpc/src/main/java/io/harness/grpc:module ]
+   *
+   * @param path relative to the workspace.
+   * @param harnessSymbolMap having mapping from Harness classes to build paths.
+   */
+  private void buildPerModuleDependencyMap(Path path, SymbolDependencyMap harnessSymbolMap) {
+    try {
+      ClasspathParser classpathParser = this.packageParser.getClassPathParser();
+      String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path + "/" + srcsGlob();
+      classpathParser.parseClasses(parseClassPattern, new HashSet<>());
+
+      Set<String> dependencies = getModuleDependencies(path, classpathParser, harnessSymbolMap);
+      if (dependencies.isEmpty()) {
+        return;
+      }
+
+      if (!perModuleDependencyMap.containsKey(path.toString())) {
+        perModuleDependencyMap.put(path.toString(), new ModuleDependencyInfo(module().toString(), path.toString()));
+      }
+
+      for (String dependency : dependencies) {
+        perModuleDependencyMap.get(path.toString()).addDependency(dependency);
+      }
+    } catch (IOException ex) {
+    }
+  }
+
+  /**
+   * Method to compute the module complexity.
+   */
+  private void computeModuleComplexity() {
+    double totalModuleComplexityPath = 0;
+    int totalZeroIntraDeps = 0;
+
+    for (String mod : perModuleDependencyMap.keySet()) {
+      int modDepth = computePathDepth(mod + "/");
+      double intraModuleComplexity = 0;
+
+      ModuleDependencyInfo moduleDependencyInfo = perModuleDependencyMap.get(mod);
+
+      if (moduleDependencyInfo.getIntraDependenciesCount() == 0) {
+        totalZeroIntraDeps++;
+        continue;
+      }
+
+      intraModuleComplexity += moduleDependencyInfo.computeIntraModuleComplexity(modDepth);
+      log.info("For Module {" + mod + "}, intraModuleComplexity {" + intraModuleComplexity + "}");
+
+      totalModuleComplexityPath += intraModuleComplexity;
+    }
+
+    log.info("Total nos of packages : " + perModuleDependencyMap.size()
+        + ", packages with intra deps : " + (perModuleDependencyMap.size() - totalZeroIntraDeps));
+    log.info("Total intra module complexity based on path weight : " + totalModuleComplexityPath);
+    log.info("Avg of outgoing for these packages : "
+        + totalModuleComplexityPath / (perModuleDependencyMap.size() - totalZeroIntraDeps));
   }
 
   /**
@@ -374,6 +487,8 @@ public class BuildCleaner {
     options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
         "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
             + "Set to 'all' if need same behavior for all folders"));
+    options.addOption(
+        new Option(null, "computeOnlyModuleComplexity", false, "Compute the module complexity based on dependencies"));
 
     CommandLine commandLineOptions = null;
     try {
