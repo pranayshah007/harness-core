@@ -14,7 +14,6 @@ java_library(
         "//:lombok",
         "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
-        "//980-commons/src/main/java/io/harness/serializer:module",
         "@maven//:com_google_inject_guice",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",

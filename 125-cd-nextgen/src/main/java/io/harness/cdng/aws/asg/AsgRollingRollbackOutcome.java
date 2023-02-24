@@ -23,9 +23,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDP)
 @Value
 @Builder
-@TypeAlias("asgRollingDeployOutcome")
-@JsonTypeName("asgRollingDeployOutcome")
-@RecasterAlias("io.harness.cdng.aws.asg.AsgRollingDeployOutcome")
-public class AsgRollingDeployOutcome implements Outcome, ExecutionSweepingOutput {
-  AutoScalingGroupContainer asg;
+@TypeAlias("asgRollingRollbackOutcome")
+@JsonTypeName("asgRollingRollbackOutcome")
+@RecasterAlias("io.harness.cdng.aws.asg.AsgRollingRollbackOutcome")
+public class AsgRollingRollbackOutcome implements Outcome, ExecutionSweepingOutput {
+  AutoScalingGroupContainer autoScalingGroupContainer;
 }

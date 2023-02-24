@@ -118,6 +118,7 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
@@ -2624,7 +2625,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
   }
 
-  @Override
   public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
     Response<ResponseBody> response = null;
     try {
@@ -2657,6 +2657,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response.body().close();
       }
     }
+  }
+
+  @Override
+  public void sendTaskResponse(final String taskId, final ExecutionStatusResponse taskResponse) {
+    throw new UnsupportedOperationException("Proto task status only supported for plugin delegate");
   }
 
   private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {

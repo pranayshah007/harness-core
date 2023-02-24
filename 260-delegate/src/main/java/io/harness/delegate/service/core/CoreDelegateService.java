@@ -7,13 +7,9 @@
 
 package io.harness.delegate.service.core;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
-import io.harness.delegate.DelegateAgentCommonVariables;
-import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
-import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.core.ExecutionMode;
 import io.harness.delegate.core.ExecutionPriority;
 import io.harness.delegate.core.PluginDescriptor;
@@ -22,11 +18,11 @@ import io.harness.delegate.service.core.k8s.K8STaskRunner;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.ApiException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +33,9 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   private final K8STaskRunner taskRunner;
 
   @Override
-  protected void abortTask(final DelegateTaskAbortEvent taskEvent) {}
+  protected void abortTask(final DelegateTaskAbortEvent taskEvent) {
+    throw new UnsupportedOperationException("Operation Not supported yet");
+  }
 
   @Override
   protected void executeTask(final @NonNull PluginDescriptor pluginDescriptor) {
@@ -63,21 +61,12 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   }
 
   @Override
-  protected ImmutableList<String> getCurrentlyExecutingTaskIds() {
-    return ImmutableList.of("");
+  protected List<String> getCurrentlyExecutingTaskIds() {
+    return List.of("");
   }
 
   @Override
-  protected ImmutableList<TaskType> getSupportedTasks() {
-    return Arrays.stream(TaskType.values()).collect(toImmutableList());
-  }
-
-  @Override
-  protected void onPreResponseSent(final DelegateTaskResponse response) {
-    final DelegateMetaInfo responseMetadata =
-        DelegateMetaInfo.builder().hostName(HOST_NAME).id(DelegateAgentCommonVariables.getDelegateId()).build();
-    if (response.getResponse() instanceof DelegateTaskNotifyResponseData) {
-      ((DelegateTaskNotifyResponseData) response.getResponse()).setDelegateMetaInfo(responseMetadata);
-    }
+  protected List<TaskType> getSupportedTasks() {
+    return Arrays.stream(TaskType.values()).collect(toUnmodifiableList());
   }
 }

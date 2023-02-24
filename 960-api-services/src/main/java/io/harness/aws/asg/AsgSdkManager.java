@@ -871,22 +871,28 @@ public class AsgSdkManager {
   public void info(String msg, boolean isBold, Object... params) {
     String formatted = format(msg, params);
     log.info(formatted);
-    if (isBold) {
-      logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
-    } else {
-      logCallback.saveExecutionLog(formatted);
+    if (logCallback != null) {
+      if (isBold) {
+        logCallback.saveExecutionLog(color(formatted, White, Bold), INFO);
+      } else {
+        logCallback.saveExecutionLog(formatted);
+      }
     }
   }
 
   public void warn(String msg, Object... params) {
     String formatted = format(msg, params);
     log.warn(formatted);
-    logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(color(formatted, Yellow, Bold), WARN);
+    }
   }
 
   public void error(String msg, String... params) {
     String formatted = format(msg, params);
-    logCallback.saveExecutionLog(formatted, ERROR);
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(formatted, ERROR);
+    }
     log.error(formatted);
   }
 }

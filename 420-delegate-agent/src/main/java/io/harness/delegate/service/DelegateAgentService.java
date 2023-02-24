@@ -7,7 +7,7 @@
 
 package io.harness.delegate.service;
 
-import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.core.ExecutionStatusResponse;
 
 public interface DelegateAgentService {
   void run(boolean watched, boolean isServer);
@@ -20,5 +20,5 @@ public interface DelegateAgentService {
   boolean isSocketHealthy();
   void recordMetrics();
 
-  void sendTaskResponse(String taskId, DelegateTaskResponse taskResponse);
+  void sendTaskResponse(String taskId, ExecutionStatusResponse taskResponse);
 }
