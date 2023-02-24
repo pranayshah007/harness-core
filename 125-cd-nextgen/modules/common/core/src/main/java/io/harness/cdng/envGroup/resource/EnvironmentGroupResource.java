@@ -40,6 +40,7 @@ import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -65,6 +66,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -189,8 +191,13 @@ public class EnvironmentGroupResource {
   public ResponseDTO<EnvironmentGroupResponse>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
              description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
-      @Parameter(description = "Details of the Environment Group to be created")
-      @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
+      @RequestBody(required = true, description = "Details of the Environment Group to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Environment Group create payload",
+                         value = DocumentationConstants.EnvironmentGroupRequestDTO,
+                         description = "Sample Environment Group payload"))
+          }) @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     checkFForThrow(accountId);
 
@@ -312,8 +319,14 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) @ResourceIdentifier String envGroupId,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
           description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
-      @Parameter(description = "Details of the Environment Group to be updated")
-      @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
+      @RequestBody(required = true, description = "Details of the Environment Group to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Environment Group update payload",
+                         value = DocumentationConstants.EnvironmentGroupRequestDTO,
+                         description = "Sample Environment Group payload"))
+          }) @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
+      @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     checkFForThrow(accountId);
 
     log.info(String.format("Updating Environment Group with identifier %s in project %s, org %s, account %s",
