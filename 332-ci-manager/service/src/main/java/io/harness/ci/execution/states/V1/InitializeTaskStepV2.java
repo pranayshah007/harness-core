@@ -226,14 +226,14 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
-      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
-
-      sdkGraphVisualizationDataService.publishStepDetailInformation(
-          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     }
 
+    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+    sdkGraphVisualizationDataService.publishStepDetailInformation(
+        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     return responseBuilder.build();
   }
 
