@@ -12,10 +12,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.pipeline.service.PipelineMetadataService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -33,7 +38,30 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class RollbackModeExecutionHelper {
-  private final NodeExecutionService nodeExecutionService;
+  NodeExecutionService nodeExecutionService;
+  PipelineMetadataService pipelineMetadataService;
+  PrincipalInfoHelper principalInfoHelper;
+
+  public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
+      ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier) {
+    return executionMetadata.toBuilder()
+        .setExecutionUuid(planExecutionID)
+        .setTriggerInfo(triggerInfo)
+        .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
+            accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
+        .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+        .build();
+  }
+
+  public PlanExecutionMetadata transformPlanExecutionMetadata(
+      PlanExecutionMetadata planExecutionMetadata, String planExecutionID) {
+    return planExecutionMetadata.withPlanExecutionId(planExecutionID)
+        .withProcessedYaml(transformProcessedYaml(planExecutionMetadata.getProcessedYaml()));
+  }
+
+  private String transformProcessedYaml(String processedYaml) {
+    return processedYaml;
+  }
 
   public Plan transformPlanForRollbackMode(Plan plan, String previousExecutionId, List<String> nodeIDsToPreserve) {
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
