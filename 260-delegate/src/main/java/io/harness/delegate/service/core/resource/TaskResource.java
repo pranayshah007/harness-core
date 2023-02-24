@@ -10,7 +10,7 @@ package io.harness.delegate.service.core.resource;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.core.ExecutionStatusResponse;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.security.annotations.PublicApi;
 
@@ -26,8 +26,8 @@ import javax.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("task")
-@Path("/task/")
+@Api("tasks")
+@Path("/tasks/")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @OwnedBy(DEL)
@@ -38,11 +38,10 @@ public class TaskResource {
   private final DelegateAgentService delegateAgentService;
 
   @POST
-  @Path("/{taskId}/execution-response")
+  @Path("/{taskId}/status")
   @ApiOperation(value = "send task execution result")
-  public boolean executionResponse(
-      @PathParam("taskId") final String taskId, final DelegateTaskResponse executionResponse) {
-    delegateAgentService.sendTaskResponse(taskId, executionResponse);
+  public boolean executionStatus(@PathParam("taskId") final String taskId, final ExecutionStatusResponse taskStatus) {
+    delegateAgentService.sendTaskResponse(taskId, taskStatus);
     return true;
   }
 }

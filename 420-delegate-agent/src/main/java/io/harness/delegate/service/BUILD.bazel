@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto",
         "//950-delegate-tasks-beans:module",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
     ],
 )
 

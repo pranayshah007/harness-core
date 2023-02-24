@@ -43,9 +43,9 @@ import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
-import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.ExecutionStatusResponse;
 import io.harness.delegate.core.PluginDescriptor;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
@@ -63,7 +63,6 @@ import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -95,6 +94,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
@@ -170,8 +170,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
   protected abstract void executeTask(@NonNull PluginDescriptor pluginDescriptor);
-  protected abstract ImmutableList<String> getCurrentlyExecutingTaskIds();
-  protected abstract ImmutableList<TaskType> getSupportedTasks();
+  protected abstract List<String> getCurrentlyExecutingTaskIds();
+  protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
   protected abstract void onDelegateRegistered();
   protected abstract void onHeartbeat();
@@ -186,7 +186,6 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
    * @return true if pre-execute checks failed which will cause the task to fail
    */
   protected abstract boolean onPreExecute(DelegateTaskEvent delegateTaskEvent, String delegateTaskId);
-  protected abstract void onPreResponseSent(DelegateTaskResponse response);
   protected abstract void onResponseSent(String taskId);
   // ToDo: add more onXXX lifecycle hooks
 
@@ -245,26 +244,19 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   }
 
   @Override
-  public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
+  public void sendTaskResponse(final String taskId, final ExecutionStatusResponse taskResponse) {
     try {
-      onPreResponseSent(taskResponse);
-
       for (int attempt = 0; attempt < NUM_RESPONSE_RETRIES; attempt++) {
-        //        FIXME: This is done in separate PR
-        //        final Response<ResponseBody> response = managerClient
-        //                                                    .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(),
-        //                                                        taskId, getDelegateConfiguration().getAccountId(),
-        //                                                        taskResponse)
-        //                                                    .execute();
-        //        if (response.isSuccessful()) {
-        //          log.info("Task {} response sent to manager", taskId);
-        //          break;
-        //        }
-        //        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
-        //        response.code(),
-        //            response.errorBody() == null ? "null" : response.errorBody().string(),
-        //            response.raw().request().url(), attempt < (NUM_RESPONSE_RETRIES - 1) ? "Retrying." : "Giving
-        //            up.");
+        final Response<ResponseBody> response =
+            managerClient.sendProtoTaskStatus(taskId, getDelegateConfiguration().getAccountId(), taskResponse)
+                .execute();
+        if (response.isSuccessful()) {
+          log.info("Proto task {} response sent to manager", taskId);
+          break;
+        }
+        log.warn("Failed to send proto response for task {}: {}. error: {}. requested url: {} {}", taskId,
+            response.code(), response.errorBody() == null ? "null" : response.errorBody().string(),
+            response.raw().request().url(), attempt < (NUM_RESPONSE_RETRIES - 1) ? "Retrying." : "Giving up.");
         if (attempt < NUM_RESPONSE_RETRIES - 1) {
           // Do not sleep for last loop round, as we are going to fail.
           sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));

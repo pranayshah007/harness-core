@@ -16,8 +16,10 @@ import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.core.AcquireTasksResponse;
+import io.harness.delegate.core.ExecutionStatusResponse;
 import io.harness.rest.RestResponse;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -30,6 +32,10 @@ public interface DelegateCoreManagerClient {
   @GET("agent/{delegateId}/tasks/{taskId}/acquire")
   Call<AcquireTasksResponse> acquireProtoTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
+
+  @POST("agent/tasks/{taskId}/status")
+  Call<ResponseBody> sendProtoTaskStatus(
+      @Path("taskId") String taskId, @Query("accountId") String accountId, @Body ExecutionStatusResponse taskStatus);
 
   @POST("agent/delegates/register")
   Call<RestResponse<DelegateRegisterResponse>> registerDelegate(
