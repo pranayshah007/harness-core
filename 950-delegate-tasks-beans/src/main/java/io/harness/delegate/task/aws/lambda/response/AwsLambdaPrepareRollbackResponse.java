@@ -26,6 +26,8 @@ public class AwsLambdaPrepareRollbackResponse implements AwsLambdaCommandRespons
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
   String manifestContent;
+  boolean firstDeployment;
+  String functionName;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

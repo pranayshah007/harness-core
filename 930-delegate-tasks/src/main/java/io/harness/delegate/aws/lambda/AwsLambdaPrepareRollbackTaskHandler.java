@@ -20,7 +20,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
-import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
@@ -40,6 +39,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.FunctionConfiguration;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 
@@ -77,7 +77,7 @@ public class AwsLambdaPrepareRollbackTaskHandler {
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
 
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
-            (AwsLambdaFunctionsInfraConfig) awsLambdaPrepareRollbackRequest.getAwsLambdaInfraConfig();
+        (AwsLambdaFunctionsInfraConfig) awsLambdaPrepareRollbackRequest.getAwsLambdaInfraConfig();
 
     try {
       executionLogCallback.saveExecutionLog(
@@ -88,22 +88,33 @@ public class AwsLambdaPrepareRollbackTaskHandler {
               awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion()),
           getFunctionRequest);
 
-      if (existingFunctionOptional.isEmpty()) {
+      if (!existingFunctionOptional.isEmpty()) {
         // if function exist
         GetFunctionResponse function = existingFunctionOptional.get();
         executionLogCallback.saveExecutionLog(
             format("Fetched Function Details for function %s %n%n", function.configuration().functionName()),
             LogLevel.INFO);
 
-        // executionLogCallback.saveExecutionLog(function.toString());
+        executionLogCallback.saveExecutionLog(
+            format("Fetched Function Configuration:%s %n%n", function.configuration()), LogLevel.INFO);
 
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        return AwsLambdaPrepareRollbackResponse.builder()
+            .manifestContent(awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent())
+            .functionName(functionName)
+            .firstDeployment(false)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
       } else {
         // if function doesn't exist
         executionLogCallback.saveExecutionLog(format("Function %s doesn't exist. Skipping Prepare Rollback Data...",
             createFunctionRequest.functionName(), LogLevel.INFO, CommandExecutionStatus.SUCCESS));
+        return AwsLambdaPrepareRollbackResponse.builder()
+            .manifestContent(awsLambdaPrepareRollbackRequest.getAwsLambdaDeployManifestContent())
+            .firstDeployment(true)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
       }
-      return AwsLambdaPrepareRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     } catch (Exception e) {
       executionLogCallback.saveExecutionLog(color(format("%n Prepare Rollback Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

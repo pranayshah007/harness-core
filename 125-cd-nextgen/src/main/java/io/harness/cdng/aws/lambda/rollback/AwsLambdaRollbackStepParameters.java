@@ -10,17 +10,18 @@ package io.harness.cdng.aws.lambda.rollback;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.aws.lambda.AwsLambdaSpecParameters;
-import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployBaseStepInfo;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+
+import java.util.Arrays;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -30,7 +31,11 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters")
 public class AwsLambdaRollbackStepParameters extends AwsLambdaRollbackBaseStepInfo implements AwsLambdaSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsLambdaRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
+  public AwsLambdaRollbackStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
     super(delegateSelectors, awsLambdaDeployStepFnq);
+  }
+  public List<String> getCommandUnits() {
+    return Arrays.asList(AwsLambdaCommandUnitConstants.rollback.toString());
   }
 }

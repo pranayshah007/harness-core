@@ -7,7 +7,6 @@
 
 package io.harness.cdng.aws.lambda.rollback;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
@@ -58,22 +57,24 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
+
 import software.wings.beans.TaskType;
 import software.wings.sm.states.AwsLambdaRollback;
 
+import com.google.inject.Inject;
 import java.util.Arrays;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-          .setType(ExecutionNodeType.AWS_LAMBDA_ROLLBACK.getYamlType())
-          .setStepCategory(StepCategory.STEP)
-          .build();
+                                               .setType(ExecutionNodeType.AWS_LAMBDA_ROLLBACK.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
   private final String AWS_LAMBDA_ROLLBACK_COMMAND_NAME = "RollbackAwsLambda";
   public static final String AWS_LAMBDA_DEPLOYMENT_STEP_MISSING =
-          "Aws Lambda Deployment Step was not executed. Skipping Rollback...";
+      "Aws Lambda Deployment Step was not executed. Skipping Rollback...";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -88,16 +89,16 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-                                                          ThrowingSupplier<AwsLambdaCommandResponse> responseDataSupplier) throws Exception {
+      ThrowingSupplier<AwsLambdaCommandResponse> responseDataSupplier) throws Exception {
     StepResponse stepResponse = null;
     try {
-      AwsLambdaCommandResponse awsLambdaCommandResponse =
-              (AwsLambdaCommandResponse) responseDataSupplier.get();
+      AwsLambdaCommandResponse awsLambdaCommandResponse = (AwsLambdaCommandResponse) responseDataSupplier.get();
 
-      StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
-              awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
-//      stepResponse =
-//              googleFunctionsHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
+      StepResponseBuilder stepResponseBuilder =
+          StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
+      //      stepResponse =
+      //              googleFunctionsHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder,
+      //              ambiance);
     } catch (Exception e) {
       log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -107,45 +108,47 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-          Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
-            (AwsLambdaRollbackStepParameters) stepParameters.getSpec();
+        (AwsLambdaRollbackStepParameters) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq())) {
       return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);
     }
 
     String stepFnq = awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq();
     OptionalSweepingOutput awsLambdaPrepareRollbackDataOptional =
-            executionSweepingOutputService.resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(
-                            stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                stepFnq + "." + OutcomeExpressionConstants.AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
 
     if (!awsLambdaPrepareRollbackDataOptional.isFound()) {
       return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);
     }
 
     AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
-            (AwsLambdaPrepareRollbackOutcome) awsLambdaPrepareRollbackDataOptional.getOutput();
+        (AwsLambdaPrepareRollbackOutcome) awsLambdaPrepareRollbackDataOptional.getOutput();
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     AwsLambdaRollbackRequest awsLambdaRollbackRequest =
-            AwsLambdaRollbackRequest.builder()
-                    .functionName(awsLambdaPrepareRollbackOutcome.getFunctionName())
-                    .qualifier(awsLambdaPrepareRollbackOutcome.getQualifier())
-                    .firstDeployment(awsLambdaPrepareRollbackOutcome.isFirstDeployment())
-                    .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK)
-                    .commandName(AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
-                    .commandUnitsProgress(CommandUnitsProgress.builder().build())
-                    .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
-                    .awsLambdaArtifactConfig(awsLambdaPrepareRollbackOutcome.getAwsLambdaArtifactConfig())
-                    .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackOutcome.getAwsLambdaDeployManifestContent())
-                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                    .build();
+        AwsLambdaRollbackRequest.builder()
+            .functionName(awsLambdaPrepareRollbackOutcome.getFunctionName())
+            .qualifier(awsLambdaPrepareRollbackOutcome.getQualifier())
+            .firstDeployment(awsLambdaPrepareRollbackOutcome.isFirstDeployment())
+            .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK)
+            .commandName(AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
+            .awsLambdaArtifactConfig(awsLambdaPrepareRollbackOutcome.getAwsLambdaArtifactConfig())
+            .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackOutcome.getAwsLambdaDeployManifestContent())
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .build();
 
-    return awsLambdaHelper.queueTask(
-            stepParameters, awsLambdaRollbackRequest, TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG, ambiance, AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true, Arrays.asList(AwsLambdaCommandUnitConstants.rollback.toString())).getTaskRequest();
+    return awsLambdaHelper
+        .queueTask(stepParameters, awsLambdaRollbackRequest, TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG, ambiance,
+            AwsLambdaStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+        .getTaskRequest();
   }
 
   @Override
@@ -155,7 +158,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
   private TaskRequest skipTaskRequest(String message) {
     return TaskRequest.newBuilder()
-            .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
-            .build();
+        .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
+        .build();
   }
 }

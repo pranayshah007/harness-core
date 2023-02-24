@@ -88,7 +88,6 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -121,7 +120,7 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
       AwsLambdaCommandRequest awsLambdaCommandRequest, TaskType taskType, Ambiance ambiance,
-      PassThroughData passThroughData, boolean isChainEnd, List<String> commandUnitConstants) {
+      PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {awsLambdaCommandRequest})
                             .taskType(taskType.name())
@@ -131,7 +130,7 @@ public class AwsLambdaHelper extends CDStepHelper {
     String taskName = taskType.getDisplayName() + " : " + awsLambdaCommandRequest.getCommandName();
     AwsLambdaSpecParameters awsLambdaSpecParameters = (AwsLambdaSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
-        referenceFalseKryoSerializer, commandUnitConstants, taskName,
+        referenceFalseKryoSerializer, awsLambdaSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(
             emptyIfNull(getParameterFieldValue(awsLambdaSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
@@ -205,6 +204,8 @@ public class AwsLambdaHelper extends CDStepHelper {
     AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
         AwsLambdaPrepareRollbackOutcome.builder()
             .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackResponse.getManifestContent())
+            .firstDeployment(awsLambdaPrepareRollbackResponse.isFirstDeployment())
+            .functionName(awsLambdaPrepareRollbackResponse.getFunctionName())
             .build();
 
     executionSweepingOutputService.consume(ambiance,
@@ -251,14 +252,12 @@ public class AwsLambdaHelper extends CDStepHelper {
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .awsLambdaInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
             .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
-                .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
-                        getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
+                getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
             .build();
 
     return queueTask(stepParameters, awsLambdaPrepareRollbackRequest,
-        TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG, ambiance, awsLambdaStepPassThroughData, false, Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
-                    AwsLambdaCommandUnitConstants.prepareRollbackData.toString(),
-                    AwsLambdaCommandUnitConstants.deploy.toString()));
+        TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG, ambiance, awsLambdaStepPassThroughData, false);
   }
 
   private String getManifestContentFromGitResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
@@ -374,7 +373,7 @@ public class AwsLambdaHelper extends CDStepHelper {
                                                                     .build();
 
     return getGitFetchFileTaskResponse(
-        ambiance, false, stepElementParameters, awsLambdaStepPassThroughData, gitRequestFileConfig);
+        ambiance, true, stepElementParameters, awsLambdaStepPassThroughData, gitRequestFileConfig);
   }
 
   private GitRequestFileConfig getGitFetchFilesConfigFromManifestOutcome(
@@ -427,13 +426,15 @@ public class AwsLambdaHelper extends CDStepHelper {
 
     AwsLambdaSpecParameters awsLambdaSpecParameters = (AwsLambdaSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
-        referenceFalseKryoSerializer, Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
-                    AwsLambdaCommandUnitConstants.prepareRollbackData.toString(),
-                    AwsLambdaCommandUnitConstants.deploy.toString()), taskName,
-        TaskSelectorYaml.toTaskSelector(
-            emptyIfNull(getParameterFieldValue(awsLambdaSpecParameters.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
+                AwsLambdaCommandUnitConstants.prepareRollbackData.toString(),
+                AwsLambdaCommandUnitConstants.deploy.toString()),
+            taskName,
+            TaskSelectorYaml.toTaskSelector(
+                emptyIfNull(getParameterFieldValue(awsLambdaSpecParameters.getDelegateSelectors()))),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -459,9 +460,7 @@ public class AwsLambdaHelper extends CDStepHelper {
             .build();
 
     return queueTask(stepParameters, awsLambdaDeployRequest, TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG, ambiance,
-        awsLambdaStepPassThroughData, true, Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
-                    AwsLambdaCommandUnitConstants.prepareRollbackData.toString(),
-                    AwsLambdaCommandUnitConstants.deploy.toString()));
+        awsLambdaStepPassThroughData, true);
   }
 
   private ArtifactOutcome getArtifactOutcome(Ambiance ambiance) {
