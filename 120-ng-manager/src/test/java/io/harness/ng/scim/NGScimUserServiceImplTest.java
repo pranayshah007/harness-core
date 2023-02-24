@@ -8,11 +8,15 @@
 package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +50,9 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,6 +82,10 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
 
   ObjectMapper mapper = new ObjectMapper();
   private static final String USERNAME = "userName";
+  private static final String GIVEN_NAME = "givenName";
+  private static final String FAMILY_NAME = "familyName";
+  private static final String FORMATTED_NAME = "formatted";
+  private static final String DISPLAY_NAME = "displayName";
 
   @Before
   public void setup() throws IOException {
@@ -130,6 +140,116 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     assertThat(response.getStatus()).isEqualTo(201);
     assertThat(response.getEntity()).isNotNull();
     assertThat(((ScimUser) response.getEntity()).getUserName()).isEqualTo(userInfo.getEmail());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testScim_doesNotReturnsFamilyNameAndGivenName_whenFFTurnedOff() {
+    ScimUser scimUser = new ScimUser();
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    scimUser.setUserName("username@harness.io");
+    scimUser.setDisplayName("display_name");
+    setNameForScimUser(scimUser);
+
+    UserInfo userInfo = UserInfo.builder()
+                            .admin(true)
+                            .email("username@harness.io")
+                            .name("display_name")
+                            .givenName("given_name")
+                            .familyName("family_name")
+                            .build();
+
+    UserMetadataDTO userMetadataDTO = Optional.of(userInfo)
+                                          .map(user
+                                              -> UserMetadataDTO.builder()
+                                                     .uuid(user.getUuid())
+                                                     .name(user.getName())
+                                                     .email(user.getEmail())
+                                                     .locked(user.isLocked())
+                                                     .disabled(user.isDisabled())
+                                                     .externallyManaged(user.isExternallyManaged())
+                                                     .build())
+                                          .orElse(null);
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setEmail("username@harness.io");
+
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
+    when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    Response response = scimUserService.createUser(scimUser, account.getUuid());
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(201);
+    assertThat(response.getEntity()).isNotNull();
+    ScimUser result = (ScimUser) response.getEntity();
+    assertNotNull(result);
+    JsonNode jsonNode = result.getName();
+    assertNotNull(jsonNode);
+    assertNotNull(jsonNode.get(DISPLAY_NAME));
+    assertNull(jsonNode.get(GIVEN_NAME));
+    assertNull(jsonNode.get(FAMILY_NAME));
+    assertNull(jsonNode.get(FORMATTED_NAME));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testScim_doesReturnsFamilyNameAndGivenName_whenFFTurnedOn() {
+    ScimUser scimUser = new ScimUser();
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    scimUser.setUserName("username@harness.io");
+    scimUser.setDisplayName("display_name");
+    setNameForScimUser(scimUser);
+
+    UserInfo userInfo = UserInfo.builder()
+                            .admin(true)
+                            .email("username@harness.io")
+                            .name("display_name")
+                            .givenName("given_name")
+                            .familyName("family_name")
+                            .build();
+
+    UserMetadataDTO userMetadataDTO = Optional.of(userInfo)
+                                          .map(user
+                                              -> UserMetadataDTO.builder()
+                                                     .uuid(user.getUuid())
+                                                     .name(user.getName())
+                                                     .email(user.getEmail())
+                                                     .locked(user.isLocked())
+                                                     .disabled(user.isDisabled())
+                                                     .externallyManaged(user.isExternallyManaged())
+                                                     .build())
+                                          .orElse(null);
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setEmail("username@harness.io");
+
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
+    when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    Response response = scimUserService.createUser(scimUser, account.getUuid());
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(201);
+    assertThat(response.getEntity()).isNotNull();
+    ScimUser result = (ScimUser) response.getEntity();
+    assertNotNull(result);
+    JsonNode jsonNode = result.getName();
+    assertNotNull(jsonNode);
+    assertNotNull(jsonNode.get(DISPLAY_NAME));
+    assertNotNull(jsonNode.get(GIVEN_NAME));
+    assertNotNull(jsonNode.get(FAMILY_NAME));
+    assertNotNull(jsonNode.get(FORMATTED_NAME));
   }
 
   @Test
@@ -405,5 +525,20 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     userMetadataDTO.setExternallyManaged(true);
     userMetadataDTO.setEmail(updatedEmail.toLowerCase());
     verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
+  }
+
+  private void setNameForScimUser(ScimUser scimUser) {
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("givenName", "given_name");
+    jsonObject.addProperty("familyName", "family_name");
+
+    JsonNode jsonNode;
+
+    try {
+      jsonNode = mapper.readTree(jsonObject.toString());
+      scimUser.setName(jsonNode);
+    } catch (IOException ioe) {
+      log.error("IO Exception while creating okta replace operation in SCIM", ioe);
+    }
   }
 }
