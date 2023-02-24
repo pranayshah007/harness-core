@@ -246,7 +246,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     AccountDTO account = accountService.getAccount(accountIdentifier);
     if (!account.isProductLed()) {
-      throw new InvalidRequestException("Cannot create a subscription for sales-led accounts.");
+      throw new InvalidRequestException(String.format(
+          "This account %s does not seem to be Product-Led and creating subscriptions for Sales-Led account is not supported at the moment. Please try again with the right account.",
+          accountIdentifier));
     }
 
     List<ModuleLicense> moduleLicenses =
