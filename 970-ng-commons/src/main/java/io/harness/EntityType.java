@@ -546,7 +546,9 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_SAM_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_DEPLOY),
   @JsonProperty(EntityTypeConstants.AWS_SAM_ROLLBACK)
   AWS_SAM_ROLLBACK(
-      ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK);
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SSCA_ORCHESTRATION)
+  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class);
 
   private final ModuleType moduleType;
   String yamlName;
