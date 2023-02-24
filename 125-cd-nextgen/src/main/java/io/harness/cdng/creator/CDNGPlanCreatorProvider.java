@@ -298,14 +298,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ASG = "AutoScalingGroup";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
-  private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
+      KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAGRUNT_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CLOUD_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
@@ -313,7 +313,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
