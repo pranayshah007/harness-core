@@ -118,7 +118,7 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.core.ExecutionStatusResponse;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;

@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "@maven//:com_google_inject_guice",
         "@maven//:io_kubernetes_client_java",

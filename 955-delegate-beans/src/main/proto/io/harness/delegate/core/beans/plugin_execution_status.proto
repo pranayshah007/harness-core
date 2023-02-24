@@ -5,7 +5,7 @@
 
 syntax = "proto3";
 
-package io.harness.delegate.core;
+package io.harness.delegate.core.beans;
 
 option java_multiple_files = true;
 
@@ -24,16 +24,19 @@ message ExecutionStatusResponse {
  All data that is sent from plugin execution back to manager
  */
 message ExecutionStatus {
-  string id = 1;
-  string type = 2;
-  StatusCode code = 3;
-  google.protobuf.Duration execution_time = 4;
+  string id = 1;                                // Id of the task
+  string type = 2;                              // Task type
+  StatusCode code = 3;                          // Execution status
+  google.protobuf.Duration execution_time = 4;  // Duration of the execution
   oneof data {
     google.protobuf.Any proto_data = 5;  // for executions with proto spec.
     bytes binary_data = 6;               // for executions with any unstructured data formats including legacy kryo
   }
 }
 
+/*
+  Execution status code
+ */
 enum StatusCode {
   CODE_UNKNOWN = 0;
   CODE_SUCCESS = 1;

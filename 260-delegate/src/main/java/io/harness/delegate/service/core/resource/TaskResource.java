@@ -10,7 +10,7 @@ package io.harness.delegate.service.core.resource;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.core.ExecutionStatusResponse;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.security.annotations.PublicApi;
 
