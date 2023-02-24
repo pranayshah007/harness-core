@@ -22,6 +22,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.googlefunctions.GoogleFunctionsStepExceptionPassThroughData;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -507,5 +508,23 @@ public class AwsLambdaHelper extends CDStepHelper {
                       .build())
               .build();
     }
+  }
+
+  public StepResponse handleStepExceptionFailure(AwsLambdaStepExceptionPassThroughData stepException) {
+    FailureData failureData = FailureData.newBuilder()
+            .addFailureTypes(FailureType.APPLICATION_FAILURE)
+            .setLevel(io.harness.eraro.Level.ERROR.name())
+            .setCode(GENERAL_ERROR.name())
+            .setMessage(HarnessStringUtils.emptyIfNull(stepException.getErrorMsg()))
+            .build();
+    return StepResponse.builder()
+            .unitProgressList(stepException.getUnitProgressData().getUnitProgresses())
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder()
+                    .addAllFailureTypes(failureData.getFailureTypesList())
+                    .setErrorMessage(failureData.getMessage())
+                    .addFailureData(failureData)
+                    .build())
+            .build();
   }
 }
