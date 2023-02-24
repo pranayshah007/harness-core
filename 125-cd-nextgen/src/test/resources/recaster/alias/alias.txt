@@ -788,5 +788,11 @@ io.harness.cdng.infra.beans.AwsLambdaInfrastructureMapping
 io.harness.cdng.service.beans.AwsSamServiceSpec
 io.harness.cdng.manifest.yaml.kinds.AwsSamDirectoryManifest
 io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome
+io.harness.cdng.aws.sam.AwsSamDeployStepInfo
+io.harness.cdng.aws.sam.AwsSamDeployStepNode
+io.harness.cdng.aws.sam.AwsSamDeployStepParameters
+io.harness.cdng.aws.sam.AwsSamRollbackStepInfo
+io.harness.cdng.aws.sam.AwsSamRollbackStepNode
+io.harness.cdng.aws.sam.AwsSamRollbackStepParameters
 io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
