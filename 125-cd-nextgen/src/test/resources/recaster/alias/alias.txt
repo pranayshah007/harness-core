@@ -798,7 +798,6 @@ io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
 io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest
 io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome
-io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode
