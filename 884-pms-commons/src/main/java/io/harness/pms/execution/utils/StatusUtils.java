@@ -257,6 +257,8 @@ public class StatusUtils {
       return ABORTED;
     } else if (statuses.stream().anyMatch(status -> status == ERRORED)) {
       return ERRORED;
+    } else if (statuses.stream().anyMatch(status -> status == PAUSED)) {
+      return PAUSED;
     } else if (statuses.stream().anyMatch(status -> status == FAILED)) {
       return FAILED;
     } else if (statuses.stream().anyMatch(status -> status == FREEZE_FAILED)) {
@@ -281,8 +283,6 @@ public class StatusUtils {
       return QUEUED;
     } else if (!Collections.disjoint(statuses, FLOWING_STATUSES)) {
       return RUNNING;
-    } else if (statuses.stream().anyMatch(status -> status == PAUSED)) {
-      return PAUSED;
     } else {
       return UNRECOGNIZED;
     }

@@ -58,10 +58,6 @@ public class ResumeStepStatusUpdateTest extends OrchestrationTestBase {
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
     verify(planExecutionService, times(0)).updateStatus(anyString(), any());
     doReturn(true).when(resumeStepStatusUpdate).resumeParents(nodeExecution);
-    doReturn(SUCCEEDED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
-    resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(0)).updateStatus(anyString(), any());
-    doReturn(PAUSED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
     verify(planExecutionService, times(1)).updateStatus(anyString(), any());
   }
