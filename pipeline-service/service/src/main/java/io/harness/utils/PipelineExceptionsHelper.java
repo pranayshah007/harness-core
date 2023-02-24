@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineExceptionsHelper {
+  public static final String ERROR_PIPELINE_BRANCH_NOT_PROVIDED = "Pipeline branch not provided.";
   public ScmException getScmException(Throwable ex) {
     while (ex != null) {
       if (ex instanceof ScmException) {
