@@ -195,13 +195,15 @@ public class MigrationResourceService {
     return workflow;
   }
 
-  private void connect(int[] list, int i, int j) {
+  void connect(int[] list, int i, int j) {
+    // we are making every node with val = what the lowest node in the list has value of
     if (list[i] != list[j]) {
-      int temp = list[i];
-      list[i] = list[j];
-      while (list[temp] != list[j]) {
-        temp = list[temp];
-        list[temp] = list[j];
+      int temp = list[j];
+      list[j] = list[i];
+      for (int ii = 0; ii < list.length; ii++) {
+        if (list[ii] == temp) {
+          list[ii] = temp;
+        }
       }
     }
   }
