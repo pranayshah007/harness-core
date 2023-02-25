@@ -38,6 +38,7 @@ import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
+import io.harness.cdng.gitops.syncstep.SyncStepInfo;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepInfo;
@@ -98,9 +99,9 @@ import io.harness.yaml.core.StepSpecType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(
-    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
-        K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class,
-        K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
+    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, SyncStepInfo.class, K8sApplyStepInfo.class,
+        K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class,
+        K8sScaleStepInfo.class, K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
         TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
         TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
         CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,

@@ -16,6 +16,7 @@ public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_SYNC = "GitOpsSync";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";

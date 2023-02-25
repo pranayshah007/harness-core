@@ -39,6 +39,7 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.syncstep.SyncStepOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -278,5 +279,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformCloudRollbackStepInfo.class, 12660);
     kryo.register(AwsLambdaStepPassThroughData.class, 12661);
     kryo.register(AwsLambdaStepExceptionPassThroughData.class, 12662);
+    kryo.register(SyncStepOutcome.class, 12663);
   }
 }
