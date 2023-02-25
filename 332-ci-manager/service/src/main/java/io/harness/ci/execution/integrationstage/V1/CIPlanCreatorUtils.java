@@ -204,6 +204,7 @@ public class CIPlanCreatorUtils {
         if (ParameterField.isNull(repository.getReference())) {
           return false;
         }
+        break;
       default:
     }
     return true;
@@ -282,6 +283,7 @@ public class CIPlanCreatorUtils {
                             .branch(ParameterField.createValueField(branchWebhookEvent.getBranchName()))
                             .build())
                   .build();
+            default:
           }
         }
         break;

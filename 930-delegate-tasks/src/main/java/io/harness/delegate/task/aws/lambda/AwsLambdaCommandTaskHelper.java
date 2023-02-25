@@ -42,6 +42,7 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequ
 import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
@@ -77,7 +78,6 @@ public class AwsLambdaCommandTaskHelper {
     String functionName = createFunctionRequest.functionName();
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
-
     try {
       Optional<GetFunctionResponse> existingFunctionOptional =
           awsLambdaClient.getFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -109,10 +109,17 @@ public class AwsLambdaCommandTaskHelper {
     functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
     createFunctionRequestBuilder.code(functionCode);
     createFunctionRequestBuilder.publish(true);
+    if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
+      createFunctionRequestBuilder.packageType(PackageType.ZIP);
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+      createFunctionRequestBuilder.packageType(PackageType.IMAGE);
+    } else {
+      throw new InvalidRequestException("Not Support ArtifactConfig Type");
+    }
     createFunctionResponse =
         awsLambdaClient.createFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                            awsLambdaFunctionsInfraConfig.getRegion()),
-            createFunctionRequest);
+            (CreateFunctionRequest) createFunctionRequestBuilder.build());
     logCallback.saveExecutionLog(format("Created Function: %s in region: %s %n", functionName,
         awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
 
@@ -166,12 +173,23 @@ public class AwsLambdaCommandTaskHelper {
     FunctionCode functionCode;
     functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
 
-    UpdateFunctionCodeRequest updateFunctionCodeRequest =
-        (UpdateFunctionCodeRequest) UpdateFunctionCodeRequest.builder()
-            .functionName(functionName)
-            .s3Bucket(functionCode.s3Bucket())
-            .s3Key(functionCode.s3Key())
-            .build();
+    UpdateFunctionCodeRequest updateFunctionCodeRequest = null;
+
+    if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
+      updateFunctionCodeRequest = (UpdateFunctionCodeRequest) UpdateFunctionCodeRequest.builder()
+                                      .functionName(functionName)
+                                      .s3Bucket(functionCode.s3Bucket())
+                                      .s3Key(functionCode.s3Key())
+                                      .build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+      updateFunctionCodeRequest = (UpdateFunctionCodeRequest) UpdateFunctionCodeRequest.builder()
+                                      .functionName(functionName)
+                                      .imageUri(functionCode.imageUri())
+                                      .build();
+
+    } else {
+      throw new InvalidRequestException("Not Support ArtifactConfig Type");
+    }
 
     UpdateFunctionCodeResponse updateFunctionCodeResponse =
         awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -224,6 +242,9 @@ public class AwsLambdaCommandTaskHelper {
           .s3Bucket(awsLambdaS3ArtifactConfig.getBucketName())
           .s3Key(awsLambdaS3ArtifactConfig.getFilePath())
           .build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+      AwsLambdaEcrArtifactConfig awsLambdaEcrArtifactConfig = (AwsLambdaEcrArtifactConfig) awsLambdaArtifactConfig;
+      return FunctionCode.builder().imageUri(awsLambdaEcrArtifactConfig.getImage()).build();
     }
 
     throw new InvalidRequestException("Not Support ArtifactConfig Type");

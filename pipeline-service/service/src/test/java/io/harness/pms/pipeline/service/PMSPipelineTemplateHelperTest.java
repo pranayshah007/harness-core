@@ -110,14 +110,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testInValidTemplateInPipelineWhenDoesNotContainTemplateRef() throws IOException {
-    String errorYaml = "ERROR_YAML";
     String fileName = "pipeline-with-template-ref.yaml";
     String givenYaml = readFile(fileName);
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null,
-            "false", TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build(), true);
+            "false", TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build(), false);
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())

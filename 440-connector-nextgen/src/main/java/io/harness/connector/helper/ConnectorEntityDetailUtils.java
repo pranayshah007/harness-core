@@ -15,8 +15,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.entities.Connector;
-import io.harness.encryption.ScopeHelper;
 import io.harness.ng.core.EntityDetail;
+import io.harness.scope.ScopeHelper;
 
 import lombok.experimental.UtilityClass;
 

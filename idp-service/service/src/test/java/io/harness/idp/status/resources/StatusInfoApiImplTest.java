@@ -7,6 +7,7 @@
 
 package io.harness.idp.status.resources;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +23,6 @@ import io.harness.spec.server.idp.v1.model.StatusInfoResponse;
 
 import java.util.Optional;
 import javax.ws.rs.core.Response;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,7 +51,7 @@ public class StatusInfoApiImplTest {
     when(statusInfoService.findByAccountIdentifierAndType(ACCOUNT_ID, type)).thenReturn(Optional.of(statusInfo));
     Response response = statusInfoApiImpl.getStatusInfoByType(type, ACCOUNT_ID);
     assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-    Assert.assertNotNull(((StatusInfoResponse) response.getEntity()).getStatus());
+    assertNotNull(((StatusInfoResponse) response.getEntity()).getStatus());
 
     when(statusInfoService.findByAccountIdentifierAndType(ACCOUNT_ID, type)).thenReturn(Optional.empty());
     response = statusInfoApiImpl.getStatusInfoByType(type, ACCOUNT_ID);
@@ -68,7 +68,7 @@ public class StatusInfoApiImplTest {
     statusInfoRequest.setStatus(statusInfo);
     Response response = statusInfoApiImpl.saveStatusInfoByType(type, statusInfoRequest, ACCOUNT_ID);
     assertThat(response.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
-    Assert.assertNotNull(((StatusInfoResponse) response.getEntity()).getStatus());
+    assertNotNull(((StatusInfoResponse) response.getEntity()).getStatus());
   }
 
   StatusInfo initializeStatusInfo() {

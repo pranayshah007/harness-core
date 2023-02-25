@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import java.util.Map;
-import lombok.NonNull;
 
 public class K8SJob extends V1Job {
   public K8SJob(final String name, final String namespace) {

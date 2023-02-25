@@ -13,10 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.utils.TimeoutUtils;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Builder;
@@ -32,6 +32,7 @@ public class Timeout {
   private static final String SPACE = " ";
   private static final String ERROR_HELPER =
       "Valid timeouts contain units s/m/h/d/w and are written like 10s or 1m 10s";
+  private static final Long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofHours(10).toMillis();
 
   @Getter
   public enum TimeUnit {
@@ -87,7 +88,7 @@ public class Timeout {
         throw new InvalidArgumentsException(Pair.of(TIMEOUT_STRING, timeout), ERROR_HELPER);
       }
 
-      totalValue = totalValue != 0 ? totalValue : TimeoutUtils.DEFAULT_TIMEOUT_IN_MILLIS;
+      totalValue = totalValue != 0 ? totalValue : DEFAULT_TIMEOUT_IN_MILLIS;
       return Timeout.builder().timeoutInMillis(totalValue).timeoutString(timeout).build();
 
     } catch (NumberFormatException e) {

@@ -217,4 +217,9 @@ public interface EntityTypeConstants {
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_ROLLBACK = "AwsSamRollback";
+  String SSCA_ORCHESTRATION = "SscaOrchestration";
 }

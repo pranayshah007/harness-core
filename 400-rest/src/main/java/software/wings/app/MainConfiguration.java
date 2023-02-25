@@ -179,6 +179,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   private SalesforceConfig salesforceConfig = SalesforceConfig.builder().build();
   @JsonProperty("datadogConfig") @ConfigSecret private DatadogConfig datadogConfig;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+  @JsonProperty("redisDelegateConfig") @ConfigSecret private RedisConfig delegateServiceRedisConfig;
   @JsonProperty("redisAtmosphereConfig") @ConfigSecret private RedisConfig redisAtmosphereConfig;
   @JsonProperty("defaultSalesContacts") private DefaultSalesContacts defaultSalesContacts;
   @JsonProperty("githubConfig") private GithubConfig githubConfig;
@@ -245,6 +246,8 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
 
   // If flag is enabled, only one thread does Notify response cleanup.
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
+  @JsonProperty(value = "enableRedisForDelegateService", defaultValue = "false")
+  private boolean enableRedisForDelegateService;
 
   private int applicationPort;
   private boolean sslEnabled;

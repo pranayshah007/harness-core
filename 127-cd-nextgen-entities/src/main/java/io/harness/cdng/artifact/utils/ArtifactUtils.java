@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -225,6 +226,11 @@ public class ArtifactUtils {
             googleArtifactRegistryConfig.getPkg().getValue(), version,
             googleArtifactRegistryConfig.getConnectorRef().getValue(),
             googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue());
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            bambooArtifactConfig.getPlanKey().getValue(), bambooArtifactConfig.getArtifactPaths().getValue(),
+            bambooArtifactConfig.getBuild().getValue(), bambooArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
             (GoogleCloudStorageArtifactConfig) artifactConfig;

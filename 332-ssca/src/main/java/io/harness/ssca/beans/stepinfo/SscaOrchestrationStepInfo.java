@@ -7,9 +7,6 @@
 
 package io.harness.ssca.beans.stepinfo;
 
-import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,14 +15,11 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.Attestation;
-import io.harness.ssca.beans.SbomGenerationFormat;
 import io.harness.ssca.beans.SscaConstants;
-import io.harness.ssca.beans.SscaOrchestrationTool;
 import io.harness.ssca.beans.source.SbomSource;
-import io.harness.yaml.YamlSchemaTypes;
+import io.harness.ssca.beans.tools.SbomOrchestrationTool;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -54,15 +48,7 @@ public class SscaOrchestrationStepInfo implements CIStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String identifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
 
-  @NotNull
-  @YamlSchemaTypes(value = {string})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<SscaOrchestrationTool> tool;
-
-  @NotNull
-  @YamlSchemaTypes(value = {string})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<SbomGenerationFormat> format;
+  @NotNull SbomOrchestrationTool tool;
 
   @NotNull SbomSource source;
 

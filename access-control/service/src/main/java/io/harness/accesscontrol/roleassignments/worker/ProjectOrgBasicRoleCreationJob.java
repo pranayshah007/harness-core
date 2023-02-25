@@ -13,12 +13,13 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.beans.FeatureName.*;
+import static io.harness.beans.FeatureName.PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
@@ -115,32 +116,32 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
     try {
       for (String accountId : targetAccounts) {
         Pattern startsWithScope = Pattern.compile("^".concat("/ACCOUNT/" + accountId));
-        Criteria projectCriteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+        Criteria projectCriteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
                                        .regex(startsWithScope)
-                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                                       .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                                        .is(DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                                       .and(RoleAssignmentDBOKeys.roleIdentifier)
                                        .is(PROJECT_VIEWER)
-                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+                                       .and(RoleAssignmentDBOKeys.principalIdentifier)
                                        .is(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER)
 
-                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
+                                       .and(RoleAssignmentDBOKeys.principalScopeLevel)
                                        .is(HarnessScopeLevel.PROJECT.getName())
-                                       .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                                       .and(RoleAssignmentDBOKeys.principalType)
                                        .is(USER_GROUP);
-        Criteria orgCriteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+        Criteria orgCriteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
                                    .regex(startsWithScope)
-                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                                   .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                                    .is(DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                                   .and(RoleAssignmentDBOKeys.roleIdentifier)
                                    .is(ORGANIZATION_VIEWER)
 
-                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+                                   .and(RoleAssignmentDBOKeys.principalIdentifier)
                                    .is(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER)
 
-                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
+                                   .and(RoleAssignmentDBOKeys.principalScopeLevel)
                                    .is(HarnessScopeLevel.ORGANIZATION.getName())
-                                   .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                                   .and(RoleAssignmentDBOKeys.principalType)
                                    .is(USER_GROUP);
         addBasicRoleToDefaultUserGroup(projectCriteria, PROJECT_BASIC);
         addBasicRoleToDefaultUserGroup(orgCriteria, ORGANIZATION_BASIC);
@@ -174,8 +175,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
       Pageable pageable = PageRequest.of(pageIndex, pageSize);
       List<RoleAssignmentDBO> roleAssignmentList =
           roleAssignmentRepository
-              .findAll(
-                  criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
+              .findAll(criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBOKeys.createdAt))
               .getContent();
       if (isEmpty(roleAssignmentList)) {
         break;
@@ -190,8 +190,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
               log.error("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
                   newRoleAssignmentDBO.toString(), e);
             }
-            roleAssignmentRepository.updateById(
-                roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
+            roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
           } catch (Exception exception) {
             log.error("[ProjectOrgBasicRoleCreationJob] Unexpected error occurred.", exception);
           }

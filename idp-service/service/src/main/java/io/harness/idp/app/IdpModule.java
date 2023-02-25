@@ -20,6 +20,8 @@ import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
 import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.service.GitIntegrationService;
+import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
 import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -53,6 +55,7 @@ import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
+import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
 
 import com.google.common.collect.ImmutableList;
@@ -156,6 +159,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new TokenClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
@@ -171,6 +176,7 @@ public class IdpModule extends AbstractModule {
     bind(EnvironmentSecretService.class).to(EnvironmentSecretServiceImpl.class);
     bind(StatusInfoService.class).to(StatusInfoServiceImpl.class);
     bind(NamespaceService.class).to(NamespaceServiceImpl.class);
+    bind(GitIntegrationService.class).to(GitIntegrationServiceImpl.class);
     bind(ConfigManagerResource.class).to(ConfigManagerResourceImpl.class);
     bind(EnvironmentSecretApi.class).to(EnvironmentSecretApiImpl.class);
     bind(StatusInfoApi.class).to(StatusInfoApiImpl.class);
@@ -190,5 +196,26 @@ public class IdpModule extends AbstractModule {
 
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageSaToken")
+  public String backstageSaToken() {
+    return this.appConfig.getBackstageSaToken();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageSaCaCrt")
+  public String backstageSaCaCrt() {
+    return this.appConfig.getBackstageSaCaCrt();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageMasterUrl")
+  public String backstageMasterUrl() {
+    return this.appConfig.getBackstageMasterUrl();
   }
 }
