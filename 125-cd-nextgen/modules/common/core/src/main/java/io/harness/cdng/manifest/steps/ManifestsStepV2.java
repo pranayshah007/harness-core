@@ -7,8 +7,6 @@
 
 package io.harness.cdng.manifest.steps;
 
-import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
-import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
@@ -16,7 +14,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateHelmRepoOverrideContainsSameManifestType;
 
 import static java.lang.String.format;
 
@@ -35,7 +32,6 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
@@ -54,6 +50,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -133,7 +130,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     validateOverridesTypeAndUniqueness(finalSvcManifestsMap, ngManifestsMetadataSweepingOutput.getServiceIdentifier(),
         ngManifestsMetadataSweepingOutput.getEnvironmentIdentifier());
 
-    validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
+    SvcEnvV2ManifestValidator.validateManifestList(
+        ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
@@ -210,7 +208,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     HelmChartManifest helmChartManifest = (HelmChartManifest) helmChart.getManifest().getSpec();
     HelmRepoOverrideManifest helmRepoOverride = (HelmRepoOverrideManifest) repoOverride.getManifest().getSpec();
     if (helmChartManifest != null && helmRepoOverride != null) {
-      validateHelmRepoOverrideContainsSameManifestType(helmChartManifest, helmRepoOverride);
+      SvcEnvV2ManifestValidator.validateHelmRepoOverrideContainsSameManifestType(helmChartManifest, helmRepoOverride);
       StoreConfig helmChartManifestStoreConfig = helmChartManifest.getStoreConfig();
       if (helmChartManifestStoreConfig != null) {
         helmChartManifestStoreConfig.overrideConnectorRef(helmRepoOverride.getConnectorRef());
@@ -280,42 +278,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     }
   }
 
-  private void validateManifestList(
-      ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList) {
-    if (serviceDefinitionType == null) {
-      return;
-    }
-
-    switch (serviceDefinitionType) {
-      case KUBERNETES:
-        validateDuplicateManifests(
-            manifestList, K8S_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.KUBERNETES.getYamlName());
-        break;
-      case NATIVE_HELM:
-        validateDuplicateManifests(
-            manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
-        break;
-      default:
-    }
-  }
-
-  private void validateDuplicateManifests(
-      List<ManifestAttributes> manifestList, Set<String> supported, String deploymentType) {
-    final Map<String, String> manifestIdTypeMap =
-        manifestList.stream()
-            .filter(m -> supported.contains(m.getKind()))
-            .collect(Collectors.toMap(ManifestAttributes::getIdentifier, ManifestAttributes::getKind));
-
-    if (manifestIdTypeMap.values().size() > 1) {
-      String manifestIdType = manifestIdTypeMap.entrySet()
-                                  .stream()
-                                  .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
-                                  .collect(Collectors.joining(", "));
-      throw new InvalidRequestException(String.format(
-          "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
-          manifestIdType, deploymentType, String.join(", ", supported)));
-    }
-  }
   void checkForAccessOrThrow(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
     if (EmptyPredicate.isEmpty(manifestAttributes)) {
       return;
