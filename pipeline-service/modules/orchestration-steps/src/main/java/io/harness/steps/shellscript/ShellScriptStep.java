@@ -144,7 +144,8 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       }
       stepResponseBuilder.failureInfo(failureInfoBuilder.build());
 
-      if (taskResponse.getStatus() == CommandExecutionStatus.SUCCESS) {
+      if (taskResponse.getStatus() == CommandExecutionStatus.SUCCESS
+          || taskResponse.getStatus() == CommandExecutionStatus.FAILURE) {
         ShellExecutionData commandExecutionData =
             (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
         ShellScriptOutcome shellScriptOutcome =

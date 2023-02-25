@@ -263,7 +263,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     if (!allVariablesToCollect.isEmpty()) {
       envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
       envVariablesOutputFile = new File(workingDirectory, envVariablesFilename);
-      command = addEnvVariablesCollector(
+      command = addTrapForCollectingEnvVariables(
           command, allVariablesToCollect, envVariablesOutputFile.getAbsolutePath(), this.scriptType);
     }
 
@@ -316,7 +316,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
-      if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
+      if (envVariablesOutputFile != null) {
         try (BufferedReader br = new BufferedReader(
                  new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);

@@ -132,6 +132,45 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
     return wrapperCommand.toString();
   }
 
+  protected String addTrapForCollectingEnvVariables(
+      String command, List<String> envVariablesToCollect, String envVariablesOutputFilePath, ScriptType scriptType) {
+    StringBuilder wrapperCommand = new StringBuilder();
+    if (ScriptType.BASH == scriptType) {
+      wrapperCommand.append("function finish {");
+      wrapperCommand.append("\n");
+    } else if (ScriptType.POWERSHELL == scriptType) {
+      wrapperCommand.append("trap {");
+      wrapperCommand.append("\n");
+    }
+    String redirect = ">";
+    for (String env : envVariablesToCollect) {
+      wrapperCommand.append("echo ")
+          .append(HARNESS_START_TOKEN)
+          .append(' ')
+          .append(env)
+          .append("=\"$")
+          .append(scriptType == ScriptType.POWERSHELL ? "env:" : "")
+          .append(env)
+          .append("\" ")
+          .append(HARNESS_END_TOKEN)
+          .append(' ')
+          .append(redirect)
+          .append(envVariablesOutputFilePath)
+          .append('\n');
+      redirect = ">>";
+    }
+    if (ScriptType.BASH == scriptType) {
+      wrapperCommand.append("}").append("\n");
+      wrapperCommand.append("trap finish EXIT").append("\n");
+    } else if (ScriptType.POWERSHELL == scriptType) {
+      wrapperCommand.append("}");
+      wrapperCommand.append("\n");
+    }
+
+    wrapperCommand.append(command);
+    return wrapperCommand.toString();
+  }
+
   protected void saveExecutionLog(String line) {
     saveExecutionLog(line, RUNNING);
   }

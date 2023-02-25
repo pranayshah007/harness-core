@@ -261,7 +261,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
       if (!allVariablesToCollect.isEmpty()) {
         envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
-        command = addEnvVariablesCollector(
+        command = addTrapForCollectingEnvVariables(
             command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
       }
 
