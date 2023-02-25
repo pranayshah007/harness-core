@@ -20,11 +20,11 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AwsConfig;
@@ -52,22 +52,22 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class AwsSshPerpetualTaskServiceClient implements PerpetualTaskServiceClient {
+public class AwsSshPerpetualTaskServiceClient extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private SecretManager secretManager;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private AwsUtils awsUtils;
   @Inject private SettingsService settingsService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     final PerpetualTaskData taskData = getPerpetualTaskData(clientContext);
 
-    ByteString configBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getAwsConfig()));
-    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getFilters()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(taskData.getEncryptionDetails()));
+    ByteString configBytes = ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getAwsConfig()));
+    ByteString filterBytes = ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getFilters()));
+    ByteString encryptionDetailsBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(taskData.getEncryptionDetails()));
 
     return AwsSshInstanceSyncPerpetualTaskParams.newBuilder()
         .setRegion(taskData.getRegion())

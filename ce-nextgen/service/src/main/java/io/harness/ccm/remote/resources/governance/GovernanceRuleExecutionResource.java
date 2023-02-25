@@ -26,7 +26,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.Blob;
@@ -95,14 +94,12 @@ public class GovernanceRuleExecutionResource {
   private static final String RESOURCESFILENAME = "resources";
   public static final String GCP_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
-  //  private final CCMRbacHelper rbacHelper
   private final RuleExecutionService ruleExecutionService;
   @Inject CENextGenConfiguration configuration;
   @Inject private BigQueryService bigQueryService;
 
   @Inject
   public GovernanceRuleExecutionResource(RuleExecutionService ruleExecutionService) {
-    //    this rbacHelper = rbacHelper
     this.ruleExecutionService = ruleExecutionService;
   }
 
@@ -122,7 +119,6 @@ public class GovernanceRuleExecutionResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Rule Execution  object")
       @Valid CreateRuleExecutionDTO createRuleExecutionDTO) {
-    // rbacHelper checkRuleExecutionEditPermission(accountId, null, null)
     if (createRuleExecutionDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -149,8 +145,6 @@ public class GovernanceRuleExecutionResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing CreateRuleExecutionFilterDTO object")
       @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
-    // rbacHelper checkRuleExecutionPermission(accountId, null, null)
-    // TO DO: Implement search support in this api
     RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
     ruleExecutionFilter.setAccountId(accountId);
     return ResponseDTO.newResponse(ruleExecutionService.filterExecution(ruleExecutionFilter));

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.pcf;
 
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasCountInstanceSelection;
@@ -47,6 +48,11 @@ public class PcfDeployStepMapperImpl extends StepMapper {
     PcfDeployState state = new PcfDeployState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

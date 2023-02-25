@@ -67,7 +67,6 @@ public class VerifyStepMetricsAnalysisUtils {
   private static final long NORMALISATION_TIME_WINDOW_IN_MILLIS =
       NORMALISATION_TIME_WINDOW_IN_MINUTES * MILLIS_IN_MINUTE;
   private static final long NORMALISATION_TIMESTAMP_OFFSET = NORMALISATION_TIME_WINDOW_IN_MILLIS / 2;
-  private static final String DATE_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   private static final String CONTROL_NODE_IDENTIFIER_F0R_AVERAGE_DATA = "None";
   public static final String LOAD_TEST_CURRENT_NODE_IDENTIFIER = "Current-test";
   public static final String LOAD_TEST_BASELINE_NODE_IDENTIFIER = "Baseline-test";

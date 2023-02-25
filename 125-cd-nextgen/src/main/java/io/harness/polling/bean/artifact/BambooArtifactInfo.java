@@ -37,7 +37,7 @@ public class BambooArtifactInfo implements ArtifactInfo {
     return BambooArtifactConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
         .planKey(ParameterField.<String>builder().value(planKey).build())
-        .artifactPath(ParameterField.<List<String>>builder().value(artifactPath).build())
+        .artifactPaths(ParameterField.<List<String>>builder().value(artifactPath).build())
         .build();
   }
 }

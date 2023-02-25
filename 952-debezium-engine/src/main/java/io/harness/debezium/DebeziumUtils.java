@@ -46,6 +46,10 @@ public class DebeziumUtils {
       } else if (!success && error != null && isErrorForOplogRotation(error, listOfErrorCodesForOffsetReset)) {
         resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
         log.error(String.format("Offset reset for key: %s at %s", redisKey, System.currentTimeMillis()), error);
+      } else if (error != null) {
+        log.error(String.format("error in callback, message: %s", message), error);
+      } else {
+        log.info("Success: {}, message: {}, error: {}", success, message, error);
       }
     };
   }

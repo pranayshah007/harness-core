@@ -203,7 +203,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     AsgBlueGreenDeployOutcome asgBlueGreenDeployOutcome =
         AsgBlueGreenDeployOutcome.builder()
-            .stageAutoScalingGroupContainer(asgBlueGreenDeployResult.getStageAutoScalingGroupContainer())
+            .stageAsg(asgBlueGreenDeployResult.getStageAutoScalingGroupContainer())
+            .prodAsg(asgBlueGreenDeployResult.getProdAutoScalingGroupContainer())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME,
@@ -215,7 +216,13 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(asgBlueGreenDeployOutcome)
+                         .build())
+        .stepOutcome(stepOutcome)
+        .build();
   }
 
   @Override

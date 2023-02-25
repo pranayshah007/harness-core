@@ -606,7 +606,7 @@ public class ArtifactResponseToOutcomeMapper {
     return BambooArtifactOutcome.builder()
         .planKey(bambooArtifactConfig.getPlanKey().getValue())
         .build(getBambooBuild(useDelegateResponse, bambooArtifactDelegateResponse, bambooArtifactConfig))
-        .artifactPath(bambooArtifactConfig.getArtifactPath().getValue())
+        .artifactPath(bambooArtifactConfig.getArtifactPaths().getValue())
         .connectorRef(bambooArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.BAMBOO.getDisplayName())
         .identifier(bambooArtifactConfig.getIdentifier())

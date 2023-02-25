@@ -9,6 +9,8 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 import static io.harness.ccm.rbac.CCMResources.BUDGET;
 import static io.harness.ccm.remote.resources.TelemetryConstants.ALERTS_COUNT;
@@ -24,6 +26,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.BudgetCreateEvent;
 import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
@@ -37,6 +40,7 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -227,6 +231,11 @@ public class BudgetResource {
                                    && allowedFolderIds.contains(
                                        perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))))
                            .collect(Collectors.toList());
+    }
+
+    if ((allowedBudgets == null || allowedBudgets.size() == 0) && allBudgets.size() > 0) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
     }
     return ResponseDTO.newResponse(allowedBudgets);
   }

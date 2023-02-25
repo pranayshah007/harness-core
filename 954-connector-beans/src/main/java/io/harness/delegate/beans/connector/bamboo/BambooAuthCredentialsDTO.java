@@ -17,6 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @OwnedBy(CDC)
 @Schema(
-    name = "JenkinsAuthCredentialsDTO", description = "This contains details of credentials for Docker Authentication")
+    name = "BambooAuthCredentialsDTO", description = "This contains details of credentials for Bamboo Authentication")
 @JsonSubTypes({ @JsonSubTypes.Type(value = BambooUserNamePasswordDTO.class, name = BambooConstant.USERNAME_PASSWORD) })
 public interface BambooAuthCredentialsDTO extends DecryptableEntity {}

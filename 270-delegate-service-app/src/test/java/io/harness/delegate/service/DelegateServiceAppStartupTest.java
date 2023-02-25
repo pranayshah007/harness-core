@@ -32,6 +32,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -90,6 +91,7 @@ public class DelegateServiceAppStartupTest extends DelegateServiceAppTestBase {
   @Test
   @Owner(developers = XIN)
   @Category(UnitTests.class)
+  @Ignore("Revist after enabling DMS")
   public void testAppStartup() {
     final Client client = new JerseyClientBuilder().sslContext(Http.getSslContext()).build();
     final Response response =

@@ -98,7 +98,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     } catch (ExplanationException e) {
       log.info(e.getMessage());
       throw new HintException(
-          HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+          HintException.HINT_BAMBOO_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
   }
 
@@ -124,7 +124,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     } catch (ExplanationException e) {
       log.info(e.getMessage());
       throw new HintException(
-          HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+          HintException.HINT_BAMBOO_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
   }
 
@@ -150,7 +150,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     } catch (ExplanationException e) {
       log.info(e.getMessage());
       throw new HintException(
-          HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+          HintException.HINT_BAMBOO_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
   }
 

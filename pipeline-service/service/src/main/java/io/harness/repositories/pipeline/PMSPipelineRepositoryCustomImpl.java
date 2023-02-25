@@ -47,6 +47,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PipelineExceptionsHelper;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -245,7 +246,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
           fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       String fallBackBranch = getFallBackBranch(savedEntity);
-      if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
+      if (PipelineGitXHelper.shouldRetryWithFallBackBranch(
+              PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
         GitAwareContextHelper.updateGitEntityContextWithBranch(fallBackBranch);

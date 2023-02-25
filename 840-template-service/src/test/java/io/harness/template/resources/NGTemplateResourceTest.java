@@ -402,11 +402,11 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "false");
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "false", false);
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
@@ -478,11 +478,11 @@ public class NGTemplateResourceTest extends CategoryTest {
             .build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "true");
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "true", false);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
     assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());

@@ -1296,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:7Ud/0r3SJA37MRG8iPztTNIF34LF31aJ9KTqbsk7Y48=",
-    version = "v1.28.2-0.20230210135737-288a76aba2cf",
+    sum = "h1:9ZrokpIAX+BANYGahqJp6vJqgYiD5c8v5A4iVk+oyZo=",
+    version = "v1.29.1",
 )
 
 go_repository(
@@ -4796,9 +4796,6 @@ plain_artifacts = [
     "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.1",
     "com.graphql-java:graphql-java:12.0",
     "com.graphql-java:java-dataloader:2.1.1",
-    "com.hazelcast:hazelcast-aws:2.4",
-    "com.hazelcast:hazelcast-kubernetes:1.5.3",
-    "com.hazelcast:hazelcast:5.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
     "com.helger:profiler:1.1.1",
     "com.hierynomus:asn-one:0.6.0",
@@ -5114,9 +5111,6 @@ plain_artifacts = [
     "org.apache.lucene:lucene-suggest:8.11.1",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
-    "org.apache.maven:maven-artifact:3.3.3",
-    "org.apache.maven:maven-core:3.6.3",
-    "org.apache.maven:maven-model:3.0.5",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.neethi:neethi:3.1.1",
@@ -5125,7 +5119,6 @@ plain_artifacts = [
     "org.apache.sshd:sshd-common:2.9.2",
     "org.apache.sshd:sshd-scp:2.9.2",
     "org.apache.ws.xmlschema:xmlschema-core:2.2.5",
-    "org.atmosphere:atmosphere-hazelcast:2.6.5",
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
@@ -5140,7 +5133,7 @@ plain_artifacts = [
     "org.cloudfoundry:cloudfoundry-client:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-operations:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-util:5.9.0.RELEASE",
-    "org.codehaus.groovy:groovy:3.0.7",
+    "org.codehaus.groovy:groovy:3.0.15",
     "org.codehaus.jackson:jackson-core-asl:1.9.11",
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",

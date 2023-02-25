@@ -29,6 +29,7 @@ import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
 import io.harness.ccm.audittrails.events.RuleSetDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleSetUpdateEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleEnforcementResource;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleResource;
 import io.harness.ccm.remote.resources.governance.GovernanceRuleSetResource;
@@ -77,7 +78,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private GovernanceRuleService governanceRuleService = mock(GovernanceRuleService.class);
   private RuleSetService ruleSetService = mock(RuleSetService.class);
   private RuleEnforcementService ruleEnforcementService = mock(RuleEnforcementService.class);
-  //  private CCMRbacHelper rbacHelper  mock(CCMRbacHelper.class)
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
   private ConnectorResourceClient connectorResourceClient = mock(ConnectorResourceClient.class);
   private RuleExecutionService rulesExecutionService = mock(RuleExecutionService.class);
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
@@ -153,7 +154,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     when(configuration.getGovernanceConfig()).thenReturn(governanceConfig);
     rulesManagement = new GovernanceRuleResource(governanceRuleService, ruleEnforcementService, ruleSetService,
         connectorResourceClient, rulesExecutionService, telemetryReporter, transactionTemplate, outboxService,
-        yamlSchemaProvider, yamlSchemaValidator, configuration);
+        yamlSchemaProvider, yamlSchemaValidator, configuration, rbacHelper);
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, true)).thenReturn(rule);
 
     ruleSet = RuleSet.builder()
@@ -165,8 +166,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                   .cloudProvider(CLOUD)
                   .build();
     when(ruleSetService.fetchById(ACCOUNT_ID, UUIDSET, false)).thenReturn(ruleSet);
-    ruleSetManagement = new GovernanceRuleSetResource(
-        ruleSetService, governanceRuleService, telemetryReporter, outboxService, transactionTemplate, configuration);
+    ruleSetManagement = new GovernanceRuleSetResource(ruleSetService, governanceRuleService, telemetryReporter,
+        outboxService, transactionTemplate, configuration, rbacHelper);
     when(ruleSetService.fetchById(ACCOUNT_ID, UUIDSET, true)).thenReturn(ruleSet);
 
     ruleEnforcement = RuleEnforcement.builder()
@@ -181,7 +182,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                           .targetAccounts(Collections.singletonList(ACCOUNT_ID))
                           .build();
     ruleEnforcementManagement = new GovernanceRuleEnforcementResource(
-        ruleEnforcementService, telemetryReporter, transactionTemplate, outboxService, configuration);
+        ruleEnforcementService, telemetryReporter, transactionTemplate, outboxService, configuration, rbacHelper);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
   }
 

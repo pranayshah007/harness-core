@@ -104,7 +104,7 @@ public class CIMiningPatternJob {
   }
 
   private Set<String> initializeValidDomains() {
-    Set<String> validDomains = new HashSet<String>();
+    Set<String> validDomains = new HashSet<>();
 
     try {
       byte[] fileContent = downloadFromGCS(VALID_DOMAINS_FILE);

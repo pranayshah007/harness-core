@@ -9,7 +9,6 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
@@ -26,17 +25,16 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
-import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetType;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
-import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -54,7 +52,6 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -66,7 +63,6 @@ import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -122,8 +118,6 @@ public class PerspectiveResource {
   private final CEViewFolderService ceViewFolderService;
   private final CEReportScheduleService ceReportScheduleService;
   private final ViewCustomFieldService viewCustomFieldService;
-  private final BigQueryService bigQueryService;
-  private final BigQueryHelper bigQueryHelper;
   private final BudgetCostService budgetCostService;
   private final BudgetService budgetService;
   private final CCMNotificationService notificationService;
@@ -137,16 +131,13 @@ public class PerspectiveResource {
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
-      ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
-      BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService,
-      AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      CCMRbacHelper rbacHelper, CEViewFolderService ceViewFolderService) {
+      ViewCustomFieldService viewCustomFieldService, BudgetCostService budgetCostService, BudgetService budgetService,
+      CCMNotificationService notificationService, AwsAccountFieldHelper awsAccountFieldHelper,
+      TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      OutboxService outboxService, CCMRbacHelper rbacHelper, CEViewFolderService ceViewFolderService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
-    this.bigQueryService = bigQueryService;
-    this.bigQueryHelper = bigQueryHelper;
     this.budgetCostService = budgetCostService;
     this.budgetService = budgetService;
     this.notificationService = notificationService;
@@ -334,9 +325,9 @@ public class PerspectiveResource {
           PERSPECTIVE_CREATE_AND_EDIT);
       boolean setFolderIdSuccess = ceViewService.setFolderId(ceView, allowedFolderIds, ceViewFolders, defaultFolderId);
       if (!setFolderIdSuccess) {
-        throw new AccessDeniedException(
+        throw new NGAccessDeniedException(
             String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_CREATE_AND_EDIT, RESOURCE_FOLDER),
-            WingsException.USER);
+            WingsException.USER, null);
       }
     } else {
       rbacHelper.checkPerspectiveEditPermission(accountId, null, null, ceView.getFolderId());
@@ -370,9 +361,7 @@ public class PerspectiveResource {
   }
 
   private CEView updateTotalCost(CEView ceView) {
-    BigQuery bigQuery = bigQueryService.get();
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(ceView.getAccountId(), UNIFIED_TABLE);
-    return ceViewService.updateTotalCost(ceView, bigQuery, cloudProviderTableName);
+    return ceViewService.updateTotalCost(ceView);
   }
 
   @GET

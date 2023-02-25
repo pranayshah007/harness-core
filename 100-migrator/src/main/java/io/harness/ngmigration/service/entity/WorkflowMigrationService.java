@@ -148,7 +148,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 Workflow workflow = (Workflow) entity.getEntity();
                                                 WorkflowHandler workflowHandler =
                                                     workflowHandlerFactory.getWorkflowHandler(workflow);
-                                                return workflowHandler.getSteps(workflow).stream();
+                                                return MigratorUtility.getSteps(workflow).stream();
                                               })
                                               .collect(groupingBy(GraphNode::getType, counting()));
     Map<String, TypeSummary> stepTypeSummaryMap = new HashMap<>();
@@ -164,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
             .flatMap(entity -> {
               Workflow workflow = (Workflow) entity.getEntity();
               WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-              return workflowHandler.getSteps(workflow).stream();
+              return MigratorUtility.getSteps(workflow).stream();
             })
             .flatMap(step -> stepMapperFactory.getStepMapper(step.getType()).getExpressions(step).stream())
             .collect(Collectors.toSet());
@@ -224,16 +224,10 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-    List<GraphNode> steps = workflowHandler.getSteps(workflow);
-    // We will skip migration if any of the steps are unsupported
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+
     if (EmptyPredicate.isEmpty(steps)) {
-      return YamlGenerationDetails.builder()
-          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
-                                                     .type(entityId.getType())
-                                                     .cgBasicInfo(workflow.getCgBasicInfo())
-                                                     .reason("The workflow has no steps")
-                                                     .build()))
-          .build();
+      steps = new ArrayList<>();
     }
     List<GraphNode> unsupportedSteps = steps.stream()
                                            .filter(step
@@ -386,7 +380,8 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     Workflow workflow = (Workflow) cgEntityNode.getEntity();
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     TemplateEntityType templateType = workflowHandler.getTemplateType(workflow);

@@ -77,5 +77,6 @@ public interface TerraformCloudRestClient {
 
   @GET("/api/v2/state-versions/{stateVersionId}/outputs")
   Call<TerraformCloudResponse<List<StateVersionOutputData>>> getStateVersionOutputs(
-      @Header("Authorization") String authorization, @Path("stateVersionId") String stateVersionId);
+      @Header("Authorization") String authorization, @Path("stateVersionId") String stateVersionId,
+      @Query("page[number]") int page);
 }

@@ -60,8 +60,9 @@ public class DelegateInstallationCommandServiceTest {
             + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
             + "  -e ACCOUNT_ID=%s \\\n"
             + "  -e DELEGATE_TOKEN=%s \\\n"
+            + "  -e LOG_STREAMING_SERVICE_URL=%s/log-service/ \\\n"
             + "  -e MANAGER_HOST_AND_PORT=%s %s",
-        ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, IMAGE);
+        ACCOUNT_ID, ENCODED_TOKEN_VALUE, MANAGER_URL, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("DOCKER", MANAGER_URL, ACCOUNT_ID, null))
         .isEqualTo(result);

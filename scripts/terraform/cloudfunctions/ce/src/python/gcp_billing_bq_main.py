@@ -12,7 +12,7 @@ import re
 import requests
 from util import create_dataset, print_, if_tbl_exists, createTable, run_batch_query, COSTAGGREGATED, UNIFIED, \
     CEINTERNALDATASET, update_connector_data_sync_status, GCPCONNECTORINFOTABLE, CURRENCYCONVERSIONFACTORUSERINPUT, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import secretmanager
@@ -69,6 +69,7 @@ KEY = "CCM_GCP_CREDENTIALS"
 client = bigquery.Client(PROJECTID)
 dt_client = bigquery_datatransfer_v1.DataTransferServiceClient()
 publisher = pubsub_v1.PublisherClient()
+COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 GCPCFTOPIC = publisher.topic_path(PROJECTID, os.environ.get('GCPCFTOPIC', 'ce-gcp-billing-cf'))
 GCP_STANDARD_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
@@ -133,6 +134,16 @@ def main(event, context):
         ingest_into_unified(jsonData)
         update_connector_data_sync_status(jsonData, PROJECTID, client)
         ingest_data_to_costagg(jsonData)
+        send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+            "eventType": "COST_CATEGORY_UPDATE",
+            "message": {
+                "accountId": jsonData["accountId"],
+                "startDate": "%s" % (datetime.datetime.today() - datetime.timedelta(days=int(jsonData["interval"]))).date(),
+                "endDate": "%s" % datetime.datetime.today().date(),
+                "cloudProvider": "GCP",
+                "cloudProviderAccountIds": jsonData["billingAccountIdsList"]
+            }
+        })
         return
     # Set the accountId for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
@@ -152,6 +163,7 @@ def main(event, context):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
         createTable(client, unifiedTableRef)
     else:
+        # alter_unified_table(jsonData)
         print_("%s table exists" % unifiedTableTableName)
 
     if not if_tbl_exists(client, preAggragatedTableRef):
@@ -196,6 +208,16 @@ def main(event, context):
     # Sync dataset
     jsonData["isFreshSync"] = isFreshSync(jsonData)
     syncDataset(jsonData)
+    send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+        "eventType": "COST_CATEGORY_UPDATE",
+        "message": {
+            "accountId": jsonData["accountId"],
+            "startDate": "%s" % (datetime.datetime.today() - datetime.timedelta(days=int(jsonData["interval"]))).date(),
+            "endDate": "%s" % datetime.datetime.today().date(),
+            "cloudProvider": "GCP",
+            "cloudProviderAccountIds": jsonData["billingAccountIdsList"]
+        }
+    })
     print_("Completed")
     return
 
@@ -1143,10 +1165,12 @@ def get_unique_billingaccount_id(jsonData):
         for row in results:
             billingAccountIds.append(row.billing_account_id)
         jsonData["billingAccountIds"] = ", ".join(f"'{w}'" for w in billingAccountIds)
+        jsonData["billingAccountIdsList"] = billingAccountIds
     except Exception as e:
         print_(query)
         print_("  Failed to retrieve distinct billingAccountIds", "WARN")
         jsonData["billingAccountIds"] = ""
+        jsonData["billingAccountIdsList"] = []
         raise e
     print_("  Found unique billingAccountIds %s" % jsonData.get("billingAccountIds"))
 
@@ -1211,3 +1235,20 @@ def fetch_acc_from_gcp_conn_info(jsonData):
     except Exception as e:
         raise e
     print_("retrieved info from gcpConnectrInfoTable")
+
+
+def alter_unified_table(jsonData):
+    print_("Altering unifiedTable Table")
+    ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
+    query = "ALTER TABLE `%s.unifiedTable` \
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
+
+    try:
+        print_(query)
+        query_job = client.query(query)
+        query_job.result()
+    except Exception as e:
+        # Error Running Alter Query
+        print_(e)
+    else:
+        print_("Finished Altering unifiedTable Table")

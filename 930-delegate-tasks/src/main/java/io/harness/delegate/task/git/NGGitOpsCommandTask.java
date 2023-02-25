@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.git;
+
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -29,6 +30,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -43,10 +45,12 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
+import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.helper.BitbucketHelper;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -110,6 +114,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject private BitbucketApiClient bitbucketApiClient;
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -179,6 +184,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           break;
         case AZURE_REPO:
           responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
+          break;
+        case BITBUCKET:
+          responseData = (GitApiTaskResponse) bitbucketApiClient.mergePR(taskParams);
           break;
 
         default:
@@ -336,7 +344,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
-      // TODO: BITBUCKET
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
         return "https://github.com"
@@ -349,6 +356,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
         return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
+      case BITBUCKET:
+        return BitbucketHelper.getBitbucketPRLink((BitbucketConnectorDTO) scmConnector, prNumber);
       default:
         return "";
     }

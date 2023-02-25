@@ -18,13 +18,13 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class BambooArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Jenkins Job build number */
+  /** Bamboo Job build number */
   String build;
 
-  /** Jenkins Job name */
+  /** Bamboo Job name */
   String planKey;
 
-  /** Jenkins artifact path */
+  /** Bamboo artifact path */
   String artifactPath;
 
   @Builder

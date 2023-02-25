@@ -106,15 +106,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         ConcurrentChildInstance concurrentChildInstance =
             pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
         if (concurrentChildInstance != null && !nodeExecution.getExecutableResponses().isEmpty()) {
-          if (nodeExecution.getNode().getStepParameters().containsKey("strategyType")
-              && !nodeExecution.getNode()
-                      .getStepParameters()
-                      .get("strategyType")
-                      .equals(StrategyType.PARALLELISM.name())) {
-            update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
-                    + ".moduleInfo.maxConcurrency.value",
-                nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
-          }
+          update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
+                  + ".moduleInfo.maxConcurrency.value",
+              nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
           updateApplied = true;
         }
       }

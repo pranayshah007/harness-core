@@ -166,8 +166,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.4
-  liteEngineImage: harness/ci-lite-engine:1.16.4
+  addonImage: harness/ci-addon:1.16.5
+  liteEngineImage: harness/ci-lite-engine:1.16.5
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -221,19 +221,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.0
+      image: plugins/kaniko:1.7.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.0
+      image: plugins/kaniko-ecr:1.7.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.0
+      image: plugins/kaniko-gcr:1.7.1
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.0
+      image: plugins/kaniko-acr:1.7.1
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -374,3 +374,4 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 enableOpentelemetry: false
+enableTelemetry: ${ENABLE_TELEMETRY:-false}

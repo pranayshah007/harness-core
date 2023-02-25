@@ -32,6 +32,7 @@ import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
@@ -98,6 +99,7 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.utils.ConnectorUtils;
 import io.harness.utils.FilePathUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
@@ -305,7 +307,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       }
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+    try {
       gitFileCacheService.upsertCache(GitFileCacheKey.builder()
                                           .accountIdentifier(scope.getAccountIdentifier())
                                           .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
@@ -319,6 +321,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .commitId(fileContent.getCommitId())
               .objectId(fileContent.getBlobId())
               .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
 
     return ScmGetFileResponseDTO.builder()
@@ -356,7 +360,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
         scmGetFileByBranchRequestDTO.getFilePath());
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+    try {
       gitFileCacheService.upsertCache(GitFileCacheKey.builder()
                                           .accountIdentifier(scope.getAccountIdentifier())
                                           .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
@@ -370,6 +374,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .commitId(gitFileResponse.getCommitId())
               .objectId(gitFileResponse.getObjectId())
               .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
 
     return getScmGetFileResponseDTO(gitFileResponse);
@@ -545,7 +551,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .build());
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+    try {
       gitFileCacheService.upsertCache(GitFileCacheKey.builder()
                                           .accountIdentifier(scope.getAccountIdentifier())
                                           .completeFilePath(scmCreateFileRequestDTO.getFilePath())
@@ -558,6 +564,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .commitId(createFileResponse.getCommitId())
               .objectId(createFileResponse.getBlobId())
               .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
 
     return ScmCommitFileResponseDTO.builder()
@@ -607,7 +615,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .build());
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+    try {
       gitFileCacheService.upsertCache(GitFileCacheKey.builder()
                                           .accountIdentifier(scope.getAccountIdentifier())
                                           .completeFilePath(scmUpdateFileRequestDTO.getFilePath())
@@ -620,6 +628,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .commitId(updateFileResponse.getCommitId())
               .objectId(updateFileResponse.getBlobId())
               .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
 
     return ScmCommitFileResponseDTO.builder()
@@ -737,6 +747,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(
       ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
+
+    if (isEmpty(gitRepository.getOrg())
+        && GitConnectionType.ACCOUNT.equals(ConnectorUtils.getConnectionType(scmConnector))) {
+      return emptyIfNull(response.getReposList())
+          .stream()
+          .map(repository
+              -> GitRepositoryResponseDTO.builder()
+                     .name(repository.getNamespace() + "/" + repository.getName())
+                     .build())
+          .collect(Collectors.toList());
+    }
+
     if (isNotEmpty(gitRepository.getName())) {
       return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
@@ -868,7 +890,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private void invalidateGitFileCache(
       String accountIdentifier, String filePath, ScmConnector scmConnector, String repoName, String branchName) {
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PIE_NG_GITX_CACHING)) {
+    try {
       GitFileCacheKey cacheKey = GitFileCacheKey.builder()
                                      .accountIdentifier(accountIdentifier)
                                      .completeFilePath(filePath)
@@ -878,6 +900,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                                      .build();
       GitFileCacheDeleteResult gitFileCacheDeleteResult = gitFileCacheService.invalidateCache(cacheKey);
       log.info("Invalidated cache for key: {} , result: {}", cacheKey, gitFileCacheDeleteResult);
+    } catch (Exception exception) {
+      log.error("invalidateGitFileCache Failure, skipping invalidation of cache", exception);
     }
   }
 
@@ -1026,5 +1050,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         });
     log.info(String.format("getBatchFilesByBranch request size %d and entity request list %s",
         uniqueFileRequests.size(), uniqueFileRequests));
+  }
+
+  private void handleUpsertCacheFailure(Exception exception) {
+    log.error("Upsert Cache Failure, skipping Upsert cache operation", exception);
   }
 }

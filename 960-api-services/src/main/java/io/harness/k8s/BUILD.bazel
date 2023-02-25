@@ -35,6 +35,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "//980-commons/src/main/java/io/harness/state:module",
+        "//980-commons/src/main/java/io/harness/supplier:module",
         "//980-commons/src/main/java/io/harness/threading:module",
         "//980-commons/src/main/java/io/harness/yaml:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",

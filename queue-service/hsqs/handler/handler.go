@@ -49,6 +49,11 @@ func (h *Handler) handleEnqueue() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
 		}
 
+		err := store.ValidateEnqueueRequest(p)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
+		}
+
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
 			h.m.CountMetric(c.Request().Context(), false, "queue", p.Topic, p.SubTopic)
@@ -74,6 +79,11 @@ func (h *Handler) handleDequeue() echo.HandlerFunc {
 		p := &store.DequeueRequest{}
 
 		if err := c.Bind(p); err != nil {
+			return c.JSON(http.StatusBadRequest, &store.DequeueErrorResponse{ErrorMessage: err.Error()})
+		}
+
+		err := store.ValidateDequeueRequest(p)
+		if err != nil {
 			return c.JSON(http.StatusBadRequest, &store.DequeueErrorResponse{ErrorMessage: err.Error()})
 		}
 
@@ -105,9 +115,14 @@ func (h *Handler) ack() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, &store.AckErrorResponse{ErrorMessage: err.Error()})
 		}
 
+		err := store.ValidateAckRequest(p)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, &store.AckErrorResponse{ErrorMessage: err.Error()})
+		}
+
 		ack, err := h.s.Ack(c.Request().Context(), *p)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, &store.AckErrorResponse{ErrorMessage: err.Error()})
+			return c.JSON(http.StatusBadRequest, &store.AckErrorResponse{ErrorMessage: err.Error()})
 		}
 		return c.JSON(http.StatusOK, ack)
 	}

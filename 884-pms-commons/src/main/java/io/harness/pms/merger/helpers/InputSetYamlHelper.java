@@ -78,7 +78,14 @@ public class InputSetYamlHelper {
   }
 
   public String getStringField(String yaml, String fieldName, String rootNode) {
-    JsonNode node = (new YamlConfig(yaml)).getYamlMap();
+    YamlConfig config;
+    try {
+      config = new YamlConfig(yaml, true);
+    } catch (Exception e) {
+      log.error("Input set yaml is invalid. Yaml:\n" + yaml);
+      throw new InvalidRequestException("Input set yaml is invalid", e);
+    }
+    JsonNode node = config.getYamlMap();
     JsonNode innerMap = node.get(rootNode);
     if (innerMap == null) {
       log.error("Root node is not " + rootNode + ". Yaml:\n" + yaml);

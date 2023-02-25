@@ -44,9 +44,11 @@ import io.harness.marketplace.gcp.GcpMarketPlaceApiHandler;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.seeddata.SampleDataProviderService;
+import io.harness.service.intfc.DelegateAuthService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
@@ -134,13 +136,16 @@ public class AccountResource {
   private final HarnessUserGroupService harnessUserGroupService;
   private final AdminLicenseHttpClient adminLicenseHttpClient;
 
+  private final DelegateAuthService delegateAuthService;
+
   @Inject
   public AccountResource(AccountService accountService, UserService userService,
       Provider<LicenseService> licenseServiceProvider, AccountPermissionUtils accountPermissionUtils,
       FeatureService featureService, @Named("BackgroundJobScheduler") PersistentScheduler jobScheduler,
       GcpMarketPlaceApiHandler gcpMarketPlaceApiHandler,
       Provider<SampleDataProviderService> sampleDataProviderServiceProvider, AuthService authService,
-      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient) {
+      HarnessUserGroupService harnessUserGroupService, AdminLicenseHttpClient adminLicenseHttpClient,
+      DelegateAuthService delegateAuthService) {
     this.accountService = accountService;
     this.userService = userService;
     this.licenseServiceProvider = licenseServiceProvider;
@@ -152,6 +157,7 @@ public class AccountResource {
     this.authService = authService;
     this.harnessUserGroupService = harnessUserGroupService;
     this.adminLicenseHttpClient = adminLicenseHttpClient;
+    this.delegateAuthService = delegateAuthService;
   }
 
   @GET
@@ -362,6 +368,19 @@ public class AccountResource {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
   }
 
+  @PUT
+  @Hidden
+  @Path("{accountId}/cross-generation-access")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @InternalApi
+  public RestResponse<Account> updateCrossGenerationAccessEnabled(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("crossGenerationAccessEnabled") @DefaultValue("false") boolean isCrossGenerationAccessEnabled) {
+    return new RestResponse<>(
+        accountService.updateCrossGenerationAccessEnabled(accountId, isCrossGenerationAccessEnabled, false));
+  }
+
   @POST
   @Path("/createSampleApplication")
   @Timed
@@ -541,7 +560,7 @@ public class AccountResource {
       @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId,
       @QueryParam("delegateTokenName") String delegateTokenName,
       @QueryParam("agentMtlsAuthority") String agentMtlsAuthority) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
+    delegateAuthService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
         delegateTokenName, agentMtlsAuthority, false);
     return new RestResponse<>(true);
   }

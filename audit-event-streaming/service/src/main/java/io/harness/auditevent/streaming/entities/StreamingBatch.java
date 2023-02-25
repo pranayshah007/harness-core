@@ -16,6 +16,7 @@ import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -36,11 +37,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "StreamingBatchKeys")
 @StoreIn(DbAliases.AUDITS)
+@Entity(value = "streamingBatches", noClassnameStored = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("streamingBatches")
 @TypeAlias("StreamingBatch")
 public class StreamingBatch {
-  @Id String id;
+  @Id @dev.morphia.annotations.Id String id;
 
   @NotBlank String streamingDestinationIdentifier;
   @NotBlank String accountIdentifier;
@@ -59,11 +61,16 @@ public class StreamingBatch {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_createdAt_streamingDestinationId_status_index")
+                 .name("accountId_streamingDestinationId_createdAt_index")
                  .field(StreamingBatchKeys.accountIdentifier)
-                 .descSortField(StreamingBatchKeys.createdAt)
                  .field(StreamingBatchKeys.streamingDestinationIdentifier)
+                 .descSortField(StreamingBatchKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_status_createdAt_index")
+                 .field(StreamingBatchKeys.accountIdentifier)
                  .field(StreamingBatchKeys.status)
+                 .descSortField(StreamingBatchKeys.createdAt)
                  .build())
         .build();
   }

@@ -9,12 +9,14 @@ package io.harness.ngmigration.template;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT;
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
 import io.harness.cdng.creator.plan.customDeployment.CustomDeploymentInstanceAttributes;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.plancreator.customDeployment.CustomDeploymentExecutionConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -54,7 +56,8 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
   }
 
   @Override
-  public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
+  public JsonNode getNgTemplateConfigSpec(
+      MigrationContext context, Template template, String orgIdentifier, String projectIdentifier) {
     CustomDeploymentTypeTemplate customDeploymentTypeTemplate =
         (CustomDeploymentTypeTemplate) template.getTemplateObject();
 
@@ -78,8 +81,7 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
     }
 
     List<CustomDeploymentInstanceAttributes> attributes = new ArrayList<>();
-    attributes.add(
-        CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath("__PLEASE_FIX_ME__").build());
+    attributes.add(CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath(PLEASE_FIX_ME).build());
     if (isNotEmpty(customDeploymentTypeTemplate.getHostAttributes())) {
       customDeploymentTypeTemplate.getHostAttributes().forEach(
           (k, v) -> { attributes.add(CustomDeploymentInstanceAttributes.builder().name(k).jsonPath(v).build()); });

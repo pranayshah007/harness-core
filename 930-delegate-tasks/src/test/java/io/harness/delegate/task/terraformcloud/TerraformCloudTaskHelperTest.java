@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.terraformcloud;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -31,13 +33,24 @@ import io.harness.terraformcloud.TerraformCloudApiException;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudClient;
 import io.harness.terraformcloud.TerraformCloudConfig;
+import io.harness.terraformcloud.model.ApplyData;
+import io.harness.terraformcloud.model.Attributes;
 import io.harness.terraformcloud.model.OrganizationData;
+import io.harness.terraformcloud.model.PlanData;
+import io.harness.terraformcloud.model.Relationship;
+import io.harness.terraformcloud.model.ResourceLinkage;
+import io.harness.terraformcloud.model.RunData;
+import io.harness.terraformcloud.model.RunRequest;
+import io.harness.terraformcloud.model.RunStatus;
+import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Rule;
@@ -55,6 +68,8 @@ public class TerraformCloudTaskHelperTest {
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private TerraformCloudClient terraformCloudClient;
+  @Mock LogCallback logCallback;
+
   @InjectMocks private TerraformCloudTaskHelper taskHelper;
 
   @Test
@@ -236,5 +251,122 @@ public class TerraformCloudTaskHelperTest {
         .hasMessage("errorMessage5");
 
     verify(logCallback, times(4)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRun() throws IOException {
+    RunRequest runRequest = RunRequest.builder().build();
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData =
+        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_REFRESH_STATE, logCallback);
+
+    assertThat(runData.getId()).isEqualTo("run-123");
+    verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunWithAutoApply() throws IOException {
+    RunRequest runRequest = RunRequest.builder().build();
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData =
+        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_PLAN_AND_APPLY, logCallback);
+
+    assertThat(runData.getId()).isEqualTo("run-123");
+    verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getApply(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testCreateRunPlanWithForceExecuteRun() throws IOException {
+    RunRequest runRequest = RunRequest.builder().build();
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
+    doReturn(getCreateRunResponse(RunStatus.PENDING)).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+
+    RunData runData =
+        taskHelper.createRun("url", "token", runRequest, true, TerraformCloudTaskType.RUN_PLAN, logCallback);
+
+    assertThat(runData.getId()).isEqualTo("run-123");
+    verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
+    verify(terraformCloudClient, times(2)).getRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).forceExecuteRun(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testApply() throws IOException {
+    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).getRun(any(), any(), any());
+    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
+    doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
+    doReturn(getOutputResponse()).when(terraformCloudClient).getStateVersionOutputs(any(), any(), any(), anyInt());
+
+    String output = taskHelper.applyRun("url", "token", "run-123", "message", logCallback);
+
+    verify(terraformCloudClient, times(1)).applyRun(any(), any(), any(), any());
+
+    assertThat(output).isEqualTo("{ \"x1\" : { \"value\" : {\"x1\":\"y1\"}, \"sensitive\" : false } }");
+  }
+
+  private TerraformCloudResponse getCreateRunResponse(RunStatus status) {
+    RunData runData = new RunData();
+    runData.setRelationships(new HashMap<>());
+    runData.setId("run-123");
+    Relationship relationshipPlan = new Relationship();
+    relationshipPlan.setData(Collections.singletonList(ResourceLinkage.builder().id("planId").build()));
+    runData.getRelationships().put("plan", relationshipPlan);
+
+    Relationship relationshipApply = new Relationship();
+    relationshipApply.setData(Collections.singletonList(ResourceLinkage.builder().id("applyId").build()));
+    runData.getRelationships().put("apply", relationshipApply);
+    runData.setAttributes(Attributes.builder().status(status).build());
+    return TerraformCloudResponse.builder().data(runData).build();
+  }
+
+  private TerraformCloudResponse getPlanResponse() {
+    PlanData planData = new PlanData();
+    planData.setAttributes(PlanData.Attributes.builder().logReadUrl("logUrl").build());
+    return TerraformCloudResponse.builder().data(planData).build();
+  }
+
+  private TerraformCloudResponse getApplyResponse() {
+    ApplyData applyData = new ApplyData();
+    applyData.setRelationships(new HashMap<>());
+    applyData.setAttributes(ApplyData.Attributes.builder().status("finished").build());
+    Relationship relationshipCv = new Relationship();
+    relationshipCv.setData(Collections.singletonList(ResourceLinkage.builder().id("cv-123").build()));
+    applyData.getRelationships().put("state-versions", relationshipCv);
+    return TerraformCloudResponse.builder().data(applyData).build();
+  }
+
+  private TerraformCloudResponse getOutputResponse() {
+    StateVersionOutputData stateVersionOutputData = new StateVersionOutputData();
+    stateVersionOutputData.setAttributes(
+        StateVersionOutputData.Attributes.builder().name("x1").value(JsonUtils.readTree("{\"x1\" : \"y1\"}")).build());
+    return TerraformCloudResponse.builder()
+        .data(Collections.singletonList(stateVersionOutputData))
+        .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+        .build();
   }
 }

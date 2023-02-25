@@ -180,3 +180,4 @@ io.harness.beans.yaml.extended.CIShellType
 io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec
 io.harness.steps.plugin.ContainerStepOutcome
 io.harness.plancreator.policy.PolicyConfig
+io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig

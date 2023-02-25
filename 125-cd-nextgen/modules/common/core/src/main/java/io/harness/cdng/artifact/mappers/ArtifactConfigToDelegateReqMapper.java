@@ -225,8 +225,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,
       BambooConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    List<String> artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue()
-                                                                         : Collections.emptyList();
+    List<String> artifactPath = artifactConfig.getArtifactPaths() != null ? artifactConfig.getArtifactPaths().getValue()
+                                                                          : Collections.emptyList();
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,

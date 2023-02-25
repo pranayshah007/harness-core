@@ -143,7 +143,8 @@ public class PMSInputSetElementMapper {
       String pipelineIdentifier, String yaml, InputSetEntityType inputSetEntityType) {
     JsonNode inputSetNode;
     try {
-      inputSetNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
+      // validating the duplicate fields in yaml fields
+      inputSetNode = YamlUtils.readTree(yaml, true).getNode().getCurrJsonNode();
     } catch (IOException exception) {
       throw new InvalidRequestException("Invalid input set yaml provided");
     }
@@ -226,7 +227,6 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -249,7 +249,6 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build())
         .inputSetErrorWrapper(errorWrapperDTO)
         .isErrorResponse(true)
@@ -279,7 +278,6 @@ public class PMSInputSetElementMapper {
         .isErrorResponse(isError)
         .invalidInputSetReferences(invalidReferences)
         .gitDetails(getEntityGitDetails(entity))
-        .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid() || isNotEmpty(invalidReferences)
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -308,7 +306,6 @@ public class PMSInputSetElementMapper {
         .gitDetails(entityGitDetails)
         .createdAt(entity.getCreatedAt())
         .lastUpdatedAt(entity.getLastUpdatedAt())
-        .isOutdated(entity.getIsInvalid())
         .inputSetErrorDetails(inputSetErrorDetails)
         .overlaySetErrorDetails(overlaySetErrorDetails)
         .entityValidityDetails(entity.isEntityInvalid()

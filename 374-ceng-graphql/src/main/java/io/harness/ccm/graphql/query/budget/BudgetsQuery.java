@@ -9,8 +9,11 @@ package io.harness.ccm.graphql.query.budget;
 
 import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.dao.BudgetDao;
@@ -26,6 +29,7 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.WingsException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -34,6 +38,7 @@ import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +81,12 @@ public class BudgetsQuery {
       }
 
       if (budget != null) {
-        return buildBudgetSummary(budget, true);
+        return buildBudgetSummary(budget, true,
+            ceViewService
+                .getPerspectiveFolderIds(
+                    accountId, Collections.singletonList(BudgetUtils.getPerspectiveIdForBudget(budget)))
+                .iterator()
+                .next());
       }
 
       // If budget is null and budgetId is not null
@@ -120,8 +130,17 @@ public class BudgetsQuery {
                            .collect(Collectors.toList());
     }
     List<BudgetSummary> budgetSummaryList = new ArrayList<>();
+    if (allowedBudgets == null || allowedBudgets.size() == 0) {
+      if (budgets.size() > 0) {
+        throw new NGAccessDeniedException(
+            String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+      }
+      return budgetSummaryList;
+    }
     allowedBudgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
-    allowedBudgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+    allowedBudgets.forEach(budget
+        -> budgetSummaryList.add(buildBudgetSummary(
+            budget, false, perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))));
 
     return budgetSummaryList;
   }
@@ -162,7 +181,13 @@ public class BudgetsQuery {
                 .collect(Collectors.toList());
       }
 
-      perspectiveBudgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+      perspectiveBudgets.forEach(budget
+          -> budgetSummaryList.add(buildBudgetSummary(budget, false,
+              ceViewService
+                  .getPerspectiveFolderIds(
+                      accountId, Collections.singletonList(BudgetUtils.getPerspectiveIdForBudget(budget)))
+                  .iterator()
+                  .next())));
 
     } catch (Exception e) {
       log.info("Exception while fetching budget summary cards for given perspective: ", e);
@@ -170,7 +195,7 @@ public class BudgetsQuery {
     return budgetSummaryList;
   }
 
-  private BudgetSummary buildBudgetSummary(Budget budget, boolean fetchLatestSpend) {
+  private BudgetSummary buildBudgetSummary(Budget budget, boolean fetchLatestSpend, String folderId) {
     Double actualCost = budget.getActualCost();
     if (fetchLatestSpend) {
       actualCost = budgetCostService.getActualCost(budget);
@@ -196,6 +221,7 @@ public class BudgetsQuery {
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .isBudgetGroup(false)
         .disableCurrencyWarning(budget.getDisableCurrencyWarning())
+        .folderId(folderId)
         .build();
   }
 

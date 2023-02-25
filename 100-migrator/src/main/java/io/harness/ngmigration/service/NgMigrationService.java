@@ -106,8 +106,8 @@ public abstract class NgMigrationService {
     return canMigrateAll;
   }
 
-  public NGYamlFile getExistingYaml(
-      MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities, CgEntityId entityId) {
+  public NGYamlFile getExistingYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityId entityId) {
     CgEntityNode cgEntityNode = entities.get(entityId);
     CgBasicInfo cgBasicInfo = cgEntityNode.getEntity().getCgBasicInfo();
     NgEntityDetail ngEntityDetail = getNGEntityDetail(inputDTO, entities, entityId);
@@ -121,7 +121,8 @@ public abstract class NgMigrationService {
             .build();
     if (mappingExist) {
       try {
-        YamlDTO yamlDTO = getNGEntity(cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO =
+            getNGEntity(entities, migratedEntities, cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
         if (yamlDTO == null) {
           return null;
         }
@@ -166,8 +167,9 @@ public abstract class NgMigrationService {
         .build();
   }
 
-  protected abstract YamlDTO getNGEntity(
-      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier);
+  protected abstract YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail,
+      String accountIdentifier);
 
   protected abstract boolean isNGEntityExists();
 
