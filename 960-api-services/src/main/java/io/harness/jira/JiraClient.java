@@ -60,6 +60,7 @@ public class JiraClient {
           .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
           .build();
   private static final String REPORTER_FIELD_NAME = "Reporter";
+  private static final String ISSUE_TYPE_FIELD_NAME = "Issue Type";
 
   private final JiraInternalConfig config;
   private final JiraRestClient restClient;
@@ -216,6 +217,7 @@ public class JiraClient {
         if (!fromCG) {
           createMetadataNGFields.removeField(REPORTER_FIELD_NAME);
         }
+        createMetadataNGFields.removeField(ISSUE_TYPE_FIELD_NAME);
         originalMetadataFromNewFieldsMetadata(projectKey, createMetadata, issueTypeNG, createMetadataNGFields);
       }
     } else {
@@ -227,6 +229,7 @@ public class JiraClient {
       if (!ignoreComment) {
         createMetadata.addField(COMMENT_FIELD);
       }
+      createMetadata.removeField(ISSUE_TYPE_FIELD_NAME);
     }
 
     if (fetchStatus) {
@@ -282,7 +285,8 @@ public class JiraClient {
    * Get the issue update metadata information - schema information for the issue with the given key.
    *
    * There is special handling for these fields:
-   * - project, issue type and status are not part of the fields
+   * - project and status are not part of the fields
+   * - issuetype is a part of fields
    * - timetracking: returned as 2 string fields - "Original Estimate", "Remaining Estimate"
    * - Fields treated as OPTION type fields:
    *   - resolution
@@ -381,7 +385,7 @@ public class JiraClient {
    *   - component
    *   - priority
    *   - version
-   *
+   * - to update issue type: sent as { Issue Type : name of the target issue type } for ex {Issue Type: Story}
    * @param issueKey           the key of the issue to be updated
    * @param transitionToStatus the status to transition to
    * @param transitionName     the transition name to choose in case multiple transitions have same to status

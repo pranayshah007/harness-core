@@ -69,6 +69,8 @@ public class Invite implements PersistentEntity {
   @Size(min = 1, max = 100) List<RoleBinding> roleBindings;
   @Size(max = 100) List<String> userGroups;
   String name;
+  String givenName;
+  String familyName;
   @NonNull InviteType inviteType;
   @CreatedDate Long createdAt;
   @Version Long version;

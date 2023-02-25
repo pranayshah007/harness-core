@@ -2040,6 +2040,8 @@ public class UserServiceImpl implements UserService {
       user = anUser().build();
       user.setEmail(userInvite.getEmail().trim().toLowerCase());
       user.setName(userInvite.getName().trim());
+      user.setGivenName(userInvite.getGivenName());
+      user.setFamilyName(userInvite.getFamilyName());
       user.setRoles(new ArrayList<>());
       user.setEmailVerified(true);
       user.setAppId(GLOBAL_APP_ID);
