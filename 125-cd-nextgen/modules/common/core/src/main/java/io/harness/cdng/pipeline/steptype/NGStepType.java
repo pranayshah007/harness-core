@@ -37,7 +37,7 @@ public enum NGStepType {
 
   @JsonProperty(StepSpecTypeConstants.GITOPS_SYNC)
   GITOPS_SYNC(
-      "Gitops Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
+      "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
 
   // k8s steps
   @JsonProperty("APPLY")

@@ -35,7 +35,6 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.GITOPS_CREATE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_CREATE_PR),
   GITOPS_MERGE_PR(
       ModuleType.CD, EntityTypeConstants.GITOPS_MERGE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_MERGE_PR),
-  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC),
   @JsonProperty(EntityTypeConstants.PROJECTS)
   PROJECTS(ModuleType.CORE, EntityTypeConstants.PROJECTS, IdentifierRef.class, EntityYamlRootNames.PROJECT),
   @JsonProperty(EntityTypeConstants.PIPELINES)
@@ -549,7 +548,8 @@ public enum EntityType {
   AWS_SAM_ROLLBACK(
       ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK),
   @JsonProperty(EntityTypeConstants.SSCA_ORCHESTRATION)
-  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class);
+  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class),
+  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC);
 
   private final ModuleType moduleType;
   String yamlName;

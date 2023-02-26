@@ -645,7 +645,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Sync")
             .setType(StepSpecTypeConstants.GITOPS_SYNC)
-            .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setFeatureFlag(FeatureName.GITOPS_SYNC_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
