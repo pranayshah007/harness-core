@@ -1,45 +1,55 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.events;
+package io.harness.engine.pms.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
-import io.harness.event.Event;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(PIPELINE)
-@Getter
+@Data
 @NoArgsConstructor
-public class NodeExecutionEvent implements Event {
-  private String accountIdentifier;
-  private String orgIdentifier;
-  private String projectIdentifier;
-  private String pipelineIdentifier;
-  private String planExecutionId;
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+public class PipelineEndEvent extends NodeExecutionEvent {
+  private TriggerType triggerType;
+  private TriggeredBy triggeredBy;
+  private Status status;
+  private Long startTs;
+  private Long endTs;
 
-  public NodeExecutionEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
-    this.accountIdentifier = accountIdentifier;
+  public PipelineEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
+      Status status, Long startTs, Long endTs) {
     this.orgIdentifier = orgIdentifier;
+    this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.planExecutionId = planExecutionId;
+    this.triggerType = triggerType;
+    this.triggeredBy = triggeredBy;
+    this.status = status;
+    this.startTs = startTs;
+    this.endTs = endTs;
   }
 
   @JsonIgnore
@@ -55,7 +65,7 @@ public class NodeExecutionEvent implements Event {
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
     return Resource.builder()
         .identifier(pipelineIdentifier)
-        .type(ResourceTypeConstants.PIPELINE)
+        .type(ResourceTypeConstants.NODE_EXECUTION)
         .labels(labels)
         .build();
   }
@@ -63,6 +73,6 @@ public class NodeExecutionEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.NODE_EXECUTION_EVENT;
+    return NodeExecutionOutboxEvents.PIPELINE_END;
   }
 }

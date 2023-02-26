@@ -18,5 +18,4 @@ public class PipelineOutboxEvents {
   public static final String PIPELINE_CREATED = "PipelineCreated";
   public static final String PIPELINE_UPDATED = "PipelineUpdated";
   public static final String PIPELINE_DELETED = "PipelineDeleted";
-  public static final String NODE_EXECUTION_EVENT = "NodeExecutionEvent";
 }

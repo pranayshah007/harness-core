@@ -36,4 +36,10 @@ public enum Action {
 
   // SLO Event
   ERROR_BUDGET_RESET,
+  START,
+  END,
+  PAUSE,
+  RESUME,
+  ABORT,
+  TIMEOUT
 }
