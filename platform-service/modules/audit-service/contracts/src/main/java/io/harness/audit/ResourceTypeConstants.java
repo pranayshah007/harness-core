@@ -71,4 +71,5 @@ public class ResourceTypeConstants {
   public static final String DOWNTIME = "DOWNTIME";
   public static final String STREAMING_DESTINATION = "STREAMING_DESTINATION";
   public static final String NG_ACCOUNT_DETAILS = "NG_ACCOUNT_DETAILS";
+  public static final String NODE_EXECUTION = "NODE_EXECUTION";
 }

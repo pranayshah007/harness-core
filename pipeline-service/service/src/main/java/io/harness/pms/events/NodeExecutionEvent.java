@@ -16,45 +16,30 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
-import io.harness.pms.pipeline.PipelineEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class PipelineCreateEvent implements Event {
+public class NodeExecutionEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
-  private PipelineEntity pipeline;
-  private Boolean isForOldGitSync;
+  private String pipelineIdentifier;
+  private String planExecutionId;
 
-  // adding this back so that older records with this field can be read
-  private Boolean isFromGit;
-
-  public PipelineCreateEvent(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, PipelineEntity pipeline) {
+  public NodeExecutionEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
-    this.pipeline = pipeline;
-    this.isForOldGitSync = false;
-  }
-
-  @Builder
-  public PipelineCreateEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      PipelineEntity pipeline, Boolean isForOldGitSync) {
-    this.orgIdentifier = orgIdentifier;
-    this.accountIdentifier = accountIdentifier;
-    this.projectIdentifier = projectIdentifier;
-    this.pipeline = pipeline;
-    this.isForOldGitSync = isForOldGitSync;
+    this.pipelineIdentifier = pipelineIdentifier;
+    this.planExecutionId = planExecutionId;
   }
 
   @JsonIgnore
@@ -67,24 +52,17 @@ public class PipelineCreateEvent implements Event {
   @Override
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipeline.getName());
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
     return Resource.builder()
-        .identifier(pipeline.getIdentifier())
+        .identifier(pipelineIdentifier)
         .type(ResourceTypeConstants.PIPELINE)
         .labels(labels)
         .build();
   }
 
-  public Boolean getIsForOldGitSync() {
-    if (isForOldGitSync == null) {
-      return isFromGit != null && isFromGit;
-    }
-    return isForOldGitSync;
-  }
-
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.PIPELINE_CREATED;
+    return PipelineOutboxEvents.NODE_EXECUTION_EVENT;
   }
 }
