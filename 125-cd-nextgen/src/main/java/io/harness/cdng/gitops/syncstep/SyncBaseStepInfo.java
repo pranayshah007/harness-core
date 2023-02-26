@@ -43,9 +43,7 @@ public class SyncBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   public ParameterField<Boolean> prune;
 
-  @ApiModelProperty(dataType = SwaggerConstants.GITOPS_AGENT_DETAILS_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
-  public ParameterField<List<AgentApplicationTargets>> applicationsList;
+  @JsonProperty("applicationsList") List<AgentApplicationTargets> applicationsList;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
