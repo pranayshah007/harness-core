@@ -81,6 +81,8 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
 
   Workflow readWorkflow(@NotNull String appId, @NotNull String workflowId);
 
+  boolean exist(String appId, String workflowId);
+
   boolean workflowExists(String appId, String workflowId);
 
   Workflow readWorkflowWithoutServices(@NotNull String appId, @NotNull String workflowId);

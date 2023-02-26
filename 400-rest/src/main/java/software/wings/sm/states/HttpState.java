@@ -68,6 +68,7 @@ import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.service.impl.AccountServiceImpl;
 import software.wings.service.impl.ActivityHelperService;
 import software.wings.service.impl.SettingServiceHelper;
+import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
@@ -93,6 +94,7 @@ import com.google.inject.Inject;
 import dev.morphia.annotations.Transient;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -130,6 +132,10 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Attributes(title = "Header") private String header;
   @Getter @Setter private List<KeyValuePair> headers;
   @Attributes(title = "Body") private String body;
+
+  @Getter @Setter private Boolean isJsonFile = false;
+  @Getter @Setter private String appId;
+  @Getter @Setter private String configFileId;
   @Attributes(title = "Assertion") private String assertion;
   @Getter @Setter @Attributes(title = "Use Delegate Proxy") private boolean useProxy;
   @Getter @Setter @Attributes(title = "Tags") private List<String> tags;
@@ -151,6 +157,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Inject protected transient DelegateService delegateService;
   @Inject @Transient InfrastructureMappingService infrastructureMappingService;
   @Inject @Transient FeatureFlagService featureFlagService;
+  @Inject private transient ConfigService configService;
   @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private SettingServiceHelper settingServiceHelper;
   @Inject private AccountServiceImpl accountService;
@@ -235,7 +242,11 @@ public class HttpState extends State implements SweepingOutputStateMixin {
    * @param body the body
    */
   public void setBody(String body) {
-    this.body = trim(body);
+    if (isJsonFile) {
+      this.body = getFileContent(appId, configFileId);
+    } else {
+      this.body = trim(body);
+    }
   }
 
   /**
@@ -293,6 +304,10 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   }
 
   protected String getFinalBody(ExecutionContext context) throws UnsupportedEncodingException {
+    if (isJsonFile) {
+      return new String(
+          configService.getFileContent(appId, configService.get(appId, configFileId)), StandardCharsets.UTF_8);
+    }
     return body;
   }
 
@@ -340,6 +355,11 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   private String fetchTemplatedValue(String fieldName, Map<String, Object> templatedVariables) {
     String templatedField = ManagerExpressionEvaluator.getName(fieldName);
     return templatedVariables.containsKey(templatedField) ? (String) templatedVariables.get(templatedField) : fieldName;
+  }
+
+  private String getFileContent(String appId, String configFileId) {
+    return new String(
+        configService.getFileContent(appId, configService.get(appId, configFileId)), StandardCharsets.UTF_8);
   }
 
   @Attributes(title = "Execute with previous steps")

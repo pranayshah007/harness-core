@@ -19,6 +19,7 @@ import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
 import static software.wings.beans.EntityType.ENVIRONMENT;
 import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.SERVICE_TEMPLATE;
+import static software.wings.beans.EntityType.WORKFLOW;
 
 import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.stream.Collectors.toList;
@@ -53,6 +54,7 @@ import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceTemplateService;
+import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.yaml.YamlPushService;
 
@@ -93,6 +95,7 @@ public class ConfigServiceImpl implements ConfigService {
   @Inject private HostService hostService;
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceTemplateService serviceTemplateService;
+  @Inject private WorkflowService workflowService;
   @Inject private EntityVersionService entityVersionService;
   @Inject private EnvironmentService environmentService;
   @Inject private SecretManager secretManager;
@@ -122,6 +125,7 @@ public class ConfigServiceImpl implements ConfigService {
   public String save(ConfigFile configFile, BoundedInputStream inputStream) {
     validateEntity(configFile.getAppId(), configFile.getEntityId(), configFile.getEntityType());
     String envId = configFile.getEntityType() == SERVICE || configFile.getEntityType() == ENVIRONMENT
+            || configFile.getEntityType() == WORKFLOW
         ? GLOBAL_ENV_ID
         : serviceTemplateService.get(configFile.getAppId(), configFile.getTemplateId()).getEnvId();
 
@@ -183,6 +187,8 @@ public class ConfigServiceImpl implements ConfigService {
       entityExist = hostService.exist(appId, entityId);
     } else if (EntityType.SERVICE_TEMPLATE == entityType) {
       entityExist = serviceTemplateService.exist(appId, entityId);
+    } else if (EntityType.WORKFLOW == entityType) {
+      entityExist = workflowService.exist(appId, entityId);
     } else {
       throw new WingsException(INVALID_ARGUMENT)
           .addParam("args", "Config upload not supported for entityType " + entityType);

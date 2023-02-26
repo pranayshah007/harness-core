@@ -794,6 +794,15 @@ public class WorkflowServiceImpl implements WorkflowService {
   }
 
   @Override
+  public boolean exist(String appId, String workflowId) {
+    return wingsPersistence.createQuery(Workflow.class)
+               .filter(WorkflowKeys.appId, appId)
+               .filter(WorkflowKeys.uuid, workflowId)
+               .getKey()
+        != null;
+  }
+
+  @Override
   public Workflow readWorkflowWithoutServices(String appId, String workflowId) {
     Workflow workflow = wingsPersistence.getWithAppId(Workflow.class, appId, workflowId);
     if (workflow == null) {
