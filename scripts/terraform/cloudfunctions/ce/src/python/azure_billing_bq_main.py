@@ -20,7 +20,7 @@ import util
 import requests
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CURRENCYCONVERSIONFACTORUSERINPUT, CEINTERNALDATASET, update_connector_data_sync_status, \
-    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES
+    add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event
 from calendar import monthrange
 
 """
@@ -45,6 +45,7 @@ AZURESCHEMATOPIC = os.environ.get('AZURESCHEMATOPIC', f'projects/{PROJECTID}/top
 AZURESCHEMA_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURESCHEMATOPIC)
 AZURE_COST_CF_TOPIC_NAME = os.environ.get('AZURECOSTCFTOPIC', 'nikunjtesttopic')
 AZURE_COST_CF_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURE_COST_CF_TOPIC_NAME)
+COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
 def main(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -160,6 +161,16 @@ def main(event, context):
     ingest_data_to_costagg(jsonData)
     if jsonData.get("triggerHistoricalCostUpdateInPreferredCurrency") and jsonData["ccmPreferredCurrency"]:
         trigger_historical_cost_update_in_preferred_currency(jsonData)
+    send_event(publisher.topic_path(PROJECTID, COSTCATEGORIESUPDATETOPIC), {
+        "eventType": "COST_CATEGORY_UPDATE",
+        "message": {
+            "accountId": jsonData["accountId"],
+            "startDate": "%s-%s-01" % (jsonData["reportYear"], jsonData["reportMonth"]),
+            "endDate": "%s-%s-%s" % (jsonData["reportYear"], jsonData["reportMonth"], monthrange(int(jsonData["reportYear"]), int(jsonData["reportMonth"]))[1]),
+            "cloudProvider": "AZURE",
+            "cloudProviderAccountIds": jsonData["subsIdsList"]
+        }
+    })
     print_("Completed")
 
 
@@ -765,10 +776,12 @@ def get_unique_subs_id(jsonData, azure_column_mapping):
         subsids = []
         for row in results:
             subsids.append(row.subscriptionid)
+        jsonData["subsIdsList"] = subsids
         jsonData["subsId"] = ", ".join(f"'{w}'" for w in subsids)
     except Exception as e:
         print_("Failed to retrieve distinct subsids", "WARN")
         jsonData["subsId"] = ""
+        jsonData["subsIdsList"] = []
         raise e
     print_("Found unique subsids %s" % subsids)
 
@@ -1086,7 +1099,8 @@ def alter_unified_table(jsonData):
         ADD COLUMN IF NOT EXISTS azureResource STRING, \
         ADD COLUMN IF NOT EXISTS azureTenantId STRING, \
         ADD COLUMN IF NOT EXISTS azureCustomerName STRING, \
-        ADD COLUMN IF NOT EXISTS azureBillingCurrency STRING;" % ds
+        ADD COLUMN IF NOT EXISTS azureBillingCurrency STRING, \
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
 
     try:
         print_(query)

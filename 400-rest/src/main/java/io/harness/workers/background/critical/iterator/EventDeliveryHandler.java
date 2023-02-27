@@ -22,7 +22,7 @@ import io.harness.beans.EventStatus;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AutoLogContext;
@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
-public class EventDeliveryHandler extends IteratorPumpModeHandler implements Handler<Event> {
+public class EventDeliveryHandler extends IteratorPumpAndRedisModeHandler implements Handler<Event> {
   public static final String GROUP = "EVENT_TELEMETRY_CRON_GROUP";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
   private static final int ITERATOR_SCHEDULE_INITIAL_DELAY = 0;

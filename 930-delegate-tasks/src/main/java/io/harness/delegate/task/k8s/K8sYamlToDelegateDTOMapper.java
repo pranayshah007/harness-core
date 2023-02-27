@@ -8,11 +8,11 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getValueFromPlainTextOrSecretRef;
 import static io.harness.k8s.KubernetesHelperService.getKubernetesConfigFromDefaultKubeConfigFile;
 import static io.harness.k8s.KubernetesHelperService.getKubernetesConfigFromServiceAccount;
 import static io.harness.k8s.KubernetesHelperService.isRunningInCluster;
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getValueFromPlainTextOrSecretRef;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 

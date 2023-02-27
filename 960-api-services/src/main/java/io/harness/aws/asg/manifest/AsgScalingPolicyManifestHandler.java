@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgContentParser;

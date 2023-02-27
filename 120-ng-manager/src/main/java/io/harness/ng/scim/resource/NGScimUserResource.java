@@ -14,6 +14,10 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.FeatureName;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.scim.PatchRequest;
@@ -22,6 +26,7 @@ import io.harness.scim.ScimResource;
 import io.harness.scim.ScimUser;
 import io.harness.scim.service.ScimUserService;
 import io.harness.security.annotations.ScimAPI;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import io.dropwizard.jersey.PATCH;
@@ -74,6 +79,10 @@ import lombok.extern.slf4j.Slf4j;
 public class NGScimUserResource extends ScimResource {
   @Inject private ScimUserService scimUserService;
   @Inject private AccessControlClient accessControlClient;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  private static final String STRING_PERMISSION_FAIL_FORMAT =
+      "Token needs to have %s permission on account: %s to perform SCIM user action";
 
   @POST
   @Path("Users")
@@ -86,9 +95,12 @@ public class NGScimUserResource extends ScimResource {
       })
   public Response
   createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (!accessControlClient.hasAccess(
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), MANAGE_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to create user for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return scimUserService.createUser(userQuery, accountIdentifier);
@@ -111,9 +123,12 @@ public class NGScimUserResource extends ScimResource {
   public Response
   updateUser(@PathParam("userIdentifier") String userIdentifier,
       @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to update user for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return scimUserService.updateUser(userIdentifier, accountIdentifier, userQuery);
@@ -137,9 +152,12 @@ public class NGScimUserResource extends ScimResource {
   public Response
   getUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (!accessControlClient.hasAccess(
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userIdentifier), VIEW_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to get user for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       return Response.status(Response.Status.OK)
@@ -169,9 +187,12 @@ public class NGScimUserResource extends ScimResource {
   public Response
   searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
-    if (!accessControlClient.hasAccess(
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(
             ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, null), VIEW_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to search users for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, VIEW_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     try {
       ScimListResponse<ScimUser> searchUserResponse =
@@ -197,9 +218,12 @@ public class NGScimUserResource extends ScimResource {
   public Response
   deleteUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to delete user for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     scimUserService.deleteUser(userIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
@@ -218,9 +242,12 @@ public class NGScimUserResource extends ScimResource {
   public ScimUser
   updateUser(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_ADD_ACL_CHECKS_NG_SCIM_API)
+        && !accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
             Resource.of(USER, userIdentifier), MANAGE_USER_PERMISSION)) {
-      log.warn("NGSCIM: Missing permission to patch update users for accountId {}", accountIdentifier);
+      throw new AccessDeniedException(
+          String.format(STRING_PERMISSION_FAIL_FORMAT, MANAGE_USER_PERMISSION, accountIdentifier),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
     return scimUserService.updateUser(accountIdentifier, userIdentifier, patchRequest);
   }

@@ -7,17 +7,18 @@
 
 package io.harness.delegate.aws.lambda;
 
+import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.aws.lambda.AwsLambdaCommandUnitConstants;
+import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
@@ -35,6 +36,7 @@ import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -53,19 +55,27 @@ public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandl
 
     AwsLambdaDeployRequest awsLambdaDeployRequest = (AwsLambdaDeployRequest) awsLambdaCommandRequest;
 
-    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-
     LogCallback executionLogCallback = new NGDelegateLogCallback(
         iLogStreamingTaskClient, AwsLambdaCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
       executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
 
-      awsLambdaCommandTaskHelper.invokeFunction(awsInternalConfig,
-          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback,
-          awsLambdaDeployRequest.getFunctionName(), awsLambdaDeployRequest.getQualifier());
+      CreateFunctionResponse createFunctionResponse = awsLambdaCommandTaskHelper.deployFunction(
+          awsLambdaDeployRequest.getAwsLambdaInfraConfig(), awsLambdaDeployRequest.getAwsLambdaArtifactConfig(),
+          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
 
-      return AwsLambdaDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+      executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
+      return AwsLambdaDeployResponse.builder()
+          .awsLambda(AwsLambda.builder()
+                         .functionName(createFunctionResponse.functionName())
+                         .runtime(createFunctionResponse.runtimeAsString())
+                         .version(createFunctionResponse.version())
+                         .functionArn(createFunctionResponse.functionArn())
+                         .build())
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .build();
     } catch (Exception exception) {
       executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);

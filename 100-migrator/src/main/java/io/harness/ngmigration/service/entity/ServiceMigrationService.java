@@ -312,7 +312,7 @@ public class ServiceMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
 
-    MigratorExpressionUtils.render(service, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, service, inputDTO.getCustomExpressions());
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     Set<CgEntityId> serviceDefs = graph.get(entityId)
@@ -390,7 +390,8 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       ServiceResponse response =
           NGRestUtils.getResponse(serviceResourceClient.getService(ngEntityDetail.getIdentifier(), accountIdentifier,

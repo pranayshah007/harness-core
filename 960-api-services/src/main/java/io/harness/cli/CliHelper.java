@@ -38,7 +38,7 @@ public class CliHelper {
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback) throws IOException, InterruptedException, TimeoutException {
     return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, command,
-        new EmptyLogOutputStream(), new DefaultErrorLogOutputStream(executionLogCallback));
+        new EmptyLogOutputStream(), new DefaultErrorLogOutputStream(executionLogCallback), 0);
   }
 
   @Nonnull
@@ -46,13 +46,14 @@ public class CliHelper {
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream)
       throws IOException, InterruptedException, TimeoutException {
     return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, loggingCommand,
-        logOutputStream, new DefaultErrorLogOutputStream(executionLogCallback));
+        logOutputStream, new DefaultErrorLogOutputStream(executionLogCallback), 0);
   }
 
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream,
-      ErrorLogOutputStream errorLogOutputStream) throws IOException, InterruptedException, TimeoutException {
+      ErrorLogOutputStream errorLogOutputStream, long secondsToWaitForGracefulShutdown)
+      throws IOException, InterruptedException, TimeoutException {
     executionLogCallback.saveExecutionLog(loggingCommand, LogLevel.INFO, RUNNING);
 
     ProcessExecutor processExecutor = new ProcessExecutor()
@@ -63,6 +64,28 @@ public class CliHelper {
                                           .directory(new File(directory))
                                           .redirectOutput(logOutputStream)
                                           .redirectError(errorLogOutputStream);
+
+    // When the thread is interrupted, process executor calls the process destroy method. Process destroy calls sigterm
+    // but doesn't wait for the process to be terminated. Since the process is not yet terminated, we don't wait for the
+    // process gracefully shutdown and interrupting (killing) the current thread. Once the current thread is killed, we
+    // suspect that there is a monitor (probably JVM) that forces process destroy.
+
+    if (secondsToWaitForGracefulShutdown > 0) {
+      processExecutor.stopper(process -> {
+        // Since Process destroy doesn't wait for process to terminate after invoking, sigterm will close all existing
+        // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
+        // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
+        // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
+        ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
+        try {
+          process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
+          process.destroyForcibly();
+        } catch (InterruptedException e) {
+          process.destroyForcibly();
+          Thread.currentThread().interrupt();
+        }
+      });
+    }
 
     ProcessResult processResult = processExecutor.execute();
     CommandExecutionStatus status = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;

@@ -9,7 +9,6 @@ package io.harness.cvng.core.beans;
 
 import lombok.Builder;
 import lombok.Value;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Value
 @Builder

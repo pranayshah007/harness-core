@@ -35,6 +35,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.manage.GlobalContextManager;
+import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
@@ -42,10 +43,10 @@ import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.persistence.UserProvider;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
-import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateTokenService;
@@ -189,6 +190,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(CacheConfig.builder().cacheBackend(NOOP).build());
     modules.add(cacheModule);
+    modules.add(new DelegateServiceCacheModule(configuration.getDelegateServiceRedisConfig(), false));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

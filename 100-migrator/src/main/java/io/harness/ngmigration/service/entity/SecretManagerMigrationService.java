@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
+import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -51,6 +52,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
@@ -119,6 +121,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
                                          .entity(managerConfig)
                                          .build();
     Set<CgEntityId> children = new HashSet<>();
+    if (managerConfig instanceof CustomSecretsManagerConfig) {
+      CustomSecretsManagerConfig sm = (CustomSecretsManagerConfig) managerConfig;
+      children.add(CgEntityId.builder().id(sm.getTemplateId()).type(SECRET_MANAGER_TEMPLATE).build());
+    }
     return DiscoveryNode.builder().children(children).entityNode(secretManagerNode).build();
   }
 
@@ -224,7 +230,8 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       Optional<ConnectorDTO> response =
           NGRestUtils.getResponse(connectorResourceClient.get(ngEntityDetail.getIdentifier(), accountIdentifier,

@@ -7,10 +7,12 @@
 
 package io.harness.cvng.activity.entities;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.CustomChangeEvent;
-import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -43,8 +45,7 @@ public class CustomChangeActivity extends Activity {
   public void fromDTO(ActivityDTO activityDTO) {}
 
   @Override
-  public void fillInVerificationJobInstanceDetails(
-      VerificationJobInstance.VerificationJobInstanceBuilder verificationJobInstanceBuilder) {}
+  public void fillInVerificationJobInstanceDetails(VerificationJobInstanceBuilder verificationJobInstanceBuilder) {}
 
   @Override
   public void validateActivityParams() {}
@@ -74,7 +75,7 @@ public class CustomChangeActivity extends Activity {
 
     public Query<CustomChangeActivity> populateKeyQuery(
         Query<CustomChangeActivity> query, CustomChangeActivity activity) {
-      if (activity.getActivitySourceId() != null && !activity.getActivitySourceId().isEmpty()) {
+      if (isNotEmpty(activity.getActivitySourceId())) {
         return super.populateKeyQuery(query, activity)
             .filter(ActivityKeys.activitySourceId, activity.getActivitySourceId())
             .filter(ActivityKeys.changeSourceIdentifier, activity.getChangeSourceIdentifier());

@@ -213,6 +213,11 @@ public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAtt
   }
 
   @Override
+  public EncryptedData encryptSecretUsingGlobalSM(String accountId, SecretText secretText, boolean validateScopes) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public boolean updateSecretText(String accountId, String uuId, SecretText secretText, boolean validateScopes) {
     throw new UnsupportedOperationException();
   }

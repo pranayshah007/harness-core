@@ -27,8 +27,8 @@ import software.wings.graphql.schema.type.aggregation.billing.QLCCMEntityGroupBy
 import software.wings.graphql.schema.type.aggregation.billing.QLCCMTimeSeriesAggregation;
 import software.wings.graphql.schema.type.aggregation.billing.QLStatsBreakdownInfo;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.hazelcast.internal.util.Preconditions;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;

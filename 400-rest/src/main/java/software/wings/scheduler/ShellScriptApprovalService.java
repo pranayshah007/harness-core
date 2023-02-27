@@ -7,8 +7,6 @@
 
 package software.wings.scheduler;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
 import static software.wings.scheduler.approval.ApprovalPollingHandler.PUMP_INTERVAL;
 import static software.wings.scheduler.approval.ApprovalPollingHandler.TARGET_INTERVAL;
 
@@ -24,6 +22,7 @@ import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.shell.ScriptType;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -58,6 +57,7 @@ public class ShellScriptApprovalService {
   private final WaitNotifyEngine waitNotifyEngine;
   private final ApprovalPolingService approvalPolingService;
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Inject
   public ShellScriptApprovalService(
@@ -90,7 +90,7 @@ public class ShellScriptApprovalService {
 
   private void appendDelegateTaskDetails(String stateExecutionInstanceId, DelegateTask delegateTask) {
     if (isBlank(delegateTask.getUuid())) {
-      delegateTask.setUuid(generateUuid());
+      delegateTask.setUuid(delegateTaskMigrationHelper.generateDelegateTaskUUID());
     }
 
     stateExecutionService.appendDelegateTaskDetails(stateExecutionInstanceId,

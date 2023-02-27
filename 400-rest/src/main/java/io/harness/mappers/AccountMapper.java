@@ -28,6 +28,7 @@ public class AccountMapper {
         .name(account.getAccountName())
         .companyName(account.getCompanyName())
         .defaultExperience(account.getDefaultExperience())
+        .isCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled())
         .authenticationMechanism(account.getAuthenticationMechanism())
         .isNextGenEnabled(account.isNextGenEnabled())
         .serviceAccountConfig(account.getServiceAccountConfig())

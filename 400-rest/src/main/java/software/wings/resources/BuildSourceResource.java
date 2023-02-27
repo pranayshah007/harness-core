@@ -7,6 +7,7 @@
 
 package software.wings.resources;
 
+import static io.harness.beans.FeatureName.SPG_ALLOW_FILTER_BY_PATHS_GCS;
 import static io.harness.beans.FeatureName.SPG_ALLOW_GET_BUILD_SYNC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -255,10 +256,16 @@ public class BuildSourceResource {
       } else {
         List<Artifact> artifacts =
             artifactService.listArtifactsByArtifactStreamId(artifactStream.getAccountId(), artifactStreamId);
-        buildDetails =
-            artifacts.stream()
-                .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
-                .collect(toList());
+
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && artifactStream.getArtifactStreamType().equals(ArtifactStreamType.GCS.name())) {
+          buildDetails = buildSourceService.listArtifactByArtifactStreamAndFilterPath(artifacts, artifactStream);
+        } else {
+          buildDetails =
+              artifacts.stream()
+                  .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
+                  .collect(toList());
+        }
       }
     } else {
       if (ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {

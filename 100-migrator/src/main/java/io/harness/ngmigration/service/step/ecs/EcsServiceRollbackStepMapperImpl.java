@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -35,6 +36,11 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.ECS;
   }
 
   @Override

@@ -9,11 +9,12 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.NAVEEN;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.core.beans.LogFeedback;
+import io.harness.cvng.core.beans.LogFeedback.LogFeedbackBuilder;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.LogFeedbackService;
@@ -92,12 +93,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
-                                                            .environmentIdentifier("env1")
-                                                            .serviceIdentifier("svc1")
-                                                            .sampleMessage("pre-deployment - host1 log2")
-                                                            .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                            .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
+                                                .environmentIdentifier("env1")
+                                                .serviceIdentifier("svc1")
+                                                .sampleMessage("pre-deployment - host1 log2")
+                                                .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
 
@@ -129,12 +130,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
-                                                            .environmentIdentifier("env1")
-                                                            .serviceIdentifier("svc1")
-                                                            .sampleMessage("pre-deployment - host1 log2")
-                                                            .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                            .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
+                                                .environmentIdentifier("env1")
+                                                .serviceIdentifier("svc1")
+                                                .sampleMessage("pre-deployment - host1 log2")
+                                                .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
 
@@ -161,12 +162,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
-                                                            .environmentIdentifier("env1")
-                                                            .serviceIdentifier("svc1")
-                                                            .sampleMessage("pre-deployment - host1 log2")
-                                                            .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                            .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
+                                                .environmentIdentifier("env1")
+                                                .serviceIdentifier("svc1")
+                                                .sampleMessage("pre-deployment - host1 log2")
+                                                .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
 
@@ -204,12 +205,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
-                                                            .environmentIdentifier("env1")
-                                                            .serviceIdentifier("svc1")
-                                                            .sampleMessage("pre-deployment - host1 log2")
-                                                            .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                            .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
+                                                .environmentIdentifier("env1")
+                                                .serviceIdentifier("svc1")
+                                                .sampleMessage("pre-deployment - host1 log2")
+                                                .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
 
@@ -230,12 +231,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
-                                                            .environmentIdentifier("env1")
-                                                            .serviceIdentifier("svc1")
-                                                            .sampleMessage("pre-deployment - host1 log2")
-                                                            .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                            .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
+                                                .environmentIdentifier("env1")
+                                                .serviceIdentifier("svc1")
+                                                .sampleMessage("pre-deployment - host1 log2")
+                                                .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                .description("feedback as high risk");
 
     LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
 
@@ -272,28 +273,28 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                       .accountIdentifier(UUID.randomUUID().toString())
                                       .build();
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder1 = LogFeedback.builder()
-                                                             .environmentIdentifier("env1")
-                                                             .serviceIdentifier("svc1")
-                                                             .sampleMessage("pre-deployment - host1 log2")
-                                                             .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
-                                                             .description("feedback as high risk");
+    LogFeedbackBuilder logFeedbackBuilder1 = LogFeedback.builder()
+                                                 .environmentIdentifier("env1")
+                                                 .serviceIdentifier("svc1")
+                                                 .sampleMessage("pre-deployment - host1 log2")
+                                                 .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
+                                                 .description("feedback as high risk");
     logFeedbackService.create(projectParams, logFeedbackBuilder1.build());
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder2 = LogFeedback.builder()
-                                                             .environmentIdentifier("env1")
-                                                             .serviceIdentifier("svc1")
-                                                             .sampleMessage("pre-deployment - host1 log1")
-                                                             .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
-                                                             .description("medium Risk");
+    LogFeedbackBuilder logFeedbackBuilder2 = LogFeedback.builder()
+                                                 .environmentIdentifier("env1")
+                                                 .serviceIdentifier("svc1")
+                                                 .sampleMessage("pre-deployment - host1 log1")
+                                                 .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
+                                                 .description("medium Risk");
     logFeedbackService.create(projectParams, logFeedbackBuilder2.build());
 
-    LogFeedback.LogFeedbackBuilder logFeedbackBuilder3 = LogFeedback.builder()
-                                                             .environmentIdentifier("env1")
-                                                             .serviceIdentifier("svc1")
-                                                             .sampleMessage("pre-deployment - host1 log3")
-                                                             .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
-                                                             .description("medium Risk");
+    LogFeedbackBuilder logFeedbackBuilder3 = LogFeedback.builder()
+                                                 .environmentIdentifier("env1")
+                                                 .serviceIdentifier("svc1")
+                                                 .sampleMessage("pre-deployment - host1 log3")
+                                                 .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
+                                                 .description("medium Risk");
     logFeedbackService.create(projectParams, logFeedbackBuilder3.build());
 
     List<LogFeedback> logFeedbackList = logFeedbackService.list("env1", "svc1");

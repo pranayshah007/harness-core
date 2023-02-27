@@ -108,6 +108,7 @@ import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
@@ -243,6 +244,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
   @Mock private InfrastructureDefinitionService infrastructureDefinitionService;
   @Mock private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
   @InjectMocks @Spy private PcfStateHelper pcfStateHelper;
 
   private PcfStateTestHelper pcfStateTestHelper = new PcfStateTestHelper();

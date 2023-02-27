@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -30,7 +31,10 @@ public class TemplateYamlUtils {
   private final ObjectMapper mapper;
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -71,7 +75,7 @@ public class TemplateYamlUtils {
     return mapper.readValue(yaml, cls);
   }
 
-  public String writeString(Object value) throws JsonProcessingException {
+  String writeString(Object value) throws JsonProcessingException {
     return mapper.writeValueAsString(value);
   }
 

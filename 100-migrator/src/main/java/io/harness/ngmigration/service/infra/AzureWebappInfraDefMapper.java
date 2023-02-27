@@ -7,9 +7,7 @@
 
 package io.harness.ngmigration.service.infra;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
 
 import static software.wings.api.CloudProviderType.AZURE;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
@@ -29,6 +27,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AzureWebAppInfra;
+import software.wings.infra.AzureWebAppInfra.AzureWebAppInfraKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -58,22 +57,13 @@ public class AzureWebappInfraDefMapper implements InfraDefMapper {
       connectorDetail =
           migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(azureWebAppInfra.getCloudProviderId()).build())
               .getNgEntityDetail();
-      String subscriptionId = azureWebAppInfra.getSubscriptionId();
-      if (isEmpty(subscriptionId) && isNotEmpty(azureWebAppInfra.getExpressions())
-          && azureWebAppInfra.getExpressions().containsKey("subscriptionId")) {
-        subscriptionId = azureWebAppInfra.getExpressions().get("subscriptionId");
-      }
-
-      String resourceGroup = azureWebAppInfra.getResourceGroup();
-      if (isEmpty(resourceGroup) && isNotEmpty(azureWebAppInfra.getExpressions())
-          && azureWebAppInfra.getExpressions().containsKey("resourceGroup")) {
-        resourceGroup = azureWebAppInfra.getExpressions().get("resourceGroup");
-      }
 
       return AzureWebAppInfrastructure.builder()
           .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-          .subscriptionId(isEmpty(subscriptionId) ? RUNTIME_INPUT : ParameterField.createValueField(subscriptionId))
-          .resourceGroup(isEmpty(resourceGroup) ? RUNTIME_INPUT : ParameterField.createValueField(resourceGroup))
+          .subscriptionId(getExpression(azureWebAppInfra.getExpressions(), AzureWebAppInfraKeys.subscriptionId,
+              azureWebAppInfra.getSubscriptionId(), infrastructureDefinition.getProvisionerId()))
+          .resourceGroup(getExpression(azureWebAppInfra.getExpressions(), AzureWebAppInfraKeys.resourceGroup,
+              azureWebAppInfra.getResourceGroup(), infrastructureDefinition.getProvisionerId()))
           .build();
     }
 

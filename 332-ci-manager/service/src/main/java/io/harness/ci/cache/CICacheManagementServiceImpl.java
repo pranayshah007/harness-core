@@ -20,6 +20,7 @@ import io.harness.repositories.ModuleLicenseRepository;
 import com.google.api.gax.paging.Page;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Blob.BlobSourceOption;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.inject.Inject;
@@ -100,7 +101,7 @@ public class CICacheManagementServiceImpl implements CICacheManagementService {
     List<CacheMetadataDetail> deletedList = new ArrayList<>();
     for (Blob blob : blobs.iterateAll()) {
       if (path == null || blob.getName().contains(path)) {
-        boolean deleted = blob.delete(Blob.BlobSourceOption.generationMatch());
+        boolean deleted = blob.delete(BlobSourceOption.generationMatch());
         if (deleted) {
           String[] pathList = blob.getName().split("/");
           String deletedPath = String.join("/", Arrays.copyOfRange(pathList, 2, pathList.length));

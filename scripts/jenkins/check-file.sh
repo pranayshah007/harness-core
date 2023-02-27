@@ -16,7 +16,7 @@ export TargetBranch=$(echo "${ghprbTargetBranch}")
 export SourceBranch=$(echo "${ghprbSourceBranch}")
 
 PR_Name=("SmartPRChecks-Functional_tests" "SmartPRChecks-Functional_tests1" "SmartPRChecks-PMD" "SmartPRChecks-codebasehashcheck")
-PR_TI=("TIAll-tin0" "TIAll-tin1" "TIAll-tin2" "TIAll-tin3" "TIAll-tin4")
+PR_TI=("TIAll-ut0" "TIAll-ut1" "TIAll-ut2" "TIAll-ut3" "TIAll-ut4")
 
 merge_summary=""
 bazelignore_array=($(cat bazelignore))

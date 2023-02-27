@@ -19,7 +19,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SettingAttributeValidateConnectivityHandler
-    extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
+    extends IteratorPumpAndRedisModeHandler implements Handler<SettingAttribute> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofHours(1);
 
   @Inject private AccountService accountService;

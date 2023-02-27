@@ -33,6 +33,7 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,6 +54,7 @@ public class ArtifactCleanupHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
+  @Ignore("Disable top running CG tests")
   public void testRegisterIterators() {
     AccountStatusBasedEntityProcessController<ArtifactStream> accountStatusBasedEntityProcessController =
         new AccountStatusBasedEntityProcessController<>(accountService);

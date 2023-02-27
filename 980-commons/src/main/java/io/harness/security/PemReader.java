@@ -30,8 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
 
-@Slf4j
 @UtilityClass
+@Slf4j
 public class PemReader {
   private static final Pattern CERT_HEADER =
       Pattern.compile("-+BEGIN\\s[^-\\r\\n]*CERTIFICATE[^-\\r\\n]*-+(?:\\s|\\r|\\n)+");
@@ -79,7 +79,7 @@ public class PemReader {
         // CERTIFICATE IS INCOMPLETE.
         break;
       }
-      certs.add(new ByteArrayInputStream((bytes)));
+      certs.add(new ByteArrayInputStream(bytes));
 
       start = m.end();
       m.usePattern(CERT_HEADER);

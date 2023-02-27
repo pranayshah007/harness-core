@@ -22,8 +22,6 @@ import io.harness.pms.events.base.PmsEventCategory;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;

@@ -15,6 +15,8 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
+import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -88,6 +90,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepInfo;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
@@ -272,5 +275,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleFunctionsInfrastructure.class, 12657);
     kryo.register(AwsSamInfrastructure.class, 12658);
     kryo.register(AwsLambdaInfrastructure.class, 12659);
+    kryo.register(TerraformCloudRollbackStepInfo.class, 12660);
+    kryo.register(AwsLambdaStepPassThroughData.class, 12661);
+    kryo.register(AwsLambdaStepExceptionPassThroughData.class, 12662);
   }
 }

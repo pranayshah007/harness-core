@@ -278,4 +278,9 @@ public interface AccountService {
   boolean updateTrustLevel(String accountId, Integer trustLevel);
 
   Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
+
+  Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
+
+  Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
 }

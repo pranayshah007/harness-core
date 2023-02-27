@@ -18,6 +18,7 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -34,6 +35,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.template.NgTemplateService;
 import io.harness.ngmigration.template.TemplateFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -73,6 +75,7 @@ import retrofit2.Response;
 public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private SecretRefUtils secretRefUtils;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -123,6 +126,11 @@ public class TemplateMigrationService extends NgMigrationService {
             .type(NGMigrationEntityType.TEMPLATE)
             .id(template.getUuid())
             .build();
+    Set<String> expressions = TemplateFactory.getTemplateService(template).getExpressions(template);
+    List<CgEntityId> secretRefs = secretRefUtils.getSecretRefFromExpressions(template.getAccountId(), expressions);
+    if (EmptyPredicate.isNotEmpty(secretRefs)) {
+      children.addAll(secretRefs);
+    }
     return DiscoveryNode.builder().children(children).entityNode(templateNode).build();
   }
 
@@ -147,6 +155,7 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    MigrationContext context = MigrationContext.newInstance(inputDTO, entities, graph, migratedEntities);
     Template template = (Template) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
@@ -154,10 +163,10 @@ public class TemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = StringUtils.isBlank(template.getDescription()) ? "" : template.getDescription();
-    MigratorExpressionUtils.render(template, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, template, inputDTO.getCustomExpressions());
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
-    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(template, orgIdentifier, projectIdentifier);
+    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(context, template, orgIdentifier, projectIdentifier);
     if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();
       NGYamlFile ngYamlFile =
@@ -201,7 +210,8 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       // Note: We are passing versionLabel as `null` because we do not know the version label.
       // It will return a stable version by default.

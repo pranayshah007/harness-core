@@ -11,9 +11,10 @@ import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
-import io.harness.ngmigration.expressions.step.ShellScripStepFunctor;
+import io.harness.ngmigration.expressions.step.ShellScriptStepFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
@@ -38,6 +39,7 @@ import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class ShellScriptStepMapperImpl extends StepMapper {
+  @Inject SecretRefUtils secretRefUtils;
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -61,17 +64,19 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     if (StringUtils.isBlank(state.getScriptString())) {
       return Collections.emptySet();
     }
-    return MigratorExpressionUtils.extractAll(state.getScriptString());
+    return MigratorExpressionUtils.getExpressions(state);
   }
 
   @Override
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    List<CgEntityId> refs = new ArrayList<>();
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
-      return Collections.singletonList(
-          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+      refs.add(CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    return Collections.emptyList();
+    refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
+    return refs;
   }
 
   @Override
@@ -176,15 +181,11 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
-    ShellScriptState state = (ShellScriptState) getState(graphNode);
-
-    if (StringUtils.isBlank(state.getSweepingOutputName())) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
-
-    return Lists
-        .newArrayList(String.format("context.%s", state.getSweepingOutputName()),
-            String.format("%s", state.getSweepingOutputName()))
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
@@ -193,7 +194,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
                    .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
                    .expression(exp)
                    .build())
-        .map(ShellScripStepFunctor::new)
+        .map(ShellScriptStepFunctor::new)
         .collect(Collectors.toList());
   }
 

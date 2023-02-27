@@ -13,7 +13,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ResourceLookupSyncHandler extends IteratorPumpModeHandler implements Handler<Account> {
+public class ResourceLookupSyncHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(120);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofMinutes(5);
 

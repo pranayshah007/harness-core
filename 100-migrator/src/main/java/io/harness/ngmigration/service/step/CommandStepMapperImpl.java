@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -40,7 +41,13 @@ public class CommandStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.SSH;
+  }
+
+  @Override
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     String templateId = graphNode.getTemplateUuid();
     if (StringUtils.isNotBlank(templateId)) {
       return Collections.singletonList(

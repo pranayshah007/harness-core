@@ -51,11 +51,10 @@ import org.springframework.guice.annotation.GuiceModule;
 
 @Configuration
 @GuiceModule
-@EnableMongoRepositories(basePackages = {"io.harness.idp.config.repositories", "io.harness.idp.secret.repositories",
-                             "io.harness.idp.namespace.repositories"},
+@EnableMongoRepositories(basePackages = {"io.harness.idp.*.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
-@OwnedBy(HarnessTeam.PL)
+@OwnedBy(HarnessTeam.IDP)
 public class IdpPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final Injector injector;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;

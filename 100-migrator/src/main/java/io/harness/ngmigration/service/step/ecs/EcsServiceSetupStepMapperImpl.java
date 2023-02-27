@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -30,6 +31,11 @@ public class EcsServiceSetupStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.MANUAL_EFFORT;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.ECS;
   }
 
   @Override

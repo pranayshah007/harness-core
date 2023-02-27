@@ -9,8 +9,6 @@ package io.harness.batch.processing.tasklet;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
-
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
@@ -46,6 +44,7 @@ import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.pubsub.v1.Publisher;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -95,6 +94,7 @@ public class GcpSyncTasklet implements Tasklet {
     private String accountId;
     private String projectId;
     private String datasetId;
+    private String tableId;
   }
 
   @Override
@@ -179,7 +179,7 @@ public class GcpSyncTasklet implements Tasklet {
           lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : table.getCreationTime();
           log.info("Sync condition {} {}", lastModifiedTime, endTime);
           if (lastModifiedTime > endTime || firstSync) {
-            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+            CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, table.getTableId().getTable());
             gcpSyncInfo.get(cacheKey,
                 key
                 -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
@@ -197,7 +197,7 @@ public class GcpSyncTasklet implements Tasklet {
       lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : tableGranularData.getCreationTime();
       log.info("Sync condition {} {}", lastModifiedTime, endTime);
       if (lastModifiedTime > endTime || firstSync) {
-        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
+        CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId, tableName);
         gcpSyncInfo.get(cacheKey,
             key
             -> publishMessage(sourceCredentials, billingDataPipelineConfig.getGcpProjectId(),
@@ -217,7 +217,7 @@ public class GcpSyncTasklet implements Tasklet {
   // read the credential path from env variables
   public static ServiceAccountCredentials getCredentials(String googleCredentialPathSystemEnv) {
     String googleCredentialsPath = System.getenv(googleCredentialPathSystemEnv);
-    checkFalse(isEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
+    Preconditions.checkArgument(!isEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
     File credentialsFile = new File(googleCredentialsPath);
     ServiceAccountCredentials credentials = null;
     try (FileInputStream serviceAccountStream = new FileInputStream(credentialsFile)) {

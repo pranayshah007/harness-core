@@ -115,6 +115,7 @@ public class FullyQualifiedIdentifierHelper {
       String accountId, String orgIdentifier, String projectIdentifier, String identifierOrRef) {
     String[] identifierSplit = StringUtils.split(identifierOrRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
 
+    // Length 2 means already a ref
     if (identifierSplit == null || identifierSplit.length == 2) {
       return identifierOrRef;
     }
