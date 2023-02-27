@@ -40,11 +40,7 @@ public class PipelineEndEvent extends NodeExecutionEvent {
   public PipelineEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
       Status status, Long startTs, Long endTs) {
-    this.orgIdentifier = orgIdentifier;
-    this.accountIdentifier = accountIdentifier;
-    this.projectIdentifier = projectIdentifier;
-    this.pipelineIdentifier = pipelineIdentifier;
-    this.planExecutionId = planExecutionId;
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;
     this.status = status;
