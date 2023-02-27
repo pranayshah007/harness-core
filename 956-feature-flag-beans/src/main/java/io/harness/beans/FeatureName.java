@@ -628,7 +628,8 @@ public enum FeatureName {
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   PL_JPMC_SCIM_REQUIREMENTS(
-      "This flag relates to all the changes requested by JPMC towards SCIM API calls", HarnessTeam.PL);
+      "This flag relates to all the changes requested by JPMC towards SCIM API calls", HarnessTeam.PL),
+  DO_NOT_MIGRATE_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
