@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -35,15 +36,18 @@ import org.springframework.data.annotation.TypeAlias;
 public class HttpStepParameters extends HttpBaseStepInfo implements SpecParameters {
   @SkipAutoEvaluation ParameterField<Map<String, Object>> outputVariables;
   Map<String, String> headers;
+  ConfigFileWrapper jsonFile;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")
   public HttpStepParameters(ParameterField<String> url, ParameterField<String> method,
-      ParameterField<String> requestBody, ParameterField<String> assertion, Map<String, Object> outputVariables,
-      Map<String, String> headers, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(url, method, requestBody, assertion);
+      ParameterField<String> requestBody, ParameterField<Boolean> isJsonFile, ConfigFileWrapper jsonFile,
+      ParameterField<String> assertion, Map<String, Object> outputVariables, Map<String, String> headers,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(url, method, requestBody, assertion, isJsonFile);
     this.outputVariables = ParameterField.createValueField(outputVariables);
     this.headers = headers;
     this.delegateSelectors = delegateSelectors;
+    this.jsonFile = jsonFile;
   }
 }

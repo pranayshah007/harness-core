@@ -101,6 +101,10 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
 
+    if (httpStepParameters.isJsonFile.getValue() != null && httpStepParameters.isJsonFile.getValue()) {
+      httpTaskParametersNgBuilder.body(httpStepParameters.jsonFile.toString());
+    }
+
     boolean shouldAvoidCapabilityUsingHeaders = pmsFeatureFlagHelper.isEnabled(
         AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
     httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);

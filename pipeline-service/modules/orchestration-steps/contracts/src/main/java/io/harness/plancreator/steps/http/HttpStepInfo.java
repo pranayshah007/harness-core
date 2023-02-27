@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
@@ -69,15 +70,16 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
 
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
   List<HttpHeaderConfig> headers;
+  ConfigFileWrapper jsonFile;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")
-  public HttpStepInfo(ParameterField<String> url, ParameterField<String> method, ParameterField<String> requestBody,
+  public HttpStepInfo(ParameterField<String> url, ParameterField<String> method, ParameterField<String> requestBody, ParameterField<Boolean> isJsonFile,
       ParameterField<String> assertion, String metadata, List<NGVariable> outputVariables,
       List<HttpHeaderConfig> headers, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(url, method, requestBody, assertion);
+    super(url, method, requestBody, assertion, isJsonFile);
     this.metadata = metadata;
     this.outputVariables = outputVariables;
     this.headers = headers;
