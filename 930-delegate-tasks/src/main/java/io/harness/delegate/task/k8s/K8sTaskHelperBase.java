@@ -267,6 +267,7 @@ import org.json.JSONObject;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -1194,9 +1195,23 @@ public class K8sTaskHelperBase {
           : overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
       ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();
-      if (result.getExitValue() != 0) {
-        logExecutableFailed(result, executionLogCallback);
+
+      String resourcesCreated = response.getProcessResult().getOutput().getString();
+      final StringBuilder resourcesNotCreatedBuilder = new StringBuilder();
+      resources.forEach(resource -> {
+        String resourceName =
+            resource.getResourceId().getKind().toLowerCase() + "/" + resource.getResourceId().getName();
+        if (!(resourcesCreated.contains(resourceName))) {
+          resourcesNotCreatedBuilder.append(resourceName + " failed to configure (dry run)\n");
+        }
+      });
+      String processOutputFinal = result.getOutput().getString() + resourcesNotCreatedBuilder;
+      ProcessResult resultFinal =
+          new ProcessResult(result.getExitValue(), new ProcessOutput(processOutputFinal.getBytes()));
+      if (resultFinal.getExitValue() != 0) {
+        logExecutableFailed(resultFinal, executionLogCallback);
         if (isErrorFrameworkEnabled) {
+          response.setProcessResult(resultFinal);
           throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
         }
 
