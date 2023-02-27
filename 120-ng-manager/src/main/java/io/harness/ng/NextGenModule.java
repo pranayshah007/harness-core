@@ -133,8 +133,6 @@ import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.metrics.impl.DelegateMetricsServiceImpl;
-import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.module.AgentMtlsModule;
 import io.harness.modules.ModulesClientModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -666,6 +664,7 @@ public class NextGenModule extends AbstractModule {
     install(new DefaultOrganizationModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
+    install(new io.harness.module.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
@@ -719,7 +718,6 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
-    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
