@@ -257,7 +257,8 @@ public class StatusUtils {
       return ABORTED;
     } else if (statuses.stream().anyMatch(status -> status == ERRORED)) {
       return ERRORED;
-    } else if (statuses.stream().anyMatch(status -> status == PAUSED)) {
+    } else if (statuses.stream().anyMatch(status -> status == PAUSED)
+        && Collections.disjoint(statuses, ACTIVE_STATUSES)) {
       return PAUSED;
     } else if (statuses.stream().anyMatch(status -> status == FAILED)) {
       return FAILED;
