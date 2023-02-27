@@ -124,6 +124,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "module",
+        "//400-rest:module",
         "//960-persistence:supporter-test",
         "//980-commons:tests",
         "//990-commons-test:module",
