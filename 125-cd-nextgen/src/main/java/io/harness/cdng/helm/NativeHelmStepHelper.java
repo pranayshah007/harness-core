@@ -358,7 +358,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
         nativeHelmStepPassThroughData.getLocalStoreFileMapContents();
     if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFetchFilesResultMap)
         || isNotEmpty(customFetchContent) || isNotEmpty(localStoreFetchFilesResultMap)
-        || isEmpty(nativeHelmStepPassThroughData.getManifestOutcomeList())) {
+        || isNotEmpty(nativeHelmStepPassThroughData.getManifestOutcomeList())) {
       valuesFileContents.addAll(
           getManifestFilesContents(gitFetchFilesResultMap, nativeHelmStepPassThroughData.getManifestOutcomeList(),
               helmChartValuesFetchFilesResultMap, customFetchContent, localStoreFetchFilesResultMap));
