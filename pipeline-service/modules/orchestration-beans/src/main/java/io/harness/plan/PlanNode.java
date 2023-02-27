@@ -52,6 +52,7 @@ public class PlanNode implements Node {
 
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
+  List<AdviserObtainment> advisorObtainmentsForRollbackMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<TimeoutObtainment> timeoutObtainments;
 
