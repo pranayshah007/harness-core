@@ -11,21 +11,22 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
-import static io.harness.ccm.rbac.CCMRbacPermissions.*;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_CREATE_AND_EDIT;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_DELETE;
+import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
-import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -110,8 +111,9 @@ public class BudgetGroupsResource {
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
     if (folderIds.size() != allowedFolderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER,
+          null);
     }
     return ResponseDTO.newResponse(budgetGroupService.save(budgetGroup));
   }
@@ -141,8 +143,8 @@ public class BudgetGroupsResource {
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
     if (folderIds.size() != allowedFolderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
     }
     return ResponseDTO.newResponse(budgetGroupService.get(budgetGroupId, accountId));
   }
@@ -198,8 +200,9 @@ public class BudgetGroupsResource {
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
     if (folderIds.size() != allowedFolderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_CREATE_AND_EDIT, RESOURCE_FOLDER), WingsException.USER,
+          null);
     }
     budgetGroupService.update(budgetGroupId, accountId, budgetGroup);
     return ResponseDTO.newResponse("Successfully updated the Budget group");
@@ -230,8 +233,8 @@ public class BudgetGroupsResource {
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_DELETE);
     if (folderIds.size() != allowedFolderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_DELETE, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_DELETE, RESOURCE_FOLDER), WingsException.USER, null);
     }
     return ResponseDTO.newResponse(budgetGroupService.delete(budgetGroupId, accountId));
   }
@@ -267,8 +270,8 @@ public class BudgetGroupsResource {
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
     if (allowedFolderIds.size() != folderIds.size()) {
-      throw new AccessDeniedException(
-          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER);
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, BUDGET_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
     }
     return ResponseDTO.newResponse(
         budgetGroupService.getAggregatedAmount(accountId, areChildEntitiesBudgets, childEntityIds));
