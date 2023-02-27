@@ -79,8 +79,8 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
         String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
         if (!opType.isEmpty()) {
           if (shouldStop(opType)) {
+            disableSnapshot(collection);
             log.error("Stopping Debezium controller for collection {}, mode {}", collection, mode);
-            disableSnapshot();
             throw new InvalidRequestException(
                 "Stopping Debezium controller for collection: " + collection + " mode: " + mode);
           }
@@ -136,10 +136,11 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
     return new AutoLogContext(map, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 
-  void disableSnapshot() {
+  void disableSnapshot(String collection) {
     RedissonClient redissonClient =
         RedissonClientFactory.getClient(globalEventsFrameworkConfiguration.getRedisConfig());
     RMap<String, String> isSnapshotEnabledMap = redissonClient.getMap("isSnapshotEnabled");
     isSnapshotEnabledMap.put(connectorName, "false");
+    log.info("completed snapshot for collection {}, hence disabling it now", collection);
   }
 }
