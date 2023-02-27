@@ -529,7 +529,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   public List<ServerInstanceInfo> getServerInstanceInfo(AwsLambdaCommandResponse awsLambdaCommandResponse,
                                                         AwsLambdaInfraConfig awsLambdaInfraConfig, String infrastructureKey) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
-    AwsLambdaFunction awsLambdaFunction = awsLambdaCommandResponse.getAwsLambdaFunction();
+    AwsLambda awsLambdaFunction = awsLambdaCommandResponse.getAwsLambda();
     if (awsLambdaFunction != null) {
       serverInstanceInfoList.add(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(awsLambdaFunction,
               ((AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig).getRegion(), infrastructureKey));

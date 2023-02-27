@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
+import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunction;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
@@ -46,7 +47,7 @@ public class AwsLambdaToServerInstanceInfoMapper {
   }
 
   public ServerInstanceInfo toServerInstanceInfo(
-      AwsLambdaFunction awsLambdaFunction, String region, String infraStructureKey) {
+          AwsLambda awsLambdaFunction, String region, String infraStructureKey) {
     return AwsLambdaServerInstanceInfo.builder()
         .functionName(awsLambdaFunction.getFunctionName())
             .region(region)

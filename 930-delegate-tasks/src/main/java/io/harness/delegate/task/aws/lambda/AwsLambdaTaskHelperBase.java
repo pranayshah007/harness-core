@@ -35,7 +35,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @OwnedBy(CDP)
 public class AwsLambdaTaskHelperBase {
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
-  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+  @Inject private AwsLambdaTaskHelper awsLambdaCommandTaskHelper;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   public List<ServerInstanceInfo> getAwsLambdaServerInstanceInfo(
       AwsLambdaDeploymentReleaseData deploymentReleaseData) {
@@ -44,7 +44,7 @@ public class AwsLambdaTaskHelperBase {
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaFunctionsInfraConfig);
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO());
     AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions =
-              awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig.getRegion(), awsInternalConfig, deploymentReleaseData.getFunction());
+              awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig, deploymentReleaseData.getFunction());
       return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,
               awsLambdaFunctionsInfraConfig.getRegion(),
               awsLambdaFunctionsInfraConfig.getInfraStructureKey());
