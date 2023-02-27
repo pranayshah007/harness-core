@@ -52,7 +52,7 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
 
   @Builder
   static class CustomLengthEntityIdentifierValidator {
-    @EntityIdentifier String identifier;
+    @EntityIdentifier(maxLength = 128) String identifier;
   }
 
   @Before
@@ -94,7 +94,7 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
         validator.validate(EntityIdentifierValidatorTestStructure.builder().build()).size());
 
     EntityIdentifierValidator entityIdentifierValidator = new EntityIdentifierValidator();
-
+    entityIdentifierValidator.identifierPattern = Pattern.compile("^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$");
     for (int i = 0; i < 5000; i++) {
       String identifier = generateRandomAsciiString(100);
       int violationsCount =
@@ -176,6 +176,11 @@ public class EntityIdentifierValidatorTest extends CategoryTest {
     @Override
     public boolean allowScoped() {
       return false;
+    }
+
+    @Override
+    public int maxLength() {
+      return this.maxLength;
     }
 
     @Override

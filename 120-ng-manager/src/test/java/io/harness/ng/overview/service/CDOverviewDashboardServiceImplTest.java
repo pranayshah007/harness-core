@@ -41,7 +41,9 @@ import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
 
@@ -51,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -131,7 +134,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     infraPipelineExecutionMap1.put("infra2", new ArrayList<>());
     infraPipelineExecutionMap1.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a"));
     infraPipelineExecutionMap2.put("infra2", new ArrayList<>());
-    infraPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b"));
+    infraPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 0l, 1, "b"));
 
     clusterPipelineExecutionMap1.put("infra1", new ArrayList<>());
     clusterPipelineExecutionMap1.get("infra1").add(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a"));
@@ -140,7 +143,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     clusterPipelineExecutionMap1.put("infra2", new ArrayList<>());
     clusterPipelineExecutionMap1.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a"));
     clusterPipelineExecutionMap2.put("infra2", new ArrayList<>());
-    clusterPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b"));
+    clusterPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 0l, 1, "b"));
 
     envInfraMap1.put("env1", new MutablePair<>(infraPipelineExecutionMap1, clusterPipelineExecutionMap1));
     envInfraMap2.put("env2", new MutablePair<>(infraPipelineExecutionMap2, clusterPipelineExecutionMap2));
@@ -158,7 +161,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     buildEnvInfraMap.put("artifact1:1", envInfraMap1);
     buildEnvInfraMap.put("artifact2:2", envInfraMap2);
-    buildEnvInfraMap.put("artifact3:1", envInfraMap4);
+    buildEnvInfraMap.put(null, envInfraMap4);
 
     serviceBuildEnvInfraMap.put("svc1", buildEnvInfraMap);
 
@@ -206,9 +209,9 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .infraIdentifier("infra2")
             .infraName("infra2")
-            .lastDeployedAt(1l)
+            .lastDeployedAt(0l)
             .instanceGroupedByPipelineExecutionList(
-                Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
+                Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 0l, 1, "b")))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2 instanceGroupedByInfrastructure4 =
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
@@ -239,9 +242,9 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
             .clusterIdentifier("infra2")
             .agentIdentifier("infra2")
-            .lastDeployedAt(1l)
+            .lastDeployedAt(0l)
             .instanceGroupedByPipelineExecutionList(
-                Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
+                Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 0l, 1, "b")))
             .build();
 
     InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2 instanceGroupedByEnvironment1 =
@@ -257,7 +260,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2.builder()
             .envId("env2")
             .envName("env2")
-            .lastDeployedAt(1l)
+            .lastDeployedAt(0l)
             .instanceGroupedByInfraList(Arrays.asList(instanceGroupedByInfrastructure3))
             .instanceGroupedByClusterList(Arrays.asList(instanceGroupedByCluster3))
             .build();
@@ -283,17 +286,17 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
             .artifactVersion("2")
             .latest(false)
-            .lastDeployedAt(1l)
+            .lastDeployedAt(0l)
             .artifactPath("artifact2")
             .instanceGroupedByEnvironmentList(Arrays.asList(instanceGroupedByEnvironment2))
             .build();
 
     InstanceGroupedByServiceList.InstanceGroupedByArtifactV2 instanceGroupedByArtifact3 =
         InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
-            .artifactVersion("1")
+            .artifactVersion(null)
             .latest(false)
             .lastDeployedAt(1l)
-            .artifactPath("artifact3")
+            .artifactPath(null)
             .instanceGroupedByEnvironmentList(Arrays.asList(instanceGroupedByEnvironment3))
             .build();
 
@@ -303,7 +306,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .serviceId("svc1")
             .lastDeployedAt(2l)
             .instanceGroupedByArtifactList(
-                Arrays.asList(instanceGroupedByArtifact1, instanceGroupedByArtifact2, instanceGroupedByArtifact3))
+                Arrays.asList(instanceGroupedByArtifact1, instanceGroupedByArtifact3, instanceGroupedByArtifact2))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2 instanceGroupedByInfrastructureV2 =
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
@@ -354,13 +357,13 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         "svc1", "svcN1", "env1", "env1", "infra2", "infra2", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        "svc1", "svcN1", "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1);
+        "svc1", "svcN1", "env2", "env2", "infra2", "infra2", null, null, "2", "b", 0l, "2", "artifact2:2", 1);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc2", "svcN2", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact11:1", 1);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        "svc1", "svcN1", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact3:1", 1);
+        "svc1", "svcN1", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, null, null, 1);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -380,7 +383,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         "svc1", "svcN1", "env1", "env1", null, null, "infra2", "infra2", "1", "a", 1l, "1", "artifact1:1", 1);
     activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
-        "svc1", "svcN1", "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1);
+        "svc1", "svcN1", "env2", "env2", null, null, "infra2", "infra2", "2", "b", 0l, "2", "artifact2:2", 1);
     activeServiceInstanceInfo.add(instance1);
     return activeServiceInstanceInfo;
   }
@@ -1106,5 +1109,41 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_OpenTasks() {
+    CDOverviewDashboardServiceImpl cdOverviewDashboardService1 = spy(cdOverviewDashboardService);
+    String query = DashboardServiceHelper.buildOpenTaskQuery(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l);
+    List<String> STATUS_LIST = Arrays
+                                   .asList(ExecutionStatus.ABORTED, ExecutionStatus.ABORTEDBYFREEZE,
+                                       ExecutionStatus.FAILED, ExecutionStatus.EXPIRED, ExecutionStatus.APPROVALWAITING)
+                                   .stream()
+                                   .map(ExecutionStatus::name)
+                                   .collect(Collectors.toList());
+    List<String> pipelineExecutionIdList = Arrays.asList(PIPELINE_EXECUTION_1, PIPELINE_EXECUTION_2);
+    List<ServicePipelineInfo> servicePipelineInfoList = Arrays.asList(
+        ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_2).lastExecutedAt(1l).build(),
+        ServicePipelineInfo.builder().pipelineExecutionId(PIPELINE_EXECUTION_1).lastExecutedAt(2l).build());
+    List<ServicePipelineInfo> servicePipelineInfoListSorted =
+        Arrays.asList(servicePipelineInfoList.get(1), servicePipelineInfoList.get(0));
+    Map<String, ServicePipelineInfo> servicePipelineInfoMap = new HashMap<>();
+    servicePipelineInfoMap.put(PIPELINE_EXECUTION_1, servicePipelineInfoList.get(0));
+    servicePipelineInfoMap.put(PIPELINE_EXECUTION_2, servicePipelineInfoList.get(1));
+    doReturn(pipelineExecutionIdList)
+        .when(cdOverviewDashboardService1)
+        .getPipelineExecutionIdFromServiceInfraInfo(query);
+    doReturn(servicePipelineInfoMap)
+        .when(cdOverviewDashboardService1)
+        .getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
+    OpenTaskDetails openTaskDetailsResult =
+        cdOverviewDashboardService1.getOpenTasks(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, 1000l);
+    OpenTaskDetails openTaskDetails =
+        OpenTaskDetails.builder().pipelineDeploymentDetails(servicePipelineInfoListSorted).build();
+    assertThat(openTaskDetails).isEqualTo(openTaskDetailsResult);
+    verify(cdOverviewDashboardService1).getPipelineExecutionIdFromServiceInfraInfo(query);
+    verify(cdOverviewDashboardService1).getPipelineExecutionDetails(pipelineExecutionIdList, STATUS_LIST);
   }
 }

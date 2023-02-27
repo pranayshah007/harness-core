@@ -21,4 +21,5 @@ public class ServiceStepV3Constants {
   public static final String SERVICE_APP_SETTINGS_SWEEPING_OUTPUT = "serviceAppSettingsSweepingOutput";
   public static final String SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT = "serviceConnectionStringsSweepingOutput";
   public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
+  public static final String ECS_SERVICE_SWEEPING_OUTPUT = "serviceCustomSweepingOutput";
 }

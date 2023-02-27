@@ -64,8 +64,8 @@ public class CustomChangeEventConsumer extends AbstractStreamConsumer {
         "ProjectIdentifier is invalid for current Internal Change Event");
     Preconditions.checkArgument(!customChangeEventDTO.getMonitoredServiceIdentifier().isEmpty(),
         "MonitoredServiceIdentifier is invalid for current Internal Change Event");
-    Preconditions.checkArgument(!customChangeEventDTO.getProjectIdentifier().isEmpty(),
-        "ProjectIdentifier is invalid for current Internal Change Event");
+    Preconditions.checkArgument(!customChangeEventDTO.getChangeSourceIdentifier().isEmpty(),
+        "ChangeSourceIdentifier is invalid for current Internal Change Event");
   }
   private void registerChangeEvents(CustomChangeEventDTO customChangeEventDTO) {
     ChangeSource changeSource =

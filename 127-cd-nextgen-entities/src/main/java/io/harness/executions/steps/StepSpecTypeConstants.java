@@ -91,6 +91,7 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+  String AWS_LAMBDA = "AwsLambda";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
@@ -113,4 +114,12 @@ public interface StepSpecTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_ROLLBACK = "AwsSamRollback";
+
+  String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

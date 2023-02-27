@@ -176,27 +176,6 @@ fi
 WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
 echo "The current watcher version is $WATCHER_CURRENT_VERSION"
 
-if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
-  echo "Checking Delegate latest version..."
-  REMOTE_DELEGATE_LATEST=$(curl $MANAGER_PROXY_CURL -ks $DELEGATE_STORAGE_URL/$DELEGATE_CHECK_LOCATION)
-  REMOTE_DELEGATE_URL=$DELEGATE_STORAGE_URL/$(echo $REMOTE_DELEGATE_LATEST | cut -d " " -f2)
-  REMOTE_DELEGATE_VERSION=$(echo $REMOTE_DELEGATE_LATEST | cut -d " " -f1)
-
-  if [ ! -e delegate.jar ]; then
-    echo "Downloading Delegate $REMOTE_DELEGATE_VERSION ..."
-    curl $MANAGER_PROXY_CURL -#k $REMOTE_DELEGATE_URL -o delegate.jar
-  else
-    DELEGATE_CURRENT_VERSION=$(jar_app_version delegate.jar)
-    if [[ $REMOTE_DELEGATE_VERSION != $DELEGATE_CURRENT_VERSION ]]; then
-      echo "The current version $DELEGATE_CURRENT_VERSION is not the same as the expected remote version $REMOTE_DELEGATE_VERSION"
-      echo "Downloading Delegate $REMOTE_DELEGATE_VERSION ..."
-      mkdir -p backup.$DELEGATE_CURRENT_VERSION
-      cp delegate.jar backup.$DELEGATE_CURRENT_VERSION
-      curl $MANAGER_PROXY_CURL -#k $REMOTE_DELEGATE_URL -o delegate.jar
-    fi
-  fi
-fi
-
 WATCHER_VERSION=$(echo $WATCHER_CURRENT_VERSION | cut -d "." -f3)
 
 echo "using JRE11 with watcher $WATCHER_VERSION"

@@ -22,4 +22,6 @@ public interface DelegateServiceConstants {
   Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(10);
 
   Duration HEARTBEAT_EXPIRY_TIME_FIVE_MINS = ofMinutes(5);
+
+  String ACCOUNT_ID = "ACCOUNT_ID";
 }

@@ -7,22 +7,17 @@
 
 package io.harness.engine.interrupts.statusupdate;
 
-import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
-import static io.harness.pms.contracts.execution.Status.PAUSING;
 import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.SHALINI;
 
-import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,10 +34,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
 import java.util.EnumSet;
-import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -63,20 +56,14 @@ public class ResumeStepStatusUpdateTest extends OrchestrationTestBase {
                                       .build();
     doReturn(false).when(resumeStepStatusUpdate).resumeParents(nodeExecution);
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(0))
-        .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), any());
+    verify(planExecutionService, times(0)).updateStatus(anyString(), any());
     doReturn(true).when(resumeStepStatusUpdate).resumeParents(nodeExecution);
     doReturn(SUCCEEDED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    verify(planExecutionService, times(0))
-        .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), any());
+    verify(planExecutionService, times(0)).updateStatus(anyString(), any());
     doReturn(PAUSED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
-    ArgumentCaptor<EnumSet> argumentCaptor = ArgumentCaptor.forClass(EnumSet.class);
-    verify(planExecutionService, times(1))
-        .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), argumentCaptor.capture());
-
-    assertEquals(argumentCaptor.getValue(), EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED, INPUT_WAITING));
+    verify(planExecutionService, times(1)).updateStatus(anyString(), any());
   }
 
   @Test

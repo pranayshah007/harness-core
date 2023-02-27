@@ -44,6 +44,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -92,6 +93,7 @@ public class EcsServiceDeployTest extends WingsBaseTest {
   @Mock private ContainerDeploymentManagerHelper mockContainerDeploymentHelper;
   @Mock private FeatureFlagService mockFeatureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @InjectMocks private EcsServiceDeploy state = new EcsServiceDeploy("stateName");
 

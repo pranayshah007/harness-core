@@ -13,14 +13,12 @@ import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceDTODeserializer;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.ChangeSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDeserializer;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.swagger.annotations.ApiModelProperty;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -36,7 +34,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @JsonDeserialize(using = ChangeSourceDTODeserializer.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-@FieldNameConstants
+@FieldNameConstants(innerTypeName = "ChangeSourceDTOKeys")
 public class ChangeSourceDTO {
   @NotEmpty String name;
   @NotEmpty @EntityIdentifier String identifier;

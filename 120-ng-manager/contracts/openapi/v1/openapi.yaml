@@ -588,6 +588,24 @@ paths:
         - Account Secret
       security:
         - x-api-key: []
+    parameters: []
+  '/v1/secrets/validate-secret-ref':
+    post:
+      summary: Validate secret reference
+      operationId: validate-account-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - Account Secret
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+    parameters: []
   '/v1/orgs/{org}/secrets':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
@@ -654,6 +672,29 @@ paths:
         - Org Secret
       security:
         - x-api-key: []
+  '/v1/orgs/{org}/secrets/validate-secret-ref':
+    post:
+      summary: Validate secret reference
+      operationId: validate-org-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+      tags:
+        - Org Secret
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Identifier field of the organization the resource is scoped to
   '/v1/orgs/{org}/projects/{project}/secrets':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
@@ -721,6 +762,35 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  '/v1/orgs/{org}/projects/{project}/secrets/validate-secret-ref':
+    post:
+      summary: Validate secret reference
+      operationId: validate-project-secret-ref
+      description: Validates if the secret at the secretManager path can be referenced
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/SecretValidationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SecretValidationResponse'
+      tags:
+        - Project Secret
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Identifier field of the organization the resource is scoped to
+      - schema:
+          type: string
+        name: project
+        in: path
+        required: true
+        description: Identifier field of the project the resource is scoped to
   '/v1/secrets/{secret}':
     parameters:
       - schema:
@@ -1659,6 +1729,30 @@ components:
           type: string
           description: Microservices version
       description: Microservice Version Info
+    SecretValidationMetadata:
+      title: SecretValidationMetadata
+      type: object
+      description: Details of the secret reference
+      properties:
+        secret_manager_identifier:
+          type: string
+          description: Identifier of the secretManager
+        secret_ref_path:
+          type: string
+          description: Path to the secret present which needs to be referenced.
+      required:
+        - secretManagerIdentifer
+        - secretRefPath
+    SecretValidationResponse:
+      title: SecretValidationResponse
+      type: object
+      description: Response of the secret reference validation
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          description: Secret reference path validation result
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2103,6 +2197,17 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    SecretValidationResponse:
+      description: 'Response of the secret reference validation '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretValidationResponse'
+          examples:
+            Example 1:
+              value:
+                success: true
+                message: 'Validation is Successful, Secret can be referenced'
   requestBodies:
     ServiceRequest:
       content:
@@ -2624,6 +2729,17 @@ components:
               - file
               - spec
       required: true
+    SecretValidationRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SecretValidationMetadata'
+          examples:
+            Example 1:
+              value:
+                secret_manager_identifier: prod_sm_one
+                secret_ref_path: path1/path2#key
+      description: Details of the secret reference
   parameters:
     Page:
       name: page

@@ -93,11 +93,11 @@ public class AMIArtifactResource {
 
     // Getting the resolved connectorRef  in case of expressions
     String resolvedAwsConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             runtimeInputYaml, awsConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // Getting the resolved project  in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
@@ -161,11 +161,11 @@ public class AMIArtifactResource {
       }
 
       // Getting the resolved connectorRef  in case of expressions
-      awsConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      awsConnectorRef = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
 
       // Getting the resolved project  in case of expressions
-      region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+      region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
     }
 

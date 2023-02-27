@@ -100,6 +100,7 @@ public class VmRunStepSerializer {
       ngAccess = AmbianceUtils.getNgAccess(ambiance);
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runStepBuilder.imageConnector(connectorDetails);
+      runStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(runStepInfo.getPrivileged(), false));
     }
 
     if (runStepInfo.getReports().getValue() != null) {

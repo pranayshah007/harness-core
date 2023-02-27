@@ -285,13 +285,13 @@ public class TerraformCloudImplTest extends CategoryTest {
   public void testGetStateVersionOutputs() throws IOException {
     TerraformCloudResponse expectedResponse =
         TerraformCloudResponse.builder().data(Collections.singletonList(new StateVersionOutputData())).build();
-    doReturn(call).when(terraformCloudRestClient).getStateVersionOutputs(any(), any());
+    doReturn(call).when(terraformCloudRestClient).getStateVersionOutputs(any(), any(), anyInt());
     doReturn(Response.success(expectedResponse)).when(call).execute();
 
     TerraformCloudResponse<List<StateVersionOutputData>> response =
-        terraformCloudClient.getStateVersionOutputs(URL, TOKEN, "stateVersionId");
+        terraformCloudClient.getStateVersionOutputs(URL, TOKEN, "stateVersionId", 1);
 
-    verify(terraformCloudRestClient).getStateVersionOutputs(eq("Bearer " + TOKEN), eq("stateVersionId"));
+    verify(terraformCloudRestClient).getStateVersionOutputs(eq("Bearer " + TOKEN), eq("stateVersionId"), eq(1));
     verify(call).execute();
     assertThat(response).isEqualTo(expectedResponse);
   }

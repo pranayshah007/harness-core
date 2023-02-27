@@ -37,7 +37,6 @@ import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
-import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
@@ -56,6 +55,8 @@ import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
 import io.harness.cvng.core.entities.HostRecord;
 import io.harness.cvng.core.entities.LogCVConfig;
+import io.harness.cvng.core.entities.LogFeedbackEntity;
+import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
 import io.harness.cvng.core.entities.LogRecord;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -103,7 +104,6 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
@@ -211,7 +211,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(PagerDutyActivity.class);
     set.add(HarnessCDCurrentGenChangeSource.class);
     set.add(HarnessCDCurrentGenActivity.class);
-    set.add(ServiceLevelObjective.class);
     set.add(UserJourney.class);
     set.add(CVNGDemoDataIndex.class);
     set.add(CVNGDemoPerpetualTask.class);
@@ -237,11 +236,12 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CompositeSLORecord.class);
     set.add(AutoVerificationJob.class);
     set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
-    set.add(VerificationTaskBase.class);
     set.add(NextGenMetricCVConfig.class);
     set.add(NextGenLogCVConfig.class);
     set.add(Downtime.class);
     set.add(EntityUnavailabilityStatuses.class);
+    set.add(LogFeedbackEntity.class);
+    set.add(LogFeedbackHistoryEntity.class);
   }
 
   @Override

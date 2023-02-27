@@ -78,6 +78,8 @@ import io.harness.ci.integrationstage.BuildEnvironmentUtils;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
@@ -146,13 +148,15 @@ public class PluginSettingUtils {
   public static final String PLUGIN_ARTIFACT_FILE = "PLUGIN_ARTIFACT_FILE";
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
+  public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
   @Inject private CodebaseUtils codebaseUtils;
+  @Inject private ConnectorUtils connectorUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
       long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
-        return getECRStepInfoEnvVariables((ECRStepInfo) stepInfo, identifier, infraType);
+        return getECRStepInfoEnvVariables(ambiance, (ECRStepInfo) stepInfo, identifier, infraType);
       case ACR:
         return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
@@ -388,8 +392,9 @@ public class PluginSettingUtils {
     setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
   }
 
-  private static Map<String, String> getECRStepInfoEnvVariables(
-      ECRStepInfo stepInfo, String identifier, Type infraType) {
+  private Map<String, String> getECRStepInfoEnvVariables(
+      Ambiance ambiance, ECRStepInfo stepInfo, String identifier, Type infraType) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     Map<String, String> map = new HashMap<>();
     String account = resolveStringParameter("account", "BuildAndPushECR", identifier, stepInfo.getAccount(), true);
     String region = resolveStringParameter("region", "BuildAndPushECR", identifier, stepInfo.getRegion(), true);
@@ -435,6 +440,17 @@ public class PluginSettingUtils {
         resolveMapParameter("labels", "BuildAndPushECR", identifier, stepInfo.getLabels(), false);
     if (isNotEmpty(labels)) {
       setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
+    }
+
+    List<String> baseImageConnectors = resolveListParameter(
+        "baseImageConnectors", "BuildAndPushECR", identifier, stepInfo.getBaseImageConnectorRefs(), false);
+    if (isNotEmpty(baseImageConnectors)) {
+      // only one baseImageConnector is allowed currently
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, baseImageConnectors.get(0));
+      if (connectorDetails != null && connectorDetails.getConnectorType() == ConnectorType.DOCKER) {
+        String dockerConnectorUrl = ((DockerConnectorDTO) connectorDetails.getConnectorConfig()).getDockerRegistryUrl();
+        setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+      }
     }
 
     if (infraType == Type.K8) {

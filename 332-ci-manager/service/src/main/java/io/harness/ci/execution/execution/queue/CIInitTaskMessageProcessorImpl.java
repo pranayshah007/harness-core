@@ -9,10 +9,13 @@ package io.harness.ci.execution.queue;
 
 import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
+import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
@@ -29,9 +32,11 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
   @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
   @Inject AsyncWaitEngine asyncWaitEngine;
 
+  @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+
   @Override
   public ProcessMessageResponse processMessage(DequeueResponse dequeueResponse) {
-    ProcessMessageResponse.ProcessMessageResponseBuilder builder = ProcessMessageResponse.builder();
+    ProcessMessageResponseBuilder builder = ProcessMessageResponse.builder();
     try {
       String payload = dequeueResponse.getPayload();
       CIInitTaskArgs ciInitTaskArgs = RecastOrchestrationUtils.fromJson(payload, CIInitTaskArgs.class);
@@ -43,8 +48,12 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
         return builder.success(false).build();
       }
       initTaskExecutor.submit(() -> {
-        String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
         asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
+        String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
+        InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+            InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+        sdkGraphVisualizationDataService.publishStepDetailInformation(
+            ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
         CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
             CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
         asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);

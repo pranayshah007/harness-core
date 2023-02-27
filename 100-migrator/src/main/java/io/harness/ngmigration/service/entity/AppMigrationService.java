@@ -26,6 +26,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
@@ -71,6 +72,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -244,11 +246,12 @@ public class AppMigrationService extends NgMigrationService {
     for (Map.Entry<String, String> entry : application.getDefaults().entrySet()) {
       String name = entry.getKey();
       String value = entry.getValue();
-      Map<String, String> variableSpec =
-          ImmutableMap.<String, String>builder()
-              .put("valueType", "FIXED")
-              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
-              .build();
+      Map<String, String> variableSpec = ImmutableMap.<String, String>builder()
+                                             .put("valueType", "FIXED")
+                                             .put("fixedValue",
+                                                 (String) MigratorExpressionUtils.render(new HashMap<>(),
+                                                     new HashMap<>(), value, inputDTO.getCustomExpressions()))
+                                             .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
               .put(YAMLFieldNameConstants.NAME, name)
@@ -274,28 +277,31 @@ public class AppMigrationService extends NgMigrationService {
         .build();
   }
 
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Application application = (Application) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, application.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
-    return Collections.singletonList(
-        NGYamlFile.builder()
-            .filename(String.format("application/%s/%s.yaml", application.getAppId(), application.getName()))
-            .type(APPLICATION)
-            .ngEntityDetail(NgEntityDetail.builder()
-                                .identifier(identifier)
-                                .orgIdentifier(orgIdentifier)
-                                .projectIdentifier(projectIdentifier)
-                                .build())
-            .cgBasicInfo(application.getCgBasicInfo())
-            .build());
+    return YamlGenerationDetails.builder()
+        .yamlFileList(Collections.singletonList(
+            NGYamlFile.builder()
+                .filename(String.format("application/%s/%s.yaml", application.getAppId(), application.getName()))
+                .type(APPLICATION)
+                .ngEntityDetail(NgEntityDetail.builder()
+                                    .identifier(identifier)
+                                    .orgIdentifier(orgIdentifier)
+                                    .projectIdentifier(projectIdentifier)
+                                    .build())
+                .cgBasicInfo(application.getCgBasicInfo())
+                .build()))
+        .build();
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

@@ -109,14 +109,15 @@ public class ContainerStepPlanCreator extends ChildrenPlanCreator<ContainerStepN
     config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
     config.setName(CONTAINER_STEP_GROUP);
 
-    StepGroupStepParameters stepGroupStepParameters = StepGroupStepParameters.builder()
-                                                          .identifier(config.getIdentifier())
-                                                          .name(config.getName())
-                                                          .skipCondition(config.getSkipCondition())
-                                                          .when(config.getWhen().getValue())
-                                                          .failureStrategies(config.getFailureStrategies().getValue())
-                                                          .childNodeID(childrenNodeIds.get(0))
-                                                          .build();
+    StepGroupStepParameters stepGroupStepParameters =
+        StepGroupStepParameters.builder()
+            .identifier(config.getIdentifier())
+            .name(config.getName())
+            .skipCondition(config.getSkipCondition())
+            .when(config.getWhen() != null ? config.getWhen().getValue() : null)
+            .failureStrategies(config.getFailureStrategies() != null ? config.getFailureStrategies().getValue() : null)
+            .childNodeID(childrenNodeIds.get(0))
+            .build();
 
     return PlanNode.builder()
         .name(config.getName())

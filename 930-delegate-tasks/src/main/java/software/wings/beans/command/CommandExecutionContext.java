@@ -14,6 +14,7 @@ import static io.harness.govern.Switch.unhandled;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_SIMPLE_HTTP_CONNECTIVITY_URL;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -59,11 +60,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
+@Slf4j
 @OwnedBy(CDC)
 public class CommandExecutionContext implements ExecutionCapabilityDemander {
   private String accountId;
@@ -259,8 +262,13 @@ public class CommandExecutionContext implements ExecutionCapabilityDemander {
       for (Entry<String, String> entry : envVariables.entrySet()) {
         String key = entry.getKey();
         String value = entry.getValue();
-        text = text.replaceAll("\\$\\{" + key + "}", value);
-        text = text.replaceAll("\\$" + key, value);
+        try {
+          text = text.replaceAll("\\$\\{" + key + "}", value);
+          text = text.replaceAll("\\$" + key, value);
+        } catch (IllegalArgumentException exception) {
+          log.warn(format("ENV variable evaluation failed for %s with error: %s. Skipping evaluation.", key,
+              exception.getMessage()));
+        }
       }
     }
     return text;

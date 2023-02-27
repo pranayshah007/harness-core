@@ -1511,7 +1511,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
                                                   .addFilter(EnvironmentKeys.appId, EQ, app.getAppId())
                                                   .addOrder(EnvironmentKeys.name, SortOrder.OrderType.ASC)
                                                   .build();
-    List<Environment> environments = environmentService.list(pageRequestEnv, false, null).getResponse();
+    List<Environment> environments = environmentService.list(pageRequestEnv, false, null, false).getResponse();
 
     if (environments != null) {
       // iterate over environments

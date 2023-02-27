@@ -1,0 +1,8 @@
+name: Orchestration Execution Time
+identifier: orchestration_event_time_queue
+metricGroup: event_time_queue_group
+metrics:
+  - metricName: orchestration_event_queue_time
+    metricDefinition: Time for which Orchestration Event in the queue.
+    type: LastValue
+    unit: count

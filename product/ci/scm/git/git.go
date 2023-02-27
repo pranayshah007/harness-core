@@ -259,8 +259,9 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 				ref = branch.Sha
 			}
 		}
-	case scm.DriverAzure:
+	case scm.DriverAzure, scm.DriverHarness:
 		// Azure doesnt support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
+		// Harness only supports a ref
 		contents, _, err := client.Contents.List(ctx, request.GetSlug(), "", ref, scm.ListOptions{})
 		if err == nil {
 			ref = contents[0].Sha

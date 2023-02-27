@@ -14,6 +14,7 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
@@ -38,6 +39,22 @@ public abstract class MetricDataCollectionInfoMapper<R extends TimeSeriesDataCol
         .filter(analysisInfo
             -> serviceLevelIndicator.getMetricNames().contains(((AnalysisInfo) analysisInfo).getIdentifier()))
         .forEach(analysisInfo -> analysisInfos.add((AnalysisInfo) analysisInfo));
+    baseCvConfig.setMetricInfos(analysisInfos);
+    return toDataCollectionInfo(baseCvConfig);
+  }
+
+  public R toDataCollectionInfo(List<T> cvConfigs, List<String> metricIdentifiers) {
+    T baseCvConfig = cvConfigs.stream()
+                         .filter(cvConfig -> cvConfig.isSLIEnabled())
+                         .findAny()
+                         .orElseThrow(() -> new IllegalStateException("No SLI Enabled CV Configs found"));
+    List<AnalysisInfo> analysisInfos = new ArrayList<>();
+    cvConfigs.stream()
+        .flatMap(cvConfig -> CollectionUtils.emptyIfNull(cvConfig.getMetricInfos()).stream())
+        .filter(analysisInfo -> metricIdentifiers.contains(((AnalysisInfo) analysisInfo).getIdentifier()))
+        .forEach(analysisInfo -> analysisInfos.add((AnalysisInfo) analysisInfo));
+    Preconditions.checkState(analysisInfos.size() == metricIdentifiers.size(), "Some of the metrics are not present");
+
     baseCvConfig.setMetricInfos(analysisInfos);
     return toDataCollectionInfo(baseCvConfig);
   }

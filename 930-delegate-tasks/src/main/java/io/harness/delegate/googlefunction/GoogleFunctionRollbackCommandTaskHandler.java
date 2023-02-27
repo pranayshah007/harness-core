@@ -61,28 +61,34 @@ public class GoogleFunctionRollbackCommandTaskHandler extends GoogleFunctionComm
         CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
             googleFunctionRollbackRequest.getGoogleFunctionDeployManifestContent(), createFunctionRequestBuilder,
-            "createFunctionRequest");
+            executionLogCallback, "createFunctionRequest");
         String functionName = googleFunctionCommandTaskHelper.getFunctionName(googleFunctionInfraConfig.getProject(),
             googleFunctionInfraConfig.getRegion(), createFunctionRequestBuilder.getFunction().getName());
         googleFunctionCommandTaskHelper.deleteFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
             googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-        return GoogleFunctionRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+        return GoogleFunctionRollbackResponse.builder()
+            .isFunctionDeleted(true)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
       } else {
         Function.Builder functionBuilder = Function.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
-            googleFunctionRollbackRequest.getGoogleFunctionAsString(), functionBuilder, "cloudFunction");
+            googleFunctionRollbackRequest.getGoogleFunctionAsString(), functionBuilder, executionLogCallback,
+            "cloudFunction");
         Service.Builder serviceBuilder = Service.newBuilder();
         googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
-            googleFunctionRollbackRequest.getGoogleCloudRunServiceAsString(), serviceBuilder, "cloudRunService");
+            googleFunctionRollbackRequest.getGoogleCloudRunServiceAsString(), serviceBuilder, executionLogCallback,
+            "cloudRunService");
         String targetRevision = googleFunctionCommandTaskHelper.getCurrentRevision(serviceBuilder.build());
         googleFunctionCommandTaskHelper.updateFullTrafficToSingleRevision(serviceBuilder.getName(), targetRevision,
             googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
             googleFunctionInfraConfig.getRegion(), executionLogCallback);
-        Function function = googleFunctionCommandTaskHelper
-                                .getFunction(functionBuilder.getName(), googleFunctionInfraConfig.getGcpConnectorDTO(),
-                                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion())
-                                .get();
+        Function function =
+            googleFunctionCommandTaskHelper
+                .getFunction(functionBuilder.getName(), googleFunctionInfraConfig.getGcpConnectorDTO(),
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(), executionLogCallback)
+                .get();
         GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(
             function, googleFunctionInfraConfig, executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

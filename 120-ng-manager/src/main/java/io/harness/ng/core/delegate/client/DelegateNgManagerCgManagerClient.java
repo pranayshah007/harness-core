@@ -45,7 +45,7 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Query("tokenName") @NotNull String tokenName);
+      @Query("tokenName") @NotNull String tokenName, @Query("revokeAfter") Long revokeAfter);
 
   @PUT(DELEGATE_TOKEN_NG_API)
   Call<RestResponse<DelegateTokenDetails>> revokeToken(

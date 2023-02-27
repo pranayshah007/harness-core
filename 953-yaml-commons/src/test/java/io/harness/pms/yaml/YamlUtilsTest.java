@@ -9,10 +9,13 @@ package io.harness.pms.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +24,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -818,7 +822,24 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stepsNode =
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
-    assertThat(YamlUtils.getStageFqnPath(step1Node)).isEqualTo("pipeline.stages.qaStage");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V0)).isEqualTo("pipeline.stages.qaStage");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetStageFqnForV1() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineV1.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
+
+    // Stages Node
+    YamlField stagesNode = yamlField.getNode().getField("stages");
+    YamlNode stage1Node = stagesNode.getNode().asArray().get(0);
+    YamlNode stepsNode = stage1Node.getField("spec").getNode().getField("steps").getNode();
+    YamlNode step1Node = stepsNode.asArray().get(0);
+    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V1)).isEqualTo("stages.stage1");
   }
 
   @Test
@@ -838,5 +859,23 @@ public class YamlUtilsTest extends CategoryTest {
   public void testCoercionConfig() throws IOException {
     assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
     assertThat(YamlUtils.read("\"\"", ArrayList.class)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testDuplicateField() {
+    String invalidYaml = "pipeline:\n"
+        + "  name: pipeline\n"
+        + "  project: project\n"
+        + "  project: identifier\n";
+    assertThatThrownBy(() -> YamlUtils.readTree(invalidYaml, true)).isInstanceOf(MismatchedInputException.class);
+    assertThatCode(() -> YamlUtils.readTree(invalidYaml)).doesNotThrowAnyException();
+    // valid yaml
+    String valid = "pipeline:\n"
+        + "  name: pipeline\n"
+        + "  project: project\n";
+    assertThatCode(() -> YamlUtils.readTree(valid, true)).doesNotThrowAnyException();
+    assertThatCode(() -> YamlUtils.readTree(valid)).doesNotThrowAnyException();
   }
 }

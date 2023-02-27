@@ -10,6 +10,7 @@ package io.harness.cdng.environment.yaml;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -67,7 +68,7 @@ public class EnvironmentYamlV2 implements Visitable {
   ParameterField<List<FilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
 
   @ApiModelProperty(dataType = "io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml")
@@ -78,11 +79,11 @@ public class EnvironmentYamlV2 implements Visitable {
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> environmentInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtimeEmptyStringAllowed})
   ParameterField<Map<String, Object>> serviceOverrideInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.CLUSTER_YAML_NODE_LIST_CLASSPATH)

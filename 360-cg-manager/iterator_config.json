@@ -350,6 +350,16 @@
     "iteratorMode": "REDIS_BATCH"
   },
   {
+    "name": "DelegateTaskFailOnDMS",
+    "enabled": false,
+    "threadPoolSize": 2,
+    "threadPoolIntervalInSeconds": 30,
+    "nextIterationMode": "TARGET",
+    "targetIntervalInSeconds": 30,
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
+  },
+  {
     "name": "DelegateTelemetryPublisherIteration",
     "enabled": true,
     "threadPoolSize": 1,

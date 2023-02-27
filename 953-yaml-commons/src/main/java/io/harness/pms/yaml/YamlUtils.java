@@ -51,8 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
@@ -101,6 +103,21 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {
@@ -166,6 +183,40 @@ public class YamlUtils {
       return field;
     }
     throw new InvalidRequestException("No Top root node available in the yaml.");
+  }
+
+  public void replaceFieldInJsonNodeFromAnotherJsonNode(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    if (baseNode == null || valueNode == null) {
+      return;
+    }
+    if (baseNode.getNodeType() != valueNode.getNodeType()) {
+      throw new InvalidRequestException("Both jsonNodes must be of same nodeType. Can not replace the values.");
+    }
+    if (baseNode.isObject()) {
+      injectUuidInObjectWithLeafValues(baseNode, valueNode, fieldName);
+    } else if (baseNode.isArray()) {
+      injectUuidInArrayWithLeafUuid(baseNode, valueNode, fieldName);
+    }
+  }
+
+  private void injectUuidInObjectWithLeafValues(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ObjectNode objectNode = (ObjectNode) baseNode;
+    if (objectNode.get(fieldName) != null) {
+      objectNode.put(fieldName, valueNode.get(fieldName));
+    }
+    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Entry<String, JsonNode> field = it.next();
+      if (!field.getValue().isValueNode()) {
+        replaceFieldInJsonNodeFromAnotherJsonNode(field.getValue(), valueNode.get(field.getKey()), fieldName);
+      }
+    }
+  }
+
+  private void injectUuidInArrayWithLeafUuid(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ArrayNode arrayNode = (ArrayNode) baseNode;
+    for (int index = 0; index < arrayNode.size(); index++) {
+      replaceFieldInJsonNodeFromAnotherJsonNode(arrayNode.get(index), valueNode.get(index), fieldName);
+    }
   }
 
   public YamlField injectUuidWithLeafUuid(String content) throws IOException {
@@ -378,8 +429,23 @@ public class YamlUtils {
     return qualifiedNameList;
   }
 
-  public String getStageFqnPath(YamlNode yamlNode) {
-    List<String> qualifiedNames = getQualifiedNameList(yamlNode, "pipeline", false);
+  private String getStageFQNPathForV1Yaml(List<String> qualifiedNames, YamlNode yamlNode) {
+    if (qualifiedNames.size() == 1) {
+      if (!EmptyPredicate.isEmpty(yamlNode.getName())) {
+        return qualifiedNames.get(0) + "." + yamlNode.getName();
+      }
+      return qualifiedNames.get(0);
+    }
+    return qualifiedNames.get(0) + "." + qualifiedNames.get(1);
+  }
+
+  public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
+    // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
+    List<String> qualifiedNames = getQualifiedNameList(yamlNode,
+        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+      return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
+    }
     if (qualifiedNames.size() <= 2) {
       return String.join(".", qualifiedNames);
     }

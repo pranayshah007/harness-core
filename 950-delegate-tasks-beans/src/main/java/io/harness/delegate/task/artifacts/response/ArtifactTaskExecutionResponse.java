@@ -23,6 +23,7 @@ import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
@@ -47,4 +48,5 @@ public class ArtifactTaskExecutionResponse {
   ExecuteCommandResponse executeCommandResponse;
   CommandExecutionStatus status;
   String errorMessage;
+  Map<String, String> plans;
 }

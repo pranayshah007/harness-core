@@ -14,25 +14,25 @@ import java.time.Duration;
 
 public class DowntimeUtils {
   public static DowntimeDuration getDowntimeDurationFromSeconds(long durationInSec) {
-    if (durationInSec < Duration.ofMinutes(60).toSeconds()) {
+    if (durationInSec % Duration.ofDays(7).toSeconds() == 0) {
       return DowntimeDuration.builder()
-          .durationType(DowntimeDurationType.MINUTES)
-          .durationValue((int) (durationInSec / Duration.ofMinutes(1).toSeconds()))
+          .durationType(DowntimeDurationType.WEEKS)
+          .durationValue((int) (durationInSec / Duration.ofDays(7).toSeconds()))
           .build();
-    } else if (durationInSec < Duration.ofHours(24).toSeconds()) {
-      return DowntimeDuration.builder()
-          .durationType(DowntimeDurationType.HOURS)
-          .durationValue((int) (durationInSec / Duration.ofHours(1).toSeconds()))
-          .build();
-    } else if (durationInSec < Duration.ofDays(7).toSeconds()) {
+    } else if (durationInSec % Duration.ofDays(1).toSeconds() == 0) {
       return DowntimeDuration.builder()
           .durationType(DowntimeDurationType.DAYS)
           .durationValue((int) (durationInSec / Duration.ofDays(1).toSeconds()))
           .build();
+    } else if (durationInSec % Duration.ofHours(1).toSeconds() == 0) {
+      return DowntimeDuration.builder()
+          .durationType(DowntimeDurationType.HOURS)
+          .durationValue((int) (durationInSec / Duration.ofHours(1).toSeconds()))
+          .build();
     } else {
       return DowntimeDuration.builder()
-          .durationType(DowntimeDurationType.WEEKS)
-          .durationValue((int) (durationInSec / Duration.ofDays(7).toSeconds()))
+          .durationType(DowntimeDurationType.MINUTES)
+          .durationValue((int) (durationInSec / Duration.ofMinutes(1).toSeconds()))
           .build();
     }
   }

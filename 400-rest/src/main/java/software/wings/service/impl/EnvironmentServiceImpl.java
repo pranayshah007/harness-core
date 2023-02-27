@@ -184,8 +184,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Environment> list(PageRequest<Environment> request, boolean withTags, String tagFilter) {
-    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags);
+  public PageResponse<Environment> list(
+      PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary) {
+    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary);
   }
 
   @Override
@@ -193,7 +194,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       PageRequest<Environment> request, boolean withTags, String tagFilter, List<String> appIds) {
     // Time to list tags
     long startTime = System.currentTimeMillis();
-    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter);
+    PageResponse<Environment> pageResponse = list(request, withTags, tagFilter, true);
     log.info("Total time taken to load tags {}", System.currentTimeMillis() - startTime);
 
     if (pageResponse.getResponse() == null) {
@@ -657,7 +658,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();
 
-    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null));
+    List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
 
     List<Base> emptyList = new ArrayList<>();
 

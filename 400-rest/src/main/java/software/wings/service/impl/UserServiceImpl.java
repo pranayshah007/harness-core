@@ -2040,6 +2040,8 @@ public class UserServiceImpl implements UserService {
       user = anUser().build();
       user.setEmail(userInvite.getEmail().trim().toLowerCase());
       user.setName(userInvite.getName().trim());
+      user.setGivenName(userInvite.getGivenName());
+      user.setFamilyName(userInvite.getFamilyName());
       user.setRoles(new ArrayList<>());
       user.setEmailVerified(true);
       user.setAppId(GLOBAL_APP_ID);
@@ -2545,6 +2547,9 @@ public class UserServiceImpl implements UserService {
 
   private void updatePasswordAndPostSteps(User existingUser, char[] password) {
     User user = resetUserPassword(existingUser, password);
+    log.info("UPDATE_USER_LOCKOUTINFO: Clearing and re-setting lockout info for user {} post password reset",
+        user.getUuid());
+    loginSettingsService.updateUserLockoutInfo(user, accountService.get(user.getDefaultAccountId()), 0);
     sendPasswordChangeEmail(user);
     user.getAccounts().forEach(account
         -> auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Type.RESET_PASSWORD));

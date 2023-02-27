@@ -60,7 +60,6 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -546,15 +545,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<PipelineValidationResponseBody> getPipelineValidateResult(
+  public ResponseDTO<PipelineValidationResponseDTO> getPipelineValidateResult(
       String accountId, String orgId, String projectId, String uuid) {
     Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
     if (eventByUuid.isEmpty()) {
       throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
     }
     PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
-    PipelineValidationResponseBody pipelineValidationResponseBody =
-        PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
-    return ResponseDTO.newResponse(pipelineValidationResponseBody);
+    PipelineValidationResponseDTO response =
+        PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
+    return ResponseDTO.newResponse(response);
   }
 }

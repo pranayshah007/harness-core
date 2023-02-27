@@ -104,7 +104,7 @@ public class CIMiningPatternJob {
   }
 
   private Set<String> initializeValidDomains() {
-    Set<String> validDomains = new HashSet<String>();
+    Set<String> validDomains = new HashSet<>();
 
     try {
       byte[] fileContent = downloadFromGCS(VALID_DOMAINS_FILE);
@@ -159,7 +159,7 @@ public class CIMiningPatternJob {
       return content;
 
     } catch (Exception e) {
-      log.error("Exception occurred while fetching file {} domains: ", fileName, e);
+      log.error("Exception occurred while fetching file {}", fileName, e);
       return null;
     }
   }

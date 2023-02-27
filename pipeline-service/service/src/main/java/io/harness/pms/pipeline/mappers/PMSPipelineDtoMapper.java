@@ -19,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -38,14 +37,17 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineValidationResponseDTO;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.pipeline.yaml.PipelineYaml;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.scope.ScopeHelper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -70,6 +72,7 @@ public class PMSPipelineDtoMapper {
         .gitDetails(getEntityGitDetails(pipelineEntity))
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .cacheResponse(getCacheResponse(pipelineEntity))
+        .storeType(pipelineEntity.getStoreType())
         .build();
   }
 
@@ -346,7 +349,7 @@ public class PMSPipelineDtoMapper {
         .collect(Collectors.toList());
   }
 
-  RecentExecutionInfoDTO prepareRecentExecutionInfo(RecentExecutionInfo recentExecutionInfo) {
+  public RecentExecutionInfoDTO prepareRecentExecutionInfo(RecentExecutionInfo recentExecutionInfo) {
     ExecutionTriggerInfo triggerInfo = recentExecutionInfo.getExecutionTriggerInfo();
     ExecutorInfoDTO executorInfo = ExecutorInfoDTO.builder()
                                        .triggerType(triggerInfo.getTriggerType())
@@ -359,6 +362,7 @@ public class PMSPipelineDtoMapper {
         .startTs(recentExecutionInfo.getStartTs())
         .endTs(recentExecutionInfo.getEndTs())
         .executorInfo(executorInfo)
+        .parentStageInfo(recentExecutionInfo.getParentStageInfo())
         .runSequence(recentExecutionInfo.getRunSequence())
         .build();
   }
@@ -453,5 +457,14 @@ public class PMSPipelineDtoMapper {
     } else {
       return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
     }
+  }
+
+  public PipelineValidationResponseDTO buildPipelineValidationResponseDTO(PipelineValidationEvent event) {
+    return PipelineValidationResponseDTO.builder()
+        .status(event.getStatus().name())
+        .policyEval(event.getResult().getGovernanceMetadata())
+        .startTs(event.getStartTs())
+        .endTs(event.getEndTs())
+        .build();
   }
 }

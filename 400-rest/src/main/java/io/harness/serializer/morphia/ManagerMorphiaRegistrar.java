@@ -9,7 +9,6 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.cluster.entities.AzureKubernetesCluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
@@ -397,6 +396,7 @@ import software.wings.service.impl.newrelic.LearningEngineExperimentalAnalysisTa
 import software.wings.service.impl.newrelic.MLExperiments;
 import software.wings.service.impl.newrelic.NewRelicMarkerExecutionData;
 import software.wings.service.impl.newrelic.NewRelicMetricAnalysisRecord;
+import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.impl.splunk.SplunkAnalysisCluster;
 import software.wings.service.impl.trigger.TriggerCallback;
 import software.wings.service.impl.trigger.TriggerServiceImpl.TriggerIdempotentResult;
@@ -867,7 +867,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DeletedEntity.class);
     set.add(ARMInfrastructureProvisioner.class);
     set.add(AccessRequest.class);
-    set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
@@ -881,6 +880,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Log.class);
     set.add(InstanceSyncPTInfoBackup.class);
     set.add(HelmChart.class);
+    set.add(NewRelicMetricDataRecord.class);
   }
 
   @Override

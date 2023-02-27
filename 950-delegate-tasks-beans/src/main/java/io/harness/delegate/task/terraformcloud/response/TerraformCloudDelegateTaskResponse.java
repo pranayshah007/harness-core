@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
-public abstract class TerraformCloudDelegateTaskResponse implements DelegateTaskNotifyResponseData {
+public class TerraformCloudDelegateTaskResponse implements DelegateTaskNotifyResponseData {
   protected CommandExecutionStatus commandExecutionStatus;
   protected DelegateMetaInfo delegateMetaInfo;
   protected String errorSummary;

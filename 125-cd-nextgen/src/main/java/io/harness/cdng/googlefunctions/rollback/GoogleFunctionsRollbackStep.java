@@ -29,6 +29,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -55,6 +56,8 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
   public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME = "CloudFunctionRollback";
   public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING =
       "Google Function Deployment Step was not executed. Skipping Rollback...";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_PREPARE_ROLLBACK_DATA_MISSING =
+      "Google Function Prepare Rollback Data is not available. Skipping Rollback...";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -76,8 +79,12 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
 
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
           googleFunctionRollbackResponse.getUnitProgressData().getUnitProgresses());
-      stepResponse =
-          googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder, ambiance);
+      if (googleFunctionRollbackResponse.isFunctionDeleted()) {
+        stepResponse = stepResponseBuilder.status(Status.SUCCEEDED).build();
+      } else {
+        stepResponse =
+            googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder, ambiance);
+      }
     } catch (Exception e) {
       log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -103,6 +110,10 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 stepFnq + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+
+    if (!googleFunctionPrepareRollbackDataOptional.isFound()) {
+      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_PREPARE_ROLLBACK_DATA_MISSING);
+    }
 
     GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
         (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
