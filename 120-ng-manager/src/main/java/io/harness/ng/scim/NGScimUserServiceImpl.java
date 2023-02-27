@@ -86,6 +86,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
                                            .locked(user.isLocked())
                                            .disabled(user.isDisabled())
                                            .externallyManaged(user.isExternallyManaged())
+                                           .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
                                            .build())
                                 .orElse(null));
     UserMetadataDTO user;
