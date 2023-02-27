@@ -59,7 +59,7 @@ public class AwsDataCollectionRequest extends DataCollectionRequest<AwsConnector
 
   @Override
   public Map<String, Object> fetchDslEnvVariables() {
-    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(getConnectorConfigDTO());
+    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(getConnectorConfigDTO(), region);
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("serviceName", awsService);
     dslEnvVariables.put("region", region);

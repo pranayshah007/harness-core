@@ -64,7 +64,7 @@ public class CloudWatchUtils {
 
   private static Map<String, Object> populateCommonDslEnvVariables(
       String region, String group, String service, AwsConnectorDTO connectorDTO, boolean collectHostData) {
-    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(connectorDTO);
+    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(connectorDTO, region);
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("region", region);
     dslEnvVariables.put("groupName", group);

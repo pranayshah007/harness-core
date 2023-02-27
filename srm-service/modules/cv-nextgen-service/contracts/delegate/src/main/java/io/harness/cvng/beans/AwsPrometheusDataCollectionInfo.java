@@ -64,7 +64,7 @@ public class AwsPrometheusDataCollectionInfo extends TimeSeriesDataCollectionInf
       }
     });
     Preconditions.checkState(queryList.size() == metricNameList.size());
-    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(awsConnectorDTO);
+    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(awsConnectorDTO, region);
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("collectHostData", Boolean.toString(this.isCollectHostData()));
     dslEnvVariables.put("serviceName", AWS_SERVICE);
