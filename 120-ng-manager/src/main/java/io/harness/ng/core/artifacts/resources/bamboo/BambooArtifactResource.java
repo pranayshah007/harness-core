@@ -87,15 +87,15 @@ public class BambooArtifactResource {
   }
 
   @GET
-  @Path("plan/{planName}/paths")
+  @Path("/paths")
   @ApiOperation(value = "Get Artifact Paths for Bamboo", nickname = "getArtifactPathsForBamboo")
   public ResponseDTO<List<String>> getArtifactPaths(@QueryParam("connectorRef") String bambooConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @PathParam("planName") String planName, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
+      @QueryParam(NGCommonEntityConstants.PLAN_NAME) String planName,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
@@ -120,14 +120,14 @@ public class BambooArtifactResource {
   }
 
   @GET
-  @Path("plan/{planName}/builds")
+  @Path("/builds")
   @ApiOperation(value = "Gets Builds details for Bamboo", nickname = "getBuildsForBamboo")
   public ResponseDTO<List<BuildDetails>> getBuilds(@QueryParam("connectorRef") String bambooConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @PathParam("planName") String planName,
+      @QueryParam(NGCommonEntityConstants.PLAN_NAME) String planName,
       @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) List<String> artifactPath,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam(NGCommonEntityConstants.FQN_PATH) String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, String runtimeInputYaml) {
