@@ -68,6 +68,11 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
       wingsPersistence.save(sweepingOutputInstance);
       return sweepingOutputInstance;
     } catch (DuplicateKeyException exception) {
+      log.error(
+          "Details of Sweeping output instance which was tried to be saved again are ID:{}, name:{}, appId: {}, phaseExecutionId: {}, workflowExecutionIds: {}, pipelineExecutionId: {}, stateExecutionId: {}",
+          sweepingOutputInstance.getUuid(), sweepingOutputInstance.getName(), sweepingOutputInstance.getAppId(),
+          sweepingOutputInstance.getPhaseExecutionId(), sweepingOutputInstance.getWorkflowExecutionIds().toString(),
+          sweepingOutputInstance.getPipelineExecutionId(), sweepingOutputInstance.getStateExecutionId());
       throw new InvalidRequestException(
           format("Output with name %s, already saved in the context", sweepingOutputInstance.getName()), exception);
     }

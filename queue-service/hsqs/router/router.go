@@ -37,7 +37,6 @@ func New(config *config.Config) *echo.Echo {
 
 	e.Logger.SetLevel(lvl)
 	e.Pre(middleware.RemoveTrailingSlash())
-	e.Use(middleware.Logger())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
@@ -46,6 +45,10 @@ func New(config *config.Config) *echo.Echo {
 
 	if envConfig.AppDynamicsConfig.Enabled {
 		e.Use(AppDynamics())
+	}
+
+	if envConfig.EnableHttpLogging {
+		e.Use(middleware.Logger())
 	}
 	// Disable auth when flag enabled
 	if !envConfig.DisableAuth {

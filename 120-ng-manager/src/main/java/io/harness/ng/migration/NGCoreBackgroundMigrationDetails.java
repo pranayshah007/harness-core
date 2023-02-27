@@ -18,6 +18,7 @@ import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigrat
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
+import io.harness.ng.core.migration.background.UserMetadataTwoFactorAuthenticationMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -45,6 +46,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(6, NGWebhookMendateSettingsCategoryUpdateMigration.class))
         .add(Pair.of(7, DeleteSoftDeletedConnectorsMigration.class))
         .add(Pair.of(8, PopulateYamlAuthFieldInNGJiraConnectorMigration.class))
+        .add(Pair.of(9, UserMetadataTwoFactorAuthenticationMigration.class))
         .build();
   }
 }

@@ -10,6 +10,7 @@ package io.harness.ssca.execution.creator.variable;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
+import io.harness.ssca.beans.SscaConstants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -18,6 +19,6 @@ import java.util.Set;
 public class SscaStepVariableCreator extends GenericStepVariableCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet();
+    return Sets.newHashSet(SscaConstants.SSCA_ORCHESTRATION_STEP);
   }
 }
