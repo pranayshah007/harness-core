@@ -66,6 +66,31 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
+  private boolean handleStageStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.START)
+                                .module(ModuleType.PMS)
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+  private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.END)
+                                .module(ModuleType.PMS)
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
     try {
@@ -74,6 +99,10 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
           return handlePipelineStartEvent(outboxEvent);
         case NodeExecutionOutboxEvents.PIPELINE_END:
           return handlePipelineEndEvent(outboxEvent);
+        case NodeExecutionOutboxEvents.STAGE_START:
+          return handleStageStartEvent(outboxEvent);
+        case NodeExecutionOutboxEvents.STAGE_END:
+          return handleStageEndEvent(outboxEvent);
         default:
           return false;
       }
