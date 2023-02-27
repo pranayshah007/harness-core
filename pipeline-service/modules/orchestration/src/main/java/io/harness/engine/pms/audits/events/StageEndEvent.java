@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.engine.pms.events;
+package io.harness.engine.pms.audits.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -27,20 +27,22 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public class StageStartEvent extends NodeExecutionEvent {
+public class StageEndEvent extends NodeExecutionEvent {
   private String stageIdentifier;
   private String stageType;
   private Long startTs;
   private String nodeExecutionId;
+  private Long endTs;
 
-  public StageStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  public StageEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
-      String nodeExecutionId) {
+      String nodeExecutionId, Long endTs) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
     this.startTs = startTs;
     this.nodeExecutionId = nodeExecutionId;
+    this.endTs = endTs;
   }
 
   @JsonIgnore
@@ -64,6 +66,6 @@ public class StageStartEvent extends NodeExecutionEvent {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return NodeExecutionOutboxEvents.STAGE_START;
+    return NodeExecutionOutboxEvents.STAGE_END;
   }
 }

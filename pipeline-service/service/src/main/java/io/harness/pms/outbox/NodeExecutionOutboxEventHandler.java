@@ -16,7 +16,7 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
-import io.harness.engine.pms.events.NodeExecutionOutboxEvents;
+import io.harness.engine.pms.audits.events.NodeExecutionOutboxEvents;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
