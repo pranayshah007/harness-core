@@ -24,11 +24,9 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,33 +63,33 @@ public class RollbackModeExecutionHelper {
   }
 
   public Plan transformPlanForRollbackMode(Plan plan, String previousExecutionId, List<String> nodeIDsToPreserve) {
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
-    Map<String, NodeExecution> planNodeIDtoNodeExecution =
-        nodeExecutions.stream().collect(Collectors.toMap(NodeExecution::getNodeId, Function.identity()));
+    Map<String, Node> planNodeIDToUpdatedPlanNodes = new HashMap<>();
 
-    List<Node> updatedPlanNodes = new ArrayList<>();
+    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
+    // create Identity Node for every Node Execution under Stage nodes
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      Node planNode = nodeExecution.getNode();
+      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE
+          || EmptyPredicate.isEmpty(planNode.getStageFqn())
+          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
+        continue;
+      }
+      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
+          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid());
+      planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), identityPlanNode);
+    }
+
     for (Node planNode : plan.getPlanNodes()) {
       if (nodeIDsToPreserve.contains(planNode.getUuid())
           || planNode.getStepType().getStepCategory() == StepCategory.STAGE
           || EmptyPredicate.isEmpty(planNode.getStageFqn())
           || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
-        updatedPlanNodes.add(planNode);
-        continue;
+        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), planNode);
       }
-      // The processed YAML used in rollback mode is the same as the one used in the original execution. Hence, the
-      // plan node IDs used will also be the same
-      NodeExecution nodeExecution = planNodeIDtoNodeExecution.get(planNode.getUuid());
-      if (nodeExecution == null) {
-        // this means that this given node was not executed in the previous execution
-        continue;
-      }
-      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid());
-      updatedPlanNodes.add(identityPlanNode);
     }
     return Plan.builder()
         .uuid(plan.getUuid())
-        .planNodes(updatedPlanNodes)
+        .planNodes(planNodeIDToUpdatedPlanNodes.values())
         .startingNodeId(plan.getStartingNodeId())
         .setupAbstractions(plan.getSetupAbstractions())
         .graphLayoutInfo(plan.getGraphLayoutInfo())
