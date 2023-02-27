@@ -46,7 +46,12 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
   @VisibleForTesting
   Query<T> createQuery(Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted,
       boolean isDelegateTaskMigrationEnabled) {
-    Query<T> query = persistence.createQuery(clazz, isDelegateTaskMigrationEnabled);
+    Query<T> query;
+    if (isDelegateTaskMigrationEnabled) {
+      query = persistence.createQuery(clazz, isDelegateTaskMigrationEnabled);
+    } else {
+      query = persistence.createQuery(clazz);
+    }
     if (!unsorted) {
       query.order(Sort.ascending(fieldName));
     }
@@ -80,7 +85,12 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
       boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
-    UpdateOperations<T> updateOperations = persistence.createUpdateOperations(clazz, isDelegateTaskMigrationEnabled);
+    UpdateOperations<T> updateOperations;
+    if (isDelegateTaskMigrationEnabled) {
+      updateOperations = persistence.createUpdateOperations(clazz, isDelegateTaskMigrationEnabled);
+    } else {
+      updateOperations = persistence.createUpdateOperations(clazz);
+    }
     switch (schedulingType) {
       case REGULAR:
         updateOperations.set(fieldName, base + targetInterval.toMillis());
@@ -94,8 +104,11 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
       default:
         unhandled(schedulingType);
     }
-    return persistence.findAndModifySystemData(
-        query, updateOperations, HPersistence.returnOldOptions, isDelegateTaskMigrationEnabled);
+    if (isDelegateTaskMigrationEnabled) {
+      return persistence.findAndModifySystemData(
+          query, updateOperations, HPersistence.returnOldOptions, isDelegateTaskMigrationEnabled);
+    }
+    return persistence.findAndModifySystemData(query, updateOperations, HPersistence.returnOldOptions);
   }
 
   @Override
