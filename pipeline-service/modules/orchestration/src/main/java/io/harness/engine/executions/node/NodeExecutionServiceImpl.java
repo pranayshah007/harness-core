@@ -39,6 +39,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
@@ -103,6 +104,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
+
+  @Inject private PlanExpansionService planExpansionService;
 
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
@@ -362,6 +365,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
+        planExpansionService.addNameAndIdentifier(nodeExecution1);
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
@@ -383,6 +387,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     } else {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
+        planExpansionService.addNameAndIdentifier(nodeExecution);
         return mongoTemplate.save(nodeExecution);
       });
       if (savedNodeExecution != null) {
@@ -487,6 +492,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       if (updated == null) {
         log.warn("Cannot update execution status for the node {} with {}", nodeExecutionId, status);
       } else {
+        planExpansionService.updateStatus(updated.getAmbiance(), status);
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
