@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ng.core.dto.GenericErrorMessage;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.serializer.JsonUtils;
 
@@ -92,6 +93,7 @@ public class NGRestUtils {
   }
 
   // Handles for general response (not using ResponseDTO)
+  // todo: Refactor API to send standard Error Response
   private static <T> T handleGeneralResponse(Response<T> response, String defaultErrorMessage) {
     if (response.isSuccessful()) {
       return response.body();
@@ -100,10 +102,10 @@ public class NGRestUtils {
     log.error("Error response received: {}", response);
     String errorMessage = "";
     try {
-      ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
-      errorMessage = restResponse.getMessage();
-      throw new InvalidRequestException(
-          StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage, restResponse.getMetadata());
+      GenericErrorMessage restResponse =
+          JsonUtils.asObject(response.errorBody().string(), new TypeReference<GenericErrorMessage>() {});
+      errorMessage = restResponse.getErrorMessage();
+      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
     } catch (InvalidRequestException e) {
       throw e;
     } catch (Exception e) {

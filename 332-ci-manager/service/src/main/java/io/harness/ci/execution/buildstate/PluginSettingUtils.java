@@ -25,6 +25,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
@@ -449,7 +451,12 @@ public class PluginSettingUtils {
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, baseImageConnectors.get(0));
       if (connectorDetails != null && connectorDetails.getConnectorType() == ConnectorType.DOCKER) {
         String dockerConnectorUrl = ((DockerConnectorDTO) connectorDetails.getConnectorConfig()).getDockerRegistryUrl();
-        setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+        if (isNotEmpty(dockerConnectorUrl)) {
+          if (DOCKER_REGISTRY_V2.equals(dockerConnectorUrl)) {
+            dockerConnectorUrl = DOCKER_REGISTRY_V1;
+          }
+          setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+        }
       }
     }
 

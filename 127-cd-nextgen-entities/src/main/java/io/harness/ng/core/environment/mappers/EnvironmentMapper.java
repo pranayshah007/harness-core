@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 

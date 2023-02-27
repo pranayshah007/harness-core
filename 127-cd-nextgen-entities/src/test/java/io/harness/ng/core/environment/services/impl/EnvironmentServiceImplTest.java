@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +40,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -87,8 +90,10 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private EnvironmentRepository environmentRepository;
+  @Mock private EnvironmentRepository mockEnvironmentRepository;
   @Inject private OutboxService outboxService;
   @InjectMocks private EnvironmentServiceImpl environmentService;
+  @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -521,6 +526,61 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
       assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
     }
     assertThat(responseDto.getEnvironmentYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testFetchesNonDeletedEnvironmentFromListOfRefs() {
+    List<String> envRefs = Arrays.asList("env1", "org.env2", "account.env3");
+    Criteria projectCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                   .is(ACCOUNT_ID)
+                                   .and(EnvironmentKeys.orgIdentifier)
+                                   .is(ORG_ID)
+                                   .and(EnvironmentKeys.projectIdentifier)
+                                   .is(PROJECT_ID)
+                                   .and(EnvironmentKeys.identifier)
+                                   .in(Arrays.asList("env1"));
+
+    Criteria orgCriteria = Criteria.where(EnvironmentKeys.accountId)
+                               .is(ACCOUNT_ID)
+                               .and(EnvironmentKeys.orgIdentifier)
+                               .is(ORG_ID)
+                               .and(EnvironmentKeys.projectIdentifier)
+                               .is(null)
+                               .and(EnvironmentKeys.identifier)
+                               .in(Arrays.asList("env2"));
+
+    Criteria accountCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                   .is(ACCOUNT_ID)
+                                   .and(EnvironmentKeys.orgIdentifier)
+                                   .is(null)
+                                   .and(EnvironmentKeys.projectIdentifier)
+                                   .is(null)
+                                   .and(EnvironmentKeys.identifier)
+                                   .in(Arrays.asList("env3"));
+
+    Environment projectEnv = Environment.builder().build();
+    Environment orgEnv = Environment.builder().build();
+    Environment accEnv = Environment.builder().build();
+
+    doReturn(Arrays.asList(projectEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(projectCriteria);
+    doReturn(Arrays.asList(orgEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(orgCriteria);
+    doReturn(Arrays.asList(accEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountCriteria);
+
+    List<Environment> environments = environmentServiceUsingMocks.fetchesNonDeletedEnvironmentFromListOfRefs(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, envRefs);
+
+    assertThat(environments).hasSize(3);
+    assertThat(environments).contains(accEnv);
+    assertThat(environments).contains(orgEnv);
+    assertThat(environments).contains(projectEnv);
   }
 
   private Object[][] data() {
