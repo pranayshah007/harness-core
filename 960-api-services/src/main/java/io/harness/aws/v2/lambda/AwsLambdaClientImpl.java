@@ -11,18 +11,30 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.lang.String.format;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.AwsClientHelper;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Singleton;
+
+import java.util.HashSet;
 import java.util.Optional;
+
+import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.SdkClient;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.applicationautoscaling.model.ApplicationAutoScalingException;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
@@ -70,7 +82,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException e) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
       throw new InvalidRequestException(e.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception createFunction", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -83,7 +104,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException e) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
       throw new InvalidRequestException(e.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception deleteFunction", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -99,7 +129,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       }
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getFunction", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -115,7 +154,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       }
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getFunctionConfiguration", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -128,7 +176,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception updateFunctionCode", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -141,7 +198,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception updateFunctionConfiguration", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -154,7 +220,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception publishVersion", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -165,7 +240,16 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     } catch (LambdaException e) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
       throw new InvalidRequestException(e.getMessage());
+    } catch (AwsServiceException awsServiceException) {
+      handleAmazonServiceException(awsServiceException);
+    } catch (SdkException sdkException) {
+      handleSdkException(sdkException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception invokeFunction", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+    return null;
   }
 
   @Override
@@ -195,5 +279,40 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
 
   public void logError(String client, String method, String errorMessage) {
     log.error("AWS Cloud Call: client: {}, method: {}, error: {}", client, method, errorMessage);
+  }
+
+  public void handleAmazonServiceException(AwsServiceException amazonServiceException) {
+    log.error("AWS API call exception: {}", amazonServiceException.getMessage());
+    if (amazonServiceException instanceof ApplicationAutoScalingException) {
+      if (amazonServiceException.getMessage().contains(
+              "Trying to remove Target Groups that are not part of the group")) {
+        log.info("Target Group already not attached: [{}]", amazonServiceException.getMessage());
+      } else if (amazonServiceException.getMessage().contains(
+              "Trying to remove Load Balancers that are not part of the group")) {
+        log.info("Classic load balancer already not attached: [{}]", amazonServiceException.getMessage());
+      } else {
+        log.warn(amazonServiceException.awsErrorDetails().errorMessage(), amazonServiceException);
+        throw amazonServiceException;
+      }
+    } else {
+      throw new InvalidRequestException(amazonServiceException.getMessage(), amazonServiceException, WingsException.USER);
+    }
+  }
+
+  public void handleSdkException(SdkException sdkException) {
+    SdkException sanitizeException =
+            ExceptionMessageSanitizer.sanitizeException(sdkException);
+    log.error("Sdk exception", sanitizeException);
+    String errorMessage = sanitizeException.getMessage();
+    if (EmptyPredicate.isNotEmpty(errorMessage) && errorMessage.contains("/meta-data/iam/security-credentials/")) {
+      throw new InvalidRequestException("The IAM role on the Ec2 delegate does not exist OR does not"
+              + " have required permissions.",
+              sanitizeException, WingsException.USER);
+    } else {
+      log.error("Unhandled aws exception");
+      throw new InvalidRequestException(
+              sanitizeException.getMessage() != null ? sanitizeException.getMessage() : "Exception Message",
+              ErrorCode.AWS_ACCESS_DENIED, WingsException.USER);
+    }
   }
 }
