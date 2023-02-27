@@ -25,7 +25,8 @@ public interface VaultRestClient {
 
   boolean deleteSecret(String authToken, String namespace, String secretEngine, String fullPath) throws IOException;
 
-  boolean deleteSecretPermanentely(String authToken, String secretEngine, String fullPath) throws IOException;
+  boolean deleteSecretPermanentely(String authToken, String namespace, String secretEngine, String fullPath)
+      throws IOException;
 
   String readSecret(String authToken, String namespace, String secretEngine, String fullPath) throws IOException;
 

@@ -281,5 +281,6 @@ public interface AccountService {
 
   Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
 
-  Account updateCrossGenerationAccessEnabled(String accountIdentifier, boolean isCrossGenerationAccessEnabled);
+  Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
 }

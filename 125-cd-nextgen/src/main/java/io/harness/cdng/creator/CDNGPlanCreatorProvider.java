@@ -133,6 +133,8 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
@@ -212,6 +214,8 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
@@ -294,14 +298,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ASG = "AutoScalingGroup";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
-  private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
+      KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAGRUNT_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CLOUD_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
@@ -309,7 +313,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
@@ -330,7 +334,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.OpenshiftParam, ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER,
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
       ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
-      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsSamDirectory);
+      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
+      ManifestType.AwsSamDirectory);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -465,6 +470,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     planCreators.add(new AwsLambdaDeployStepPlanCreator());
+
+    // AWS SAM
+    planCreators.add(new AwsSamDeployStepPlanCreator());
+    planCreators.add(new AwsSamRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -602,6 +611,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     variableCreators.add(new AwsLambdaDeployStepVariableCreator());
+
+    // AWS SAM
+    variableCreators.add(new AwsSamDeployStepVariableCreator());
+    variableCreators.add(new AwsSamRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -893,14 +906,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
-    StepInfo awsLambdaDeploy =
-        StepInfo.newBuilder()
-            .setName("Aws Lambda Deploy")
-            .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("AwsLambdaDeploy").setFolderPath("Aws Lambda").build())
-            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
-            .build();
+    StepInfo awsLambdaDeploy = StepInfo.newBuilder()
+                                   .setName("Aws Lambda Deploy")
+                                   .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
+                                   .setStepMetaData(StepMetaData.newBuilder()
+                                                        .addCategory(StepSpecTypeConstants.AWS_LAMBDA)
+                                                        .setFolderPath("Aws Lambda")
+                                                        .build())
+                                   .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+                                   .build();
 
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
@@ -1268,6 +1282,21 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .build())
                                      .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
                                      .build();
+    StepInfo awsSamDeploy =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Deploy")
+            .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamDeploy").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
+
+    StepInfo awsSamRollback =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Rollback")
+            .setType(StepSpecTypeConstants.AWS_SAM_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamRollback").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
 
     StepInfo terraformCloudRollback =
         StepInfo.newBuilder()
@@ -1360,6 +1389,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(asgBlueGreenSwapService);
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
+    stepInfos.add(awsSamDeploy);
+    stepInfos.add(awsSamRollback);
     stepInfos.add(terraformCloudRollback);
     return stepInfos;
   }

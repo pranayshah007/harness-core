@@ -33,7 +33,7 @@ import io.harness.distribution.barrier.Forcer.State;
 import io.harness.distribution.barrier.ForcerId;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -79,7 +79,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
-public class BarrierServiceImpl extends IteratorPumpModeHandler implements BarrierService, ForceProctor {
+public class BarrierServiceImpl extends IteratorPumpAndRedisModeHandler implements BarrierService, ForceProctor {
   private static final String APP_ID = "appId";
   private static final String LEVEL = "level";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(1);

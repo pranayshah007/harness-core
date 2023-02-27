@@ -15,11 +15,16 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.environment.NGEnvironmentInfoConfigVisitorHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -51,7 +56,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("ngEnvironmentInfoConfig")
-public class NGEnvironmentInfoConfig {
+@SimpleVisitorHelper(helperClass = NGEnvironmentInfoConfigVisitorHelper.class)
+public class NGEnvironmentInfoConfig implements Visitable {
   @JsonProperty("__uuid")
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -81,5 +87,14 @@ public class NGEnvironmentInfoConfig {
       //
     }
     return true;
+  }
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add("NGEnvironmentGlobalOverride", ngEnvironmentGlobalOverride);
+    if (EmptyPredicate.isNotEmpty(variables)) {
+      variables.forEach(ngVariable -> children.add("variables", ngVariable));
+    }
+    return children;
   }
 }

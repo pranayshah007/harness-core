@@ -30,7 +30,8 @@ public interface ManifestType {
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
   Set<String> GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.GoogleCloudFunctionDefinition);
-  Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition);
+  Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition);
   Set<String> AWS_SAM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsSamDirectory);
 
   String K8Manifest = "K8sManifest";
@@ -59,6 +60,7 @@ public interface ManifestType {
   String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
   String HelmRepoOverride = "HelmRepoOverride";
   String AwsLambdaFunctionDefinition = "AwsLambdaFunctionDefinition";
+  String AwsLambdaFunctionAliasDefinition = "AwsLambdaFunctionAliasDefinition";
   String AwsSamDirectory = "AwsSamDirectory";
 
   static HashSet<String> getAllManifestTypes() {
@@ -69,6 +71,7 @@ public interface ManifestType {
         ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
         ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
         AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
-        ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsSamDirectory));
+        ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
+        ManifestType.AwsSamDirectory));
   }
 }

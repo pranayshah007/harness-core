@@ -14,11 +14,13 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
+import static io.harness.rule.OwnerRule.JAMES_RICKS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import io.harness.category.element.UnitTests;
 import io.harness.cvng.client.FakeAccountClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -28,6 +30,7 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
+import io.harness.rule.Owner;
 
 import java.time.Clock;
 import java.util.Collections;
@@ -35,6 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
 public class ErrorTrackingTemplateDataGeneratorTest {
@@ -58,6 +62,8 @@ public class ErrorTrackingTemplateDataGeneratorTest {
   public static final String PORTAL_URL_VALUE = "http://testPortalUrl/";
 
   @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
   public void getTemplateDataTest() throws IllegalAccessException {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(ACCOUNT_IDENTIFIER)

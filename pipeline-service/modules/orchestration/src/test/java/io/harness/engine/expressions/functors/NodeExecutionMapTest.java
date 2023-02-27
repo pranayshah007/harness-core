@@ -74,7 +74,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step inside parallel block
     stepAmbiance = Ambiance.newBuilder()
@@ -87,7 +87,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
   }
 
   @Test
@@ -112,7 +112,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
         .isEqualTo(
-            String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s'>", stageSetupId, stageRuntimeId));
+            String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s'>", stageSetupId, stageRuntimeId));
 
     // Stage having strategy inside parallel block
     ambiance = Ambiance.newBuilder()
@@ -127,7 +127,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
         .isEqualTo(
-            String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s'>", stageSetupId, stageRuntimeId));
+            String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s'>", stageSetupId, stageRuntimeId));
 
     // Only step is inside strategy
     String stepRuntimeId = UUIDGenerator.generateUuid();
@@ -142,7 +142,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step having strategy inside parallel block and not stage
     stepAmbiance = Ambiance.newBuilder()
@@ -156,7 +156,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&step=%s'>", stageSetupId, stepRuntimeId));
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&step=%s'>", stageSetupId, stepRuntimeId));
 
     // step having stage strategy
     stepAmbiance = Ambiance.newBuilder()
@@ -170,7 +170,7 @@ public class NodeExecutionMapTest extends CategoryTest {
     executionUrl = nodeExecutionMap.fetchExecutionUrl(OrchestrationConstants.EXECUTION_URL);
     assertThat(executionUrl).isPresent();
     assertThat((String) executionUrl.get())
-        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s&stageExecId=%s&step=%s'>", stageSetupId,
+        .isEqualTo(String.format("<+<+pipeline.executionUrl>+'?stage=%s\\&stageExecId=%s\\&step=%s'>", stageSetupId,
             stageRuntimeId, stepRuntimeId));
   }
 

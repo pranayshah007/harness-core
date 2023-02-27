@@ -141,7 +141,7 @@ public class NodeExecutionMap extends LateBindingMap {
     /*
      * Following cases exists -
      * 1. Step execution url
-     * a) Inside Normal stage (inside a matrix step/stepgroup is same as normal)
+     * a) Inside Normal stage (inside a matrix step/step-group is same as normal)
      * b) Inside a matrix stage
      * c) Inside a child pipeline stage -> for this output child execution url, thus same as 1.a case
      *
@@ -153,7 +153,6 @@ public class NodeExecutionMap extends LateBindingMap {
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
     Ambiance nodeAmbiance = nodeExecution.getAmbiance();
     boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
-
     // If any other node expression is called, then return pipeline execution url.
     if (!currentLevelInsideStage) {
       return Optional.of(pipelineExecutionUrl);
@@ -166,13 +165,14 @@ public class NodeExecutionMap extends LateBindingMap {
     boolean currentStrategyLevelAtStage = AmbianceUtils.isCurrentNodeUnderStageStrategy(nodeAmbiance);
     if (currentStrategyLevelAtStage) {
       String stageRuntimeId = nodeAmbiance.getStageExecutionId();
-      stageExecutionUrl += String.format("&stageExecId=%s", stageRuntimeId);
+      stageExecutionUrl += String.format("\\&stageExecId=%s", stageRuntimeId);
     }
 
     boolean currentLevelAtStep = AmbianceUtils.isCurrentLevelAtStep(nodeAmbiance);
     if (currentLevelAtStep) {
       String stepId = AmbianceUtils.obtainCurrentRuntimeId(nodeAmbiance);
-      return Optional.of(stageExecutionUrl + String.format("&step=%s'>", stepId));
+      String stepUrl = stageExecutionUrl + String.format("\\&step=%s'>", stepId);
+      return Optional.of(stepUrl);
     }
 
     stageExecutionUrl += "'>";

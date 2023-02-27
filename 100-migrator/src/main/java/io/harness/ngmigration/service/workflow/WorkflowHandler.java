@@ -338,7 +338,7 @@ public abstract class WorkflowHandler {
     // Handle Wait Interval
     Integer waitInterval = phaseStep.getWaitInterval();
     if (waitInterval != null && waitInterval > 0) {
-      WaitStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", waitInterval);
+      WaitStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", waitInterval, false);
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       allSteps.add(waitStep);
@@ -448,15 +448,23 @@ public abstract class WorkflowHandler {
 
   // We can infer the type based on the service, infra & sometimes based on the steps used.
   ServiceDefinitionType inferServiceDefinitionType(WorkflowMigrationContext context) {
+    List<GraphNode> steps = MigratorUtility.getSteps(context.getWorkflow());
+    return inferServiceDefinitionType(context, steps);
+  }
+
+  ServiceDefinitionType inferServiceDefinitionType(WorkflowMigrationContext context, WorkflowPhase phase) {
+    List<GraphNode> steps = MigratorUtility.getStepsFromPhases(Collections.singletonList(phase));
+    return inferServiceDefinitionType(context, steps);
+  }
+
+  ServiceDefinitionType inferServiceDefinitionType(WorkflowMigrationContext context, List<GraphNode> steps) {
     OrchestrationWorkflowType workflowType = context.getWorkflow().getOrchestration().getOrchestrationWorkflowType();
     ServiceDefinitionType defaultType = workflowType.equals(OrchestrationWorkflowType.BASIC)
         ? ServiceDefinitionType.SSH
         : ServiceDefinitionType.KUBERNETES;
-    List<GraphNode> steps = MigratorUtility.getSteps(context.getWorkflow());
     if (EmptyPredicate.isEmpty(steps)) {
       return defaultType;
     }
-
     return steps.stream()
         .map(step -> stepMapperFactory.getStepMapper(step.getType()).inferServiceDef(context, step))
         .filter(Objects::nonNull)
@@ -481,7 +489,10 @@ public abstract class WorkflowHandler {
   DeploymentStageConfig getDeploymentStageConfig(ServiceDefinitionType serviceDefinitionType,
       List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps) {
     if (EmptyPredicate.isEmpty(steps)) {
-      return null;
+      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      ExecutionWrapperConfig waitStep =
+          ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
+      steps = Collections.singletonList(waitStep);
     }
     return DeploymentStageConfig.builder()
         .deploymentType(serviceDefinitionType)
@@ -566,7 +577,10 @@ public abstract class WorkflowHandler {
     List<ExecutionWrapperConfig> steps = getSteps(context, phases);
 
     if (EmptyPredicate.isEmpty(steps)) {
-      return null;
+      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      ExecutionWrapperConfig waitStep =
+          ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
+      steps = Collections.singletonList(waitStep);
     }
 
     // Add all the steps
@@ -731,7 +745,7 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isNotEmpty(phases)) {
       stages.addAll(phases.stream()
                         .map(phase
-                            -> buildDeploymentStage(context, ServiceDefinitionType.KUBERNETES, phase,
+                            -> buildDeploymentStage(context, inferServiceDefinitionType(context, phase), phase,
                                 rollbackPhaseMap.getOrDefault(phase.getName(), null)))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList()));
@@ -745,6 +759,25 @@ public abstract class WorkflowHandler {
         stages.add(stage);
       }
     }
+
+    // Note: If there are no stages in the generated template then we add a dummy stage which has a step that is always
+    // skipped
+    if (EmptyPredicate.isEmpty(stages)) {
+      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      ExecutionWrapperConfig waitStep =
+          ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
+      CustomStageConfig customStageConfig =
+          CustomStageConfig.builder()
+              .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(waitStep)).build())
+              .build();
+      CustomStageNode customStageNode = new CustomStageNode();
+      customStageNode.setName("Always Skipped");
+      customStageNode.setIdentifier(MigratorUtility.generateIdentifier("Always Skipped"));
+      customStageNode.setCustomStageConfig(customStageConfig);
+      customStageNode.setFailureStrategies(getDefaultFailureStrategy());
+      stages.add(StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(customStageNode)).build());
+    }
+
     return stages;
   }
 

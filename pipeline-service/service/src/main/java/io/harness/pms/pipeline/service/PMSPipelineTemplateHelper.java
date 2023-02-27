@@ -78,6 +78,20 @@ public class PMSPipelineTemplateHelper {
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
       String loadFromCache) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, checkForTemplateAccess,
+        getMergedTemplateWithTemplateReferences, loadFromCache, false);
+  }
+
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipelineAndAppendInputSetValidators(String accountId,
+      String orgId, String projectId, String yaml, boolean checkForTemplateAccess,
+      boolean getMergedTemplateWithTemplateReferences, String loadFromCache) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, checkForTemplateAccess,
+        getMergedTemplateWithTemplateReferences, loadFromCache, true);
+  }
+
+  private TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
+      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
+      String loadFromCache, boolean appendInputSetValidator) {
     // validating the duplicate fields in yaml field
     if (TemplateRefHelper.hasTemplateRef(yaml, true)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
@@ -94,7 +108,7 @@ public class PMSPipelineTemplateHelper {
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build(),
-              true));
+              appendInputSetValidator));
         }
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
@@ -106,7 +120,7 @@ public class PMSPipelineTemplateHelper {
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build(),
-              true));
+              appendInputSetValidator));
         }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {

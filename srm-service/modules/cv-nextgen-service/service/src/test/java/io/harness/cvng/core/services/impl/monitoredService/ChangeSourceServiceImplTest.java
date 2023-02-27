@@ -10,9 +10,11 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANJAN;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,10 +29,12 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
+import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
@@ -271,6 +275,19 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
     mockChangeSourceService.deleteByAccountIdentifier(
         ChangeSource.class, monitoredServiceParams.getAccountIdentifier());
     verify(mockChangeSourceService, times(1)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testChangeSourceDTOValidation_Failure() {
+    ChangeSourceDTO changeSourceDto =
+        builderFactory.getCustomChangeSourceDTOBuilder(ChangeSourceType.CUSTOM_DEPLOY)
+            .spec(CustomChangeSourceSpec.builder().name(randomAlphabetic(20)).type(ChangeCategory.FEATURE_FLAG).build())
+            .build();
+    Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
+    assertThatThrownBy(() -> changeSourceService.create(monitoredServiceParams, dtos))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   private ChangeSource getChangeSourceFromDb(String identifier) {

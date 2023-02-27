@@ -23,6 +23,7 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,14 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
       ProjectParams projectParams, ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO, Boolean isEnabled) {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
+
+    if (simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType() != null
+        && serviceLevelObjectiveV2DTO.getTags() == null) {
+      Map<String, String> tags = new HashMap<>();
+      tags.put("serviceLevelIndicatorType", simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType().toString());
+      serviceLevelObjectiveV2DTO.setTags(tags);
+    }
+
     return SimpleServiceLevelObjective.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())

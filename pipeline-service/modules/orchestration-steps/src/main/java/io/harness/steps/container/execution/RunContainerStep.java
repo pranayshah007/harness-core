@@ -148,7 +148,7 @@ public class RunContainerStep implements AsyncExecutableWithRbac<StepElementPara
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     return containerStepExecutionResponseHelper.handleAsyncResponseInternal(
-        ambiance, ((ContainerStepInfo) stepParameters.getSpec()), responseDataMap);
+        ambiance, (ContainerStepInfo) stepParameters.getSpec(), responseDataMap);
   }
 
   private String getLogPrefix(Ambiance ambiance) {

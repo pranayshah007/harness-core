@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 // TODO: ARPIT remove this iterator once delegate task migration has been done
 public class FailDelegateTaskIteratorOnDMS
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<DelegateTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<DelegateTask> persistenceProvider;
   @Inject private ConfigurationController configurationController;
@@ -52,6 +52,26 @@ public class FailDelegateTaskIteratorOnDMS
                            .unsorted(true)
                            .isDelegateTaskMigrationEnabled(true)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<DelegateTask, MorphiaFilterExpander<DelegateTask>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       FailDelegateTaskIteratorOnDMS.class,
+                       MongoPersistenceIterator.<DelegateTask, MorphiaFilterExpander<DelegateTask>>builder()
+                           .clazz(DelegateTask.class)
+                           .fieldName(DelegateTaskKeys.delegateTaskFailIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofSeconds(45))
+                           .acceptableExecutionTime(Duration.ofSeconds(30))
+                           .filterExpander(query
+                               -> query.criteria(DelegateTaskKeys.createdAt)
+                                      .lessThan(currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                           .handler(this)
+                           .persistenceProvider(persistenceProvider)
+                           .isDelegateTaskMigrationEnabled(true));
   }
 
   @Override

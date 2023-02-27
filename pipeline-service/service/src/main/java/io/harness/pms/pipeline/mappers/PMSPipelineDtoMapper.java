@@ -19,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -48,6 +47,7 @@ import io.harness.pms.pipeline.yaml.PipelineYaml;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.scope.ScopeHelper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;

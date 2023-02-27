@@ -224,7 +224,9 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(190, "GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT");
     entityTypeOrdinalMapping.put(191, "GOOGLE_CLOUD_FUNCTIONS_ROLLBACK");
     entityTypeOrdinalMapping.put(192, "AWS_LAMBDA_DEPLOY");
-
+    entityTypeOrdinalMapping.put(193, "AWS_SAM_DEPLOY");
+    entityTypeOrdinalMapping.put(194, "AWS_SAM_ROLLBACK");
+    entityTypeOrdinalMapping.put(195, "SSCA_ORCHESTRATION");
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

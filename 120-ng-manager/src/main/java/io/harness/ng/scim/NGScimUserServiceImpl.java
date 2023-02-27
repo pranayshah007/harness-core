@@ -8,6 +8,7 @@
 package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -59,6 +60,7 @@ import org.apache.commons.lang3.StringUtils;
 public class NGScimUserServiceImpl implements ScimUserService {
   private static final String GIVEN_NAME = "givenName";
   private static final String FAMILY_NAME = "familyName";
+  private static final String FORMATTED_NAME = "formatted";
   private static final String VALUE = "value";
   private static final String PRIMARY = "primary";
   private final NgUserService ngUserService;
@@ -99,7 +101,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
       ngUserService.addUserToScope(
           user.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
-      return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
+      return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);
       Invite invite = Invite.builder()
@@ -107,6 +109,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
                           .approved(true)
                           .email(primaryEmail)
                           .name(userName)
+                          .givenName(getGivenNameFromScimUser(userQuery))
+                          .familyName(getFamilyNameFromScimUser(userQuery))
                           .inviteType(InviteType.SCIM_INITIATED_INVITE)
                           .build();
 
@@ -119,7 +123,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         user = userOptional.get();
         userQuery.setId(user.getUuid());
         log.info("NGSCIM: Completed creating user call for accountId {} with query {}", accountId, userQuery);
-        return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid())).build();
+        return Response.status(Response.Status.CREATED).entity(getUserInternal(user.getUuid(), accountId)).build();
       } else {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
@@ -133,9 +137,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
     return false;
   }
 
-  private ScimUser getUserInternal(String userId) {
+  private ScimUser getUserInternal(String userId, String accountId) {
     Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
-    return userInfo.map(this::buildUserResponse).orElse(null);
+    return userInfo.map(user -> buildUserResponse(user, accountId)).orElse(null);
   }
 
   @Override
@@ -146,7 +150,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       if (userOptional.isPresent()
           && ngUserService.isUserAtScope(
               userOptional.get().getUuid(), Scope.builder().accountIdentifier(accountId).build())) {
-        return userInfo.map(this::buildUserResponse).get();
+        return userInfo.map(user -> buildUserResponse(user, accountId)).get();
       } else {
         throw new InvalidRequestException("User does not exist in NG");
       }
@@ -225,7 +229,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       });
     }
-    return getUserInternal(userId);
+    return getUserInternal(userId, accountId);
   }
 
   @Override
@@ -295,7 +299,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUserInternal(userId)).build();
+      return Response.status(Response.Status.OK).entity(getUserInternal(userId, accountId)).build();
     }
   }
 
@@ -398,7 +402,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         || !StringUtils.equalsIgnoreCase(user.getEmail(), userQuery.getUserName());
   }
 
-  private ScimUser buildUserResponse(UserInfo user) {
+  private ScimUser buildUserResponse(UserInfo user, String accountId) {
     ScimUser userResource = new ScimUser();
     userResource.setId(user.getUuid());
 
@@ -409,9 +413,20 @@ public class NGScimUserServiceImpl implements ScimUserService {
     // @Todo - Check with Ujjawal on this if we need GIVEN_NAME & FAMILY_NAME
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
-        //        put(GIVEN_NAME, user.getGivenName() != null ? user.getGivenName() : user.getName());
-        //        put(FAMILY_NAME, user.getFamilyName() != null ? user.getFamilyName() : user.getName());
         put("displayName", user.getName());
+        if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+          final String givenNm = user.getGivenName() == null ? user.getName() : user.getGivenName();
+          final String familyNm = user.getFamilyName() == null ? user.getName() : user.getFamilyName();
+
+          put(FAMILY_NAME, familyNm);
+          put(GIVEN_NAME, givenNm);
+
+          if (user.getGivenName() == null && user.getFamilyName() == null) {
+            put(FORMATTED_NAME, user.getName());
+          } else {
+            put(FORMATTED_NAME, givenNm + ", " + familyNm);
+          }
+        }
       }
     };
 
@@ -440,5 +455,17 @@ public class NGScimUserServiceImpl implements ScimUserService {
       return user.getName().get(GIVEN_NAME).asText() + " " + user.getName().get(FAMILY_NAME).asText();
     }
     return null;
+  }
+
+  private String getGivenNameFromScimUser(@NotNull ScimUser userQuery) {
+    return userQuery.getName() != null && userQuery.getName().get(GIVEN_NAME) != null
+        ? userQuery.getName().get(GIVEN_NAME).textValue()
+        : userQuery.getDisplayName();
+  }
+
+  private String getFamilyNameFromScimUser(@NotNull ScimUser userQuery) {
+    return userQuery.getName() != null && userQuery.getName().get(GIVEN_NAME) != null
+        ? userQuery.getName().get(FAMILY_NAME).textValue()
+        : userQuery.getDisplayName();
   }
 }
