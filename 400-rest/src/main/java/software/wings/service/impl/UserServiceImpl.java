@@ -2447,10 +2447,14 @@ public class UserServiceImpl implements UserService {
       updates.add(org.springframework.data.util.Pair.of(inviteQuery, update));
     });
 
-    BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, UserInvite.class);
-    bulkOperations.updateMulti(updates);
-    log.info("Bulk updating userInvites associated with accountId {} to remove the user groupId={}", accountId, userGroupId);
-    bulkOperations.execute();
+    if (updates.size() > 0) {
+      BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, UserInvite.class);
+      bulkOperations.updateMulti(updates);
+      log.info("Bulk updating userInvites associated with accountId {} to remove the user groupId={}", accountId, userGroupId);
+      bulkOperations.execute();
+    } else {
+      log.info("No userInvites matched associated to accountId {} for user groupId={}", accountId, userGroupId);
+    }
   }
 
   @Override
