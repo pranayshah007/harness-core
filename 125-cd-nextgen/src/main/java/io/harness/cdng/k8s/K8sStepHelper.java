@@ -660,8 +660,9 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap =
         k8sStepPassThroughData.getLocalStoreFileMapContents();
-    if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFilesResultMap)
-        || isNotEmpty(customFetchContent) || isNotEmpty(localStoreFetchFilesResultMap)) {
+    if (isNotEmpty(k8sStepPassThroughData.getManifestOutcomeList()) || isNotEmpty(gitFetchFilesResultMap)
+        || isNotEmpty(helmChartValuesFilesResultMap) || isNotEmpty(customFetchContent)
+        || isNotEmpty(localStoreFetchFilesResultMap)) {
       valuesFileContents.addAll(
           getManifestFilesContents(gitFetchFilesResultMap, k8sStepPassThroughData.getManifestOutcomeList(),
               helmChartValuesFilesResultMap, customFetchContent, localStoreFetchFilesResultMap));
