@@ -12,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/go-redis/redismock/v8"
@@ -275,4 +276,144 @@ func TestEnqueue(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDequeue(t *testing.T) {
+	rdb, mock := redismock.NewClientMock()
+	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	defer func() {
+		_ = rdb.Close()
+	}()
+	r := &Store{Client: rdb, Logger: &l}
+
+	// Initialize Store with Redis mock
+
+	request1 := store.DequeueRequest{Topic: "test", MaxWaitDuration: 100, BatchSize: 1, ConsumerName: "test_consumer"}
+	pendingExtArgs := &redis.XPendingExtArgs{
+		Stream: utils.GetSubTopicStreamQueueKey(request1.Topic, "account1"),
+		Group:  utils.GetConsumerGroupKeyForTopic(request1.Topic),
+		// todo: use RegisterTopicMetadata instead of hardcoding
+		Idle:     time.Duration(r.PendingTimeout) * time.Millisecond,
+		Count:    1,
+		Start:    "-",
+		End:      "+",
+		Consumer: "test_consumer",
+	}
+	xReadGroupArgs := &redis.XReadGroupArgs{
+		Group:    utils.GetConsumerGroupKeyForTopic(request1.Topic),
+		Consumer: "test_consumer",
+		Streams:  []string{utils.GetSubTopicStreamQueueKey(request1.Topic, "account1"), ">"},
+		Count:    int64(1),
+		Block:    100 * time.Millisecond,
+	}
+	xclaimArgs := &redis.XClaimArgs{
+		Stream:   utils.GetSubTopicStreamQueueKey(request1.Topic, "account1"),
+		Group:    utils.GetConsumerGroupKeyForTopic(request1.Topic),
+		Consumer: request1.ConsumerName,
+		MinIdle:  time.Duration(r.ClaimTimeout) * time.Millisecond,
+		Messages: []string{"1233434545-0"},
+	}
+
+	// Test case 1: Dequeuing a message that exists in the stream
+	mock.ExpectSMembers(utils.GetAllSubTopicsFromTopicKey(request1.Topic)).SetVal([]string{"account1"})
+	mock.ExpectXPendingExt(pendingExtArgs).SetVal([]redis.XPendingExt{})
+	mock.ExpectXReadGroup(xReadGroupArgs).SetVal([]redis.XStream{
+		{
+			Stream: utils.GetSubTopicStreamQueueKey(request1.Topic, "account1"),
+			Messages: []redis.XMessage{
+				{
+					ID: "1232343434-0",
+					Values: map[string]interface{}{
+						"payload": "test1",
+					},
+				},
+			},
+		}})
+	response1, err1 := r.Dequeue(context.Background(), request1)
+	assert.Nil(t, err1)
+	assert.Equal(t, response1[0].ItemID, "1232343434-0")
+	assert.Equal(t, response1[0].Payload, "test1")
+
+	// Test case 2: Dequeuing a message when no subtopic Exist
+
+	mock.ExpectSMembers(utils.GetAllSubTopicsFromTopicKey(request1.Topic)).SetVal([]string{})
+	response2, err2 := r.Dequeue(context.Background(), request1)
+	assert.Nil(t, err2)
+	assert.Equal(t, len(response2), 0)
+
+	// Test case 3: Dequeue a message when no message left for processing
+	mock.ExpectSMembers(utils.GetAllSubTopicsFromTopicKey(request1.Topic)).SetVal([]string{"account1"})
+	mock.ExpectXPendingExt(pendingExtArgs).SetVal([]redis.XPendingExt{})
+	mock.ExpectXReadGroup(xReadGroupArgs).SetVal([]redis.XStream{})
+	response3, err3 := r.Dequeue(context.Background(), request1)
+	assert.Nil(t, err3)
+	assert.Equal(t, len(response3), 0)
+
+	// Test case 4: Message claimed from Pending Queue
+	mock.ExpectSMembers(utils.GetAllSubTopicsFromTopicKey(request1.Topic)).SetVal([]string{"account1"})
+	mock.ExpectXPendingExt(pendingExtArgs).SetVal([]redis.XPendingExt{
+		{
+			ID:         "1233434545-0",
+			Consumer:   "test_consumer",
+			Idle:       10000 * time.Millisecond,
+			RetryCount: 1,
+		},
+	})
+	mock.ExpectXClaim(xclaimArgs).SetVal([]redis.XMessage{
+		{
+			ID: "1233434545-0",
+			Values: map[string]interface{}{
+				"payload": "test1",
+			},
+		},
+	})
+
+	r.Dequeue(context.Background(), request1)
+	assert.Nil(t, err1)
+	assert.Equal(t, response1[0].ItemID, "1232343434-0")
+	assert.Equal(t, response1[0].Payload, "test1")
+
+	// Check that all expectations have been met
+	assert.NoError(t, mock.ExpectationsWereMet())
+
+}
+
+func TestAck(t *testing.T) {
+	rdb, mock := redismock.NewClientMock()
+	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	defer func() {
+		_ = rdb.Close()
+	}()
+	r := &Store{Client: rdb, Logger: &l}
+
+	// Initialize Store with Redis mock
+
+	// Test case 1: Acknowledging a message that exists in the stream
+	request1 := store.AckRequest{Topic: "test", SubTopic: "subtest", ItemID: "12345", ConsumerName: "test_consumer"}
+	mock.ExpectXAck(utils.GetSubTopicStreamQueueKey(request1.Topic, request1.SubTopic), utils.GetConsumerGroupKeyForTopic(request1.Topic), "12345").SetVal(int64(1))
+	mock.ExpectXDel(utils.GetSubTopicStreamQueueKey(request1.Topic, request1.SubTopic), "12345").SetVal(int64(1))
+
+	response1, err1 := r.Ack(context.Background(), request1)
+	assert.Nil(t, err1)
+	assert.Equal(t, request1.ItemID, response1.ItemID)
+
+	// Test case 2: Acknowledging a message that does not exist in the stream
+	request2 := store.AckRequest{Topic: "test", SubTopic: "subtest", ItemID: "12345", ConsumerName: "test_consumer"}
+	mock.ExpectXAck(utils.GetSubTopicStreamQueueKey(request2.Topic, request2.SubTopic), utils.GetConsumerGroupKeyForTopic(request1.Topic), "12345").SetVal(int64(0))
+
+	_, err2 := r.Ack(context.Background(), request2)
+	assert.NotNil(t, err2)
+	assert.Equal(t, "Acknowledging item failed due to incorrect Topic/SubTopic or item does not exist", err2.(*store.AckErrorResponse).ErrorMessage)
+
+	// Test case 3: Acknowledging a message that fails to delete from the stream
+	request3 := store.AckRequest{Topic: "test", SubTopic: "subtest", ItemID: "12345", ConsumerName: "test_consumer"}
+	mock.ExpectXAck(utils.GetSubTopicStreamQueueKey(request3.Topic, request3.SubTopic), utils.GetConsumerGroupKeyForTopic(request3.Topic), "12345").SetVal(int64(1))
+	mock.ExpectXDel(utils.GetSubTopicStreamQueueKey(request3.Topic, request3.SubTopic), "12345").SetErr(errors.New("error deleting message"))
+
+	_, err3 := r.Ack(context.Background(), request3)
+	assert.NotNil(t, err3)
+	assert.Equal(t, "error deleting message", err3.(*store.AckErrorResponse).ErrorMessage)
+
+	// Check that all expectations have been met
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

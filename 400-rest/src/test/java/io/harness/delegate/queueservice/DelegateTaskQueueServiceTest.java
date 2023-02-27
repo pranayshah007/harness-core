@@ -139,7 +139,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
     when(hsqsServiceClient.ack(any())).thenReturn(new Call<>() {
       @Override
       public Response<AckResponse> execute() throws IOException {
-        return Response.success(AckResponse.builder().itemID("itemId").build());
+        return Response.success(AckResponse.builder().itemId("itemId").build());
       }
 
       @Override

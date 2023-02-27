@@ -132,13 +132,13 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     try {
       AckResponse response = hsqsServiceClient
                                  .ack(AckRequest.builder()
-                                          .itemID(itemId)
+                                          .itemId(itemId)
                                           .topic(delegateQueueServiceConfig.getTopic())
                                           .subTopic(accountId)
                                           .build())
                                  .execute()
                                  .body();
-      return Objects.requireNonNull(response).getItemID();
+      return Objects.requireNonNull(response).getItemId();
     } catch (IOException e) {
       log.error("Error while acknowledging delegate task ", e);
       return null;
