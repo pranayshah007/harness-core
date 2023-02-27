@@ -14,7 +14,15 @@ import io.harness.connector.migration.AddOnDelegateFieldToCustomSecretManagerCon
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
-import io.harness.ng.core.migration.*;
+import io.harness.ng.core.migration.CreateDefaultGcpKmsSMInNGMigration;
+import io.harness.ng.core.migration.DeleteCVSetupUsageEventsMigration;
+import io.harness.ng.core.migration.DisableBuiltInHarnessSMSettingsMigration;
+import io.harness.ng.core.migration.DisableHarnessSMSettingCategoryMigration;
+import io.harness.ng.core.migration.NGAccountSettingsMigration;
+import io.harness.ng.core.migration.NGDefaultOrgNameMigration;
+import io.harness.ng.core.migration.NGDefaultSMNameMigration;
+import io.harness.ng.core.migration.NGGitlabConnectorMigration;
+import io.harness.ng.core.migration.NGUpdatePollingDocumentClassMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;

@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.migration;
+package io.harness.ng.core.migration;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.connector.entities.Connector.ConnectorKeys;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -19,7 +20,6 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.migration.NGMigration;
-import io.harness.ng.core.migration.NGSecretManagerMigration;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -95,11 +95,11 @@ public class CreateDefaultGcpKmsSMInNGMigration implements NGMigration {
 
   private void removeGlobalLocalConnector() throws Exception {
     log.info("[CreateDefaultGcpKMSInNGMigration]: Removing GLOBAL Local Connector");
-    Query query = new Query(Criteria.where(Connector.ConnectorKeys.identifier)
+    Query query = new Query(Criteria.where(ConnectorKeys.identifier)
                                 .is(HARNESS_SECRET_MANAGER_IDENTIFIER)
-                                .and(Connector.ConnectorKeys.accountIdentifier)
+                                .and(ConnectorKeys.accountIdentifier)
                                 .is(GLOBAL_ACCOUNT_ID)
-                                .and(Connector.ConnectorKeys.type)
+                                .and(ConnectorKeys.type)
                                 .is(ConnectorType.LOCAL));
     final DeleteResult remove = mongoTemplate.remove(query, Connector.class);
     if (remove.getDeletedCount() == 1) {
