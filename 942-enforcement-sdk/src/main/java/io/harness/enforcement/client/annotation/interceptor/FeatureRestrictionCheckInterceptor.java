@@ -30,6 +30,7 @@ public class FeatureRestrictionCheckInterceptor implements MethodInterceptor {
 
   @Override
   public Object invoke(MethodInvocation methodInvocation) throws Throwable {
+    log.info("TestVikasLogs: feature restriction interceptor invoked.");
     FeatureRestrictionCheck featureCheck =
         methodInvocation.getMethod().getDeclaredAnnotation(FeatureRestrictionCheck.class);
 
