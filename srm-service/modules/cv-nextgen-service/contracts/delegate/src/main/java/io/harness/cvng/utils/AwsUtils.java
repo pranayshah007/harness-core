@@ -85,6 +85,8 @@ public class AwsUtils {
         awsCredentials = serviceProvider.getCredentials();
       } else {
         awsCredentials = InstanceProfileCredentialsProvider.getInstance().getCredentials();
+        log.info("AwsConnectorDTO AWSCredentialsType {} awsCredentials skey {} aKey {}", awsCredentialType,
+            awsCredentials.getAWSSecretKey().substring(0, 4), awsCredentials.getAWSAccessKeyId().substring(0, 4));
       }
     } else {
       AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) connectorDTO.getCredential().getConfig();
