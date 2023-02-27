@@ -5,13 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.utils;
+package io.harness.encryption;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 
 import lombok.experimental.UtilityClass;

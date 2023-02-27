@@ -64,6 +64,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
@@ -147,6 +148,18 @@ public class CIStepGroupUtils {
     }
 
     return mainEngineExecutionSections;
+  }
+
+  public static String getUniqueStepIdentifier(List<Level> levels, String stepIdentifier) {
+    StringBuilder identifier = new StringBuilder();
+    for (Level level : levels) {
+      if (level.getStepType().getType().equals("STEP_GROUP")) {
+        identifier.append(level.getIdentifier());
+        identifier.append("_");
+      }
+    }
+    identifier.append(stepIdentifier);
+    return identifier.toString();
   }
 
   private ExecutionWrapperConfig fetchInitializeStepExecutionWrapper(

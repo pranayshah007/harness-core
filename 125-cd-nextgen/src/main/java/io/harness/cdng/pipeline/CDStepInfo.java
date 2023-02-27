@@ -17,6 +17,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepInfo;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.aws.sam.AwsSamRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
@@ -126,7 +127,7 @@ import io.swagger.annotations.ApiModel;
         AsgBlueGreenSwapServiceStepInfo.class, TerraformCloudRunStepInfo.class, TerraformCloudRollbackStepInfo.class,
         GoogleFunctionsDeployStepInfo.class, GoogleFunctionsDeployWithoutTrafficStepInfo.class,
         GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class, AwsSamDeployStepInfo.class,
-        AwsSamRollbackStepInfo.class})
+        AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

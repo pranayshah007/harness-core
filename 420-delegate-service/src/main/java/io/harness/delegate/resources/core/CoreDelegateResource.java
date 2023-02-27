@@ -15,17 +15,16 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.SecretDetail;
-import io.harness.delegate.core.AcquireTasksResponse;
-import io.harness.delegate.core.ExecutionEnvironment;
-import io.harness.delegate.core.ExecutionMode;
-import io.harness.delegate.core.ExecutionPriority;
-import io.harness.delegate.core.PluginDescriptor;
-import io.harness.delegate.core.PluginInput;
-import io.harness.delegate.core.PluginSecret;
-import io.harness.delegate.core.PluginSource;
-import io.harness.delegate.core.PluginType;
-import io.harness.delegate.core.ResourceRequirements;
-import io.harness.delegate.core.SecretConfig;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.ExecutionEnvironment;
+import io.harness.delegate.core.beans.ExecutionMode;
+import io.harness.delegate.core.beans.ExecutionPriority;
+import io.harness.delegate.core.beans.PluginSource;
+import io.harness.delegate.core.beans.ResourceRequirements;
+import io.harness.delegate.core.beans.SecretConfig;
+import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.TaskInput;
+import io.harness.delegate.core.beans.TaskSecret;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -88,27 +87,26 @@ public class CoreDelegateResource {
 
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
       final var taskDataBytes = kryoSerializer.asDeflatedBytes(delegateTaskPackage);
-      final List<PluginSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
+      final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var pluginDesc =
-          PluginDescriptor.newBuilder()
+          TaskDescriptor.newBuilder()
               .setId(taskId)
               .setMode(ExecutionMode.MODE_ONCE)
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
-              .setInput(PluginInput.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
+              .setInput(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
               .addAllInputSecrets(protoSecrets)
-              .setRuntime(
-                  ExecutionEnvironment.newBuilder()
-                      .setType(PluginType.newBuilder().setType(delegateTaskPackage.getData().getTaskType()).build())
-                      .setSource(PluginSource.SOURCE_IMAGE)
-                      .setUsing("us.gcr.io/gcr-play/delegate-plugin:k8s")
-                      .setResource(ResourceRequirements.newBuilder()
-                                       .setMemory("128Mi")
-                                       .setCpu("0.1")
-                                       .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
-                                       .build())
-                      .build())
+              .setRuntime(ExecutionEnvironment.newBuilder()
+                              .setType(delegateTaskPackage.getData().getTaskType())
+                              .setSource(PluginSource.SOURCE_IMAGE)
+                              .setUses("us.gcr.io/gcr-play/delegate-plugin:k8s")
+                              .setResource(ResourceRequirements.newBuilder()
+                                               .setMemory("128Mi")
+                                               .setCpu("0.1")
+                                               .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
+                                               .build())
+                              .build())
               .build();
       final var response = AcquireTasksResponse.newBuilder().addTasks(pluginDesc).build();
 
@@ -119,7 +117,7 @@ public class CoreDelegateResource {
     }
   }
 
-  private List<PluginSecret> createProtoSecrets(final DelegateTaskPackage delegateTaskPackage) {
+  private List<TaskSecret> createProtoSecrets(final DelegateTaskPackage delegateTaskPackage) {
     final Map<EncryptionConfig, List<EncryptedRecord>> kryoSecrets =
         delegateTaskPackage.getSecretDetails().values().stream().collect(Collectors.groupingBy(secret
             -> delegateTaskPackage.getEncryptionConfigs().get(secret.getConfigUuid()),
@@ -131,25 +129,23 @@ public class CoreDelegateResource {
         .collect(Collectors.toList());
   }
 
-  private PluginSecret createProtoSecret(final EncryptionConfig config, final List<EncryptedRecord> secrets) {
+  private TaskSecret createProtoSecret(final EncryptionConfig config, final List<EncryptedRecord> secrets) {
     final var configBytes = kryoSerializer.asDeflatedBytes(config);
     final var secretsBytes = kryoSerializer.asDeflatedBytes(secrets);
 
-    return PluginSecret.newBuilder()
+    return TaskSecret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
-        .setSecrets(PluginInput.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
-        .setRuntime(
-            ExecutionEnvironment.newBuilder()
-                .setType(
-                    PluginType.newBuilder().setType("SECRET").build()) // Fixme: Secret type doesn't exist right now
-                .setSource(PluginSource.SOURCE_IMAGE)
-                .setUsing("us.gcr.io/gcr-play/secret-provider:secrets")
-                .setResource(ResourceRequirements.newBuilder()
-                                 .setMemory("128Mi")
-                                 .setCpu("0.1")
-                                 .setTimeout(Duration.newBuilder().setSeconds(600).build())
-                                 .build())
-                .build())
+        .setSecrets(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
+        .setRuntime(ExecutionEnvironment.newBuilder()
+                        .setType("SECRET") // Fixme: Secret type doesn't exist right now
+                        .setSource(PluginSource.SOURCE_IMAGE)
+                        .setUses("us.gcr.io/gcr-play/secret-provider:secrets")
+                        .setResource(ResourceRequirements.newBuilder()
+                                         .setMemory("128Mi")
+                                         .setCpu("0.1")
+                                         .setTimeout(Duration.newBuilder().setSeconds(600).build())
+                                         .build())
+                        .build())
         .build();
   }
 }

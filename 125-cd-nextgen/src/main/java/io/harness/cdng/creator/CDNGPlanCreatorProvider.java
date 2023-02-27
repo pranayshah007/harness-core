@@ -298,14 +298,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ASG = "AutoScalingGroup";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
-  private static final List<String> CLOUDFORMATION_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
+      KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAGRUNT_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final List<String> TERRAFORM_CLOUD_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
@@ -313,7 +313,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS);
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
@@ -334,7 +334,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       ManifestType.OpenshiftParam, ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER,
       ManifestType.AsgLaunchTemplate, ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy,
       ManifestType.AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
-      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsSamDirectory);
+      ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
+      ManifestType.AwsSamDirectory);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -905,14 +906,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
             .build();
 
-    StepInfo awsLambdaDeploy =
-        StepInfo.newBuilder()
-            .setName("Aws Lambda Deploy")
-            .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
-            .setStepMetaData(
-                StepMetaData.newBuilder().addCategory("AwsLambdaDeploy").setFolderPath("Aws Lambda").build())
-            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
-            .build();
+    StepInfo awsLambdaDeploy = StepInfo.newBuilder()
+                                   .setName("Aws Lambda Deploy")
+                                   .setType(StepSpecTypeConstants.AWS_LAMBDA_DEPLOY)
+                                   .setStepMetaData(StepMetaData.newBuilder()
+                                                        .addCategory(StepSpecTypeConstants.AWS_LAMBDA)
+                                                        .setFolderPath("Aws Lambda")
+                                                        .build())
+                                   .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+                                   .build();
 
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")

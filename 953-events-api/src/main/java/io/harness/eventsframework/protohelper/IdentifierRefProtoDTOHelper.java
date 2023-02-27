@@ -14,10 +14,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.encryption.ScopeHelper;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.exception.InvalidRequestException;
+import io.harness.scope.ScopeHelper;
 
 import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;

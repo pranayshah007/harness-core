@@ -5,9 +5,9 @@
 
 syntax = "proto3";
 
-package io.harness.delegate.core;
+package io.harness.delegate.core.beans;
 
-import "955-delegate-beans/src/main/proto/io/harness/delegate/core/plugin.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.proto";
 
 option java_multiple_files = true;
 
@@ -15,5 +15,5 @@ option java_multiple_files = true;
   Top level request object for acquiring tasks
  */
 message AcquireTasksResponse {
-  repeated PluginDescriptor tasks = 1;
+  repeated TaskDescriptor tasks = 1;
 }

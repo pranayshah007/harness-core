@@ -17,7 +17,9 @@ type Config struct {
 
 	ServiceName string `envconfig:"HSQS_SERVICE_NAME" default:"queue_service"`
 
-	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH" default:"true"`
+	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH" default:"false"`
+
+	EnableHttpLogging bool `envconfig:"HSQS_ENABLE_HTTP_LOGGING" default:"false"`
 
 	EnableProfiler bool `envconfig:"HSQS_ENABLE_PROFILER"`
 

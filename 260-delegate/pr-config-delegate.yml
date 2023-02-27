@@ -1,0 +1,36 @@
+# Dropwizard config
+server:
+  allowedMethods: ["GET"]
+  adminConnectors: []
+  applicationConnectors:
+    - type: http
+      port: 3460
+      maxRequestHeaderSize: 100KiB
+  rootPath: /api
+  maxThreads: 1024
+
+logging:
+  type: external
+
+# Delegate Config
+accountId: kmpySmUISimoRrJL6NL73w
+delegateToken: a0770803011fe08a9172933bebf713ce
+managerUrl: https://del.pr.harness.io/del-5320/api/
+verificationServiceUrl: https://del.pr.harness.io/del-5320/verification/
+cvNextGenUrl: https://del.pr.harness.io/del-5320/cv/api/
+logStreamingServiceBaseUrl: https://del.pr.harness.io/del-5320
+heartbeatIntervalMs: 50000
+localDiskPath: /tmp
+doUpgrade: false
+pollForTasks: false
+description: description here
+managerTarget: localhost:9880
+managerAuthority: localhost
+queueFilePath: ../eventQueue
+grpcServiceEnabled: true
+grpcServiceConnectorPort: 8080
+clientToolsDownloadDisabled: true
+installClientToolsInBackground: true
+
+# Required for local development as manger uses self-signed cert
+trustAllCertificates: true
