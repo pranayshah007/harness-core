@@ -15,6 +15,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMM
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
@@ -222,6 +224,16 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Map<String, String> actual =
         pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
     assertThat(actual).isEqualTo(expected);
+
+    when(connectorUtils.getConnectorDetails(any(), eq("docker")))
+        .thenReturn(ConnectorDetails.builder()
+                        .connectorType(ConnectorType.DOCKER)
+                        .connectorConfig(DockerConnectorDTO.builder().dockerRegistryUrl(DOCKER_REGISTRY_V2).build())
+                        .build());
+    actual =
+        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    assertThat(actual).containsKey("PLUGIN_DOCKER_REGISTRY");
+    assertThat(actual.get("PLUGIN_DOCKER_REGISTRY")).isEqualTo(DOCKER_REGISTRY_V1);
   }
 
   @Test
