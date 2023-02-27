@@ -256,8 +256,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
       try {
         if (isNotEmpty(parameters.getEnvToEnvInputs())) {
-          ngEnvironmentConfig = mergeEnvironmentInputs(
-              environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.getIdentifier()));
+          ngEnvironmentConfig =
+              mergeEnvironmentInputs(environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.fetchRef()));
         } else {
           ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(), null);
         }
@@ -267,26 +267,25 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             ex);
       }
       List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
-      envToEnvVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(variables));
+      envToEnvVariables.put(environment.fetchRef(), NGVariablesUtils.getMapOfVariables(variables));
       if (variables != null) {
         secretNGVariables.addAll(
             variables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
       }
-      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
-          serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-              AmbianceUtils.getProjectIdentifier(ambiance), environment.getIdentifier(),
-              parameters.getServiceRef().getValue());
+      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity = serviceOverrideService.get(
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), environment.fetchRef(), parameters.getServiceRef().getValue());
       NGServiceOverrideConfig ngServiceOverrides;
       if (ngServiceOverridesEntity.isPresent()) {
         ngServiceOverrides = mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(),
-            parameters.getEnvToSvcOverrideInputs().get(environment.getIdentifier()));
+            parameters.getEnvToSvcOverrideInputs().get(environment.fetchRef()));
 
         svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
         if (svcOverrideVariables != null) {
           secretNGVariables.addAll(
               svcOverrideVariables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
         }
-        envToSvcVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
+        envToSvcVariables.put(environment.fetchRef(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
       }
     }
 
@@ -321,7 +320,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     List<String> envRefsIds = envRefs.stream().map(e -> e.getValue()).collect(Collectors.toList());
 
     List<Environment> environments =
-        environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(AmbianceUtils.getAccountId(ambiance),
+        environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), envRefsIds);
 
     if (environments.isEmpty()) {

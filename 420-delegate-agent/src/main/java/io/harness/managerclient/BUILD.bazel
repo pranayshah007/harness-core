@@ -17,7 +17,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/beans/configfile:module",
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//950-delegate-tasks-beans:module",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//959-file-service-commons:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//970-watcher-beans:module",

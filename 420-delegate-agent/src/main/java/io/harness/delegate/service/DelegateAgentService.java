@@ -7,7 +7,7 @@
 
 package io.harness.delegate.service;
 
-import io.harness.delegate.core.ExecutionStatusResponse;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 
 public interface DelegateAgentService {
   void run(boolean watched, boolean isServer);
