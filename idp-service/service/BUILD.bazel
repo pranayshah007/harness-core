@@ -38,6 +38,7 @@ java_binary(
         "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/maintenance:module",
         "//999-annotations:module",
+        "//clients/access-control/sdk:module",
         "//idp-service/contracts:module",
         "//idp-service/modules/contracts:module",
         "//idp-service/service/src/main/java/io/harness/idp/config:module",
