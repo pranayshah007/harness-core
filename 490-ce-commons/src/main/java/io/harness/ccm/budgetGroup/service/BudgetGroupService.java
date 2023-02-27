@@ -14,25 +14,31 @@ import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface BudgetGroupService {
   String save(BudgetGroup budgetGroup);
   void update(String uuid, String accountId, BudgetGroup budgetGroup);
   BudgetGroup get(String uuid, String accountId);
-  List<BudgetGroup> list(String accountId, Set<String> allowedFolderIds);
+  List<BudgetGroup> list(
+      String accountId, Set<String> allowedFolderIds, HashMap<String, String> perspectiveIdAndFolderIds);
   List<BudgetGroup> list(String accountId, List<String> budgetGroupIds);
   boolean delete(String uuid, String accountId);
   BudgetGroup updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup);
   List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
-  List<BudgetSummary> listAllEntities(String accountId, Set<String> allowedFolderIds);
-  List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id, Set<String> allowedFolderIds);
+  List<BudgetSummary> listAllEntities(
+      String accountId, Set<String> allowedFolderIds, HashMap<String, String> perspectiveIdAndFolderIds);
+  List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(
+      String accountId, String id, Set<String> allowedFolderIds, HashMap<String, String> perspectiveIdAndFolderIds);
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
   void updateBudgetGroupCosts(BudgetGroup budgetGroup);
   void updateCostsOfParentBudgetGroupsOnEntityDeletion(BudgetGroup immediateParent);
-  Set<String> findFolderIdsGivenBudgetGroup(String accountId, List<BudgetGroup> budgetGroups);
-  Set<String> getFolderIdsGivenBudgetIds(String accountId, List<String> budgetIds);
+  List<String> findPerspectiveIdsGivenBudgetGroup(String accountId, List<BudgetGroup> budgetGroups);
+  Set<String> getFolderIdsGivenBudgetIds(
+      String accountId, List<String> budgetIds, Map<String, String> perspectiveIdAndFolderIds);
 }

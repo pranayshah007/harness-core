@@ -46,6 +46,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -106,8 +107,8 @@ public class BudgetGroupsResource {
   save(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Budget Group definition") @NotNull @Valid BudgetGroup budgetGroup) {
-    Set<String> folderIds =
-        budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup));
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId,
+        budgetGroupService.findPerspectiveIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup)));
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
     if (folderIds.size() != allowedFolderIds.size()) {
@@ -138,8 +139,9 @@ public class BudgetGroupsResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetGroupId) {
-    Set<String> folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(
-        accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId)));
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId,
+        budgetGroupService.findPerspectiveIdsGivenBudgetGroup(
+            accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId))));
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
     if (folderIds.size() != allowedFolderIds.size()) {
@@ -171,7 +173,12 @@ public class BudgetGroupsResource {
                                 .collect(Collectors.toSet());
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
-    return ResponseDTO.newResponse(budgetGroupService.list(accountId, allowedFolderIds));
+    HashMap<String, String> perspectiveIdAndFolderIds = ceViewService.getPerspectiveIdAndFolderId(accountId,
+        ceViewService.getAllViews(accountId, true, null)
+            .stream()
+            .map(ceView -> ceView.getId())
+            .collect(Collectors.toList()));
+    return ResponseDTO.newResponse(budgetGroupService.list(accountId, allowedFolderIds, perspectiveIdAndFolderIds));
   }
 
   @PUT
@@ -195,8 +202,8 @@ public class BudgetGroupsResource {
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the budget group") @PathParam(
           "id") String budgetGroupId,
       @RequestBody(required = true, description = "The Budget object") @NotNull @Valid BudgetGroup budgetGroup) {
-    Set<String> folderIds =
-        budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup));
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId,
+        budgetGroupService.findPerspectiveIdsGivenBudgetGroup(accountId, Collections.singletonList(budgetGroup)));
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_CREATE_AND_EDIT);
     if (folderIds.size() != allowedFolderIds.size()) {
@@ -228,8 +235,9 @@ public class BudgetGroupsResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetGroupId) {
-    Set<String> folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(
-        accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId)));
+    Set<String> folderIds = ceViewService.getPerspectiveFolderIds(accountId,
+        budgetGroupService.findPerspectiveIdsGivenBudgetGroup(
+            accountId, Collections.singletonList(budgetGroupService.get(budgetGroupId, accountId))));
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_DELETE);
     if (folderIds.size() != allowedFolderIds.size()) {
@@ -262,10 +270,16 @@ public class BudgetGroupsResource {
           description = "List of child budgets/budget groups") @NotNull @Valid List<String> childEntityIds) {
     Set<String> folderIds = null;
     if (areChildEntitiesBudgets) {
-      folderIds = budgetGroupService.getFolderIdsGivenBudgetIds(accountId, childEntityIds);
+      folderIds = budgetGroupService.getFolderIdsGivenBudgetIds(accountId, childEntityIds,
+          ceViewService.getPerspectiveIdAndFolderId(accountId,
+              ceViewService.getAllViews(accountId, true, null)
+                  .stream()
+                  .map(ceView -> ceView.getId())
+                  .collect(Collectors.toList())));
     } else {
       List<BudgetGroup> budgetGroups = budgetGroupService.list(accountId, childEntityIds);
-      folderIds = budgetGroupService.findFolderIdsGivenBudgetGroup(accountId, budgetGroups);
+      folderIds = ceViewService.getPerspectiveFolderIds(
+          accountId, budgetGroupService.findPerspectiveIdsGivenBudgetGroup(accountId, budgetGroups));
     }
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
@@ -302,9 +316,15 @@ public class BudgetGroupsResource {
                                 .collect(Collectors.toSet());
     Set<String> allowedFolderIds =
         rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
+    HashMap<String, String> perspectiveIdAndFolderIds = ceViewService.getPerspectiveIdAndFolderId(accountId,
+        ceViewService.getAllViews(accountId, true, null)
+            .stream()
+            .map(ceView -> ceView.getId())
+            .collect(Collectors.toList()));
     List<BudgetSummary> summaryList = showAllEntities
-        ? budgetGroupService.listAllEntities(accountId, allowedFolderIds)
-        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId, allowedFolderIds);
+        ? budgetGroupService.listAllEntities(accountId, allowedFolderIds, perspectiveIdAndFolderIds)
+        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(
+            accountId, budgetGroupId, allowedFolderIds, perspectiveIdAndFolderIds);
     return ResponseDTO.newResponse(summaryList);
   }
 }

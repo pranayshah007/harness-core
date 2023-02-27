@@ -298,9 +298,7 @@ public class CEViewServiceImpl implements CEViewService {
     }
     List<CEView> ceViews = ceViewDao.getPerspectivesByIds(accountId, ceViewIds);
     HashMap<String, String> perspectiveIdAndFolderIds = new HashMap<>();
-    for (CEView ceView : ceViews) {
-      perspectiveIdAndFolderIds.put(ceView.getUuid(), ceView.getFolderId());
-    }
+    ceViews.forEach(ceView -> perspectiveIdAndFolderIds.put(ceView.getUuid(), ceView.getFolderId()));
     return perspectiveIdAndFolderIds;
   }
 
