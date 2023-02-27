@@ -44,12 +44,12 @@ public class AwsLambdaRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<Aws
   protected StepParameters getStepParameters(PlanCreationContext ctx, AwsLambdaRollbackStepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
 
-    String awsLambdaDeployStepFnq = getExecutionStepFqn(ctx.getCurrentField(), AWS_LAMBDA_DEPLOY);
+    String awsLambdaDeployStepFqn = getExecutionStepFqn(ctx.getCurrentField(), AWS_LAMBDA_DEPLOY);
     AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
         (AwsLambdaRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
     awsLambdaRollbackStepParameters.setDelegateSelectors(
         stepNode.getAwsLambdaRollbackStepInfo().getDelegateSelectors());
-    awsLambdaRollbackStepParameters.setAwsLambdaDeployStepFnq(awsLambdaDeployStepFnq);
+    awsLambdaRollbackStepParameters.setAwsLambdaDeployStepFqn(awsLambdaDeployStepFqn);
     return stepParameters;
   }
 }

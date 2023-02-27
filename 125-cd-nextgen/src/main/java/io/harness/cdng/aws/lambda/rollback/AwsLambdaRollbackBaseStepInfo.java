@@ -37,5 +37,5 @@ public class AwsLambdaRollbackBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonIgnore String awsLambdaDeployStepFnq;
+  @JsonIgnore String awsLambdaDeployStepFqn;
 }

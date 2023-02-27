@@ -78,7 +78,7 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
           StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
       stepResponse = awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
-      log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Error while processing aws lambda function rollback response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     }
     return stepResponse;
@@ -89,11 +89,11 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     AwsLambdaRollbackStepParameters awsLambdaRollbackStepParameters =
         (AwsLambdaRollbackStepParameters) stepParameters.getSpec();
-    if (EmptyPredicate.isEmpty(awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq())) {
+    if (EmptyPredicate.isEmpty(awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFqn())) {
       return skipTaskRequest(AWS_LAMBDA_DEPLOYMENT_STEP_MISSING);
     }
 
-    String stepFnq = awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFnq();
+    String stepFnq = awsLambdaRollbackStepParameters.getAwsLambdaDeployStepFqn();
     OptionalSweepingOutput awsLambdaPrepareRollbackDataOptional =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
