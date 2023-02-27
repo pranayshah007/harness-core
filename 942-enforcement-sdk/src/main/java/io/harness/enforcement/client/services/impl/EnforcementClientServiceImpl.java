@@ -111,10 +111,11 @@ public class EnforcementClientServiceImpl implements EnforcementClientService {
   @Override
   public void checkAvailabilityWithIncrement(
       FeatureRestrictionName featureRestrictionName, String accountIdentifier, long increment) {
+    log.info("TestVikasLogs: checkAvailabilityWithIncrement is invoked.");
     if (!isEnforcementEnabled()) {
       return;
     }
-
+    log.info("TestVikasLogs: enforcement enabled is true..");
     FeatureRestrictionMetadataDTO featureMetadataDTO;
     try {
       featureMetadataDTO =
@@ -123,10 +124,11 @@ public class EnforcementClientServiceImpl implements EnforcementClientService {
       log.error("Not able to fetch feature restriction metadata from ng-manager, failover to bypass the check", e);
       return;
     }
-
+    log.info("TestVikasLogs: featureRestriction metadata is {}", featureMetadataDTO);
     Edition edition = featureMetadataDTO.getEdition();
     ModuleType moduleType = featureMetadataDTO.getModuleType();
     RestrictionMetadataDTO currentRestriction = featureMetadataDTO.getRestrictionMetadata().get(edition);
+    log.info("TestVikasLogs: currentRestriction is {}", currentRestriction);
     try {
       verifyRestriction(featureRestrictionName, accountIdentifier, moduleType, edition, currentRestriction, increment);
     } catch (FeatureNotSupportedException e) {
@@ -295,6 +297,7 @@ public class EnforcementClientServiceImpl implements EnforcementClientService {
             (StaticLimitRestrictionMetadataDTO) currentRestriction;
         RestrictionUsageInterface staticUsage =
             enforcementSdkRegisterService.getRestrictionUsageInterface(featureRestrictionName);
+        log.info("TestVikasLogs: static usage is {} ", staticUsage);
         if (verifyExceedLimit(staticLimitRestrictionMetadataDTO.getLimit(),
                 staticUsage.getCurrentValue(accountIdentifier, staticLimitRestrictionMetadataDTO), increment)) {
           throw new LimitExceededException(String.format(
