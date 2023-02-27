@@ -23,10 +23,12 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
@@ -37,6 +39,7 @@ import io.harness.logging.LogLevel;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudConfig;
 import io.harness.terraformcloud.model.RunData;
+import io.harness.terraformcloud.model.RunRequest;
 import io.harness.terraformcloud.model.RunStatus;
 
 import com.google.inject.Inject;
@@ -51,6 +54,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   @Inject private TerraformCloudValidationHandler terraformCloudValidationHandler;
   @Inject private TerraformCloudConfigMapper terraformCloudConfigMapper;
   @Inject private TerraformCloudTaskHelper terraformCloudTaskHelper;
+  @Inject private RunRequestCreator runRequestCreator;
 
   public TerraformCloudTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -108,8 +112,12 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         taskResponse = apply(
             (TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(), taskParameters);
         break;
+      case ROLLBACK:
+        taskResponse = rollback(
+            (TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(), taskParameters);
+        break;
       default:
-        throw new InvalidRequestException("Task type not identified");
+        throw new InvalidRequestException("Terraform Cloud Task type not identified");
     }
     taskResponse.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
     return taskResponse;
@@ -119,7 +127,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
       throws IOException {
     LogCallback logCallback =
         getLogCallback(TerraformCloudCommandUnit.RUN.name(), CommandUnitsProgress.builder().build());
-    terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(), taskParameters, logCallback);
+    terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(),
+        runRequestCreator.createRunRequest(taskParameters), taskParameters.isDiscardPendingRuns(),
+        taskParameters.getTerraformCloudTaskType(), logCallback);
     logCallback.saveExecutionLog("Refresh state completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
@@ -128,8 +138,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     LogCallback logCallback =
         getLogCallback(TerraformCloudCommandUnit.RUN.name(), CommandUnitsProgress.builder().build());
 
-    RunData runData =
-        terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(), taskParameters, logCallback);
+    RunData runData = terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(),
+        runRequestCreator.createRunRequest(taskParameters), taskParameters.isDiscardPendingRuns(),
+        taskParameters.getTerraformCloudTaskType(), logCallback);
     String tfPlanJsonFileId = null;
     if (taskParameters.isExportJsonTfPlan()) {
       String jsonPlan = terraformCloudTaskHelper.getJsonPlan(credentials.getUrl(), credentials.getToken(), runData);
@@ -147,8 +158,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     LogCallback logCallback =
         getLogCallback(TerraformCloudCommandUnit.RUN.name(), CommandUnitsProgress.builder().build());
 
-    RunData runData =
-        terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(), taskParameters, logCallback);
+    RunData runData = terraformCloudTaskHelper.createRun(credentials.getUrl(), credentials.getToken(),
+        runRequestCreator.createRunRequest(taskParameters), taskParameters.isDiscardPendingRuns(),
+        taskParameters.getTerraformCloudTaskType(), logCallback);
 
     String output = terraformCloudTaskHelper.getApplyOutput(credentials.getUrl(), credentials.getToken(), runData);
     logCallback.saveExecutionLog("Execution completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -165,7 +177,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String runId = taskParameters.getRunId();
 
     RunStatus status = terraformCloudTaskHelper.getRunStatus(url, token, runId);
-    if (status == RunStatus.policy_checked) {
+    if (status == RunStatus.POLICY_CHECKED) {
       String output = terraformCloudTaskHelper.applyRun(url, token, runId, taskParameters.getMessage(), logCallback);
       logCallback.saveExecutionLog("Apply completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       return TerraformCloudRunTaskResponse.builder().runId(runId).tfOutput(output).build();
@@ -175,6 +187,28 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
       // toDo custom exception will be thrown here
       throw new InvalidRequestException(format("Apply can't be done when run is in status %s", status.name()));
     }
+  }
+
+  private TerraformCloudRollbackTaskResponse rollback(
+      TerraformCloudApiTokenCredentials credentials, TerraformCloudTaskParams taskParameters) throws IOException {
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.RUN.name(), CommandUnitsProgress.builder().build());
+
+    String url = credentials.getUrl();
+    String token = credentials.getToken();
+    String runId = taskParameters.getRunId();
+
+    RunData run = terraformCloudTaskHelper.getRun(url, token, runId);
+
+    RunRequest runRequest =
+        runRequestCreator.mapRunDataToRunRequest(run, taskParameters.getMessage(), taskParameters.getRollbackType());
+
+    RunData runData = terraformCloudTaskHelper.createRun(
+        url, token, runRequest, taskParameters.isDiscardPendingRuns(), TerraformCloudTaskType.ROLLBACK, logCallback);
+
+    String output = terraformCloudTaskHelper.getApplyOutput(credentials.getUrl(), credentials.getToken(), runData);
+    logCallback.saveExecutionLog("Rollback completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    return TerraformCloudRollbackTaskResponse.builder().runId(runData.getId()).tfOutput(output).build();
   }
 
   @Override

@@ -66,6 +66,13 @@ public class StatefulSetApiWatcher implements WorkloadWatcher {
           case "MODIFIED":
             K8ApiResponseDTO rolloutStatus = statusViewer.extractRolloutStatus(statefulSet);
             executionLogCallback.saveExecutionLog(rolloutStatus.getMessage());
+            if (rolloutStatus.isFailed()) {
+              if (errorFrameworkEnabled) {
+                throw new KubernetesCliTaskRuntimeException(
+                    rolloutStatus.getMessage(), KubernetesCliCommandType.STEADY_STATE_CHECK);
+              }
+              return false;
+            }
             if (rolloutStatus.isDone()) {
               return true;
             }

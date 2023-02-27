@@ -13,8 +13,8 @@ import io.harness.category.element.FunctionalTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.configuration.DelegateConfiguration;
-import io.harness.delegate.core.PluginDescriptor;
-import io.harness.delegate.core.PluginInput;
+import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.TaskInput;
 import io.harness.rule.Owner;
 
 import software.wings.beans.bash.ShellScriptParameters;
@@ -52,8 +52,8 @@ public class K8STaskRunnerTest {
     final byte[] taskPackageBytes =
         null; // kryoSerializer.asDeflatedBytes(taskPackage); // TODO: switch to serialized task package file
     final var pluginDescriptor =
-        PluginDescriptor.newBuilder()
-            .setInput(PluginInput.newBuilder().setBinaryData(ByteString.copyFrom(taskPackageBytes)).build())
+        TaskDescriptor.newBuilder()
+            .setInput(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(taskPackageBytes)).build())
             .build();
     underTest.launchTask(pluginDescriptor);
     underTest.cleanupTaskData(taskId);

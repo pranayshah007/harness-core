@@ -162,8 +162,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
       try {
-        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
-            createdEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+        String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
+            GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+            Action.CRUD);
       } catch (Exception e) {
         log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
       }
@@ -412,8 +414,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
     try {
-      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
-          updatedEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+      String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
+          GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+          Action.CRUD);
     } catch (Exception e) {
       log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
     }

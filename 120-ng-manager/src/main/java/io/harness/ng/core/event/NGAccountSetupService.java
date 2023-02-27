@@ -196,7 +196,11 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      if (featureFlagService.isNotEnabled(FeatureName.DO_NOT_MIGRATE_CG_USERS_TO_NG, accountIdentifier)) {
+        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      } else {
+        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
+      }
       assignAdminRoleToUsers(accountScope, cgAdmins);
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
@@ -238,7 +242,11 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      if (featureFlagService.isNotEnabled(FeatureName.DO_NOT_MIGRATE_CG_USERS_TO_NG, accountIdentifier)) {
+        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      } else {
+        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
+      }
       assignAdminRoleToUsers(accountScope, cgAdmins);
       if (shouldAssignAdmins && !hasAdmin(accountScope)) {
         throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));

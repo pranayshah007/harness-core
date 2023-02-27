@@ -12,9 +12,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//260-delegate/src/main/java/io/harness/delegate/service/common/client:module",
         "//920-delegate-agent-beans:module",
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/network:module",

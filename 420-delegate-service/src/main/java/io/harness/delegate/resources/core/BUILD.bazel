@@ -26,7 +26,7 @@ java_library(
         "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:org_hibernate_validator_hibernate_validator",
     ] + [
-        "//955-delegate-beans/src/main/proto/io/harness/delegate/core:955_delegate_core_task_java_proto",
+        "//955-delegate-beans/src/main/proto/io/harness/delegate/core/beans:955_delegate_core_task_java_proto",
     ],
 )
 
