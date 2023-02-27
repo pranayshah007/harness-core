@@ -2610,8 +2610,7 @@ public class DelegateServiceImpl implements DelegateService {
       try {
         onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getUuid());
       } catch (Exception e) {
-        log.error(
-                "Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
+        log.error("Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
       }
     }
 
