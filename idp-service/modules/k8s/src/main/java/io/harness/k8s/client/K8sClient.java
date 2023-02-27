@@ -7,6 +7,9 @@
 
 package io.harness.k8s.client;
 
+import io.harness.k8s.model.KubernetesConfig;
+
+import java.util.List;
 import java.util.Map;
 
 public interface K8sClient {
@@ -14,4 +17,6 @@ public interface K8sClient {
       throws Exception;
   boolean updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace)
       throws Exception;
+  void removeSecretData(String namespace, String backstageSecret, List<String> envNames) throws Exception;
+  KubernetesConfig getKubernetesConfig(String namespace);
 }

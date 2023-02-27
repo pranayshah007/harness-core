@@ -34,6 +34,7 @@ import io.harness.beans.SweepingOutputInstance.SweepingOutputInstanceBuilder;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.response.AzureVMSSDeployTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -82,6 +83,7 @@ public class AzureVMSSRollbackStateTest extends WingsBaseTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks AzureVMSSRollbackState rollbackState = new AzureVMSSRollbackState("Azure VMSS Rollback State");
 

@@ -49,9 +49,9 @@ public class NGConstants {
   public static final String CONNECTOR_HEARTBEAT_LOG_PREFIX = "Connector Heartbeat :";
   public static final String CONNECTOR_TYPE_NAME = "connectorType";
   public static final String REFERRED_ENTITY_FQN = "referredEntityFQN";
+  public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String REFERRED_ENTITY_FQN1 = "referredEntityFQN1";
   public static final String REFERRED_ENTITY_FQN2 = "referredEntityFQN2";
-  public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String REFERRED_BY_ENTITY_FQN = "referredByEntityFQN";
   public static final String REFERRED_BY_ENTITY_TYPE = "referredByEntityType";
 

@@ -24,14 +24,16 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class FakeAccountClient implements AccountClient {
+  private static final String EXCEPTION_MESSAGE = "mocked method - provide impl when required";
+
   @Override
   public Call<RestResponse<AccountDTO>> create(AccountDTO dto) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<List<AccountDTO>>> getAllAccounts() {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
@@ -72,114 +74,119 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<List<AccountDTO>>> getAccountDTOs(List<String> accountIds) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<AccountDTO>> updateAccountName(String accountId, AccountDTO dto) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Integer>> getAccountTrustLevel(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> updateAccountTrustLevel(String accountId, Integer trustLevel) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> isFeatureFlagEnabled(String featureName, String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Set<String>>> featureFlagEnabledAccounts(String featureName) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> isNextGenEnabled(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<String>> getBaseUrl(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<String>> getGatewayBaseUrl(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<List<String>>> getAccountAdmins(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> doesAccountExist(String accountName) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> updateDefaultExperienceIfApplicable(
       String accountId, DefaultExperience defaultExperience) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<AccountDTO>> updateDefaultExperience(String accountId, AccountDTO dto) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
+  public Call<RestResponse<AccountDTO>> updateCrossGenerationAccessEnabled(String accountId, AccountDTO dto) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Collection<FeatureFlag>>> listAllFeatureFlagsForAccount(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<List<UserMetadata>>> listAllHarnessSupportUsers() {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> checkIfHarnessSupportEnabledForAccount(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> checkPLNoEmailForSamlAccountInvitesEnabledForAccount(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Boolean>> isSSOEnabled(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<Void>> upsertDefaultToken(
       String accountId, String orgId, String projectId, Boolean skipIfExists) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<List<String>>> getOrgsWithActiveDefaultDelegateToken(String accountIdentifier) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
   public Call<RestResponse<List<String>>> getProjectsWithActiveDefaultDelegateToken(String accountIdentifier) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 
   @Override
@@ -220,6 +227,6 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<Boolean>> isImmutableDelegateEnabled(String accountId) {
-    throw new UnsupportedOperationException("mocked method - provide impl when required");
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 }

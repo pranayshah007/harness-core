@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.MarkAsFailureAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -79,14 +81,17 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
         AdviserResponse.newBuilder()
             .setMarkAsFailureAdvise(MarkAsFailureAdvise.newBuilder().setNextNodeId(nextNodeId).build())
             .build();
-
     PlanNode planNode = PlanNode.builder()
                             .uuid(nextNodeId)
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .identifier("DUMMY")
                             .serviceName("CD")
                             .build();
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).setPlanId(planId).build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(Level.newBuilder().setNodeType("PLAN_NODE").build())
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .build();
     NodeExecution nodeExecution = NodeExecution.builder()
                                       .uuid(nodeExecutionId)
                                       .ambiance(ambiance)
@@ -100,6 +105,7 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
 
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);
     doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
+    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
 
     ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
     markAsFailureAdviseHandler.handleAdvise(nodeExecution, adviserResponse);

@@ -12,7 +12,9 @@ import static io.harness.authorization.AuthorizationServiceHeader.MIGRATOR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.environment.EnvironmentResourceClientModule;
+import io.harness.infrastructure.InfrastructureResourceClientModule;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.token.TokenClientModule;
@@ -66,6 +68,9 @@ public class MigratorModule extends AbstractModule {
           migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
       install(new EnvironmentResourceClientModule(migratorConfig.getNgClientConfig(),
           migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
+      install(new InfrastructureResourceClientModule(migratorConfig.getNgClientConfig(),
+          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId(),
+          ClientMode.PRIVILEGED));
     } catch (Exception ex) {
       log.info("Could not create the service resource client module", ex);
     }

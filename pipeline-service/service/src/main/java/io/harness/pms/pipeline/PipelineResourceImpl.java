@@ -60,7 +60,6 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;

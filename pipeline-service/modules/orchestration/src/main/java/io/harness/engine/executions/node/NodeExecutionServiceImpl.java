@@ -875,14 +875,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionIdToPlanNode;
   }
 
-  // We can have multiple nodeExecution corresponding to same node. So this method make sure that only final/last
-  // nodeExecution is considered while transforming plan for retry failed pipeline.
+  // We can have multiple nodeExecution corresponding to same node during the retry-failure-strategy. So this method
+  // makes sure that only the latest nodeExecution is used for retry when there are multiple nodeExecutions due to
+  // retry-failure-strategy. There will be only one such node due to retry-failure-strategy.
+
+  // In case of strategy, returning any nodeExecution for steps is fine. Because during the execution, the children
+  // nodeExecutions are decided by the original nodeExecution of strategy node. And there will be only one strategy
+  // nodeExecution and that too with oldRetry false.
   private Map<String, NodeExecution> getUniqueNodeExecutionForNodes(List<NodeExecution> nodeExecutions) {
     Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
     for (NodeExecution nodeExecution : nodeExecutions) {
-      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid())) {
-        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
-      } else if (nodeExecutionMap.get(nodeExecution.getNode().getUuid()).getStartTs() < nodeExecution.getStartTs()) {
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid()) && !nodeExecution.getOldRetry()) {
         nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
       }
     }

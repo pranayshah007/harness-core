@@ -22,6 +22,6 @@ import com.google.protobuf.Message;
 @TargetModule(HarnessModule._920_DELEGATE_SERVICE_BEANS)
 @Deprecated
 public interface PerpetualTaskServiceClient {
-  Message getTaskParams(PerpetualTaskClientContext clientContext);
+  Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalseKryoSerializer);
   DelegateTask getValidationTask(PerpetualTaskClientContext clientContext, String accountId);
 }

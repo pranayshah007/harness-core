@@ -158,7 +158,8 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
 
-    Response response = inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null);
+    Response response =
+        inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null, false);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);

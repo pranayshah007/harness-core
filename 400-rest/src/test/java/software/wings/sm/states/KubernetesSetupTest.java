@@ -69,6 +69,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.ImageDetails;
@@ -196,6 +197,7 @@ public class KubernetesSetupTest extends WingsBaseTest {
   @InjectMocks private KubernetesSetup kubernetesSetup = new KubernetesSetup("name");
 
   @Mock private MainConfiguration configuration;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private ExecutionContext context;
 

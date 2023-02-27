@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.infra;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
 
 import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
@@ -28,6 +29,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AwsAmiInfrastructure;
+import software.wings.infra.AwsAmiInfrastructure.AwsAmiInfrastructureKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -99,7 +101,8 @@ public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
                 .getNgEntityDetail();
         return AsgInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .region(ParameterField.createValueField(awsAmiInfrastructure.getRegion()))
+            .region(getExpression(awsAmiInfrastructure.getExpressions(), AwsAmiInfrastructureKeys.region,
+                awsAmiInfrastructure.getRegion(), infrastructureDefinition.getProvisionerId()))
             .build();
       }
     }

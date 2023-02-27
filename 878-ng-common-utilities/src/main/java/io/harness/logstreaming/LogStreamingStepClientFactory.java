@@ -63,7 +63,7 @@ public class LogStreamingStepClientFactory {
     }
   }
 
-  private String retrieveLogStreamingAccountToken(String accountId) throws IOException {
+  public String retrieveLogStreamingAccountToken(String accountId) throws IOException {
     return SafeHttpCall.executeWithExceptions(logStreamingServiceRestClient.retrieveAccountToken(
         logStreamingServiceConfiguration.getServiceToken(), accountId));
   }

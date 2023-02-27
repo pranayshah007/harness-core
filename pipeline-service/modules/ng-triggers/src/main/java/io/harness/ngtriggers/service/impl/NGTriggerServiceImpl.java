@@ -43,6 +43,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -92,6 +93,7 @@ import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
@@ -766,8 +768,22 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails) {
-    Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+    PMSPipelineResponseDTO pipelineResponse = validationHelper.fetchPipelineForTrigger(triggerDetails);
+    Optional<String> pipelineYmlOptional;
+    if (pipelineResponse != null) {
+      pipelineYmlOptional = Optional.of(pipelineResponse.getYamlPipeline());
+    } else {
+      pipelineYmlOptional = Optional.empty();
+    }
+
     Map<String, Map<String, String>> errorMap = new HashMap<>();
+    if (pipelineResponse != null) {
+      if (pipelineResponse.getStoreType() == StoreType.REMOTE) {
+        if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+          throw new InvalidRequestException("pipelineBranchName is missing or is empty.");
+        }
+      }
+    }
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
       if (PipelineVersion.V1.equals(PipelineYamlHelper.getVersion(pipelineYaml))) {
@@ -1143,7 +1159,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       // No reconciliation can be done at trigger level if it is for remote pipeline or if it is using input sets
       newTriggerYaml = triggerYaml;
     } else {
-      Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+      Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineYamlForTrigger(triggerDetails);
       if (pipelineYmlOptional.isPresent()) {
         String pipelineYaml = pipelineYmlOptional.get();
         String templateYaml = createRuntimeInputForm(pipelineYaml);

@@ -22,7 +22,6 @@ import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 
-import io.fabric8.utils.Pair;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -88,6 +87,9 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache);
+
+  PipelineEntity getPipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly);
 
   /**
    * Update pipeline (inline/remote) after doing validation - template resolution,

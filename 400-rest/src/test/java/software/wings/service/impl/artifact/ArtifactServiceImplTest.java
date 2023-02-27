@@ -104,14 +104,14 @@ public class ArtifactServiceImplTest extends WingsBaseTest {
   public void shouldFetchAMIBuilds() {
     artifactStream.setRegion("TestRegion");
 
-    assertThat(artifactService.prepareArtifactWithMetadataQuery(artifactStream)).isNotNull();
+    assertThat(artifactService.prepareArtifactWithMetadataQuery(artifactStream, false)).isNotNull();
   }
 
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void shouldFetchNonAMIBuilds() {
-    assertThat(artifactService.prepareArtifactWithMetadataQuery(jenkinsArtifactStream)).isNotNull();
+    assertThat(artifactService.prepareArtifactWithMetadataQuery(jenkinsArtifactStream, false)).isNotNull();
   }
 
   @Test

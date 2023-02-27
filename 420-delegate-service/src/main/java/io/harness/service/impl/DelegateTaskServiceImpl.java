@@ -23,6 +23,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.DelegateDriverLogContext;
@@ -76,6 +77,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
   @Inject private DelegateCache delegateCache;
 
+  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+
   @Override
   public boolean isTaskTypeSupportedByAllDelegates(String accountId, String taskType) {
     Set<String> supportedTaskTypes = delegateCache.getDelegateSupportedTaskTypes(accountId);
@@ -90,7 +93,37 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
 
     log.debug("Updating tasks");
+    touchExecutingTasksUsingForLoop(accountId, delegateId, delegateTaskIds);
 
+    // TODO: Start using iterator for this method once delegate task migration is done
+    // touchExecutingTasksUsingIterator(accountId, delegateId, delegateTaskIds);
+  }
+
+  private void touchExecutingTasksUsingForLoop(String accountId, String delegateId, List<String> delegateTaskIds) {
+    for (String taskId : delegateTaskIds) {
+      boolean delegateTaskMigrationEnabled = delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId);
+      DelegateTask delegateTask = persistence.createQuery(DelegateTask.class, delegateTaskMigrationEnabled)
+                                      .filter(DelegateTaskKeys.accountId, accountId)
+                                      .filter(DelegateTaskKeys.uuid, taskId)
+                                      .filter(DelegateTaskKeys.delegateId, delegateId)
+                                      .filter(DelegateTaskKeys.status, DelegateTask.Status.STARTED)
+                                      .project(DelegateTaskKeys.uuid, true)
+                                      .project(DelegateTaskKeys.data_timeout, true)
+                                      .get();
+      if (delegateTask == null) {
+        continue;
+      }
+      long now = currentTimeMillis();
+
+      persistence.update(delegateTask,
+          persistence.createUpdateOperations(DelegateTask.class, delegateTaskMigrationEnabled)
+              .set(DelegateTaskKeys.expiry, now + delegateTask.getData().getTimeout()),
+          delegateTaskMigrationEnabled);
+    }
+  }
+
+  // Don't use this method till delegate task migration is complete
+  private void touchExecutingTasksUsingIterator(String accountId, String delegateId, List<String> delegateTaskIds) {
     Query<DelegateTask> delegateTaskQuery = persistence.createQuery(DelegateTask.class)
                                                 .filter(DelegateTaskKeys.accountId, accountId)
                                                 .field(DelegateTaskKeys.uuid)
@@ -118,9 +151,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       throw new InvalidArgumentsException(Pair.of("args", "response cannot be null"));
     }
 
-    Query<DelegateTask> taskQuery = persistence.createQuery(DelegateTask.class)
-                                        .filter(DelegateTaskKeys.accountId, response.getAccountId())
-                                        .filter(DelegateTaskKeys.uuid, taskId);
+    Query<DelegateTask> taskQuery =
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, response.getAccountId())
+            .filter(DelegateTaskKeys.uuid, taskId);
 
     DelegateTask delegateTask = taskQuery.get();
     copyTaskDataV2ToTaskData(delegateTask);
@@ -211,7 +245,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
 
     if (taskQuery != null) {
-      persistence.deleteOnServer(taskQuery);
+      persistence.deleteOnServer(
+          taskQuery, delegateTaskMigrationHelper.isMigrationEnabledForTask(delegateTask.getUuid()));
     }
 
     delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
@@ -230,10 +265,11 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
   @Override
   public Optional<DelegateTask> fetchDelegateTask(String accountId, String taskId) {
-    return Optional.ofNullable(persistence.createQuery(DelegateTask.class)
-                                   .filter(DelegateTaskKeys.accountId, accountId)
-                                   .filter(DelegateTaskKeys.uuid, taskId)
-                                   .get());
+    return Optional.ofNullable(
+        persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
+            .filter(DelegateTaskKeys.accountId, accountId)
+            .filter(DelegateTaskKeys.uuid, taskId)
+            .get());
   }
 
   @VisibleForTesting

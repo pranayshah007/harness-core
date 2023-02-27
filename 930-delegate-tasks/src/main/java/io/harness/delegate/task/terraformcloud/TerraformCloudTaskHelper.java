@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.ROLLBACK;
 import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.RUN_PLAN_AND_APPLY;
 import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.RUN_PLAN_AND_DESTROY;
 import static io.harness.threading.Morpheus.sleep;
@@ -22,7 +23,6 @@ import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.terraformcloud.PlanType;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -77,7 +77,6 @@ public class TerraformCloudTaskHelper {
   private static final String TFC_DESTROY_PLAN_FILE_OUTPUT_NAME = "tfcdestroyplan.json";
 
   @Inject TerraformCloudClient terraformCloudClient;
-  @Inject RunRequestCreator runRequestCreator;
   @Inject DelegateFileManagerBase delegateFileManager;
 
   public Map<String, String> getOrganizationsMap(TerraformCloudConfig terraformCloudConfig) throws IOException {
@@ -175,17 +174,14 @@ public class TerraformCloudTaskHelper {
     return string.endsWith(String.valueOf((char) 3));
   }
 
-  RunData createRun(String url, String token, TerraformCloudTaskParams taskParameters, LogCallback logCallback)
-      throws IOException {
-    RunRequest runRequest = runRequestCreator.createRunRequest(taskParameters);
-    logCallback.saveExecutionLog(format("Creating execution run in organization: %s workspace: %s",
-                                     taskParameters.getOrganization(), taskParameters.getWorkspace()),
-        LogLevel.INFO, CommandExecutionStatus.RUNNING);
+  RunData createRun(String url, String token, RunRequest runRequest, boolean forceExecute,
+      TerraformCloudTaskType terraformCloudTaskType, LogCallback logCallback) throws IOException {
+    logCallback.saveExecutionLog("Creating execution run ...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     RunData runData = terraformCloudClient.createRun(url, token, runRequest).getData();
     String runId = runData.getId();
     logCallback.saveExecutionLog(format("Run created: %s", runId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
 
-    if (taskParameters.isDiscardPendingRuns() && getRunStatus(url, token, runId) == RunStatus.pending) {
+    if (forceExecute && getRunStatus(url, token, runId) == RunStatus.PENDING) {
       logCallback.saveExecutionLog(format("Force execute: %s", runId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       terraformCloudClient.forceExecuteRun(url, token, runId);
     }
@@ -196,9 +192,9 @@ public class TerraformCloudTaskHelper {
     logCallback.saveExecutionLog("Plan execution...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
 
-    runData = terraformCloudClient.getRun(url, token, runId).getData();
-    TerraformCloudTaskType type = taskParameters.getTerraformCloudTaskType();
-    if (type == RUN_PLAN_AND_APPLY || type == RUN_PLAN_AND_DESTROY) {
+    runData = getRun(url, token, runId);
+    if (terraformCloudTaskType == RUN_PLAN_AND_APPLY || terraformCloudTaskType == RUN_PLAN_AND_DESTROY
+        || terraformCloudTaskType == ROLLBACK) {
       streamApplyLogs(url, token, runData, logCallback);
     }
 
@@ -290,14 +286,18 @@ public class TerraformCloudTaskHelper {
   }
 
   public RunStatus getRunStatus(String url, String token, String runId) throws IOException {
-    return terraformCloudClient.getRun(url, token, runId).getData().getAttributes().getStatus();
+    return getRun(url, token, runId).getAttributes().getStatus();
   }
 
   public String applyRun(String url, String token, String runId, String message, LogCallback logCallback)
       throws IOException {
     terraformCloudClient.applyRun(url, token, runId, RunActionRequest.builder().comment(message).build());
-    RunData runData = terraformCloudClient.getRun(url, token, runId).getData();
+    RunData runData = getRun(url, token, runId);
     streamApplyLogs(url, token, runData, logCallback);
     return getApplyOutput(url, token, runData);
+  }
+
+  public RunData getRun(String url, String token, String runId) throws IOException {
+    return terraformCloudClient.getRun(url, token, runId).getData();
   }
 }

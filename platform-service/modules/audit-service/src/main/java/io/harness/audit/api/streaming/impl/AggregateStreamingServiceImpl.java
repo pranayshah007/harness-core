@@ -7,9 +7,6 @@
 
 package io.harness.audit.api.streaming.impl;
 
-import static io.harness.auditevent.streaming.dto.StreamingBatchDTO.StreamingBatchDTOKeys.createdAt;
-import static io.harness.auditevent.streaming.dto.StreamingBatchDTO.StreamingBatchDTOKeys.status;
-
 import io.harness.audit.api.streaming.AggregateStreamingService;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
@@ -94,16 +91,16 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
   private Optional<StreamingBatchDTO> getLatestSuccessfulBatch(String accountIdentifier) {
     Criteria criteria = Criteria.where(StreamingBatchDTOKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(status)
+                            .and(StreamingBatchDTOKeys.status)
                             .is(BatchStatus.SUCCESS);
-    Sort sort = Sort.by(Sort.Direction.DESC, createdAt);
+    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchDTOKeys.createdAt);
     return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 
   private long getFailedBatchCount(String accountIdentifier) {
     Criteria criteria = Criteria.where(StreamingBatchDTOKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(status)
+                            .and(StreamingBatchDTOKeys.status)
                             .is(BatchStatus.FAILED);
     return streamingBatchRepository.count(criteria);
   }
@@ -113,7 +110,7 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
                             .is(accountIdentifier)
                             .and(StreamingBatchDTOKeys.streamingDestinationIdentifier)
                             .is(streamingDestinationIdentifier);
-    Sort sort = Sort.by(Sort.Direction.DESC, createdAt);
+    Sort sort = Sort.by(Sort.Direction.DESC, StreamingBatchDTOKeys.createdAt);
     return Optional.ofNullable(streamingBatchRepository.findOne(criteria, sort));
   }
 

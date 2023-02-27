@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.azure.webapp;
 
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -31,6 +32,11 @@ public class AzureSlotShiftTrafficMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.AZURE_WEBAPP;
   }
 
   @Override

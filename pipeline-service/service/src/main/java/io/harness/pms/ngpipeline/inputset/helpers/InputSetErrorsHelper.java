@@ -152,7 +152,8 @@ public class InputSetErrorsHelper {
   }
 
   public Map<FQN, String> getInvalidFQNsInInputSet(YamlConfig pipelineYamlConfig, YamlConfig inputSetConfig) {
-    YamlConfig templateYamlConfig = RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true);
+    YamlConfig templateYamlConfig =
+        RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true, false);
     return getInvalidFQNsInInputSetFromTemplateConfig(templateYamlConfig, inputSetConfig, false);
   }
 

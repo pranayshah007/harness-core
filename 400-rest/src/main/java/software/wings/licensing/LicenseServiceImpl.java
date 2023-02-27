@@ -635,6 +635,9 @@ public class LicenseServiceImpl implements LicenseService {
   public boolean updateLicenseForProduct(
       String productCode, String accountId, Integer orderQuantity, long expirationTime) {
     final MarketPlaceConfig marketPlaceConfig = mainConfiguration.getMarketPlaceConfig();
+    log.info("marketPlaceConfig:", marketPlaceConfig);
+    log.info("productCode:", productCode);
+
     if (marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)) {
       updateAccountLicense(accountId,
           LicenseInfo.builder()
@@ -647,6 +650,10 @@ public class LicenseServiceImpl implements LicenseService {
       updateCeLicense(
           accountId, CeLicenseInfo.builder().expiryTime(expirationTime).licenseType(CeLicenseType.PAID).build());
     } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+      log.info("accountId:", accountId);
+      log.info("orderQuantity:", orderQuantity);
+      log.info("expirationTime:", expirationTime);
+
       adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
               .numberOfClientMAUs(TEST_FF_NUMBER_OF_CLIENT_MAUS)

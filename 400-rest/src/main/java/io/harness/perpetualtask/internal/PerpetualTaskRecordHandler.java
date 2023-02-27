@@ -36,7 +36,7 @@ import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @BreakDependencyOn("software.wings.service.InstanceSyncConstants")
-public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implements PerpetualTaskCrudObserver {
+public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler implements PerpetualTaskCrudObserver {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private DelegateService delegateService;
   @Inject private PerpetualTaskService perpetualTaskService;

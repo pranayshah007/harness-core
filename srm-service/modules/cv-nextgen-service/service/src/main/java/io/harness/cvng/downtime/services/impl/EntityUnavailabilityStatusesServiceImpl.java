@@ -125,7 +125,7 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
             .lessThanOrEq(endTime)
             .field(EntityUnavailabilityStatusesKeys.endTime)
             .greaterThanOrEq(startTime)
-            .order(Sort.descending(EntityUnavailabilityStatusesKeys.endTime))
+            .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
             .asList();
     return allInstances.stream()
         .map(status -> statusesEntityAndDTOTransformer.getDto(status))

@@ -505,6 +505,8 @@ public class UserResourceNG {
     return UserInfo.builder()
         .email(user.getEmail())
         .name(user.getName())
+        .familyName(user.getFamilyName())
+        .givenName(user.getGivenName())
         .uuid(user.getUuid())
         .locked(user.isUserLocked())
         .disabled(user.isDisabled())

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_GROUPS;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_TOKEN;
+import static io.harness.audit.ResourceTypeConstants.NG_ACCOUNT_DETAILS;
 import static io.harness.audit.ResourceTypeConstants.NG_LOGIN_SETTINGS;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
@@ -27,7 +28,6 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
-import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -73,7 +73,9 @@ import io.harness.ccm.health.HealthStatusServiceImpl;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskService;
 import io.harness.ccm.ngperpetualtask.service.K8sWatchTaskServiceImpl;
 import io.harness.ccm.setup.CESetupServiceModule;
+import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
@@ -192,6 +194,7 @@ import io.harness.marketplace.gcp.procurement.GcpProductHandler;
 import io.harness.metrics.impl.DelegateMetricsPublisher;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
+import io.harness.module.AgentMtlsModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.notifications.AlertNotificationRuleChecker;
@@ -283,6 +286,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.Workflow;
+import software.wings.beans.accountdetails.outbox.AccountDetailsOutboxEventHandler;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
@@ -1223,6 +1227,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CEViewService.class).to(CEViewServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
+    bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);
@@ -1562,6 +1567,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     outboxEventHandlerMapBinder.addBinding(DELEGATE_GROUPS).to(DelegateOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(USER).to(UserEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(NG_LOGIN_SETTINGS).to(LoginSettingsOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(NG_ACCOUNT_DETAILS).to(AccountDetailsOutboxEventHandler.class);
   }
 
   private void bindFeatures() {

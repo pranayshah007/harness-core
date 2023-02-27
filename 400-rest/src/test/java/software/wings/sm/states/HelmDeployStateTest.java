@@ -111,6 +111,7 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.InvalidRequestException;
@@ -321,6 +322,7 @@ public class HelmDeployStateTest extends CategoryTest {
   @Mock private FeatureService featureService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
+  @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   @Spy @InjectMocks private K8sStateHelper k8sStateHelper;
 

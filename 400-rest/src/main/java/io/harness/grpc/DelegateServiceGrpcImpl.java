@@ -8,7 +8,6 @@
 package io.harness.grpc;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -57,6 +56,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -103,12 +103,14 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private DelegateTaskService delegateTaskService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
+  private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
-      DelegateTaskServiceClassic delegateTaskServiceClassic) {
+      DelegateTaskServiceClassic delegateTaskServiceClassic, DelegateTaskMigrationHelper delegateTaskMigrationHelper) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
@@ -116,6 +118,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
+    this.delegateTaskMigrationHelper = delegateTaskMigrationHelper;
   }
 
   @Override
@@ -138,7 +141,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   @Override
   public void submitTask(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
-      String taskId = generateUuid();
+      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       TaskDetails taskDetails = request.getDetails();
       Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
       LinkedHashMap<String, String> logAbstractions =
@@ -213,7 +216,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
   public void submitTaskV2(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
-      String taskId = generateUuid();
+      String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       TaskDetails taskDetails = request.getDetails();
       Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
       LinkedHashMap<String, String> logAbstractions =
