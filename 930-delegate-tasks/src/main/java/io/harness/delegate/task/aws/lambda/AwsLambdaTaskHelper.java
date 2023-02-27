@@ -19,6 +19,7 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -37,6 +38,8 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.DeleteFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.FunctionCode;
 import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
@@ -52,7 +55,7 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 
 @Slf4j
 @OwnedBy(CDP)
-public class AwsLambdaCommandTaskHelper {
+public class AwsLambdaTaskHelper {
   @Inject private AwsLambdaClient awsLambdaClient;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
 
@@ -78,6 +81,7 @@ public class AwsLambdaCommandTaskHelper {
     String functionName = createFunctionRequest.functionName();
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+
     try {
       Optional<GetFunctionResponse> existingFunctionOptional =
           awsLambdaClient.getFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -93,6 +97,88 @@ public class AwsLambdaCommandTaskHelper {
       }
     } catch (Exception e) {
       throw new InvalidRequestException(e.getMessage());
+    }
+  }
+
+  public CreateFunctionResponse rollbackFunction(AwsLambdaInfraConfig awsLambdaInfraConfig,
+      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent, String qualifier,
+      LogCallback logCallback) throws Exception {
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
+
+    CreateFunctionRequest.Builder createFunctionRequestBuilder =
+        parseYamlAsObject(awsLambdaManifestContent, CreateFunctionRequest.serializableBuilderClass());
+
+    CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
+
+    String functionName = createFunctionRequest.functionName();
+    GetFunctionRequest getFunctionRequest =
+        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+
+    Optional<GetFunctionResponse> existingFunctionOptional = null;
+    try {
+      existingFunctionOptional =
+          awsLambdaClient.getFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                          awsLambdaFunctionsInfraConfig.getRegion()),
+              getFunctionRequest);
+    } catch (Exception e) {
+      throw new InvalidRequestException(e.getMessage());
+    }
+
+    if (existingFunctionOptional.isEmpty()) {
+      throw new AwsLambdaException(
+          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
+              awsLambdaFunctionsInfraConfig.getRegion())));
+    } else {
+      try {
+        logCallback.saveExecutionLog(
+            format("Updating Function: %s in region: %s with same configuration and code as in qualifier:%s %n",
+                functionName, awsLambdaFunctionsInfraConfig.getRegion(), qualifier, LogLevel.INFO));
+        return updateFunction(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
+            awsLambdaFunctionsInfraConfig, functionName, existingFunctionOptional.get());
+      } catch (Exception e) {
+        throw new InvalidRequestException(e.getMessage());
+      }
+    }
+  }
+
+  public DeleteFunctionResponse deleteFunction(AwsLambdaInfraConfig awsLambdaInfraConfig,
+      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent, LogCallback logCallback)
+      throws Exception {
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
+
+    CreateFunctionRequest.Builder createFunctionRequestBuilder =
+        parseYamlAsObject(awsLambdaManifestContent, CreateFunctionRequest.serializableBuilderClass());
+
+    CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
+
+    String functionName = createFunctionRequest.functionName();
+    GetFunctionRequest getFunctionRequest =
+        (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
+
+    Optional<GetFunctionResponse> existingFunctionOptional = null;
+    try {
+      existingFunctionOptional =
+          awsLambdaClient.getFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                          awsLambdaFunctionsInfraConfig.getRegion()),
+              getFunctionRequest);
+    } catch (Exception e) {
+      throw new InvalidRequestException(e.getMessage());
+    }
+
+    if (existingFunctionOptional.isEmpty()) {
+      throw new AwsLambdaException(
+          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
+              awsLambdaFunctionsInfraConfig.getRegion())));
+    } else {
+      try {
+        logCallback.saveExecutionLog(format("Deleting Function: %s in region: %s %n", functionName,
+            awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
+        return awsLambdaClient.deleteFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+                                                  awsLambdaFunctionsInfraConfig.getRegion()),
+            (DeleteFunctionRequest) DeleteFunctionRequest.builder().functionName(functionName).build());
+      } catch (Exception e) {
+        throw new InvalidRequestException(e.getMessage());
+      }
     }
   }
 
@@ -250,7 +336,7 @@ public class AwsLambdaCommandTaskHelper {
     throw new InvalidRequestException("Not Support ArtifactConfig Type");
   }
 
-  private AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
+  public AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
     AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
     awsInternalConfig.setDefaultRegion(region);
     return awsInternalConfig;

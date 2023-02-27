@@ -8,9 +8,11 @@
 package io.harness.ng.beans;
 
 import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_TOKEN_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.SORT_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.PAGE_KEY;
+import static io.harness.NGResourceFilterConstants.PAGE_TOKEN_KEY;
 import static io.harness.NGResourceFilterConstants.SIZE_KEY;
 import static io.harness.NGResourceFilterConstants.SORT_KEY;
 
@@ -44,4 +46,12 @@ public class PageRequest {
   @Max(100)
   int pageSize;
   @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT_KEY) List<SortOrder> sortOrders;
+  // This is used when page index is a string
+  @Parameter(description = PAGE_TOKEN_PARAM_MESSAGE) @QueryParam(PAGE_TOKEN_KEY) String pageToken;
+
+  public PageRequest(final int pageIndex, final int pageSize, final List<SortOrder> sortOrders) {
+    this.pageIndex = pageIndex;
+    this.pageSize = pageSize;
+    this.sortOrders = sortOrders;
+  }
 }
