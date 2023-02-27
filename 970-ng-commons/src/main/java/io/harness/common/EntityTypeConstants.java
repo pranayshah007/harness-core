@@ -221,4 +221,6 @@ public interface EntityTypeConstants {
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
   String SSCA_ORCHESTRATION = "SscaOrchestration";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

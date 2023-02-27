@@ -9,7 +9,7 @@ package io.harness.delegate.task.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskHandler;
+import io.harness.delegate.aws.lambda.AwsLambdaRollbackTaskCommandHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -18,7 +18,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
@@ -31,11 +31,11 @@ import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
-  @Inject private AwsLambdaDeployTaskHandler awsLambdaDeployTaskHandler;
+public class AwsLambdaRollbackTask extends AbstractDelegateRunnableTask {
+  @Inject private AwsLambdaRollbackTaskCommandHandler awsLambdaRollbackTaskCommandHandler;
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
 
-  public AwsLambdaDeployTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+  public AwsLambdaRollbackTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
@@ -43,12 +43,11 @@ public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
   }
 
   @Override
-  public AwsLambdaCommandResponse run(Object[] parameters) {
+  public AwsLambdaRollbackResponse run(Object[] parameters) {
     throw new NotImplementedException("not implemented");
   }
 
-  @Override
-  public AwsLambdaCommandResponse run(TaskParameters parameters) {
+  public AwsLambdaRollbackResponse run(TaskParameters parameters) {
     AwsLambdaCommandRequest awsLambdaCommandRequest = (AwsLambdaCommandRequest) parameters;
     CommandUnitsProgress commandUnitsProgress = awsLambdaCommandRequest.getCommandUnitsProgress() != null
         ? awsLambdaCommandRequest.getCommandUnitsProgress()
@@ -57,10 +56,11 @@ public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaCommandRequest.getAwsLambdaInfraConfig());
 
     try {
-      AwsLambdaCommandResponse awsLambdaCommandResponse = awsLambdaDeployTaskHandler.executeTaskInternal(
+      AwsLambdaRollbackResponse awsLambdaRollbackResponse = awsLambdaRollbackTaskCommandHandler.executeTaskInternal(
           awsLambdaCommandRequest, getLogStreamingTaskClient(), commandUnitsProgress);
-      awsLambdaCommandResponse.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
-      return awsLambdaCommandResponse;
+      awsLambdaRollbackResponse.setCommandUnitsProgress(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+      return awsLambdaRollbackResponse;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing Aws Lambda function task [{}]",

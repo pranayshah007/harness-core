@@ -470,7 +470,9 @@ public enum TaskType {
   ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
   ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
   BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO),
-  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task");
+  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task"),
+  AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Prepare Rollback Task NG"),
+  AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Rollback Task NG");
 
   private final TaskGroup taskGroup;
   private final String displayName;

@@ -25,16 +25,20 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class AwsLambdaPrepareRollbackRequest implements AwsLambdaCommandRequest, NestedAnnotationResolver {
+public class AwsLambdaRollbackRequest implements AwsLambdaCommandRequest, NestedAnnotationResolver {
   AwsLambdaCommandTypeNG awsLambdaCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) String functionName;
+  @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
+  boolean firstDeployment;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {
-    return AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK;
+    return AwsLambdaCommandTypeNG.AWS_LAMBDA_ROLLBACK;
   }
 }

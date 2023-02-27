@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.aws.lambda.deploy;
+package io.harness.cdng.aws.lambda.rollback;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,15 +27,15 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TypeAlias("awslambdaDeployStepParameters")
-@RecasterAlias("io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStepParameters")
-public class AwsLambdaDeployStepParameters extends AwsLambdaDeployBaseStepInfo implements AwsLambdaSpecParameters {
+@TypeAlias("awsLambdaRollbackStepParameters")
+@RecasterAlias("io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters")
+public class AwsLambdaRollbackStepParameters extends AwsLambdaRollbackBaseStepInfo implements AwsLambdaSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AwsLambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AwsLambdaRollbackStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String awsLambdaDeployStepFnq) {
+    super(delegateSelectors, awsLambdaDeployStepFnq);
   }
   public List<String> getCommandUnits() {
-    return Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
-        AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), AwsLambdaCommandUnitConstants.deploy.toString());
+    return Arrays.asList(AwsLambdaCommandUnitConstants.rollback.toString());
   }
 }
