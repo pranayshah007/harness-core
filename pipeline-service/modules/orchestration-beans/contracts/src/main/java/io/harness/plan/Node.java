@@ -10,10 +10,13 @@ package io.harness.plan;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.persistence.UuidAccess;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+
+import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface Node extends UuidAccess {
@@ -58,4 +61,12 @@ public interface Node extends UuidAccess {
   }
 
   boolean isSkipUnresolvedExpressionsCheck();
+
+  default List<AdviserObtainment> getAdviserObtainments() {
+    return null;
+  }
+
+  default List<AdviserObtainment> getAdvisorObtainmentsForRollbackMode() {
+    return null;
+  }
 }

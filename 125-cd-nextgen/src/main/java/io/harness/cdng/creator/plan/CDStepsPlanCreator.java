@@ -28,6 +28,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.common.NGSectionStepParameters;
 import io.harness.steps.common.NGSectionStepWithRollbackInfo;
 
+import java.util.Collections;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -53,8 +54,11 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
       return planNodeBuilder.build();
     }
 
+    // todo: correct advisor for rollback mode
     return planNodeBuilder
         .adviserObtainment(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build())
+        .advisorObtainmentsForRollbackMode(Collections.singletonList(
+            AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build()))
         .build();
   }
 }

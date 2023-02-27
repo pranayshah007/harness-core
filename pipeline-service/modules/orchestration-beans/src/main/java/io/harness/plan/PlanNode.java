@@ -76,28 +76,31 @@ public class PlanNode implements Node {
     if (planNodeProto == null) {
       return null;
     }
-    return PlanNode.builder()
-        .uuid(planNodeProto.getUuid())
-        .name(planNodeProto.getName())
-        .stageFqn(planNodeProto.getStageFqn())
-        .stepType(planNodeProto.getStepType())
-        .identifier(planNodeProto.getIdentifier())
-        .group(planNodeProto.getGroup())
-        .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
-        .refObjects(planNodeProto.getRebObjectsList())
-        .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
-        .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
-        .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
-        .skipCondition(planNodeProto.getSkipCondition())
-        .whenCondition(planNodeProto.getWhenCondition())
-        .skipExpressionChain(planNodeProto.getSkipExpressionChain())
-        .skipGraphType(planNodeProto.getSkipType())
-        .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
-        .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
-        .serviceName(planNodeProto.getServiceName())
-        .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
-        .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
-        .build();
+    PlanNode planNode =
+        PlanNode.builder()
+            .uuid(planNodeProto.getUuid())
+            .name(planNodeProto.getName())
+            .stageFqn(planNodeProto.getStageFqn())
+            .stepType(planNodeProto.getStepType())
+            .identifier(planNodeProto.getIdentifier())
+            .group(planNodeProto.getGroup())
+            .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
+            .refObjects(planNodeProto.getRebObjectsList())
+            .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
+            .advisorObtainmentsForRollbackMode(planNodeProto.getAdviserObtainmentsForRollbackModeList())
+            .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
+            .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
+            .skipCondition(planNodeProto.getSkipCondition())
+            .whenCondition(planNodeProto.getWhenCondition())
+            .skipExpressionChain(planNodeProto.getSkipExpressionChain())
+            .skipGraphType(planNodeProto.getSkipType())
+            .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
+            .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
+            .serviceName(planNodeProto.getServiceName())
+            .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
+            .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
+            .build();
+    return planNode;
   }
 
   @Override

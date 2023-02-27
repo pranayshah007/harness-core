@@ -99,6 +99,13 @@ public class RollbackModeExecutionHelper {
           nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid());
       planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), identityPlanNode);
     }
+    for (Node planNode : plan.getPlanNodes()) {
+      if (EmptyPredicate.isNotEmpty(planNode.getAdvisorObtainmentsForRollbackMode())) {
+        IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
+        planNodeIDToUpdatedPlanNodes.put(
+            planNode.getUuid(), updatedNode.withAdviserObtainments(planNode.getAdvisorObtainmentsForRollbackMode()));
+      }
+    }
 
     for (Node planNode : plan.getPlanNodes()) {
       if (nodeIDsToPreserve.contains(planNode.getUuid())

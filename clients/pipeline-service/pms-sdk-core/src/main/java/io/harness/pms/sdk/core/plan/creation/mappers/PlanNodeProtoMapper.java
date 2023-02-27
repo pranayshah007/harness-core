@@ -50,6 +50,8 @@ public class PlanNodeProtoMapper {
                 node.getStepParameters() == null ? "" : RecastOrchestrationUtils.toJson(node.getStepParameters()))
             .addAllRebObjects(CollectionUtils.emptyIfNull(node.getRefObjects()))
             .addAllAdviserObtainments(CollectionUtils.emptyIfNull(node.getAdviserObtainments()))
+            .addAllAdviserObtainmentsForRollbackMode(
+                CollectionUtils.emptyIfNull(node.getAdvisorObtainmentsForRollbackMode()))
             .addAllFacilitatorObtainments(CollectionUtils.emptyIfNull(node.getFacilitatorObtainments()))
             .setSkipExpressionChain(node.isSkipExpressionChain())
             .setExpressionMode(node.getExpressionMode())
