@@ -227,9 +227,9 @@ public class BudgetResource {
           rbacHelper.checkFolderIdsGivenPermission(accountId, null, null, folderIds, BUDGET_VIEW);
       allowedBudgets = allBudgets.stream()
                            .filter(budget
-                               -> (BudgetUtils.isPerspectiveBudget(budget)
+                               -> BudgetUtils.isPerspectiveBudget(budget)
                                    && allowedFolderIds.contains(
-                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget)))))
+                                       perspectiveIdAndFolderIds.get(BudgetUtils.getPerspectiveIdForBudget(budget))))
                            .collect(Collectors.toList());
     }
 
