@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.utils.AwsUtils;
+import io.harness.cvng.utils.AwsUtils.AwsAccessKeysPair;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,12 +59,12 @@ public class AwsDataCollectionRequest extends DataCollectionRequest<AwsConnector
 
   @Override
   public Map<String, Object> fetchDslEnvVariables() {
-    AWSCredentials awsCredentials = AwsUtils.getAwsCredentials(getConnectorConfigDTO(), region);
+    AwsAccessKeysPair awsCredentials = AwsUtils.getAwsCredentials(getConnectorConfigDTO());
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("serviceName", awsService);
     dslEnvVariables.put("region", region);
-    dslEnvVariables.put("awsSecretKey", awsCredentials.getAWSSecretKey());
-    dslEnvVariables.put("awsAccessKey", awsCredentials.getAWSAccessKeyId());
+    dslEnvVariables.put("awsSecretKey", awsCredentials.getSecretAccessKey());
+    dslEnvVariables.put("awsAccessKey", awsCredentials.getAccessKeyId());
     dslEnvVariables.put("url", getBaseUrl());
     dslEnvVariables.put("queryMap", queryParameters);
     return dslEnvVariables;

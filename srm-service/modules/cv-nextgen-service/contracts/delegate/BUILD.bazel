@@ -21,6 +21,8 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//957-cg-beans:module",
+        "//960-api-services/src/main/java/io/harness/aws/beans:module",
+        "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//960-api-services/src/main/java/io/harness/gcp/helpers:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
