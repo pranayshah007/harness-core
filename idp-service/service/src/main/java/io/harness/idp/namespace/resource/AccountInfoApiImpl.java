@@ -8,12 +8,12 @@ package io.harness.idp.namespace.resource;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.inject.Inject;
-import java.util.Optional;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,13 @@ public class AccountInfoApiImpl implements AccountInfoApi {
 
   @Override
   public Response getAccountForNamespace(String namespace) {
-    Optional<NamespaceInfo> accountInfo = namespaceService.getAccountIdForNamespace(namespace);
-    return Response.status(Response.Status.OK).entity(accountInfo).build();
+    try {
+      NamespaceInfo accountInfo = namespaceService.getAccountIdForNamespace(namespace);
+      return Response.status(Response.Status.OK).entity(accountInfo).build();
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }
