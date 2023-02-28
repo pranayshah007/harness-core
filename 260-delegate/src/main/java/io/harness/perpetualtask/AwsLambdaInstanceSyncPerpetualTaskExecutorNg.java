@@ -7,40 +7,35 @@
 
 package io.harness.perpetualtask;
 
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.network.SafeHttpCall.execute;
+
+import static java.lang.String.format;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.AwsLambdaInstanceSyncPerpetualTaskResponse;
-import io.harness.delegate.beans.instancesync.GoogleFunctionInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeploymentReleaseData;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelperBase;
-import io.harness.delegate.task.googlefunction.GoogleFunctionDeploymentReleaseData;
-import io.harness.delegate.task.googlefunction.GoogleFunctionTaskHelperBase;
-import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
-import io.harness.perpetualtask.instancesync.GoogleFunctionDeploymentRelease;
-import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.network.SafeHttpCall.execute;
-import static java.lang.String.format;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -62,8 +57,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
 
   public PerpetualTaskResponse executeAwsLambdaInstanceSyncTask(
       PerpetualTaskId taskId, AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams) {
-    List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList =
-            getAwsLambdaDeploymentReleaseData(taskParams);
+    List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList = getAwsLambdaDeploymentReleaseData(taskParams);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -77,8 +71,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
 
-  private List<ServerInstanceInfo> getServerInstanceInfoList(
-      AwsLambdaDeploymentReleaseData deploymentReleaseData) {
+  private List<ServerInstanceInfo> getServerInstanceInfoList(AwsLambdaDeploymentReleaseData deploymentReleaseData) {
     try {
       return awsLambdaTaskHelperBase.getAwsLambdaServerInstanceInfo(deploymentReleaseData);
     } catch (Exception ex) {
@@ -99,7 +92,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
       AwsLambdaDeploymentRelease awsLambdaDeploymentRelease) {
     return AwsLambdaDeploymentReleaseData.builder()
         .awsLambdaInfraConfig((AwsLambdaFunctionsInfraConfig) kryoSerializer.asObject(
-                awsLambdaDeploymentRelease.getAwsLambdaInfraConfig().toByteArray()))
+            awsLambdaDeploymentRelease.getAwsLambdaInfraConfig().toByteArray()))
         .function(awsLambdaDeploymentRelease.getFunction())
         .region(awsLambdaDeploymentRelease.getRegion())
         .build();
@@ -108,7 +101,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
   private String publishInstanceSyncResult(
       PerpetualTaskId taskId, String accountId, List<ServerInstanceInfo> serverInstanceInfos) {
     AwsLambdaInstanceSyncPerpetualTaskResponse instanceSyncResponse =
-            AwsLambdaInstanceSyncPerpetualTaskResponse.builder()
+        AwsLambdaInstanceSyncPerpetualTaskResponse.builder()
             .serverInstanceDetails(serverInstanceInfos)
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();

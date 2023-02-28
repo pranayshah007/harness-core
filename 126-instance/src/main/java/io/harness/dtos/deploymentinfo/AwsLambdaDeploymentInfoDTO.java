@@ -8,21 +8,21 @@
 
 package io.harness.dtos.deploymentinfo;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
+
+import software.wings.beans.Tag;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Date;
+import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import software.wings.beans.Tag;
-
-import javax.validation.constraints.NotNull;
-
-import java.util.Date;
-import java.util.Set;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data

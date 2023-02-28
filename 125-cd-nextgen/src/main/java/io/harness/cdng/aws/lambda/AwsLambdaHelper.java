@@ -17,7 +17,6 @@ import static java.lang.String.format;
 
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
-import java.util.ArrayList;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
@@ -37,15 +36,12 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
-import io.harness.delegate.beans.instancesync.mapper.GoogleFunctionToServerInstanceInfoMapper;
-import io.harness.delegate.task.aws.lambda.AwsLambdaFunction;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
-import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
@@ -94,6 +90,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -529,12 +526,12 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   public List<ServerInstanceInfo> getServerInstanceInfo(AwsLambdaCommandResponse awsLambdaCommandResponse,
-                                                        AwsLambdaInfraConfig awsLambdaInfraConfig, String infrastructureKey) {
+      AwsLambdaInfraConfig awsLambdaInfraConfig, String infrastructureKey) {
     List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
     AwsLambda awsLambdaFunction = awsLambdaCommandResponse.getAwsLambda();
     if (awsLambdaFunction != null) {
-      serverInstanceInfoList.add(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(awsLambdaFunction,
-              ((AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig).getRegion(), infrastructureKey));
+      serverInstanceInfoList.add(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(
+          awsLambdaFunction, ((AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig).getRegion(), infrastructureKey));
     }
     return serverInstanceInfoList;
   }

@@ -28,5 +28,4 @@ public class AwsLambdaFunctionsInfraConfig implements AwsLambdaInfraConfig {
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   List<EncryptedDataDetail> encryptionDataDetails;
   String infraStructureKey;
-
 }

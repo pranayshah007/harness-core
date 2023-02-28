@@ -10,14 +10,15 @@ package io.harness.dtos.instanceinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.util.InstanceSyncKey;
+
+import software.wings.beans.Tag;
+
+import java.util.Date;
+import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import software.wings.beans.Tag;
-
-import javax.validation.constraints.NotNull;
-import java.util.Date;
-import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data

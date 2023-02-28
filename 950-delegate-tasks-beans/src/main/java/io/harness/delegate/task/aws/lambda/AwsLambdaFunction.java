@@ -7,31 +7,28 @@
 
 package io.harness.delegate.task.aws.lambda;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+
+import io.harness.annotations.dev.OwnedBy;
+
 import com.amazonaws.services.lambda.model.AliasConfiguration;
 import com.amazonaws.services.lambda.model.FunctionConfiguration;
 import com.amazonaws.services.lambda.model.GetFunctionResult;
 import com.amazonaws.services.lambda.model.ListAliasesResult;
 import com.google.common.collect.ImmutableMap;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.logging.log4j.util.Strings;
-import software.wings.service.impl.aws.model.embed.AwsLambdaDetails.AwsLambdaDetailsBuilder;
-
-import javax.annotation.Nonnull;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.logging.log4j.util.Strings;
 
 @Data
 @Builder
@@ -59,20 +56,20 @@ public class AwsLambdaFunction {
   public static AwsLambdaFunction from(GetFunctionResult result, ListAliasesResult listAliasesResult) {
     final FunctionConfiguration config = result.getConfiguration();
     final AwsLambdaFunction.AwsLambdaFunctionBuilder builder = AwsLambdaFunction.builder()
-            .functionArn(config.getFunctionArn())
-            .functionName(config.getFunctionName())
-            .runtime(config.getRuntime())
-            .role(config.getRole())
-            .handler(config.getHandler())
-            .codeSize(config.getCodeSize())
-            .description(config.getDescription())
-            .timeout(config.getTimeout())
-            .memorySize(config.getMemorySize())
-            .codeSha256(config.getCodeSha256())
-            .version(config.getVersion())
-            .kMSKeyArn(config.getKMSKeyArn())
-            .masterArn(config.getMasterArn())
-            .revisionId(config.getRevisionId());
+                                                                   .functionArn(config.getFunctionArn())
+                                                                   .functionName(config.getFunctionName())
+                                                                   .runtime(config.getRuntime())
+                                                                   .role(config.getRole())
+                                                                   .handler(config.getHandler())
+                                                                   .codeSize(config.getCodeSize())
+                                                                   .description(config.getDescription())
+                                                                   .timeout(config.getTimeout())
+                                                                   .memorySize(config.getMemorySize())
+                                                                   .codeSha256(config.getCodeSha256())
+                                                                   .version(config.getVersion())
+                                                                   .kMSKeyArn(config.getKMSKeyArn())
+                                                                   .masterArn(config.getMasterArn())
+                                                                   .revisionId(config.getRevisionId());
 
     if (Strings.isNotEmpty(config.getLastModified())) {
       try {
@@ -90,30 +87,30 @@ public class AwsLambdaFunction {
 
     if (listAliasesResult != null) {
       builder.aliases(
-              emptyIfNull(listAliasesResult.getAliases()).stream().map(AliasConfiguration::getName).collect(toList()));
+          emptyIfNull(listAliasesResult.getAliases()).stream().map(AliasConfiguration::getName).collect(toList()));
     }
     return builder.build();
   }
 
   public static AwsLambdaFunction from(AwsLambdaFunctionWithActiveVersions activeVersions, String version) {
     final AwsLambdaFunction.AwsLambdaFunctionBuilder builder = AwsLambdaFunction.builder()
-            .functionArn(activeVersions.getFunctionArn())
-            .functionName(activeVersions.getFunctionName())
-            .runtime(activeVersions.getRuntime())
-            .role(activeVersions.getRole())
-            .handler(activeVersions.getHandler())
-            .codeSize(activeVersions.getCodeSize())
-            .description(activeVersions.getDescription())
-            .timeout(activeVersions.getTimeout())
-            .memorySize(activeVersions.getMemorySize())
-            .codeSha256(activeVersions.getCodeSha256())
-            .version(version)
-            .kMSKeyArn(activeVersions.getKMSKeyArn())
-            .masterArn(activeVersions.getMasterArn())
-            .revisionId(activeVersions.getRevisionId())
-            .lastModified(activeVersions.getLastModified())
-            .aliases(activeVersions.getAliases())
-            .tags(activeVersions.getTags());
+                                                                   .functionArn(activeVersions.getFunctionArn())
+                                                                   .functionName(activeVersions.getFunctionName())
+                                                                   .runtime(activeVersions.getRuntime())
+                                                                   .role(activeVersions.getRole())
+                                                                   .handler(activeVersions.getHandler())
+                                                                   .codeSize(activeVersions.getCodeSize())
+                                                                   .description(activeVersions.getDescription())
+                                                                   .timeout(activeVersions.getTimeout())
+                                                                   .memorySize(activeVersions.getMemorySize())
+                                                                   .codeSha256(activeVersions.getCodeSha256())
+                                                                   .version(version)
+                                                                   .kMSKeyArn(activeVersions.getKMSKeyArn())
+                                                                   .masterArn(activeVersions.getMasterArn())
+                                                                   .revisionId(activeVersions.getRevisionId())
+                                                                   .lastModified(activeVersions.getLastModified())
+                                                                   .aliases(activeVersions.getAliases())
+                                                                   .tags(activeVersions.getTags());
 
     return builder.build();
   }

@@ -7,30 +7,25 @@
 
 package io.harness.service.instancesynchandler;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
-import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.AwsLambdaDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.deploymentinfo.GoogleFunctionDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
-import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.AwsLambdaInfrastructureDetails;
-import io.harness.models.infrastructuredetails.GoogleFunctionInfrastructureDetails;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
@@ -51,13 +46,10 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO) {
     if (!(instanceInfoDTO instanceof AwsLambdaInstanceInfoDTO)) {
-      throw new InvalidArgumentsException(
-          Pair.of("instanceInfoDTO", "Must be instance of AwsLambdaInstanceInfoDTO"));
+      throw new InvalidArgumentsException(Pair.of("instanceInfoDTO", "Must be instance of AwsLambdaInstanceInfoDTO"));
     }
     AwsLambdaInstanceInfoDTO awsLambdaInstanceInfoDTO = (AwsLambdaInstanceInfoDTO) instanceInfoDTO;
-    return AwsLambdaInfrastructureDetails.builder()
-        .region(awsLambdaInstanceInfoDTO.getRegion())
-        .build();
+    return AwsLambdaInfrastructureDetails.builder().region(awsLambdaInstanceInfoDTO.getRegion()).build();
   }
 
   @Override
@@ -82,17 +74,17 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
         .region(awsLambdaServerInstanceInfo.getRegion())
         .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
-            .version(awsLambdaServerInstanceInfo.getVersion())
-            .tags(awsLambdaServerInstanceInfo.getTags())
-            .handler(awsLambdaServerInstanceInfo.getHandler())
-            .runtime(awsLambdaServerInstanceInfo.getRuntime())
-            .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
-            .description(awsLambdaServerInstanceInfo.getDescription())
-            .aliases(awsLambdaServerInstanceInfo.getAliases())
-            .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
-            .source(awsLambdaServerInstanceInfo.getSource())
-            .updatedTime(awsLambdaServerInstanceInfo.getUpdatedTime())
-            .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
+        .version(awsLambdaServerInstanceInfo.getVersion())
+        .tags(awsLambdaServerInstanceInfo.getTags())
+        .handler(awsLambdaServerInstanceInfo.getHandler())
+        .runtime(awsLambdaServerInstanceInfo.getRuntime())
+        .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
+        .description(awsLambdaServerInstanceInfo.getDescription())
+        .aliases(awsLambdaServerInstanceInfo.getAliases())
+        .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
+        .source(awsLambdaServerInstanceInfo.getSource())
+        .updatedTime(awsLambdaServerInstanceInfo.getUpdatedTime())
+        .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
         .build();
   }
 
@@ -103,8 +95,7 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
           Pair.of("serverInstanceInfo", "Must be instance of AwsLambdaServerInstanceInfo"));
     }
 
-    AwsLambdaServerInstanceInfo awsLambdaServerInstanceInfo =
-        (AwsLambdaServerInstanceInfo) serverInstanceInfo;
+    AwsLambdaServerInstanceInfo awsLambdaServerInstanceInfo = (AwsLambdaServerInstanceInfo) serverInstanceInfo;
 
     return AwsLambdaInstanceInfoDTO.builder()
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
@@ -115,12 +106,12 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
         .runTime(awsLambdaServerInstanceInfo.getRuntime())
         .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
-            .handler(awsLambdaServerInstanceInfo.getHandler())
-            .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
-            .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
-            .description(awsLambdaServerInstanceInfo.getDescription())
-            .aliases(awsLambdaServerInstanceInfo.getAliases())
-            .tags(awsLambdaServerInstanceInfo.getTags())
+        .handler(awsLambdaServerInstanceInfo.getHandler())
+        .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
+        .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
+        .description(awsLambdaServerInstanceInfo.getDescription())
+        .aliases(awsLambdaServerInstanceInfo.getAliases())
+        .tags(awsLambdaServerInstanceInfo.getTags())
         .build();
   }
 }

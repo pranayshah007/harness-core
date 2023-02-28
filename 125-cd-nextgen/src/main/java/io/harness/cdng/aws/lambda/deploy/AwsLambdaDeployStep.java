@@ -36,9 +36,8 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -49,7 +48,6 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
                                                .build();
   @Inject private AwsLambdaHelper awsLambdaHelper;
   @Inject private InstanceInfoService instanceInfoService;
-
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -97,14 +95,14 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
 
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
-            awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
+        awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
     List<ServerInstanceInfo> serverInstanceInfoList = awsLambdaHelper.getServerInstanceInfo(
-            awsLambdaDeployResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
+        awsLambdaDeployResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
     StepResponse.StepOutcome stepOutcome =
-            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
-            .stepOutcome(stepOutcome)
+        .stepOutcome(stepOutcome)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
                          .outcome(awsLambdaStepOutcome)

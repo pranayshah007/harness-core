@@ -23,8 +23,6 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.exception.ExceptionUtils;
@@ -47,9 +45,8 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -83,13 +80,13 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
       InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-              ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
-              awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
+          awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
       List<ServerInstanceInfo> serverInstanceInfoList = awsLambdaHelper.getServerInstanceInfo(
-              awsLambdaCommandResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
+          awsLambdaCommandResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
       StepResponse.StepOutcome stepOutcome =
-              instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
       stepResponseBuilder.stepOutcome(stepOutcome);
       stepResponse = awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {

@@ -9,15 +9,15 @@ package io.harness.entities.deploymentinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+
+import software.wings.beans.Tag;
+
+import java.util.Date;
+import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import software.wings.beans.Tag;
-
-import javax.validation.constraints.NotNull;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 @Data
 @Builder

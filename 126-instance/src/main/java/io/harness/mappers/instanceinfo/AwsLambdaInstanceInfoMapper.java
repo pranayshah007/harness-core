@@ -10,9 +10,8 @@ package io.harness.mappers.instanceinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
-import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AwsLambdaInstanceInfo;
-import io.harness.entities.instanceinfo.GoogleFunctionInstanceInfo;
+
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -23,16 +22,16 @@ public class AwsLambdaInstanceInfoMapper {
         .functionName(awsLambdaInstanceInfo.getFunctionName())
         .region(awsLambdaInstanceInfo.getRegion())
         .source(awsLambdaInstanceInfo.getSource())
-            .version(awsLambdaInstanceInfo.getVersion())
+        .version(awsLambdaInstanceInfo.getVersion())
         .updatedTime(awsLambdaInstanceInfo.getUpdatedTime())
         .memorySize(awsLambdaInstanceInfo.getMemorySize())
         .runTime(awsLambdaInstanceInfo.getRunTime())
         .infraStructureKey(awsLambdaInstanceInfo.getInfraStructureKey())
-            .tags(awsLambdaInstanceInfo.getTags())
-            .aliases(awsLambdaInstanceInfo.getAliases())
-            .description(awsLambdaInstanceInfo.getDescription())
-            .functionArn(awsLambdaInstanceInfo.getFunctionArn())
-            .handler(awsLambdaInstanceInfo.getHandler())
+        .tags(awsLambdaInstanceInfo.getTags())
+        .aliases(awsLambdaInstanceInfo.getAliases())
+        .description(awsLambdaInstanceInfo.getDescription())
+        .functionArn(awsLambdaInstanceInfo.getFunctionArn())
+        .handler(awsLambdaInstanceInfo.getHandler())
         .build();
   }
 
@@ -46,11 +45,11 @@ public class AwsLambdaInstanceInfoMapper {
         .memorySize(awsLambdaInstanceInfoDTO.getMemorySize())
         .runTime(awsLambdaInstanceInfoDTO.getRunTime())
         .infraStructureKey(awsLambdaInstanceInfoDTO.getInfraStructureKey())
-            .tags(awsLambdaInstanceInfoDTO.getTags())
-            .aliases(awsLambdaInstanceInfoDTO.getAliases())
-            .description(awsLambdaInstanceInfoDTO.getDescription())
-            .functionArn(awsLambdaInstanceInfoDTO.getFunctionArn())
-            .handler(awsLambdaInstanceInfoDTO.getHandler())
+        .tags(awsLambdaInstanceInfoDTO.getTags())
+        .aliases(awsLambdaInstanceInfoDTO.getAliases())
+        .description(awsLambdaInstanceInfoDTO.getDescription())
+        .functionArn(awsLambdaInstanceInfoDTO.getFunctionArn())
+        .handler(awsLambdaInstanceInfoDTO.getHandler())
         .build();
   }
 }

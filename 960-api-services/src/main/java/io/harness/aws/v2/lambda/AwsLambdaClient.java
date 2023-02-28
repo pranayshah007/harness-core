@@ -56,8 +56,7 @@ public interface AwsLambdaClient {
       AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest);
 
   ListVersionsByFunctionResponse listVersionsByFunction(
-          AwsInternalConfig awsInternalConfig, ListVersionsByFunctionRequest listVersionsByFunctionRequest);
+      AwsInternalConfig awsInternalConfig, ListVersionsByFunctionRequest listVersionsByFunctionRequest);
 
-  ListAliasesResponse listAliases(
-          AwsInternalConfig awsInternalConfig, ListAliasesRequest listAliasesRequest);
+  ListAliasesResponse listAliases(AwsInternalConfig awsInternalConfig, ListAliasesRequest listAliasesRequest);
 }

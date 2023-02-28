@@ -79,7 +79,8 @@ public class InstanceSyncStepResolver {
       AsgBlueGreenDeployStep.STEP_TYPE.getType(), AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(),
       AsgBlueGreenRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployStep.STEP_TYPE.getType(),
       GoogleFunctionsRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
-      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(), AwsLambdaRollbackStep.STEP_TYPE.getType()));
+      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(),
+      AwsLambdaRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

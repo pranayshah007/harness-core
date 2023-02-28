@@ -48,8 +48,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AsgServerInstanceInfo.class, name = "AsgServerInstanceInfo"),
       @JsonSubTypes.Type(
           value = GoogleFunctionServerInstanceInfo.class, name = "GoogleCloudFunctionsServerInstanceInfo"),
-        @JsonSubTypes.Type(
-                value = AwsLambdaServerInstanceInfo.class, name = "AwsLambdaServerInstanceInfo")
+      @JsonSubTypes.Type(value = AwsLambdaServerInstanceInfo.class, name = "AwsLambdaServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}

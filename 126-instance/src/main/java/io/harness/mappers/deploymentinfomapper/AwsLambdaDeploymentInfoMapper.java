@@ -10,9 +10,8 @@ package io.harness.mappers.deploymentinfomapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.deploymentinfo.AwsLambdaDeploymentInfoDTO;
-import io.harness.dtos.deploymentinfo.GoogleFunctionDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.AwsLambdaDeploymentInfo;
-import io.harness.entities.deploymentinfo.GoogleFunctionDeploymentInfo;
+
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -23,17 +22,17 @@ public class AwsLambdaDeploymentInfoMapper {
         .functionName(awsLambdaDeploymentInfo.getFunctionName())
         .region(awsLambdaDeploymentInfo.getRegion())
         .infraStructureKey(awsLambdaDeploymentInfo.getInfraStructureKey())
-            .version(awsLambdaDeploymentInfo.getVersion())
-            .memorySize(awsLambdaDeploymentInfo.getMemorySize())
-            .updatedTime(awsLambdaDeploymentInfo.getUpdatedTime())
-            .aliases(awsLambdaDeploymentInfo.getAliases())
-            .artifactId(awsLambdaDeploymentInfo.getArtifactId())
-            .description(awsLambdaDeploymentInfo.getDescription())
-            .functionArn(awsLambdaDeploymentInfo.getFunctionArn())
-            .handler(awsLambdaDeploymentInfo.getHandler())
-            .runtime(awsLambdaDeploymentInfo.getRuntime())
-            .source(awsLambdaDeploymentInfo.getSource())
-            .tags(awsLambdaDeploymentInfo.getTags())
+        .version(awsLambdaDeploymentInfo.getVersion())
+        .memorySize(awsLambdaDeploymentInfo.getMemorySize())
+        .updatedTime(awsLambdaDeploymentInfo.getUpdatedTime())
+        .aliases(awsLambdaDeploymentInfo.getAliases())
+        .artifactId(awsLambdaDeploymentInfo.getArtifactId())
+        .description(awsLambdaDeploymentInfo.getDescription())
+        .functionArn(awsLambdaDeploymentInfo.getFunctionArn())
+        .handler(awsLambdaDeploymentInfo.getHandler())
+        .runtime(awsLambdaDeploymentInfo.getRuntime())
+        .source(awsLambdaDeploymentInfo.getSource())
+        .tags(awsLambdaDeploymentInfo.getTags())
         .build();
   }
 
@@ -43,16 +42,16 @@ public class AwsLambdaDeploymentInfoMapper {
         .functionName(awsLambdaDeploymentInfoDTO.getFunctionName())
         .region(awsLambdaDeploymentInfoDTO.getRegion())
         .infraStructureKey(awsLambdaDeploymentInfoDTO.getInfraStructureKey())
-            .memorySize(awsLambdaDeploymentInfoDTO.getMemorySize())
-            .updatedTime(awsLambdaDeploymentInfoDTO.getUpdatedTime())
-            .aliases(awsLambdaDeploymentInfoDTO.getAliases())
-            .artifactId(awsLambdaDeploymentInfoDTO.getArtifactId())
-            .description(awsLambdaDeploymentInfoDTO.getDescription())
-            .functionArn(awsLambdaDeploymentInfoDTO.getFunctionArn())
-            .handler(awsLambdaDeploymentInfoDTO.getHandler())
-            .runtime(awsLambdaDeploymentInfoDTO.getRuntime())
-            .source(awsLambdaDeploymentInfoDTO.getSource())
-            .tags(awsLambdaDeploymentInfoDTO.getTags())
+        .memorySize(awsLambdaDeploymentInfoDTO.getMemorySize())
+        .updatedTime(awsLambdaDeploymentInfoDTO.getUpdatedTime())
+        .aliases(awsLambdaDeploymentInfoDTO.getAliases())
+        .artifactId(awsLambdaDeploymentInfoDTO.getArtifactId())
+        .description(awsLambdaDeploymentInfoDTO.getDescription())
+        .functionArn(awsLambdaDeploymentInfoDTO.getFunctionArn())
+        .handler(awsLambdaDeploymentInfoDTO.getHandler())
+        .runtime(awsLambdaDeploymentInfoDTO.getRuntime())
+        .source(awsLambdaDeploymentInfoDTO.getSource())
+        .tags(awsLambdaDeploymentInfoDTO.getTags())
         .build();
   }
 }

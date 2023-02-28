@@ -7,41 +7,33 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.AwsLambdaEntityHelper;
-import io.harness.cdng.googlefunctions.GoogleFunctionsEntityHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.aws.lambda.AwsLambdaDeploymentReleaseData;
-import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaInstanceSyncRequest;
-import io.harness.delegate.task.googlefunction.GoogleFunctionDeploymentReleaseData;
-import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
-import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionInstanceSyncRequest;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.AwsLambdaDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.deploymentinfo.GoogleFunctionDeploymentInfoDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.AwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
-import io.harness.perpetualtask.instancesync.GoogleFunctionDeploymentRelease;
-import io.harness.perpetualtask.instancesync.GoogleFunctionInstanceSyncPerpetualTaskParams;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.InstanceSyncPerpetualTaskHandler;
-import lombok.AllArgsConstructor;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -70,8 +62,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
         .filter(Objects::nonNull)
         .map(AwsLambdaDeploymentInfoDTO.class ::cast)
         .map(deploymentInfoDTO
-            -> toAwsLambdaDeploymentReleaseData(
-                infrastructureMappingDTO, deploymentInfoDTO, infrastructureOutcome))
+            -> toAwsLambdaDeploymentReleaseData(infrastructureMappingDTO, deploymentInfoDTO, infrastructureOutcome))
         .collect(Collectors.toList());
   }
 
@@ -79,22 +70,22 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
       InfrastructureMappingDTO infrastructureMappingDTO, AwsLambdaDeploymentInfoDTO deploymentInfoDTO,
       InfrastructureOutcome infrastructureOutcome) {
     AwsLambdaInfraConfig awsLambdaInfraConfig =
-            getAwsLambdaInfraConfig(infrastructureMappingDTO, infrastructureOutcome);
+        getAwsLambdaInfraConfig(infrastructureMappingDTO, infrastructureOutcome);
     return AwsLambdaDeploymentReleaseData.builder()
         .awsLambdaInfraConfig(awsLambdaInfraConfig)
         .function(deploymentInfoDTO.getFunctionName())
         .region(deploymentInfoDTO.getRegion())
-            .version(deploymentInfoDTO.getVersion())
-            .handler(deploymentInfoDTO.getHandler())
-            .aliases(deploymentInfoDTO.getAliases())
-            .artifactId(deploymentInfoDTO.getArtifactId())
-            .description(deploymentInfoDTO.getDescription())
-            .functionArn(deploymentInfoDTO.getFunctionArn())
-            .memorySize(deploymentInfoDTO.getMemorySize())
-            .runtime(deploymentInfoDTO.getRuntime())
-            .source(deploymentInfoDTO.getSource())
-            .tags(deploymentInfoDTO.getTags())
-            .updatedTime(deploymentInfoDTO.getUpdatedTime())
+        .version(deploymentInfoDTO.getVersion())
+        .handler(deploymentInfoDTO.getHandler())
+        .aliases(deploymentInfoDTO.getAliases())
+        .artifactId(deploymentInfoDTO.getArtifactId())
+        .description(deploymentInfoDTO.getDescription())
+        .functionArn(deploymentInfoDTO.getFunctionArn())
+        .memorySize(deploymentInfoDTO.getMemorySize())
+        .runtime(deploymentInfoDTO.getRuntime())
+        .source(deploymentInfoDTO.getSource())
+        .tags(deploymentInfoDTO.getTags())
+        .updatedTime(deploymentInfoDTO.getUpdatedTime())
         .build();
   }
 
@@ -130,20 +121,17 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
     return deploymentReleaseData.stream().map(this::toAwsLambdaDeploymentRelease).collect(Collectors.toList());
   }
 
-  private AwsLambdaDeploymentRelease toAwsLambdaDeploymentRelease(
-          AwsLambdaDeploymentReleaseData releaseData) {
+  private AwsLambdaDeploymentRelease toAwsLambdaDeploymentRelease(AwsLambdaDeploymentReleaseData releaseData) {
     return AwsLambdaDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setAwsLambdaInfraConfig(
-            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
+        .setAwsLambdaInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
         .build();
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(
       List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList) {
-    Optional<AwsLambdaDeploymentReleaseData> deploymentReleaseSample =
-        deploymentReleaseDataList.stream().findFirst();
+    Optional<AwsLambdaDeploymentReleaseData> deploymentReleaseSample = deploymentReleaseDataList.stream().findFirst();
     if (!deploymentReleaseSample.isPresent()) {
       return Collections.emptyList();
     }

@@ -147,7 +147,7 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
     mapBinder.addBinding(GoogleFunctionInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(GoogleFunctionInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AwsLambdaInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
-            .to(AwsLambdaInstanceSyncPerpetualTaskExecutorNg.class);
+        .to(AwsLambdaInstanceSyncPerpetualTaskExecutorNg.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)
