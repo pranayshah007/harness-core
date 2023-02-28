@@ -43,6 +43,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -759,7 +760,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     for (String env : envRefs) {
       // org level entities need to have compatible ids. Eg. Stage level template will call with only org.Service type
       // refs
-      if (isNotEmpty(env)) {
+      if (isNotEmpty(env) && !EngineExpressionEvaluator.hasExpressions(env)) {
         IdentifierRef envIdentifierRef =
             IdentifierRefHelper.getIdentifierRef(env, accountId, orgIdentifier, projectIdentifier);
         Optional<Environment> environment =
@@ -772,7 +773,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                   envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
           List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
           for (String serviceRef : serviceRefs) {
-            if (isNotEmpty(serviceRef)) {
+            if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
               IdentifierRef serviceIdentifierRef =
                   IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
 

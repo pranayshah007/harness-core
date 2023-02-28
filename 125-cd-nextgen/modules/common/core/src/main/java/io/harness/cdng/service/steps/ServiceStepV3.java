@@ -40,6 +40,7 @@ import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -118,6 +119,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -243,7 +245,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("No environments are found while handling deployment to multiple environments");
     }
 
-    List<Environment> environments = getEnvironmentsFromEnvRef(ambiance, parameters.getEnvRefs());
+    List<ParameterField<String>> envRefs =
+        inferEnvRefScopeFromEnvGroup(parameters.getEnvRefs(), parameters.getEnvGroupRef());
+
+    List<Environment> environments = getEnvironmentsFromEnvRef(ambiance, envRefs);
 
     EnvironmentStepsUtils.checkForAllEnvsAccessOrThrow(accessControlClient, ambiance, environments);
 
@@ -256,8 +261,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
       try {
         if (isNotEmpty(parameters.getEnvToEnvInputs())) {
-          ngEnvironmentConfig =
-              mergeEnvironmentInputs(environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.fetchRef()));
+          ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(),
+              parameters.getEnvToEnvInputs().get(
+                  getEnvRefOrId(environment.fetchRef(), parameters.getEnvGroupRef(), environment.getIdentifier())));
         } else {
           ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(), null);
         }
@@ -267,7 +273,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             ex);
       }
       List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
-      envToEnvVariables.put(environment.fetchRef(), NGVariablesUtils.getMapOfVariables(variables));
+      envToEnvVariables.put(inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
+          NGVariablesUtils.getMapOfVariables(variables));
       if (variables != null) {
         secretNGVariables.addAll(
             variables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
@@ -278,14 +285,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       NGServiceOverrideConfig ngServiceOverrides;
       if (ngServiceOverridesEntity.isPresent()) {
         ngServiceOverrides = mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(),
-            parameters.getEnvToSvcOverrideInputs().get(environment.fetchRef()));
+            parameters.getEnvToSvcOverrideInputs().get(
+                getEnvRefOrId(environment.fetchRef(), parameters.getEnvGroupRef(), environment.getIdentifier())));
 
         svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
         if (svcOverrideVariables != null) {
           secretNGVariables.addAll(
               svcOverrideVariables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
         }
-        envToSvcVariables.put(environment.fetchRef(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
+        envToSvcVariables.put(inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
+            NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
       }
     }
 
@@ -314,6 +323,32 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
         servicePartResponse.getNgServiceConfig(), null, null, ambiance,
         ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
+  }
+
+  private String getEnvRefOrId(String envRef, ParameterField<String> envGroupRef, String envId) {
+    if (ParameterField.isNull(envGroupRef) || StringUtils.isEmpty(envGroupRef.getValue())) {
+      return envRef;
+    }
+    return envId;
+  }
+
+  private String inheritEnvGroupScope(String envRef, ParameterField<String> envGroupRef) {
+    if (ParameterField.isNull(envGroupRef) || StringUtils.isEmpty(envGroupRef.getValue())) {
+      return envRef;
+    }
+    Scope envGroupScope = EnvironmentStepsUtils.getScopeForRef(envGroupRef.getValue());
+    return EnvironmentStepsUtils.getEnvironmentRef(envRef, envGroupScope);
+  }
+
+  private List<ParameterField<String>> inferEnvRefScopeFromEnvGroup(
+      List<ParameterField<String>> envRefs, ParameterField<String> envGroupRef) {
+    if (isEmpty(envRefs) || ParameterField.isNull(envGroupRef) || StringUtils.isEmpty(envGroupRef.getValue())) {
+      return envRefs;
+    }
+    Scope envGroupScope = EnvironmentStepsUtils.getScopeForRef(envGroupRef.getValue());
+    return envRefs.stream()
+        .map(e -> ParameterField.createValueField(EnvironmentStepsUtils.getEnvironmentRef(e.getValue(), envGroupScope)))
+        .collect(Collectors.toList());
   }
 
   private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {

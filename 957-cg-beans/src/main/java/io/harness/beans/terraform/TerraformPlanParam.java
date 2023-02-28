@@ -30,6 +30,7 @@ public class TerraformPlanParam implements SweepingOutput {
   private Integer add;
   private Integer change;
   private Integer destroy;
+  private String policyChecksFileId;
 
   @Override
   public String getType() {

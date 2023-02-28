@@ -109,7 +109,7 @@ public class NGRestUtils {
     } catch (InvalidRequestException e) {
       throw e;
     } catch (Exception e) {
-      log.error("Error while converting rest response to ErrorDTO", e);
+      log.error("Error while converting rest response to GenericErrorMessage", e);
       throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage);
     } finally {
       if (!response.isSuccessful() && response.errorBody() != null) {

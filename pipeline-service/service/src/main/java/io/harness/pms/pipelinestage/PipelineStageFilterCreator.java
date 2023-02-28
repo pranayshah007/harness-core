@@ -16,6 +16,9 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -31,6 +34,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.strategy.StrategyValidationUtils;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
@@ -73,13 +77,19 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 
-    SourcePrincipalContextBuilder.setSourcePrincipal(
-        PmsSecurityContextGuardUtils.getPrincipal(filterCreationContext.getSetupMetadata().getAccountId(),
-            filterCreationContext.getSetupMetadata().getPrincipalInfo(),
-            filterCreationContext.getSetupMetadata().getTriggeredInfo()));
-    Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(
-        filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig.getOrg(),
-        pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false);
+    SetupMetadata setupMetadata = filterCreationContext.getSetupMetadata();
+    SourcePrincipalContextBuilder.setSourcePrincipal(PmsSecurityContextGuardUtils.getPrincipal(
+        setupMetadata.getAccountId(), setupMetadata.getPrincipalInfo(), setupMetadata.getTriggeredInfo()));
+
+    // This is required to fetch correct branch of child parent pipeline in case of remote pipelines. This will set
+    // parentConnectorRef and parentConnectorRepo in child git context
+    GitEntityInfo gitRequestParamsInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    PipelineGitXHelper.setupGitParentEntityDetails(setupMetadata.getAccountId(), setupMetadata.getOrgId(),
+        setupMetadata.getProjectId(), gitRequestParamsInfo.getConnectorRef(), gitRequestParamsInfo.getRepoName());
+
+    Optional<PipelineEntity> childPipelineEntity =
+        pmsPipelineService.getPipeline(setupMetadata.getAccountId(), pipelineStageConfig.getOrg(),
+            pipelineStageConfig.getProject(), pipelineStageConfig.getPipeline(), false, false);
 
     if (!childPipelineEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -89,7 +99,7 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
 
     pipelineStageHelper.validateFailureStrategy(stageNode.getFailureStrategies());
     EntityDetailProtoDTO entityDetailProtoDTO =
-        getEntityDetailOfChildPipeline(filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig);
+        getEntityDetailOfChildPipeline(setupMetadata.getAccountId(), pipelineStageConfig);
     return FilterCreationResponse.builder().referredEntities(Collections.singletonList(entityDetailProtoDTO)).build();
   }
 
