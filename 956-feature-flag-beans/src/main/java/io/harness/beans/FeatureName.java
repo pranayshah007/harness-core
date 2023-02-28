@@ -626,7 +626,8 @@ public enum FeatureName {
   PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY(
       "Allow different Service Principal in Auth Token and Request Body. Used for Internal purpose only.",
       HarnessTeam.PL),
-  CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC);
+  CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
+  PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
