@@ -470,10 +470,11 @@ public class AwsLambdaTaskHelper {
         List<String> activeVersions = new ArrayList<>();
         ListVersionsByFunctionResponse listVersionsByFunctionResult = listVersionsByFunction(functionName, awsLambdaFunctionsInfraConfig);
         if(!(listVersionsByFunctionResult == null || listVersionsByFunctionResult.versions() == null)) {
-          for (FunctionConfiguration functionConfiguration : listVersionsByFunctionResult.versions()) {
-            if (State.ACTIVE.equals(functionConfiguration.state()) || State.UNKNOWN_TO_SDK_VERSION.equals(functionConfiguration.state())) {
-              activeVersions.add(functionConfiguration.version());
-            }
+          throw new InvalidRequestException("Cannot find Versions for the given function");
+        }
+        for(FunctionConfiguration functionConfiguration : listVersionsByFunctionResult.versions()) {
+          if(State.ACTIVE.equals(functionConfiguration.state()) || State.UNKNOWN_TO_SDK_VERSION.equals(functionConfiguration.state())) {
+            activeVersions.add(functionConfiguration.version());
           }
         }
 
