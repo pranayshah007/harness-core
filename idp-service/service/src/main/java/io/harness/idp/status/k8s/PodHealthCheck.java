@@ -71,11 +71,8 @@ public class PodHealthCheck implements HealthCheck {
   }
 
   private String getNamespaceForAccountId(String accountId) {
-    Optional<NamespaceInfo> namespace = namespaceService.getNamespaceForAccountIdentifier(accountId);
-    if (namespace.isPresent()) {
-      return namespace.get().getNamespace();
-    }
-    throw new InvalidRequestException("No namespace present for accountId: " + accountId);
+    NamespaceInfo namespace = namespaceService.getNamespaceForAccountIdentifier(accountId);
+    return namespace.getNamespace();
   }
 
   private boolean isPodInPendingPhase(V1Pod pod) {

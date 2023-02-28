@@ -50,4 +50,5 @@ public interface SwaggerConstants {
   String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
   String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";
+  String GITOPS_AGENT_DETAILS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.syncstep.AgentApplicationTargets;";
 }

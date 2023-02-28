@@ -130,6 +130,8 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("shouldUseEventsFrameworkSnapshotDebezium") private boolean shouldUseEventsFrameworkSnapshotDebezium;
+  @JsonProperty("allowDifferentReposForPipelineAndInputSets")
+  private boolean allowDifferentReposForPipelineAndInputSets;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;

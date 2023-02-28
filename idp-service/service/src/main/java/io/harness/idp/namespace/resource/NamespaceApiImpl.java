@@ -8,6 +8,7 @@ package io.harness.idp.namespace.resource;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
@@ -15,7 +16,6 @@ import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.inject.Inject;
-import java.util.Optional;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,21 +29,32 @@ public class NamespaceApiImpl implements NamespaceApi {
 
   @Override
   public Response createNamespace(String accountIdentifier) {
-    NamespaceEntity saveResponse;
     try {
-      saveResponse = namespaceService.saveAccountIdNamespace(accountIdentifier);
+      NamespaceEntity saveResponse = namespaceService.saveAccountIdNamespace(accountIdentifier);
+      NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(saveResponse);
+      return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (DuplicateKeyException e) {
       String logMessage = String.format("Namespace already created for given account Id - %s", accountIdentifier);
       log.error(logMessage);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(logMessage).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(logMessage).build())
+          .build();
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
-    NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(saveResponse);
-    return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
   }
 
   @Override
   public Response getNamespaceInfo(String accountIdentifier) {
-    Optional<NamespaceInfo> namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
-    return Response.status(Response.Status.OK).entity(namespaceInfo).build();
+    try {
+      NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+      return Response.status(Response.Status.OK).entity(namespaceInfo).build();
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }

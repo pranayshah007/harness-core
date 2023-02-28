@@ -116,7 +116,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
             if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
-                                          .itemID(ciExecutionMetadata.getQueueId())
+                                          .itemId(ciExecutionMetadata.getQueueId())
                                           .consumerName(SERVICE_NAME_CI)
                                           .topic(SERVICE_NAME_CI)
                                           .subTopic(accountId)

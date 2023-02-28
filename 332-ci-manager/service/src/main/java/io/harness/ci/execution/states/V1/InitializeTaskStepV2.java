@@ -312,24 +312,30 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
     responseData = serializedResponseDataHelper.deserialize(responseData);
+
     if (responseData instanceof ErrorNotifyResponseData) {
-      FailureData failureData =
-          FailureData.newBuilder()
-              .addFailureTypes(FailureType.APPLICATION_FAILURE)
-              .setLevel(Level.ERROR.name())
-              .setCode(GENERAL_ERROR.name())
-              .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                  new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
-              .build();
+      String errorMsg = "";
+      if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
+          == Infrastructure.Type.KUBERNETES_DIRECT) {
+        errorMsg = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+      } else {
+        errorMsg = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+      }
+
+      FailureData failureData = FailureData.newBuilder()
+                                    .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                    .setLevel(Level.ERROR.name())
+                                    .setCode(GENERAL_ERROR.name())
+                                    .setMessage(errorMsg)
+                                    .build();
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
           .build();
     }
+
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
     if (type == CITaskExecutionResponse.Type.K8) {
@@ -506,7 +512,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.FAILED).stepOutcome(stepOutcome);
       if (k8sTaskExecutionResponse.getErrorMessage() != null) {
         stepResponseBuilder.failureInfo(
-            FailureInfo.newBuilder().setErrorMessage(k8sTaskExecutionResponse.getErrorMessage()).build());
+            FailureInfo.newBuilder()
+                .setErrorMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+                    new CILiteEngineException(k8sTaskExecutionResponse.getErrorMessage())))))
+                .build());
       }
       return stepResponseBuilder.build();
     }

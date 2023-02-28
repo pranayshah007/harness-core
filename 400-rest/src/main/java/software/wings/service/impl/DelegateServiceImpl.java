@@ -2604,6 +2604,16 @@ public class DelegateServiceImpl implements DelegateService {
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
+    // this code is to mark all the task in running as failed if same delegate registration for immutable
+    // this should not impact any functionality wrt legacy delegate
+    if ((existingDelegate != null) && (existingDelegate.isImmutable())) {
+      try {
+        onDelegateDisconnected(delegateParams.getAccountId(), existingDelegate.getUuid());
+      } catch (Exception e) {
+        log.error("Couldn't delete the task associated with existing delegate: {}", existingDelegate.getUuid(), e);
+      }
+    }
+
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
           .broadcast(SELF_DESTRUCT + existingDelegate.getUuid());

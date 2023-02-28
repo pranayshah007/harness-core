@@ -46,6 +46,7 @@ import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;

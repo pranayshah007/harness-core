@@ -97,6 +97,7 @@ import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsFetchLinkedAppsStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.GitOpsSyncStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
@@ -188,6 +189,7 @@ import io.harness.cdng.creator.variables.ElastigroupSwapRouteStepVariableCreator
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
+import io.harness.cdng.creator.variables.GitOpsSyncStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
@@ -360,6 +362,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
     planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
+    planCreators.add(new GitOpsSyncStepPlanCreator());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
     planCreators.add(new K8sCanaryStepPlanCreator());
     planCreators.add(new K8sApplyStepPlanCreator());
@@ -522,6 +525,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
+    variableCreators.add(new GitOpsSyncStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
@@ -639,6 +643,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("GitOps Merge PR")
             .setType(StepSpecTypeConstants.GITOPS_MERGE_PR)
             .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo gitOpsSync =
+        StepInfo.newBuilder()
+            .setName("GitOps Sync")
+            .setType(StepSpecTypeConstants.GITOPS_SYNC)
+            .setFeatureFlag(FeatureName.GITOPS_SYNC_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -1327,6 +1339,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     stepInfos.add(gitOpsCreatePR);
     stepInfos.add(gitOpsMergePR);
+    stepInfos.add(gitOpsSync);
     stepInfos.add(updateReleaseRepo);
     stepInfos.add(fetchLinkedApps);
     stepInfos.add(k8sRolling);

@@ -893,10 +893,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(triggerConfig.getFqnToValueMap(), key);
         subMap.keySet().forEach(triggerFQNs::remove);
-        if (pmsFeatureFlagService.isEnabled(
-                accountIdentifier, FeatureName.SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER)) {
-          errorMap.put(key, "Trigger does not contain required input " + key.getExpressionFqn());
-        }
       }
     });
     triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));

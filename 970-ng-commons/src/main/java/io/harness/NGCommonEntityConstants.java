@@ -126,6 +126,8 @@ public class NGCommonEntityConstants {
 
   public static final String PAGE_PARAM_MESSAGE = "Page Index of the results to fetch."
       + "Default Value: 0";
+  public static final String PAGE_TOKEN_PARAM_MESSAGE = "Page Token of the next results to fetch."
+      + "Default Value: ''";
   public static final String SIZE_PARAM_MESSAGE = "Results per page";
   public static final String SORT_PARAM_MESSAGE = "Sort criteria for the elements.";
   public static final String BAD_REQUEST_PARAM_MESSAGE = "Bad Request";

@@ -554,7 +554,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     List<String> accountLevelIdentifiers = new ArrayList<>();
 
     for (String serviceIdentifier : serviceRefs) {
-      if (isNotEmpty(serviceIdentifier)) {
+      if (isNotEmpty(serviceIdentifier) && !EngineExpressionEvaluator.hasExpressions(serviceIdentifier)) {
         IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
             serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
 

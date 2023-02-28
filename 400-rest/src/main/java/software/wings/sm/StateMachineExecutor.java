@@ -2746,6 +2746,9 @@ public class StateMachineExecutor implements StateInspectionListener {
         if (stateExecutionInstance.getStateParams() != null) {
           mapObject(stateExecutionInstance.getStateParams(), state, context.getAccountId());
         }
+        log.info("Execution is processing for workflowExecutionId: {}, stateExecutionId: {}, appId: {}, accountId: {}",
+            context.getWorkflowExecutionId(), context.getStateExecutionInstanceId(), context.getAppId(),
+            context.getAccountId());
         ExecutionResponse executionResponse = state.handleAsyncResponse(context, response);
         stateMachineExecutor.handleResponse(context, executionResponse);
       } catch (WingsException ex) {

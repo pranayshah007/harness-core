@@ -26,7 +26,7 @@ public class UnAckRequestLogContext extends AutoLogContext {
     Map<String, String> contextMap = new HashMap<>();
     contextMap.put("topic", unAckRequest.getTopic());
     contextMap.put("subTopic", unAckRequest.getSubTopic());
-    contextMap.put("itemId", unAckRequest.getItemID());
+    contextMap.put("itemId", unAckRequest.getItemId());
     return contextMap;
   }
 }

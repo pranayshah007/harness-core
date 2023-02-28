@@ -154,7 +154,6 @@ import io.harness.queue.consumers.GeneralEventConsumerCg;
 import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
-import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -878,8 +877,6 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(configuration.getCacheConfig());
     modules.add(cacheModule);
-    modules.add(new DelegateServiceCacheModule(
-        configuration.getDelegateServiceRedisConfig(), configuration.isEnableRedisForDelegateService()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
