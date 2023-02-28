@@ -37,7 +37,7 @@ public class PipelineEndEvent extends NodeExecutionEvent {
   private long startTs;
   private long endTs;
 
-  public PipelineEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+  public PipelineEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
       Status status, Long startTs, Long endTs) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);

@@ -55,7 +55,7 @@ public class StageEndEvent extends NodeExecutionEvent {
   @Override
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, stageIdentifier);
     return Resource.builder()
         .identifier(stageIdentifier)
         .type(ResourceTypeConstants.NODE_EXECUTION)

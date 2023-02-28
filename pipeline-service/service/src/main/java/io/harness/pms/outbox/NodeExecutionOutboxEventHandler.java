@@ -14,9 +14,12 @@ import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
+import io.harness.audit.beans.custom.template.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEvents;
+import io.harness.engine.pms.audits.events.PipelineStartEvent;
+import io.harness.engine.pms.audits.events.StageStartEvent;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
@@ -43,12 +46,22 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handlePipelineStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
+    PipelineStartEvent pipelineStartEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), PipelineStartEvent.class);
+    NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
+                                                        .accountIdentifier(pipelineStartEvent.getAccountIdentifier())
+                                                        .orgIdentifier(pipelineStartEvent.getOrgIdentifier())
+                                                        .projectIdentifier(pipelineStartEvent.getProjectIdentifier())
+                                                        .pipelineIdentifier(pipelineStartEvent.getPipelineIdentifier())
+                                                        .planExecutionId(pipelineStartEvent.getPlanExecutionId())
+                                                        .build();
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.START)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .auditEventData(nodeExecutionEventData)
                                 .insertId(outboxEvent.getId())
                                 .build();
 
@@ -70,12 +83,22 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handleStageStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
+    StageStartEvent stageStartEvent = objectMapper.readValue(outboxEvent.getEventData(), StageStartEvent.class);
+    NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
+                                                        .accountIdentifier(stageStartEvent.getAccountIdentifier())
+                                                        .orgIdentifier(stageStartEvent.getOrgIdentifier())
+                                                        .projectIdentifier(stageStartEvent.getProjectIdentifier())
+                                                        .pipelineIdentifier(stageStartEvent.getPipelineIdentifier())
+                                                        .planExecutionId(stageStartEvent.getPlanExecutionId())
+                                                        .nodeExecutionId(stageStartEvent.getNodeExecutionId())
+                                                        .build();
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.START)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .auditEventData(nodeExecutionEventData)
                                 .insertId(outboxEvent.getId())
                                 .build();
 
