@@ -20,12 +20,11 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   @Inject EnvironmentSecretServiceImpl environmentSecretService;
 
   @Override
-  public boolean createConnectorsSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
+  public void createConnectorsSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) throws Exception {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
     List<EnvironmentSecret> connectorEnvSecrets = connectorProcessor.getConnectorSecretsInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
-    boolean success = environmentSecretService.syncK8sSecret(connectorEnvSecrets, accountIdentifier);
-    return success;
+    environmentSecretService.syncK8sSecret(connectorEnvSecrets, accountIdentifier);
   }
 }

@@ -8,7 +8,6 @@
 package io.harness.idp.secret.service;
 
 import static io.harness.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
-import static io.harness.k8s.constants.K8sConstants.DEFAULT_NAMESPACE;
 
 import static java.lang.String.format;
 
@@ -44,8 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
-  private static final String SUCCEEDED = "succeeded";
-  private static final String FAILED = "failed";
+  private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
   private EnvironmentSecretRepository environmentSecretRepository;
   private K8sClient k8sClient;
   @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
@@ -59,23 +57,17 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
-      throws Exception {
-    boolean success = syncK8sSecret(Collections.singletonList(environmentSecret), accountIdentifier);
-    log.info("Secret [{}] insert {} for the account [{}]", environmentSecret.getSecretIdentifier(),
-        success ? SUCCEEDED : FAILED, accountIdentifier);
+  public EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier) {
+    syncK8sSecret(Collections.singletonList(environmentSecret), accountIdentifier);
     EnvironmentSecretEntity environmentSecretEntity =
         EnvironmentSecretMapper.fromDTO(environmentSecret, accountIdentifier);
     return EnvironmentSecretMapper.toDTO(environmentSecretRepository.save(environmentSecretEntity));
   }
 
   @Override
-  public List<EnvironmentSecret> saveAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String accountIdentifier)
-      throws Exception {
-    boolean success = syncK8sSecret(requestSecrets, accountIdentifier);
-    if (success) {
-      log.info("Successfully synced secret {} in the namespace {}", BACKSTAGE_SECRET, DEFAULT_NAMESPACE);
-    }
+  public List<EnvironmentSecret> saveAndSyncK8sSecrets(
+      List<EnvironmentSecret> requestSecrets, String accountIdentifier) {
+    syncK8sSecret(requestSecrets, accountIdentifier);
     List<EnvironmentSecretEntity> entities =
         requestSecrets.stream()
             .map(requestSecret -> EnvironmentSecretMapper.fromDTO(requestSecret, accountIdentifier))
@@ -87,11 +79,8 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
-      throws Exception {
-    boolean success = syncK8sSecret(Collections.singletonList(environmentSecret), accountIdentifier);
-    log.info("Secret [{}] update {} for the account [{}]", environmentSecret.getSecretIdentifier(),
-        success ? SUCCEEDED : FAILED, accountIdentifier);
+  public EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier) {
+    syncK8sSecret(Collections.singletonList(environmentSecret), accountIdentifier);
     EnvironmentSecretEntity environmentSecretEntity =
         EnvironmentSecretMapper.fromDTO(environmentSecret, accountIdentifier);
     environmentSecretEntity.setAccountIdentifier(accountIdentifier);
@@ -100,11 +89,8 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
 
   @Override
   public List<EnvironmentSecret> updateAndSyncK8sSecrets(
-      List<EnvironmentSecret> requestSecrets, String accountIdentifier) throws Exception {
-    boolean success = syncK8sSecret(requestSecrets, accountIdentifier);
-    if (success) {
-      log.info("Successfully synced secret {} in the namespace {}", BACKSTAGE_SECRET, DEFAULT_NAMESPACE);
-    }
+      List<EnvironmentSecret> requestSecrets, String accountIdentifier) {
+    syncK8sSecret(requestSecrets, accountIdentifier);
     List<EnvironmentSecretEntity> entities =
         requestSecrets.stream()
             .map(requestSecret -> EnvironmentSecretMapper.fromDTO(requestSecret, accountIdentifier))
@@ -147,24 +133,20 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) throws Exception {
+  public void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) {
     String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     Optional<EnvironmentSecretEntity> envSecretOpt =
         environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(accountIdentifier, secretIdentifier);
     if (envSecretOpt.isPresent()) {
-      boolean success = syncK8sSecret(
-          Collections.singletonList(EnvironmentSecretMapper.toDTO(envSecretOpt.get())), accountIdentifier);
-      log.info("Secret [{}] update {} in the namespace [{}]", secretIdentifier, success ? "succeeded" : "failed",
-          DEFAULT_NAMESPACE);
+      syncK8sSecret(Collections.singletonList(EnvironmentSecretMapper.toDTO(envSecretOpt.get())), accountIdentifier);
     } else {
       // TODO: There might be too many secrets overall. We might have to consider removing this log line in future
       log.info("Secret {} is not tracker by IDP, hence not processing it", secretIdentifier);
     }
   }
 
-  public boolean syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) throws Exception {
-    // TODO: get the namespace for the given account. Currently assuming it to be default. Needs to be fixed.
+  public void syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) {
     Map<String, byte[]> secretData = new HashMap<>();
     for (EnvironmentSecret environmentSecret : environmentSecrets) {
       String envName = environmentSecret.getEnvName();
@@ -177,7 +159,9 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
         secretData.put(envName, environmentSecret.getDecryptedValue().getBytes());
       }
     }
-    return k8sClient.updateSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, secretData, false);
+    String namespace = getNamespaceForAccount(accountIdentifier);
+    k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData, false);
+    log.info("Successfully updated secret {} in the namespace {}", BACKSTAGE_SECRET, namespace);
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {
