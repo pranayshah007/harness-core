@@ -12,7 +12,6 @@ import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
