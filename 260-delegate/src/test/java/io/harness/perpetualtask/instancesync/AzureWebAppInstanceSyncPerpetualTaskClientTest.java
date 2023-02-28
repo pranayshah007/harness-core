@@ -70,7 +70,7 @@ public class AzureWebAppInstanceSyncPerpetualTaskClientTest extends WingsBaseTes
   @Category(UnitTests.class)
   public void testGetTaskParams() {
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
-        (AzureWebAppInstanceSyncPerpetualProtoTaskParams) client.getTaskParams(getPerpetualTaskClientContext(), true);
+        (AzureWebAppInstanceSyncPerpetualProtoTaskParams) client.getTaskParams(getPerpetualTaskClientContext());
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getAppName()).isEqualTo("appName");
     assertThat(taskParams.getSlotName()).isEqualTo("slotName");
