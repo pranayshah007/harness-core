@@ -13,6 +13,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
+import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -383,6 +384,28 @@ public class CIExecutionConfigService {
     return deprecatedTags;
   }
 
+  public CIExecutionImages getDeprecatedImages(String accountId) {
+    Optional<CIExecutionConfig> configOptional = configRepository.findFirstByAccountIdentifier(accountId);
+    CIExecutionImagesBuilder builder = CIExecutionImages.builder();
+
+    if (configOptional.isPresent()) {
+      CIExecutionConfig ciExecutionConfig = configOptional.get();
+      String addonOverride = ciExecutionConfig.getAddOnImage();
+      String liteEngineOverride = ciExecutionConfig.getLiteEngineImage();
+      if (Strings.isNotBlank(addonOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getAddonImage(), addonOverride)) {
+          builder.addonTag(addonOverride);
+        }
+      }
+      if (Strings.isNotBlank(liteEngineOverride)) {
+        if (hasLowerMajorVersion(ciExecutionServiceConfig.getLiteEngineImage(), liteEngineOverride)) {
+          builder.liteEngineTag(liteEngineOverride);
+        }
+      }
+    }
+    return builder.build();
+  }
+
   private boolean checkForCIImage(String defaultImage, String customImage) {
     String defaultImageTag = defaultImage.split(":")[1];
     String customImageTag = customImage.split(":")[1];
@@ -390,6 +413,14 @@ public class CIExecutionConfigService {
     Version customVersion = Version.parseVersion(customImageTag);
     // we are supporting 2 back versions
     return defaultVersion.isLowerThanOrEqualTo(customVersion.nextMinor().nextMinor());
+  }
+
+  private boolean hasLowerMajorVersion(String defaultImage, String customImage) {
+    String defaultImageTag = defaultImage.split(":")[1];
+    String customImageTag = customImage.split(":")[1];
+    Version defaultVersion = Version.parseVersion(defaultImageTag);
+    Version customVersion = Version.parseVersion(customImageTag);
+    return customVersion.getMajor() <= defaultVersion.getMajor() - 1;
   }
 
   public StepImageConfig getPluginVersionForK8(CIStepInfoType stepInfoType, String accountId) {
