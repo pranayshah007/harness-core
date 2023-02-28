@@ -467,14 +467,13 @@ public class AwsLambdaTaskHelper {
                       awsLambdaFunctionsInfraConfig.getRegion())));
     } else {
       try {
-        ListVersionsByFunctionResponse listVersionsByFunctionResult = listVersionsByFunction(functionName, awsLambdaFunctionsInfraConfig);
-        if(listVersionsByFunctionResult == null || listVersionsByFunctionResult.versions() == null) {
-          return null;
-        }
         List<String> activeVersions = new ArrayList<>();
-        for(FunctionConfiguration functionConfiguration : listVersionsByFunctionResult.versions()) {
-          if(State.ACTIVE.equals(functionConfiguration.state()) || State.UNKNOWN_TO_SDK_VERSION.equals(functionConfiguration.state())) {
-            activeVersions.add(functionConfiguration.version());
+        ListVersionsByFunctionResponse listVersionsByFunctionResult = listVersionsByFunction(functionName, awsLambdaFunctionsInfraConfig);
+        if(!(listVersionsByFunctionResult == null || listVersionsByFunctionResult.versions() == null)) {
+          for (FunctionConfiguration functionConfiguration : listVersionsByFunctionResult.versions()) {
+            if (State.ACTIVE.equals(functionConfiguration.state()) || State.UNKNOWN_TO_SDK_VERSION.equals(functionConfiguration.state())) {
+              activeVersions.add(functionConfiguration.version());
+            }
           }
         }
 
