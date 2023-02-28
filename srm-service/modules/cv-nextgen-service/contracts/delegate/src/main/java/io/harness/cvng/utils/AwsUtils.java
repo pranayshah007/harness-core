@@ -7,25 +7,12 @@
 
 package io.harness.cvng.utils;
 
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
-import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
-import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.serializer.JsonUtils;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,13 +25,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 @Slf4j
 public class AwsUtils {
-  private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
+  @Inject private static SimpleAwsClientHelper simpleAwsClientHelper;
   public static String getBaseUrl(String region, String serviceName) {
     return "https://" + serviceName + "." + region + ".amazonaws.com";
   }
@@ -77,109 +65,19 @@ public class AwsUtils {
     return awsRegions;
   }
 
-  //  public static AWSCredentials getAwsCredentials(AwsConnectorDTO connectorDTO) {
-  //    AWSCredentials awsCredentials = null;
-  //    AwsCredentialType awsCredentialType = connectorDTO.getCredential().getAwsCredentialType();
-  //    if (AwsCredentialType.INHERIT_FROM_DELEGATE.equals(awsCredentialType)
-  //        || AwsCredentialType.IRSA.equals(awsCredentialType)) {
-  //      CrossAccountAccessDTO crossAccountAccessDTO = connectorDTO.getCredential().getCrossAccountAccess();
-  //      if (Objects.nonNull(crossAccountAccessDTO)) {
-  //        String arn = crossAccountAccessDTO.getCrossAccountRoleArn();
-  //        String externalId = crossAccountAccessDTO.getExternalId();
-  //        RoleInfo roleInfo = new RoleInfo();
-  //        roleInfo.setRoleArn(arn);
-  //        roleInfo.setExternalId(externalId);
-  //        STSProfileCredentialsServiceProvider serviceProvider = new STSProfileCredentialsServiceProvider(roleInfo);
-  //        awsCredentials = serviceProvider.getCredentials();
-  //      } else {
-  //        awsCredentials = InstanceProfileCredentialsProvider.getInstance().getCredentials();
-  //        log.info("AwsConnectorDTO AWSCredentialsType {} awsCredentials skey {} aKey {}", awsCredentialType,
-  //            awsCredentials.getAWSSecretKey().substring(0, 4), awsCredentials.getAWSAccessKeyId().substring(0, 4));
-  //      }
-  //    } else {
-  //      AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO)
-  //      connectorDTO.getCredential().getConfig(); String accessKeyId =
-  //      StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())
-  //          ? String.valueOf(awsManualConfigSpecDTO.getAccessKeyRef().getDecryptedValue())
-  //          : awsManualConfigSpecDTO.getAccessKey();
-  //      String secretKey = String.valueOf(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue());
-  //      awsCredentials = ManualAWSCredentials.builder().accessKeyId(accessKeyId).secretKey(secretKey).build();
-  //    }
-  //    return awsCredentials;
-  //  }
-
-  public static AWSCredentials getAwsCredentials(AwsConnectorDTO awsConnectorDTO, String region) {
-    AwsCredentialType awsCredentialType = awsConnectorDTO.getCredential().getAwsCredentialType();
-    AWSCredentialsProvider awsCredentialsProvider;
-    switch (awsCredentialType) {
-      case INHERIT_FROM_DELEGATE: {
-        awsCredentialsProvider = new EC2ContainerCredentialsProviderWrapper();
-        break;
-      }
-      case IRSA: {
-        awsCredentialsProvider = WebIdentityTokenCredentialsProvider.builder()
-                                     .roleSessionName("IRSA" + UUIDGenerator.generateUuid())
-                                     .build();
-        break;
-      }
-      case MANUAL_CREDENTIALS: {
-        awsCredentialsProvider = getManualAwsCredentialsProvider(awsConnectorDTO);
-        break;
-      }
-      default:
-        throw new IllegalStateException("Unsupported AwsCredentialType " + awsCredentialType);
-    }
-    if (awsConnectorDTO.getCredential().getCrossAccountAccess() != null) {
-      CrossAccountAccessDTO crossAccountAttributes = awsConnectorDTO.getCredential().getCrossAccountAccess();
-      awsCredentialsProvider =
-          getCrossAccountAccessCredentialsProvider(awsCredentialsProvider, crossAccountAttributes, region);
-    }
-    return awsCredentialsProvider.getCredentials();
-  }
-
-  private static String getAccessKeyId(AwsManualConfigSpecDTO awsManualConfigSpecDTO) {
-    return StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())
-        ? String.valueOf(awsManualConfigSpecDTO.getAccessKeyRef().getDecryptedValue())
-        : awsManualConfigSpecDTO.getAccessKey();
-  }
-  private static String getSecretKey(AwsManualConfigSpecDTO awsManualConfigSpecDTO) {
-    return String.valueOf(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue());
-  }
-  private static AWSCredentialsProvider getManualAwsCredentialsProvider(AwsConnectorDTO awsConnectorDTO) {
-    AwsManualConfigSpecDTO awsManualConfigSpecDTO =
-        (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig();
-    String accessKeyId = getAccessKeyId(awsManualConfigSpecDTO);
-    String secretKey = getSecretKey(awsManualConfigSpecDTO);
-    return new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKeyId, secretKey));
-  }
-
-  private static AWSCredentialsProvider getCrossAccountAccessCredentialsProvider(
-      AWSCredentialsProvider credentialsProvider, CrossAccountAccessDTO crossAccountAccess, String region) {
-    String roleSessionName = UUID.randomUUID().toString();
-    region = StringUtils.isNotEmpty(region) ? region : DEFAULT_REGION.getName();
-    AWSSecurityTokenService awsSecurityTokenService =
-        AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).withCredentials(credentialsProvider).build();
-    return new STSAssumeRoleSessionCredentialsProvider
-        .Builder(crossAccountAccess.getCrossAccountRoleArn(), roleSessionName)
-        .withExternalId(crossAccountAccess.getExternalId())
-        .withStsClient(awsSecurityTokenService)
+  public static AwsAccessKeysPair getAwsCredentials(AwsConnectorDTO awsConnectorDTO) {
+    AwsCredentials awsCredentials = simpleAwsClientHelper.getAwsCredentials(awsConnectorDTO);
+    return AwsAccessKeysPair.builder()
+        .accessKeyId(awsCredentials.accessKeyId())
+        .secretAccessKey(awsCredentials.secretAccessKey())
         .build();
   }
 
   private AwsUtils() {}
-
-  //  @Builder
-  //  private static class ManualAWSCredentials implements AWSCredentials {
-  //    private String accessKeyId;
-  //    private String secretKey;
-  //    @Override
-  //    public String getAWSAccessKeyId() {
-  //      return accessKeyId;
-  //    }
-  //
-  //    @Override
-  //    public String getAWSSecretKey() {
-  //      return secretKey;
-  //    }
-  //  }
+  @Value
+  @Builder
+  public static class AwsAccessKeysPair {
+    String accessKeyId;
+    String secretAccessKey;
+  }
 }
