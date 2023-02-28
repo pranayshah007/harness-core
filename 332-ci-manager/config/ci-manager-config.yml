@@ -273,7 +273,7 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     sscaOrchestrationConfig:
-      image: ${SSCA_ORCHESTRATION_IMAGE:-dummy:latest}
+      image: harness/ssca-plugin:latest
       entrypoint:
         - /bin/ssca-plugin
     vmImageConfig:
