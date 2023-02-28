@@ -9,6 +9,7 @@ package io.harness.ci.execution.queue;
 
 import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
 import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.hsqs.client.model.DequeueResponse;
@@ -35,7 +36,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
 
   @Override
   public ProcessMessageResponse processMessage(DequeueResponse dequeueResponse) {
-    ProcessMessageResponse.ProcessMessageResponseBuilder builder = ProcessMessageResponse.builder();
+    ProcessMessageResponseBuilder builder = ProcessMessageResponse.builder();
     try {
       String payload = dequeueResponse.getPayload();
       CIInitTaskArgs ciInitTaskArgs = RecastOrchestrationUtils.fromJson(payload, CIInitTaskArgs.class);

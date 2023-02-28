@@ -54,8 +54,7 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
   public CreateFunctionResponse createFunction(
       AwsInternalConfig awsInternalConfig, CreateFunctionRequest createFunctionRequest) {
     try {
-      LambdaClient awsLambdaClient =
-          ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()));
+      LambdaClient awsLambdaClient = (LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion());
       LambdaWaiter waiter = awsLambdaClient.waiter();
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
 

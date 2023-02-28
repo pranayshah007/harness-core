@@ -13,8 +13,8 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import java.util.Optional;
 
 public interface NamespaceService {
-  Optional<NamespaceInfo> getNamespaceForAccountIdentifier(String accountIdentifier);
+  NamespaceInfo getNamespaceForAccountIdentifier(String accountIdentifier);
 
-  Optional<NamespaceInfo> getAccountIdForNamespace(String namespace);
+  NamespaceInfo getAccountIdForNamespace(String namespace);
   NamespaceEntity saveAccountIdNamespace(String accountIdentifier);
 }

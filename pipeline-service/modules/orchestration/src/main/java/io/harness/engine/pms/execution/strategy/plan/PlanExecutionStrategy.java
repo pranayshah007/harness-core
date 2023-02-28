@@ -30,6 +30,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.Subject;
@@ -74,6 +75,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Getter private final Subject<OrchestrationStartObserver> orchestrationStartSubject = new Subject<>();
   @Getter private final Subject<OrchestrationEndObserver> orchestrationEndSubject = new Subject<>();
+  @Inject private PlanExpansionService planExpansionService;
 
   @Override
   public PlanExecution runNode(@NonNull Ambiance ambiance, @NonNull Plan plan, PlanExecutionMetadata metadata) {
@@ -159,6 +161,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
     PlanExecution createdPlanExecution = transactionHelper.performTransaction(() -> {
       planExecutionMetadataService.save(planExecutionMetadata);
+      planExpansionService.create(planExecution.getUuid());
       return planExecutionService.save(planExecution);
     });
 

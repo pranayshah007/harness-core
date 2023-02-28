@@ -401,6 +401,7 @@ import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.AsgNGException;
+import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.exception.ElastigroupNGException;
@@ -494,12 +495,16 @@ import io.harness.delegate.task.aws.asg.AutoScalingGroupInstance;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
+import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
+import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2379,5 +2384,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaArtifactConfig.class, 10000508);
     kryo.register(AwsLambdaS3ArtifactConfig.class, 10000509);
     kryo.register(AwsLambda.class, 10000510);
+    kryo.register(AwsLambdaEcrArtifactConfig.class, 10000511);
+    kryo.register(AwsLambdaException.class, 10000512);
+    kryo.register(AwsLambdaRollbackRequest.class, 10000513);
+    kryo.register(AwsLambdaRollbackResponse.class, 10000514);
+    kryo.register(AwsLambdaPrepareRollbackResponse.class, 10000515);
   }
 }

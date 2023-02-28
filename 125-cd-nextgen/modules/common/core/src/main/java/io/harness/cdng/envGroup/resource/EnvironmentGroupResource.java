@@ -26,6 +26,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.DocumentationConstants;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
@@ -63,6 +64,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -97,8 +99,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-@Tag(name = "EnvironmentGroup",
-    description = "This contains APIs related to EnvironmentGroup. Please enable Feature flag ENV_GROUP to use them")
+@Tag(name = "EnvironmentGroup", description = "This contains APIs related to EnvironmentGroup.")
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -185,8 +186,13 @@ public class EnvironmentGroupResource {
   public ResponseDTO<EnvironmentGroupResponse>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
              description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
-      @Parameter(description = "Details of the Environment Group to be created")
-      @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
+      @RequestBody(required = true, description = "Details of the Environment Group to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Environment Group create payload",
+                         value = DocumentationConstants.EnvironmentGroupRequestDTO,
+                         description = "Sample Environment Group payload"))
+          }) @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentGroupRequestDTO.getOrgIdentifier(),
                                                   environmentGroupRequestDTO.getProjectIdentifier()),
@@ -302,8 +308,14 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) @ResourceIdentifier String envGroupId,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
           description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
-      @Parameter(description = "Details of the Environment Group to be updated")
-      @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
+      @RequestBody(required = true, description = "Details of the Environment Group to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Environment Group update payload",
+                         value = DocumentationConstants.EnvironmentGroupRequestDTO,
+                         description = "Sample Environment Group payload"))
+          }) @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
+      @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     log.info(String.format("Updating Environment Group with identifier %s in project %s, org %s, account %s",
         envGroupId, environmentGroupRequestDTO.getProjectIdentifier(), environmentGroupRequestDTO.getOrgIdentifier(),
         accountId));

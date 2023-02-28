@@ -21,7 +21,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
-public class ArtifactCollectionHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
+public class ArtifactCollectionHandler extends IteratorPumpAndRedisModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
 

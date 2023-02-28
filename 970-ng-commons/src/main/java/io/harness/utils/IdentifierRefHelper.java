@@ -16,9 +16,9 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.IdentifierRef.IdentifierRefBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.scope.ScopeHelper;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;

@@ -42,6 +42,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PipelineGitXHelper;
@@ -278,33 +279,22 @@ public class RetryExecutionHelper {
           // need to copy only the uuid of the stage to be retry.
           JsonNode currentResumableStagejsonNode =
               PipelineYamlUtils.getStagesNodeFromRootNode(currentRootJsonNode, pipelineVersion).get(stageCounter);
-          ((ObjectNode) PipelineYamlUtils.getStageNodeFromStagesElement(currentResumableStagejsonNode, pipelineVersion))
-              .set(YAMLFieldNameConstants.UUID,
-                  PipelineYamlUtils.getStageNodeFromStagesElement(stage, pipelineVersion)
-                      .get(YAMLFieldNameConstants.UUID));
 
           // if this is true then pipeline is being retried from previous stage. And previous node had the strategy
-          // defined.
+          // defined. So we just need to replace the UUID of stage node.
           if (isStrategyNodeProcessed) {
-            break;
-          }
-
-          JsonNode currentResumableStrategyJsonNode =
-              PipelineYamlUtils.getStageNodeFromStagesElement(currentResumableStagejsonNode, pipelineVersion)
-                  .get(YAMLFieldNameConstants.STRATEGY);
-          // If strategy id defined then copy the strategyNode uuid and toggle isStrategyNodeProcessed so that we can
-          // copy next stage uuid in next iteration.
-          if (currentResumableStrategyJsonNode != null) {
-            ((ObjectNode) currentResumableStrategyJsonNode)
+            ((ObjectNode) PipelineYamlUtils.getStageNodeFromStagesElement(
+                 currentResumableStagejsonNode, pipelineVersion))
                 .set(YAMLFieldNameConstants.UUID,
                     PipelineYamlUtils.getStageNodeFromStagesElement(stage, pipelineVersion)
-                        .get(YAMLFieldNameConstants.STRATEGY)
                         .get(YAMLFieldNameConstants.UUID));
-            stageCounter++;
-            isStrategyNodeProcessed = true;
-          } else {
             break;
           }
+          // Replacing all the UUIDs under the stage node. Strategy/Multi-deployment node's UUIDs will be replaced here.
+          YamlUtils.replaceFieldInJsonNodeFromAnotherJsonNode(
+              currentResumableStagejsonNode, stage, YAMLFieldNameConstants.UUID);
+          stageCounter++;
+          isStrategyNodeProcessed = true;
         }
       } else {
         // parallel group
@@ -353,20 +343,9 @@ public class RetryExecutionHelper {
         JsonNode currentResumableStagejsonNode = PipelineYamlUtils.getStageNodeFromStagesNode(
             (ArrayNode) PipelineYamlUtils.getStagesNodeFromParallelNode(currentParallelStageNode, pipelineVersion),
             stageCounter, pipelineVersion);
-        ((ObjectNode) currentResumableStagejsonNode)
-            .set(YAMLFieldNameConstants.UUID,
-                PipelineYamlUtils.getStageNodeFromStagesElement(stageNode, pipelineVersion)
-                    .get(YAMLFieldNameConstants.UUID));
-        JsonNode currentResumableStrategyJsonNode = currentResumableStagejsonNode.get(YAMLFieldNameConstants.STRATEGY);
-        // If strategy id defined then copy the strategyNode uuid
-        if (currentResumableStrategyJsonNode != null) {
-          ((ObjectNode) currentResumableStrategyJsonNode)
-              .set(YAMLFieldNameConstants.UUID,
-                  PipelineYamlUtils.getStageNodeFromStagesElement(stageNode, pipelineVersion)
-                      .get(YAMLFieldNameConstants.STRATEGY)
-                      .get(YAMLFieldNameConstants.UUID));
-          isStrategyNodeProcessed = true;
-        }
+        // Replacing all the UUIDs under the stage node.
+        YamlUtils.replaceFieldInJsonNodeFromAnotherJsonNode(currentResumableStagejsonNode,
+            PipelineYamlUtils.getStageNodeFromStagesElement(stageNode, pipelineVersion), YAMLFieldNameConstants.UUID);
       }
       stageCounter++;
     }

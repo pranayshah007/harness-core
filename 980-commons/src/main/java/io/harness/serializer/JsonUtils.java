@@ -479,12 +479,17 @@ public class JsonUtils {
     return mapper.convertValue(fromValue, toValueType);
   }
 
+  public static <T> T convertValue(Object fromValue, TypeReference<T> toValueType) {
+    return mapper.convertValue(fromValue, toValueType);
+  }
+
   public static String prettifyJsonString(String jsonString) {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     JsonParser jsonParser = new JsonParser();
     JsonElement jsonElement = jsonParser.parse(jsonString);
     return gson.toJson(jsonElement);
   }
+
   @JsonDeserialize
   public static <T> T asObjectWithExceptionHandlingType(String jsonString, Class<T> classToConvert)
       throws JsonProcessingException {

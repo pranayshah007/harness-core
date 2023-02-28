@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistentIterable;
@@ -35,7 +35,7 @@ import java.time.Duration;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(_970_RBAC_CORE)
-public class AccessRequestHandler extends IteratorPumpModeHandler implements Handler<AccessRequest> {
+public class AccessRequestHandler extends IteratorPumpAndRedisModeHandler implements Handler<AccessRequest> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(15);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(10);
 

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.stepinfo.IACMStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 

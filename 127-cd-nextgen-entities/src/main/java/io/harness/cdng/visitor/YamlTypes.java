@@ -20,7 +20,7 @@ public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
   String UPDATE_RELEASE_REPO = StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO;
-
+  String GITOPS_SYNC = StepSpecTypeConstants.GITOPS_SYNC;
   String PRIMARY_ARTIFACT = "primary";
   String PRIMARY_ARTIFACT_REF = "primaryArtifactRef";
   String ARTIFACT_SOURCES = "sources";
@@ -204,4 +204,10 @@ public interface YamlTypes {
   String K8S_DRY_RUN_MANIFEST = StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST;
 
   String AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.AWS_LAMBDA_DEPLOY;
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
+  String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
+
+  String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;
 }

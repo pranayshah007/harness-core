@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.GROUP;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS;
 import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_INHERITED_GROUPS;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
@@ -649,12 +650,26 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
+  private Criteria createChildScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(UserGroupKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(UserGroupKeys.projectIdentifier).is(projectIdentifier);
+    }
+    return criteria;
+  }
+
   @VisibleForTesting
   protected Criteria createUserGroupFilterCriteria(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, UserGroupFilterType filterType) {
     Criteria criteria;
     if (filterType == INCLUDE_INHERITED_GROUPS) {
       criteria = createScopeCriteriaIncludingInheritedUserGroups(accountIdentifier, orgIdentifier, projectIdentifier);
+    } else if (filterType == INCLUDE_CHILD_SCOPE_GROUPS) {
+      criteria = createChildScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
       criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     }

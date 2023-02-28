@@ -95,6 +95,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
+  @Inject private boolean allowDifferentReposForPipelineAndInputSets;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -114,7 +115,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
       InputSetValidationHelper.checkForPipelineStoreType(pipelineEntityMetadata);
-      validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      if (allowDifferentReposForPipelineAndInputSets) {
+        validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      }
     }
 
     try {
@@ -186,6 +189,39 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
     }
     return optionalInputSetEntity;
+  }
+
+  @Override
+  public Optional<InputSetEntity> getMetadataWithoutValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
+      boolean loadFromFallbackBranch, boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          identifier, !deleted, getMetadata, loadFromFallbackBranch);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while retrieving input set [%s]", identifier), e);
+      throw new InvalidRequestException(
+          String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
+    }
+    return optionalInputSetEntity;
+  }
+
+  @Override
+  public InputSetEntity getMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean getMetadata) {
+    Optional<InputSetEntity> optionalInputSetMetadataEntity = getMetadataWithoutValidations(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, true);
+    if (optionalInputSetMetadataEntity.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+    return optionalInputSetMetadataEntity.get();
   }
 
   @Override
@@ -674,12 +710,13 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @VisibleForTesting
   void validateInputSetSetting(InputSetEntity inputSetEntity, PipelineEntity pipelineEntity) {
-    if (inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(inputSetEntity.getAccountId())) {
+    if (!inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(inputSetEntity.getAccountId())) {
       GitAwareContextHelper.initDefaultScmGitMetaData();
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-      String inputSetRepo = gitEntityInfo.getRepoName();
-
-      validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetRepo);
+      if (gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType())) {
+        String inputSetRepo = gitEntityInfo.getRepoName();
+        validatePipelineAndInputSetRepos(pipelineEntity.getRepo(), inputSetRepo);
+      }
     }
   }
 

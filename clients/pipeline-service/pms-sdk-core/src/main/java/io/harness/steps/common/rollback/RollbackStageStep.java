@@ -26,8 +26,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(PIPELINE)
 public class RollbackStageStep extends NGSectionStep {
   ExecutionSweepingOutputService executionSweepingOutputService;

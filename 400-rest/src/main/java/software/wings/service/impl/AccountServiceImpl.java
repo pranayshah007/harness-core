@@ -618,13 +618,16 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public Account updateCrossGenerationAccessEnabled(String accountIdentifier, boolean isCrossGenerationAccessEnabled) {
+  public Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen) {
     Account account = get(accountIdentifier);
     boolean oldIsCrossGenerationAccessEnabled = account.isCrossGenerationAccessEnabled();
     account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
     Account updatedAccount = update(account);
-    ngAuditAccountDetailsCrossGenerationAccess(
-        accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+    if (isNextGen) {
+      ngAuditAccountDetailsCrossGenerationAccess(
+          accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+    }
 
     return updatedAccount;
   }

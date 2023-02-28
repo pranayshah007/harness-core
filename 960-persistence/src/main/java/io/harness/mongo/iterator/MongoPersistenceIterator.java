@@ -78,7 +78,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
   @Getter private final PersistenceProvider<T, F> persistenceProvider;
   private F filterExpander;
-  private ProcessMode mode;
+  @Getter private ProcessMode mode;
   private Class<T> clazz;
   private String fieldName;
   private Duration targetInterval;
@@ -90,7 +90,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private int redisModeBatchSize;
   private Handler<T> handler;
   @Getter private ExecutorService executorService;
-  @Getter private ScheduledThreadPoolExecutor threadPoolExecutor;
+  @Getter private ScheduledThreadPoolExecutor workerThreadPoolExecutor;
   private Semaphore semaphore;
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
@@ -325,7 +325,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
       // Compute a limit value that takes into account the number of unprocessed
       // docs in the jobQ to ensure that the Q doesn't overflow.
-      int limit = Math.min(redisModeBatchSize, redisModeBatchSize - threadPoolExecutor.getQueue().size());
+      int limit = Math.min(redisModeBatchSize, redisModeBatchSize - workerThreadPoolExecutor.getQueue().size());
 
       if (limit <= 0) {
         // The Queue is full, so try after sometime
@@ -396,7 +396,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       try {
         // We won't wait for the threads to pick up the task.
         // The caller should be mindful of the threadPoolExecutor jobQ overflow.
-        threadPoolExecutor.submit(() -> processEntityWithoutWaitNotify(finalEntity));
+        workerThreadPoolExecutor.submit(() -> processEntityWithoutWaitNotify(finalEntity));
       } catch (RejectedExecutionException e) {
         log.info("The executor service has been shutdown - received exception {} ", e);
       }

@@ -33,6 +33,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.sli.MetricOnboardingGraph;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
@@ -172,6 +173,67 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getMetricIdentifier())
         .isEqualTo("Calls per Minute");
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getDataPoints().get(0).getValue())
+        .isEqualTo(343.0);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMetricGraph() throws IOException, IllegalAccessException {
+    String tracingId = "tracingId";
+    String healthSourceRef = "healthSourceIdentifier";
+    CVConfig cvConfig =
+        builderFactory.appDynamicsCVConfigBuilder()
+            .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceRef))
+            .build();
+    hPersistence.save(cvConfig);
+    metricPackService.populateDataCollectionDsl(cvConfig.getType(), ((MetricCVConfig) cvConfig).getMetricPack());
+
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
+
+    DataCollectionInfo dataCollectionInfo =
+        dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
+            .toDataCollectionInfo(Arrays.asList(cvConfig), Collections.singletonList("identifier"));
+
+    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
+    Instant startTime = endTime.minus(Duration.ofDays(1));
+
+    DataCollectionRequest request = SyncDataCollectionRequest.builder()
+                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                        .dataCollectionInfo(dataCollectionInfo)
+                                        .endTime(endTime)
+                                        .startTime(startTime)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(cvConfig.getConnectorIdentifier())
+            .accountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
+            .tracingId(tracingId)
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    MetricOnboardingGraph metricOnboardingGraph =
+        serviceLevelIndicatorService.getMetricGraphs(builderFactory.getContext().getProjectParams(),
+            monitoredServiceIdentifier, healthSourceRef, null, Collections.singletonList("identifier"), tracingId);
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().size()).isEqualTo(1);
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getStartTime()).isEqualTo(1595760600000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getEndTime()).isEqualTo(1595847000000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs()).hasSize(1);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricName()).isEqualTo("name");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricIdentifier()).isEqualTo("identifier");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getDataPoints().get(0).getValue())
         .isEqualTo(343.0);
   }
 
