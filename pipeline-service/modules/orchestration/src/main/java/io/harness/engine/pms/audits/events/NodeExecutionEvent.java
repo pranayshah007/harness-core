@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class NodeExecutionEvent implements Event {
+public abstract class NodeExecutionEvent implements Event {
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
@@ -48,21 +48,7 @@ public class NodeExecutionEvent implements Event {
     return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
-  @JsonIgnore
-  @Override
-  public Resource getResource() {
-    Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
-    return Resource.builder()
-        .identifier(pipelineIdentifier)
-        .type(ResourceTypeConstants.NODE_EXECUTION)
-        .labels(labels)
-        .build();
-  }
+  @JsonIgnore @Override public abstract Resource getResource();
 
-  @JsonIgnore
-  @Override
-  public String getEventType() {
-    return NodeExecutionOutboxEvents.NODE_EXECUTION_EVENT;
-  }
+  @JsonIgnore @Override public abstract String getEventType();
 }

@@ -11,10 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
-import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
-import io.harness.ng.core.ResourceScope;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 
@@ -32,21 +30,15 @@ import lombok.NoArgsConstructor;
 public class PipelineStartEvent extends NodeExecutionEvent {
   private TriggerType triggerType;
   private TriggeredBy triggeredBy;
-  private Long startTs;
+  private long startTs;
 
-  public PipelineStartEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+  public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
       Long startTs) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;
     this.startTs = startTs;
-  }
-
-  @JsonIgnore
-  @Override
-  public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @JsonIgnore

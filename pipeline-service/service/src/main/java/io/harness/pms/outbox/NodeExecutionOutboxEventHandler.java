@@ -51,6 +51,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .insertId(outboxEvent.getId())
                                 .build();
+
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
   private boolean handlePipelineEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -63,6 +64,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .insertId(outboxEvent.getId())
                                 .build();
+
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -76,6 +78,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .insertId(outboxEvent.getId())
                                 .build();
+
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
   private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -88,6 +91,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .insertId(outboxEvent.getId())
                                 .build();
+
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
@@ -107,6 +111,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
           return false;
       }
     } catch (IOException ex) {
+      log.error(String.format("Unexpected error occurred during handling of event", ex));
       return false;
     }
   }

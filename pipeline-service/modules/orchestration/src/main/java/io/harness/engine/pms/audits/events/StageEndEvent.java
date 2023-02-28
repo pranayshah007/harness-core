@@ -30,9 +30,9 @@ import lombok.NoArgsConstructor;
 public class StageEndEvent extends NodeExecutionEvent {
   private String stageIdentifier;
   private String stageType;
-  private Long startTs;
+  private long startTs;
   private String nodeExecutionId;
-  private Long endTs;
+  private long endTs;
 
   public StageEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
