@@ -272,6 +272,10 @@ ciExecutionServiceConfig:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
+    sscaOrchestrationConfig:
+      image: ${SSCA_ORCHESTRATION_IMAGE:-dummy:latest}
+      entrypoint:
+        - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.2.7
