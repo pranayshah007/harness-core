@@ -668,7 +668,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @VisibleForTesting
   void validateInputSetSetting(InputSetEntity inputSetEntity, PipelineEntity pipelineEntity) {
-    if (inputSetsApiUtils.isSameRepoForPipelineAndInputSetsAccountSettingEnabled(inputSetEntity.getAccountId())) {
+    if (inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(inputSetEntity.getAccountId())) {
       GitAwareContextHelper.initDefaultScmGitMetaData();
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       String inputSetRepo = gitEntityInfo.getRepoName();
