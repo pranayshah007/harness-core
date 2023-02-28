@@ -307,7 +307,7 @@ io.harness.ci.beans.entities.PluginMetadataConfig
 io.harness.ci.beans.entities.PluginMetadataStatus
 io.harness.beans.stages.IACMStageNode
 io.harness.beans.steps.nodes.iacm.IACMTerraformPlanStepNode
-io.harness.beans.steps.stepinfo.IACMStepInfo
+io.harness.beans.stepinfo.IACMStepInfo
 io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo
 io.harness.ci.states.V1.InitStepV2DelegateTaskInfo
 io.harness.plancreator.policy.PolicyConfig

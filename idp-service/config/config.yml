@@ -63,6 +63,14 @@ logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
 
+accessControlClient:
+  enableAccessControl: true
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
 ngManagerServiceHttpClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15

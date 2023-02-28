@@ -556,3 +556,6 @@ eventsFrameworkSnapshotDebezium:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+
+allowDifferentReposForPipelineAndInputSets: ${ALLOW_DIFFERENT_REPOS_FOR_PIPELINE_AND_INPUT_SETS:-false}

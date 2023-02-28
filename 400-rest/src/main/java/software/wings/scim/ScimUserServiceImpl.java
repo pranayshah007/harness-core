@@ -9,6 +9,7 @@ package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -427,21 +428,24 @@ public class ScimUserServiceImpl implements ScimUserService {
         }
       }
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-          && userResource.getEmails() != null && userResource.getEmails().get(0) != null
-          && userResource.getEmails().get(0).get("value") != null
-          && userResource.getEmails().get(0).get("value").asText() != null
-          && !user.getEmail().equalsIgnoreCase(userResource.getEmails().get(0).get("value").asText())) {
+      final String userPrimaryEmail =
+          isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
+
+      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
+          && !userPrimaryEmail.equals(user.getEmail())) {
+        UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+        updateOperation.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
-        String emailFromScim = userResource.getEmails().get(0).get("value").asText().toLowerCase();
-        updateOperations.set(UserKeys.email, emailFromScim);
-        log.info("SCIM: Updating user's {}, email from {} to email id: {}", userId, user.getEmail(), emailFromScim);
+        log.info(
+            "SCIM: Updated users {}, email from {} to updated email id: {}", userId, user.getEmail(), userPrimaryEmail);
       }
+
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
         userService.updateUser(user.getUuid(), updateOperations);
       }
-      log.info("SCIM: user {} was updated {} with updateOperations {}", user.getUuid(), userUpdate, updateOperations);
+      log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,
+          updateOperations, accountId);
       return Response.status(Status.OK).entity(getUser(user.getUuid(), accountId)).build();
     }
   }
