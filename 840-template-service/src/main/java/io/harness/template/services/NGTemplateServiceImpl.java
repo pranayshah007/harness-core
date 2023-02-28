@@ -9,7 +9,6 @@ package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -527,11 +526,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         comments, canDeleteStableTemplate, stableTemplate, forceDelete);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isForceDeleteFFEnabled(accountIdentifier);
   }
+
   @VisibleForTesting
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils
@@ -544,11 +541,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
-  }
-
-  @VisibleForTesting
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 
   private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {

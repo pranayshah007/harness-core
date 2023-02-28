@@ -27,7 +27,6 @@ import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.delegate.beans.gitapi.GitRepoType;
@@ -387,12 +386,9 @@ public class TriggerEventExecutionHelper {
     // Only GitHub events authentication is supported for now
     List<TriggerDetails> triggersToAuthenticate = new ArrayList<>();
     if (GITHUB.name().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
-      Boolean ngSettingsFFEnabled =
-          pmsFeatureFlagService.isEnabled(triggerWebhookEvent.getAccountId(), FeatureName.NG_SETTINGS);
       for (TriggerDetails triggerDetails : webhookEventMappingResponse.getTriggers()) {
         NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-        if (ngTriggerConfigV2 != null
-            && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2, ngSettingsFFEnabled)) {
+        if (ngTriggerConfigV2 != null && shouldAuthenticateTrigger(triggerWebhookEvent, ngTriggerConfigV2)) {
           triggersToAuthenticate.add(triggerDetails);
         }
       }
@@ -415,17 +411,16 @@ public class TriggerEventExecutionHelper {
   }
 
   private Boolean shouldAuthenticateTrigger(
-      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2, Boolean ngSettingsFFEnabled) {
-    if (ngSettingsFFEnabled) {
-      String mandatoryAuth = NGRestUtils
-                                 .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
-                                     triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
-                                     ngTriggerConfigV2.getProjectIdentifier()))
-                                 .getValue();
-      if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
-        return true;
-      }
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerConfigV2 ngTriggerConfigV2) {
+    String mandatoryAuth = NGRestUtils
+                               .getResponse(settingsClient.getSetting(TRIGGERS_MANDATE_GITHUB_AUTHENTICATION,
+                                   triggerWebhookEvent.getAccountId(), ngTriggerConfigV2.getOrgIdentifier(),
+                                   ngTriggerConfigV2.getProjectIdentifier()))
+                               .getValue();
+    if (mandatoryAuth.equals(MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE)) {
+      return true;
     }
+
     return isNotEmpty(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
   }
 }

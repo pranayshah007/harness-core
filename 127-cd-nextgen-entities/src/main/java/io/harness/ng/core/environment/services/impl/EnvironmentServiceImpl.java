@@ -8,7 +8,6 @@
 package io.harness.ng.core.environment.services.impl;
 
 import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
-import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -847,10 +846,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return environmentRepository.getEnvironmentIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
-    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
-    boolean isForceDeleteEnabledBySettings =
-        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+    return isForceDeleteFFEnabled(accountIdentifier);
   }
 
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
@@ -865,9 +861,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
-  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
-    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-  }
   private Set<EntityDetailProtoDTO> getAndValidateReferredEntities(Environment environment) {
     try {
       return environmentEntitySetupUsageHelper.getAllReferredEntities(environment);
