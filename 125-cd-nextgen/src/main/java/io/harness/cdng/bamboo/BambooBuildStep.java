@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -75,7 +76,7 @@ public class BambooBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(COMMAND_UNIT);
     BambooBuildSpecParameters specParameters = (BambooBuildSpecParameters) stepParameters.getSpec();
-    BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder paramBuilder =
+    BambooArtifactDelegateRequestBuilder paramBuilder =
         BambooArtifactDelegateRequest.builder()
             .connectorRef(specParameters.getConnectorRef().getValue())
             .planKey(specParameters.getPlanName().getValue())

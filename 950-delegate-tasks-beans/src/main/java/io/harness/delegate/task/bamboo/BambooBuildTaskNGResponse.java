@@ -15,9 +15,7 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 
 import software.wings.sm.states.FilePathAssertionEntry;
-import software.wings.sm.states.ParameterEntry;
 
-import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
