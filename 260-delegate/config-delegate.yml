@@ -19,4 +19,4 @@ installClientToolsInBackground: true
 isLocalNgDelegate: true
 
 # Required for local development as manger uses self-signed cert
-trustAllCertificates: true
+trustAllCertificates: false

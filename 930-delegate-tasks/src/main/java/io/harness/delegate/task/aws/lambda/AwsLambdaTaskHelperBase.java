@@ -26,6 +26,7 @@ public class AwsLambdaTaskHelperBase {
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
   @Inject private AwsLambdaTaskHelper awsLambdaCommandTaskHelper;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
+  private String latestVersionForAwsLambda = "$LATEST";
   public List<ServerInstanceInfo> getAwsLambdaServerInstanceInfo(AwsLambdaDeploymentReleaseData deploymentReleaseData) {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
         (AwsLambdaFunctionsInfraConfig) deploymentReleaseData.getAwsLambdaInfraConfig();
@@ -33,6 +34,9 @@ public class AwsLambdaTaskHelperBase {
     AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions =
         awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(
             awsLambdaFunctionsInfraConfig, deploymentReleaseData.getFunction());
+    if (awsLambdaFunctionWithActiveVersions != null && awsLambdaFunctionWithActiveVersions.getVersions() != null) {
+      awsLambdaFunctionWithActiveVersions.getVersions().remove(latestVersionForAwsLambda);
+    }
     return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,
         awsLambdaFunctionsInfraConfig.getRegion(), awsLambdaFunctionsInfraConfig.getInfraStructureKey());
   }

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
+import io.harness.delegate.task.aws.lambda.AwsLambda.AwsLambdaBuilder;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions;
 
 import software.wings.beans.Tag;
@@ -68,17 +69,17 @@ public class AwsLambdaToServerInstanceInfoMapper {
   }
 
   public static AwsLambda convertToAwsLambda(AwsLambdaFunctionWithActiveVersions activeVersions, String version) {
-    final AwsLambda.AwsLambdaBuilder builder = AwsLambda.builder()
-                                                   .functionArn(activeVersions.getFunctionArn())
-                                                   .functionName(activeVersions.getFunctionName())
-                                                   .runtime(activeVersions.getRuntime())
-                                                   .handler(activeVersions.getHandler())
-                                                   .description(activeVersions.getDescription())
-                                                   .memorySize(activeVersions.getMemorySize())
-                                                   .version(version)
-                                                   .lastModified(activeVersions.getLastModified())
-                                                   .aliases(activeVersions.getAliases())
-                                                   .tags(activeVersions.getTags());
+    final AwsLambdaBuilder builder = AwsLambda.builder()
+                                         .functionArn(activeVersions.getFunctionArn())
+                                         .functionName(activeVersions.getFunctionName())
+                                         .runtime(activeVersions.getRuntime())
+                                         .handler(activeVersions.getHandler())
+                                         .description(activeVersions.getDescription())
+                                         .memorySize(activeVersions.getMemorySize())
+                                         .version(version)
+                                         .lastModified(activeVersions.getLastModified())
+                                         .aliases(activeVersions.getAliases())
+                                         .tags(activeVersions.getTags());
 
     return builder.build();
   }
