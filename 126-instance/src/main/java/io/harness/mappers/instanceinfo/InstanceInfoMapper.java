@@ -27,6 +27,7 @@ import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AsgInstanceInfo;
+import io.harness.entities.instanceinfo.AwsLambdaInstanceInfo;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
@@ -80,6 +81,8 @@ public class InstanceInfoMapper {
       return AsgInstanceInfoMapper.toDTO((AsgInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof GoogleFunctionInstanceInfo) {
       return GoogleFunctionInstanceInfoMapper.toDTO((GoogleFunctionInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AwsLambdaInstanceInfo) {
+      return AwsLambdaInstanceInfoMapper.toDTO((AwsLambdaInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }

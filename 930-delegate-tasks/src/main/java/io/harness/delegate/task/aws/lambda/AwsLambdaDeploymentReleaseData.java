@@ -12,6 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import lombok.Builder;
 import lombok.Data;
+import software.wings.beans.Tag;
+
+import javax.validation.constraints.NotNull;
+import java.util.Date;
+import java.util.Set;
 
 @Data
 @Builder
@@ -20,4 +25,15 @@ public class AwsLambdaDeploymentReleaseData {
   private AwsLambdaInfraConfig awsLambdaInfraConfig;
   private String function;
   private String region;
+  private String version;
+  private Set<String> aliases;
+  private Set<Tag> tags;
+  private String functionArn;
+  private String description;
+  private String runtime;
+  private String handler;
+  private String source;
+  private Date updatedTime;
+  private Integer memorySize;
+  private String artifactId;
 }

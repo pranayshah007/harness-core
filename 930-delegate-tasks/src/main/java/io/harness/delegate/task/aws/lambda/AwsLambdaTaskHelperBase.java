@@ -42,7 +42,6 @@ public class AwsLambdaTaskHelperBase {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
         (AwsLambdaFunctionsInfraConfig) deploymentReleaseData.getAwsLambdaInfraConfig();
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaFunctionsInfraConfig);
-    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO());
     AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions =
               awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithActiveVersions(awsLambdaFunctionsInfraConfig, deploymentReleaseData.getFunction());
       return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,

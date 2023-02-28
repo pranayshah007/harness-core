@@ -39,6 +39,7 @@ public class AwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
   private String functionArn;
   private String description;
   private String handler;
+  private String artifactId;
 
   @Override
   public String prepareInstanceKey() {

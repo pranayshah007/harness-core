@@ -82,7 +82,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg implements PerpetualTa
     try {
       return awsLambdaTaskHelperBase.getAwsLambdaServerInstanceInfo(deploymentReleaseData);
     } catch (Exception ex) {
-      log.warn("Unable to get google cloud function server instance", ex);
+      log.warn("Unable to get aws lambda function server instance", ex);
       return Collections.emptyList();
     }
   }

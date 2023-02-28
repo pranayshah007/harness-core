@@ -17,6 +17,7 @@ import static java.lang.String.format;
 
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
+import java.util.ArrayList;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;

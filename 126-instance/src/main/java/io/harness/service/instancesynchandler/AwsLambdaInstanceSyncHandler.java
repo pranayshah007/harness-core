@@ -35,7 +35,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public String getPerpetualTaskType() {
-    return PerpetualTaskType.AWS_LAMBDA_INSTANCE_SYNC;
+    return PerpetualTaskType.AWS_LAMBDA_INSTANCE_SYNC_NG;
   }
 
   @Override
@@ -82,6 +82,17 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .functionName(awsLambdaServerInstanceInfo.getFunctionName())
         .region(awsLambdaServerInstanceInfo.getRegion())
         .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
+            .version(awsLambdaServerInstanceInfo.getVersion())
+            .tags(awsLambdaServerInstanceInfo.getTags())
+            .handler(awsLambdaServerInstanceInfo.getHandler())
+            .runtime(awsLambdaServerInstanceInfo.getRuntime())
+            .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
+            .description(awsLambdaServerInstanceInfo.getDescription())
+            .aliases(awsLambdaServerInstanceInfo.getAliases())
+            .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
+            .source(awsLambdaServerInstanceInfo.getSource())
+            .updatedTime(awsLambdaServerInstanceInfo.getUpdatedTime())
+            .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
         .build();
   }
 
@@ -104,6 +115,12 @@ public class AwsLambdaInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .memorySize(awsLambdaServerInstanceInfo.getMemorySize())
         .runTime(awsLambdaServerInstanceInfo.getRuntime())
         .infraStructureKey(awsLambdaServerInstanceInfo.getInfrastructureKey())
+            .handler(awsLambdaServerInstanceInfo.getHandler())
+            .artifactId(awsLambdaServerInstanceInfo.getArtifactId())
+            .functionArn(awsLambdaServerInstanceInfo.getFunctionArn())
+            .description(awsLambdaServerInstanceInfo.getDescription())
+            .aliases(awsLambdaServerInstanceInfo.getAliases())
+            .tags(awsLambdaServerInstanceInfo.getTags())
         .build();
   }
 }

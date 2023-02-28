@@ -13,6 +13,11 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static java.util.stream.Collectors.toList;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.logging.log4j.util.Strings;
+import com.google.common.collect.ImmutableMap;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -33,6 +38,9 @@ import io.harness.serializer.YamlUtils;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +56,7 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequ
 import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.ListAliasesRequest;
 import software.amazon.awssdk.services.lambda.model.ListAliasesResponse;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
@@ -59,6 +68,8 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationResponse;
+import software.amazon.awssdk.services.lambda.model.AliasConfiguration;
+
 
 @Slf4j
 @OwnedBy(CDP)
@@ -423,6 +434,19 @@ public class AwsLambdaTaskHelper {
     return listVersionsByFunctionResult;
   }
 
+  public ListAliasesResponse listAliases(String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
+    ListAliasesResponse listAliasesResponse = null;
+    try {
+      ListAliasesRequest listAliasesRequest = (ListAliasesRequest) ListAliasesRequest.builder().functionName(functionName).build();
+      listAliasesResponse = awsLambdaClient.listAliases(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
+              awsLambdaFunctionsInfraConfig.getRegion()), listAliasesRequest);
+    } catch (Exception e) {
+      throw new InvalidRequestException(e.getMessage());
+    }
+
+    return listAliasesResponse;
+  }
+
   public AwsLambdaFunctionWithActiveVersions getAwsLambdaFunctionWithActiveVersions(AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) {
     GetFunctionRequest getFunctionRequest =
             (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
@@ -449,17 +473,55 @@ public class AwsLambdaTaskHelper {
         }
         List<String> activeVersions = new ArrayList<>();
         for(FunctionConfiguration functionConfiguration : listVersionsByFunctionResult.versions()) {
-          if(State.ACTIVE.equals(functionConfiguration.state())) {
+          if(State.ACTIVE.equals(functionConfiguration.state()) || State.UNKNOWN_TO_SDK_VERSION.equals(functionConfiguration.state())) {
             activeVersions.add(functionConfiguration.version());
           }
         }
-        //TODO
-//    ListAliasesResult listAliasesResult = listAliasesRequest(region, awsInternalConfig, getFunctionResult);
-        ListAliasesResponse listAliasesResponse = null;
-        return AwsLambdaFunctionWithActiveVersions.from(existingFunctionOptional.get(), listAliasesResponse, activeVersions);
+
+        ListAliasesResponse listAliasesResponse = listAliases(functionName, awsLambdaFunctionsInfraConfig);
+        return convertToAwsLambdaFunctionWithActiveVersion(existingFunctionOptional.get(), listAliasesResponse, activeVersions);
       } catch (Exception e) {
         throw new InvalidRequestException(e.getMessage());
       }
     }
+  }
+
+  public AwsLambdaFunctionWithActiveVersions convertToAwsLambdaFunctionWithActiveVersion(GetFunctionResponse result, ListAliasesResponse listAliasesResult, List<String> activeVersions) {
+    final FunctionConfiguration config = result.configuration();
+    final AwsLambdaFunctionWithActiveVersions.AwsLambdaFunctionWithActiveVersionsBuilder builder = AwsLambdaFunctionWithActiveVersions.builder()
+            .functionArn(config.functionArn())
+            .functionName(config.functionName())
+            .runtime(config.runtime().toString())
+            .role(config.role())
+            .handler(config.handler())
+            .codeSize(config.codeSize())
+            .description(config.description())
+            .timeout(config.timeout())
+            .memorySize(config.memorySize())
+            .codeSha256(config.codeSha256())
+            .versions(activeVersions)
+            .kMSKeyArn(config.kmsKeyArn())
+            .masterArn(config.masterArn())
+            .revisionId(config.revisionId());
+
+    if (Strings.isNotEmpty(config.lastModified())) {
+      try {
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+
+        builder.lastModified(simpleDateFormat.parse(config.lastModified()));
+      } catch (ParseException e) {
+        log.warn("Unable to parse date [{}]", config.lastModified());
+      }
+    }
+
+    if (MapUtils.isNotEmpty(result.tags())) {
+      builder.tags(ImmutableMap.copyOf(result.tags()));
+    }
+
+    if (listAliasesResult != null) {
+      builder.aliases(
+              emptyIfNull(listAliasesResult.aliases()).stream().map(AliasConfiguration::name).collect(toList()));
+    }
+    return builder.build();
   }
 }

@@ -84,6 +84,17 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
         .awsLambdaInfraConfig(awsLambdaInfraConfig)
         .function(deploymentInfoDTO.getFunctionName())
         .region(deploymentInfoDTO.getRegion())
+            .version(deploymentInfoDTO.getVersion())
+            .handler(deploymentInfoDTO.getHandler())
+            .aliases(deploymentInfoDTO.getAliases())
+            .artifactId(deploymentInfoDTO.getArtifactId())
+            .description(deploymentInfoDTO.getDescription())
+            .functionArn(deploymentInfoDTO.getFunctionArn())
+            .memorySize(deploymentInfoDTO.getMemorySize())
+            .runtime(deploymentInfoDTO.getRuntime())
+            .source(deploymentInfoDTO.getSource())
+            .tags(deploymentInfoDTO.getTags())
+            .updatedTime(deploymentInfoDTO.getUpdatedTime())
         .build();
   }
 
@@ -142,7 +153,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
   private AwsLambdaInstanceSyncRequest toAwsLambdaInstanceSyncRequest(
       AwsLambdaDeploymentReleaseData awsLambdaDeploymentReleaseData) {
     return AwsLambdaInstanceSyncRequest.builder()
-        .awsLambdaFunctionsInfraConfig((AwsLambdaFunctionsInfraConfig) awsLambdaDeploymentReleaseData.getAwsLambdaInfraConfig())
+        .awsLambdaInfraConfig(awsLambdaDeploymentReleaseData.getAwsLambdaInfraConfig())
         .function(awsLambdaDeploymentReleaseData.getFunction())
         .build();
   }

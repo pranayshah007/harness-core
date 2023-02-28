@@ -38,6 +38,7 @@ public class AwsLambdaServerInstanceInfo extends ServerInstanceInfo {
   private String source;
   private Date updatedTime;
   private Integer memorySize;
+  private String artifactId;
 
   // todo
   private int invocationsCount;

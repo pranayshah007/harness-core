@@ -10,8 +10,10 @@ package io.harness.delegate.task.aws.lambda.request;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionCommandRequest;
@@ -30,10 +32,15 @@ public class AwsLambdaInstanceSyncRequest
     implements AwsLambdaCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String accountId;
   AwsLambdaCommandTypeNG awsLambdaCommandType;
+  AwsLambdaInfraConfig awsLambdaInfraConfig;
+  AwsLambdaArtifactConfig awsLambdaArtifactConfig;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS)
-  AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig;
-  @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
+  Integer timeoutIntervalInMin;
   String function;
+
+  @Override
+  public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {
+    return AwsLambdaCommandTypeNG.AWS_INSTANCE_SYNC;
+  }
 }

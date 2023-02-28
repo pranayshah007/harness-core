@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.lang.String.format;
 
+import software.amazon.awssdk.services.lambda.model.ListAliasesRequest;
+import software.amazon.awssdk.services.lambda.model.ListAliasesResponse;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
 import io.harness.annotations.dev.OwnedBy;
@@ -177,6 +179,19 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
       return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
               .listVersionsByFunction(listVersionsByFunctionRequest);
+    } catch (LambdaException e) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
+      throw new InvalidRequestException(e.getMessage());
+    }
+  }
+
+  @Override
+  public ListAliasesResponse listAliases(
+          AwsInternalConfig awsInternalConfig, ListAliasesRequest listAliasesRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+              .listAliases(listAliasesRequest);
     } catch (LambdaException e) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
       throw new InvalidRequestException(e.getMessage());
