@@ -63,7 +63,8 @@ public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandl
 
       CreateFunctionResponse createFunctionResponse = awsLambdaCommandTaskHelper.deployFunction(
           awsLambdaDeployRequest.getAwsLambdaInfraConfig(), awsLambdaDeployRequest.getAwsLambdaArtifactConfig(),
-          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
+          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(),
+          awsLambdaDeployRequest.getAwsLambdaAliasManifestContent(), executionLogCallback);
 
       executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 

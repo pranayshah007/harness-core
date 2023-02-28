@@ -24,6 +24,8 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -151,6 +153,18 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
       return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
           .publishVersion(publishVersionRequest);
+    } catch (LambdaException lambdaException) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public CreateAliasResponse createAlias(AwsInternalConfig awsInternalConfig, CreateAliasRequest createAliasRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .createAlias(createAliasRequest);
     } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());

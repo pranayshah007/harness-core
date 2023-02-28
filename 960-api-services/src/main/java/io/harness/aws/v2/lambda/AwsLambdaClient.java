@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 
 import java.util.Optional;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -50,4 +52,6 @@ public interface AwsLambdaClient {
 
   PublishVersionResponse publishVersion(
       AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest);
+
+  CreateAliasResponse createAlias(AwsInternalConfig awsInternalConfig, CreateAliasRequest createAliasRequest);
 }

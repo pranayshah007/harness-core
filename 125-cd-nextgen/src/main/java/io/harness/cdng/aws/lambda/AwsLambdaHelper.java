@@ -396,6 +396,7 @@ public class AwsLambdaHelper extends CDStepHelper {
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .awsLambdaAliasManifestContent(awsLambdaStepPassThroughData.getAwsLambdaAliasManifestContent())
             .build();
 
     return queueTask(stepParameters, awsLambdaDeployRequest, ambiance, awsLambdaStepPassThroughData, true);

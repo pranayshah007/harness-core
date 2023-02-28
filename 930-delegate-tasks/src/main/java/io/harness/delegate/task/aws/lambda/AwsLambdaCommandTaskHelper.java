@@ -13,6 +13,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -33,8 +34,12 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.FunctionCode;
@@ -42,6 +47,7 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationRequ
 import software.amazon.awssdk.services.lambda.model.GetFunctionConfigurationResponse;
 import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
+import software.amazon.awssdk.services.lambda.model.LambdaRequest;
 import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
@@ -67,7 +73,8 @@ public class AwsLambdaCommandTaskHelper {
   long WAIT_SLEEP_IN_SECONDS = 10L;
 
   public CreateFunctionResponse deployFunction(AwsLambdaInfraConfig awsLambdaInfraConfig,
-      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent, LogCallback logCallback) {
+      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent,
+      List<String> awsLambdaAliasManifestContent, LogCallback logCallback) {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     CreateFunctionRequest.Builder createFunctionRequestBuilder =
@@ -75,7 +82,14 @@ public class AwsLambdaCommandTaskHelper {
 
     CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
 
+    if (isEmpty(createFunctionRequest.functionName())) {
+      logCallback.saveExecutionLog(
+          format("%nFunction Name not found from function definition manifest."), LogLevel.ERROR);
+      throw new InvalidRequestException("Function Name not found from function definition manifest.");
+    }
+
     String functionName = createFunctionRequest.functionName();
+
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
     try {
@@ -84,16 +98,45 @@ public class AwsLambdaCommandTaskHelper {
                                           awsLambdaFunctionsInfraConfig.getRegion()),
               getFunctionRequest);
 
+      CreateFunctionResponse function;
+
       if (existingFunctionOptional.isEmpty()) {
-        return createFunction(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig,
+        function = createFunction(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig,
             createFunctionRequestBuilder, createFunctionRequest, functionName);
       } else {
-        return updateFunction(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
+        function = updateFunction(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
             awsLambdaFunctionsInfraConfig, functionName, existingFunctionOptional.get());
       }
+
+      // create alias
+      if (!awsLambdaAliasManifestContent.isEmpty()) {
+        createAlias(awsLambdaAliasManifestContent, function.functionName(), awsLambdaFunctionsInfraConfig, logCallback);
+      }
+
+      return function;
     } catch (Exception e) {
       throw new InvalidRequestException(e.getMessage());
     }
+  }
+
+  private void createAlias(List<String> awsLambdaAliasManifestContent, String functionName,
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
+    logCallback.saveExecutionLog(format("%nCreate Alias for function %s. %n", functionName), LogLevel.INFO);
+
+    AwsInternalConfig awsInternalConfig = getAwsInternalConfig(
+        awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion());
+
+    for (String alias : awsLambdaAliasManifestContent) {
+      CreateAliasRequest.Builder aliasRequestBuilder =
+          parseYamlAsObject(alias, CreateAliasRequest.serializableBuilderClass());
+      CreateAliasRequest createAliasRequest = (CreateAliasRequest) aliasRequestBuilder.build();
+
+      CreateAliasResponse createAliasResponse = awsLambdaClient.createAlias(awsInternalConfig, createAliasRequest);
+      logCallback.saveExecutionLog(format("%nCreated Alias for function %s. %n", functionName), LogLevel.INFO);
+      logCallback.saveExecutionLog(format("%Fetching Alias Details", createAliasResponse), LogLevel.INFO);
+    }
+
+    logCallback.saveExecutionLog(format("%Done Creating Aliases"), LogLevel.INFO);
   }
 
   private CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
