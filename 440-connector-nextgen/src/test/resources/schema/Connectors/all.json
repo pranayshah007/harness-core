@@ -1136,13 +1136,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "clientId",
-            "secretKey",
-            "subscription",
-            "tenantId",
-            "vaultName"
-          ],
           "properties": {
             "azureEnvironmentType": {
               "type": "string",
@@ -1154,6 +1147,13 @@
             "clientId": {
               "type": "string"
             },
+            "credentialType": {
+              "type": "string",
+              "enum": [
+                "InheritFromDelegate",
+                "ManualConfig"
+              ]
+            },
             "default": {
               "type": "boolean"
             },
@@ -1164,6 +1164,16 @@
                 "type": "string"
               }
             },
+            "managedClientId": {
+              "type": "string"
+            },
+            "managedIdentityType": {
+              "type": "string",
+              "enum": [
+                "SystemAssignedManagedIdentity",
+                "UserAssignedManagedIdentity"
+              ]
+            },
             "secretKey": {
               "type": "string"
             },
@@ -1172,6 +1182,9 @@
             },
             "tenantId": {
               "type": "string"
+            },
+            "useManagedIdentity": {
+              "type": "boolean"
             },
             "vaultName": {
               "type": "string"
