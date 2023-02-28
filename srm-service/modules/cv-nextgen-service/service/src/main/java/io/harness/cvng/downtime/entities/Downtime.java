@@ -49,8 +49,6 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.LastModifiedBy;
 
 @Data
 @Builder
@@ -63,8 +61,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 @Entity(value = "downtime", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class Downtime
-    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, CreatedByAware, UpdatedByAware {
+public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
   @Id private String uuid;
   @NotNull String accountId;
   String orgIdentifier;
@@ -81,8 +78,8 @@ public class Downtime
   private EntitiesRule entitiesRule;
 
   private boolean enabled;
-  @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
-  @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+  @SchemaIgnore private EmbeddedUser createdBy;
+  @SchemaIgnore private EmbeddedUser lastUpdatedBy;
   private long createdAt;
   private long lastUpdatedAt;
 

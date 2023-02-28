@@ -8,6 +8,7 @@ package io.harness.cvng.downtime.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.beans.EmbeddedUser;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -50,8 +51,11 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -87,12 +91,22 @@ public class DowntimeServiceImpl implements DowntimeService {
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private Clock clock;
-
   private static final int MAX_DURATION_IN_DAYS = 3 * 365;
   @Override
   public DowntimeResponse create(ProjectParams projectParams, DowntimeDTO downtimeDTO) {
     validateCreate(projectParams, downtimeDTO);
     Downtime downtime = getDowntimeFromDowntimeDTO(projectParams, downtimeDTO);
+    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    downtime.setCreatedBy(EmbeddedUser.builder()
+                              .name(userPrincipal.getUsername())
+                              .email(userPrincipal.getEmail())
+                              .uuid(userPrincipal.getName())
+                              .build());
+    downtime.setLastUpdatedBy(EmbeddedUser.builder()
+                                  .name(userPrincipal.getUsername())
+                                  .email(userPrincipal.getEmail())
+                                  .uuid(userPrincipal.getName())
+                                  .build());
     hPersistence.save(downtime);
     if (downtime.isEnabled()) {
       List<Pair<Long, Long>> futureInstances =
@@ -633,7 +647,7 @@ public class DowntimeServiceImpl implements DowntimeService {
                        DowntimeListView.LastModified.builder()
                            .lastModifiedAt(downtime.getLastUpdatedAt())
                            .lastModifiedBy(
-                               downtime.getLastUpdatedBy() != null ? downtime.getLastUpdatedBy().getName() : "")
+                               downtime.getLastUpdatedBy() != null ? downtime.getLastUpdatedBy().getEmail() : "")
                            .build())
                    .duration(downtimeTransformerMap.get(downtime.getType())
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))
@@ -658,6 +672,13 @@ public class DowntimeServiceImpl implements DowntimeService {
     updateOperations.set(DowntimeKeys.downtimeDetails, getDowntimeDetails(downtimeDTO.getSpec()));
     updateOperations.set(DowntimeKeys.type, downtimeDTO.getSpec().getType());
     updateOperations.set(DowntimeKeys.timezone, downtimeDTO.getSpec().getSpec().getTimezone());
+    UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    updateOperations.set(DowntimeKeys.lastUpdatedBy,
+        EmbeddedUser.builder()
+            .name(userPrincipal.getUsername())
+            .email(userPrincipal.getEmail())
+            .uuid(userPrincipal.getName())
+            .build());
     hPersistence.update(existingDowntime, updateOperations);
     return getEntity(projectParams, downtimeDTO.getIdentifier());
   }
