@@ -24,6 +24,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
+import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED_CH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
@@ -256,7 +257,6 @@ public class RecommendationsOverviewQueryV2 {
   @NotNull
   private Condition getPerspectiveCondition(
       @NotNull List<QLCEViewFilterWrapper> perspectiveFilters, @NotNull String accountId) {
-    final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewTimeFilter> qlCEViewTimeFilters = viewsQueryHelper.getTimeFilters(perspectiveFilters);
 
     final List<QLCEViewRule> qlCeViewRules = viewParametersHelper.getRuleFilters(perspectiveFilters);
@@ -392,8 +392,7 @@ public class RecommendationsOverviewQueryV2 {
         }
       } else if (idCondition.getViewField().getIdentifier() == LABEL) {
         if (isClickHouseEnabled) {
-          final ResultSet result =
-              getWorkloadAndCloudServiceNamesResultSet(accountId, qlCEViewTimeFilters, idCondition);
+          final ResultSet result = getWorkloadAndCloudServiceNamesResultSet(qlCEViewTimeFilters, idCondition);
           condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
         } else {
           final TableResult result =
@@ -432,11 +431,10 @@ public class RecommendationsOverviewQueryV2 {
   }
 
   private ResultSet getWorkloadAndCloudServiceNamesResultSet(
-      final String accountId, final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
+      final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
     final List<QLCEViewFilter> qlCEViewFilters =
         Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
-    final String cloudProviderTableName =
-        bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
+    final String cloudProviderTableName = CLUSTER_TABLE_HOURLY_AGGREGRATED_CH;
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
         qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
     ResultSet resultSet;
