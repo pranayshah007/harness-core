@@ -358,7 +358,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
     processGetFileOperationResponse(scope.getAccountIdentifier(), gitFileResponse, scmConnector,
         scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
-        scmGetFileByBranchRequestDTO.getFilePath());
+        scmGetFileByBranchRequestDTO.getFilePath(), scmGetFileByBranchRequestDTO.getBranchName());
 
     return getScmGetFileResponseDTO(gitFileResponse);
   }
