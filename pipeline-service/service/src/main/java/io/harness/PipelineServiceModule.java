@@ -791,4 +791,10 @@ public class PipelineServiceModule extends AbstractModule {
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
   }
+
+  @Provides
+  @Singleton
+  public boolean getAllowDifferentReposForPipelineAndInputSets() {
+    return configuration.isAllowDifferentReposForPipelineAndInputSets();
+  }
 }

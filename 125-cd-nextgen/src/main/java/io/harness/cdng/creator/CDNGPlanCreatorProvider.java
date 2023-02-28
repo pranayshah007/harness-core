@@ -97,6 +97,7 @@ import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsFetchLinkedAppsStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.GitOpsSyncStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
@@ -133,6 +134,7 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgCanaryDeployStepPlanCreator
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
@@ -187,6 +189,7 @@ import io.harness.cdng.creator.variables.ElastigroupSwapRouteStepVariableCreator
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
+import io.harness.cdng.creator.variables.GitOpsSyncStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
@@ -214,6 +217,7 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
@@ -296,6 +300,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
   private static final String ASG = "AutoScalingGroup";
+  private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
@@ -357,6 +362,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
     planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
+    planCreators.add(new GitOpsSyncStepPlanCreator());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
     planCreators.add(new K8sCanaryStepPlanCreator());
     planCreators.add(new K8sApplyStepPlanCreator());
@@ -470,6 +476,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     planCreators.add(new AwsLambdaDeployStepPlanCreator());
+    planCreators.add(new AwsLambdaRollbackStepPlanCreator());
 
     // AWS SAM
     planCreators.add(new AwsSamDeployStepPlanCreator());
@@ -518,6 +525,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
+    variableCreators.add(new GitOpsSyncStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
@@ -611,6 +619,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS Lambda
     variableCreators.add(new AwsLambdaDeployStepVariableCreator());
+    variableCreators.add(new AwsLambdaRollbackStepVariableCreator());
 
     // AWS SAM
     variableCreators.add(new AwsSamDeployStepVariableCreator());
@@ -634,6 +643,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("GitOps Merge PR")
             .setType(StepSpecTypeConstants.GITOPS_MERGE_PR)
             .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo gitOpsSync =
+        StepInfo.newBuilder()
+            .setName("GitOps Sync")
+            .setType(StepSpecTypeConstants.GITOPS_SYNC)
+            .setFeatureFlag(FeatureName.GITOPS_SYNC_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -1310,10 +1327,19 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
             .build();
 
+    StepInfo awsLambdaRollback =
+        StepInfo.newBuilder()
+            .setName("Aws Lambda Rollback")
+            .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath(AWS_LAMBDA).build())
+            .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
     stepInfos.add(gitOpsMergePR);
+    stepInfos.add(gitOpsSync);
     stepInfos.add(updateReleaseRepo);
     stepInfos.add(fetchLinkedApps);
     stepInfos.add(k8sRolling);
@@ -1392,6 +1418,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(awsSamDeploy);
     stepInfos.add(awsSamRollback);
     stepInfos.add(terraformCloudRollback);
+    stepInfos.add(awsLambdaRollback);
     return stepInfos;
   }
 }

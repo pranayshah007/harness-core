@@ -37,6 +37,7 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -113,6 +114,7 @@ public class PMSPipelineTemplateHelper {
         GitSyncBranchContext gitSyncBranchContext =
             GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
+          log.info("Principal before the interService call is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               null, null, null, null, null, null, null, null, loadFromCache,
               TemplateApplyRequestDTO.builder()

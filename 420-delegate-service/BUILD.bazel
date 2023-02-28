@@ -94,7 +94,7 @@ java_library(
         "@maven//:org_glassfish_jersey_core_jersey_server",
         "@maven//:org_glassfish_jersey_test_framework_jersey_test_framework_core",
         "@maven//:org_glassfish_jersey_test_framework_providers_jersey_test_framework_provider_inmemory",
-        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
         "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",

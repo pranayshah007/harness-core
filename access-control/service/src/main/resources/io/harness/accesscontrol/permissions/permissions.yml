@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 47
+version: 48
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1408,5 +1408,11 @@ permissions:
   - identifier: core_streamingDestination_delete
     name: Delete Streaming Destination
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: idp_idpsettings_manage
+    name: Manage Policies in settings UI
+    status: ACTIVE
+    includedInAllRoles: false
     allowedScopeLevels:
       - account

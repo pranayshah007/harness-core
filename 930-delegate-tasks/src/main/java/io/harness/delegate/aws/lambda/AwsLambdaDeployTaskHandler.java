@@ -19,10 +19,9 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTaskHelper;
+import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
-import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -41,11 +40,10 @@ import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandler {
-  @Inject private AwsLambdaCommandTaskHelper awsLambdaCommandTaskHelper;
+public class AwsLambdaDeployTaskHandler {
+  @Inject private AwsLambdaTaskHelper awsLambdaTaskHelper;
 
-  @Override
-  protected AwsLambdaCommandResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
+  public AwsLambdaDeployResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
     if (!(awsLambdaCommandRequest instanceof AwsLambdaCommandRequest)) {
       throw new InvalidArgumentsException(Pair.of("awsLambdaCommandRequest",
@@ -61,7 +59,7 @@ public class AwsLambdaDeployTaskCommandHandler extends AwsLambdaCommandTaskHandl
     try {
       executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
 
-      CreateFunctionResponse createFunctionResponse = awsLambdaCommandTaskHelper.deployFunction(
+      CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.deployFunction(
           awsLambdaDeployRequest.getAwsLambdaInfraConfig(), awsLambdaDeployRequest.getAwsLambdaArtifactConfig(),
           awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
 

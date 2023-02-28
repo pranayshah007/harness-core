@@ -19,6 +19,7 @@ import io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepParame
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfigDAL;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
 import io.harness.cdng.provision.terraformcloud.output.TerraformCloudConfigSweepingOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -180,7 +181,9 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                               .build();
 
       return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-          Collections.singletonList(TerraformCloudCommandUnit.RUN.name()),
+          List.of(TerraformCloudCommandUnit.PLAN.getDisplayName(),
+              TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(),
+              TerraformCloudCommandUnit.APPLY.getDisplayName()),
           TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(rollbackStepParameters.getDelegateSelectors()),
           stepHelper.getEnvironmentType(ambiance));
@@ -233,6 +236,10 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
         terraformCloudConfigDAL.clearTerraformCloudConfig(ambiance, rollbackConfig.getEntityId());
       }
 
+      String provisionerIdentifier = ParameterFieldHelper.getParameterFieldValue(
+          ((TerraformCloudRollbackStepParameters) stepElementParameters.getSpec()).getProvisionerIdentifier());
+      helper.saveTerraformPlanExecutionDetails(
+          ambiance, null, terraformCloudRunTaskResponse.getPolicyChecksJsonFileId(), provisionerIdentifier);
       stepResponseBuilder.stepOutcome(
           StepOutcome.builder()
               .name(OUTCOME_NAME)
@@ -240,6 +247,10 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                   TerraformCloudRunOutcome.builder()
                       .detailedExitCode(terraformCloudRunTaskResponse.getDetailedExitCode())
                       .runId(runId)
+                      .policyChecksFilePath(terraformCloudRunTaskResponse.getPolicyChecksJsonFileId() != null
+                                  && provisionerIdentifier != null
+                              ? TerraformCloudPolicyChecksJsonFunctor.getExpression(provisionerIdentifier)
+                              : null)
                       .outputs(new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())))
                       .build())
               .build());

@@ -10,6 +10,7 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -63,6 +64,10 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof AwsLambdaStepExceptionPassThroughData) {
+      return awsLambdaHelper.handleStepExceptionFailure((AwsLambdaStepExceptionPassThroughData) passThroughData);
+    }
+
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = (AwsLambdaStepPassThroughData) passThroughData;
     AwsLambdaDeployResponse awsLambdaDeployResponse;

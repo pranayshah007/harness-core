@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.Builder;
 
@@ -27,5 +28,16 @@ public class PolicyCheckData extends Data {
   public static class Attributes {
     private String status;
     private Map<String, Boolean> permissions;
+    private Action actions;
+    private Object result;
+    private String scope;
+    @JsonProperty("status-timestamps") private Object statusTimestamp;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @lombok.Data
+    public static class Action {
+      @JsonProperty("is-overridable") boolean isOverridable;
+    }
   }
 }

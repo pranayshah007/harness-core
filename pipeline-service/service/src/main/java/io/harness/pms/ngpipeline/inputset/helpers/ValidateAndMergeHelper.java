@@ -233,6 +233,7 @@ public class ValidateAndMergeHelper {
     Set<String> inputSetVersions = new HashSet<>();
     GitSyncBranchContext branchContext = setupGitContext(accountId, orgIdentifier, projectIdentifier, pipelineBranch);
     PipelineEntity pipelineEntity;
+    PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier, null, null);
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
       pipelineEntity = getPipelineEntity(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);

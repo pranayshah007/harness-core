@@ -95,6 +95,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
+  @Inject private boolean allowDifferentReposForPipelineAndInputSets;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -114,7 +115,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
       InputSetValidationHelper.checkForPipelineStoreType(pipelineEntityMetadata);
-      validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      if (allowDifferentReposForPipelineAndInputSets) {
+        validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      }
     }
 
     try {
