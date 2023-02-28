@@ -576,4 +576,35 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     assertThat(filteredEnv2.getClusterRefs()).hasSize(1);
     assertThat(filteredEnv2.getClusterRefs()).contains("c3");
   }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldThrowErrorWhenFFDisabledAndFiltersPresent() {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
+
+    doReturn(false).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+
+    Assertions
+        .assertThatThrownBy(()
+                                -> environmentInfraFilterHelper.processEnvInfraFiltering(
+                                    ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES))
+        .hasMessageContaining(
+            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.");
+
+    EnvironmentGroupYaml envGroupYaml = EnvironmentGroupYaml.builder()
+                                            .envGroupRef(ParameterField.createValueField("EG_1"))
+                                            .filters(ParameterField.createValueField(Arrays.asList(envFilter)))
+                                            .build();
+
+    Assertions
+        .assertThatThrownBy(()
+                                -> environmentInfraFilterHelper.processEnvInfraFiltering(
+                                    ACC_ID, ORG_ID, PROJ_ID, null, envGroupYaml, ServiceDefinitionType.KUBERNETES))
+        .hasMessageContaining(
+            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.");
+  }
 }
