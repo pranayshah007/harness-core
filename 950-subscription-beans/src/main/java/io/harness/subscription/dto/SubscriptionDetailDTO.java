@@ -7,6 +7,8 @@
 
 package io.harness.subscription.dto;
 
+import io.harness.ModuleType;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -20,6 +22,7 @@ public class SubscriptionDetailDTO {
   private String subscriptionId;
   private String accountIdentifier;
   private String customerId;
+  private ModuleType moduletype;
   private String status;
   private Long cancelAt;
   private Long canceledAt;
