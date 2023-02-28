@@ -111,12 +111,10 @@ public class EnforcementServiceImpl implements EnforcementService {
       throw new InvalidRequestException(String.format("Feature [%s] is not defined", featureRestrictionName));
     }
     FeatureRestriction featureRestriction = featureRestrictionMap.get(featureRestrictionName);
-    log.info("TestVikasLogs: Feature restriction is {}.", featureRestriction);
     Edition edition = getLicenseEdition(accountIdentifier, featureRestriction.getModuleType());
 
     ConversionHandler conversionHandler =
         conversionHandlerFactory.getConversionHandler(isFeatureFlagEnabled(accountIdentifier));
-    log.info("TestVikasLogs: conversionHandler is {}.", conversionHandler);
     return conversionHandler.toFeatureMetadataDTO(featureRestriction, edition, accountIdentifier);
   }
 
