@@ -52,13 +52,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
-  private static final Set<String> k8sSteps = Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR,
-      StepSpecTypeConstants.GITOPS_MERGE_PR, StepSpecTypeConstants.K8S_ROLLING_DEPLOY,
-      StepSpecTypeConstants.K8S_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
-      StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
-      StepSpecTypeConstants.K8S_CANARY_DELETE, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
-      StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
-      StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST);
+  private static final Set<String> k8sSteps =
+      Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR,
+          StepSpecTypeConstants.GITOPS_SYNC, StepSpecTypeConstants.K8S_ROLLING_DEPLOY,
+          StepSpecTypeConstants.K8S_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
+          StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
+          StepSpecTypeConstants.K8S_CANARY_DELETE, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
+          StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.HELM_DEPLOY, StepSpecTypeConstants.HELM_ROLLBACK,
+          StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;

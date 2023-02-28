@@ -803,3 +803,9 @@ io.harness.cdng.aws.asg.AsgRollingRollbackOutcome
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode
+io.harness.cdng.gitops.syncstep.SyncOptions
+io.harness.cdng.gitops.syncstep.SyncRetryStrategy
+io.harness.cdng.gitops.syncstep.SyncStepParameters
+io.harness.cdng.gitops.syncstep.SyncStepInfo
+io.harness.cdng.gitops.syncstep.SyncStepNode
+io.harness.cdng.gitops.syncstep.SyncStepOutcome

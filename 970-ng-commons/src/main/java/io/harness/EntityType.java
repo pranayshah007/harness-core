@@ -551,7 +551,8 @@ public enum EntityType {
   SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_ROLLBACK)
   AWS_LAMBDA_ROLLBACK(ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.AWS_LAMBDA_ROLLBACK);
+      EntityYamlRootNames.AWS_LAMBDA_ROLLBACK),
+  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC);
 
   private final ModuleType moduleType;
   String yamlName;

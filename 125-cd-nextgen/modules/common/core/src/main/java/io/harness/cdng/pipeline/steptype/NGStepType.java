@@ -35,6 +35,10 @@ public enum NGStepType {
   GITOPS_MERGE_PR(
       "Merge PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_MERGE_PR),
 
+  @JsonProperty(StepSpecTypeConstants.GITOPS_SYNC)
+  GITOPS_SYNC(
+      "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),
