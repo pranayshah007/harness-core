@@ -10,16 +10,12 @@ package io.harness.engine.pms.audits.events;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.audit.ResourceTypeConstants;
 import io.harness.event.Event;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
-import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
