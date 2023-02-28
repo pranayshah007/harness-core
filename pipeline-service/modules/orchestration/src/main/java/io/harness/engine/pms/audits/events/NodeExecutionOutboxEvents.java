@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NodeExecutionOutboxEvents {
+public final class NodeExecutionOutboxEvents {
   public static final String NODE_EXECUTION_EVENT = "NodeExecutionEvent";
   public static final String PIPELINE_START = "PipelineStart";
   public static final String PIPELINE_PAUSE = "PipelinePause";
