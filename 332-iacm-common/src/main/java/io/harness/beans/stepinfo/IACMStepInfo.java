@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.steps.stepinfo;
+package io.harness.beans.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
 
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("iacmStepInfo")
 @OwnedBy(IACM)
-@RecasterAlias("io.harness.beans.steps.stepinfo.IACMStepInfo")
+@RecasterAlias("io.harness.beans.stepinfo.IACMStepInfo")
 public class IACMStepInfo implements CIStepInfo {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

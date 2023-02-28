@@ -2702,3 +2702,7 @@
 10000509:io.harness.delegate.task.aws.lambda.AwsLambdaS3ArtifactConfig
 10000510:io.harness.delegate.task.aws.lambda.AwsLambda
 10000511:io.harness.delegate.task.aws.lambda.AwsLambdaEcrArtifactConfig
+10000512:io.harness.delegate.exception.AwsLambdaException
+10000513:io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest
+10000514:io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse
+10000515:io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse

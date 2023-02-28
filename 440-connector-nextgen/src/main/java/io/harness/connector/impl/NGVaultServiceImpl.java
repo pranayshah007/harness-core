@@ -25,6 +25,7 @@ import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -112,6 +113,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
@@ -909,7 +911,8 @@ public class NGVaultServiceImpl implements NGVaultService {
     return delegateResponseData;
   }
 
-  private void decryptSecretRefData(
+  @VisibleForTesting
+  protected void decryptSecretRefData(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretRefData secretRefData) {
     // Get Scope of secretRefData as per RequestDTO's details
     Scope scope = secretRefData.getScope();
@@ -926,8 +929,14 @@ public class NGVaultServiceImpl implements NGVaultService {
     }
 
     // Get KMS Config for secret Manager of encrypted data's secret manager
-    EncryptionConfig encryptionConfig = getDecryptedEncryptionConfig(
-        accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    EncryptionConfig encryptionConfig;
+    if (encryptedData.getEncryptionType() == LOCAL) {
+      encryptionConfig =
+          SecretManagerConfigMapper.fromDTO(ngConnectorSecretManagerService.getLocalConfigDTO(accountIdentifier));
+    } else {
+      encryptionConfig = getDecryptedEncryptionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier());
+    }
 
     // Decrypt the encypted data with above KMS Config
     char[] decryptedValue = ngEncryptorService.fetchSecretValue(

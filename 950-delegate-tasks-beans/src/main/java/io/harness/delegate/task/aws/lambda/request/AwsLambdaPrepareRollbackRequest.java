@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -30,17 +29,12 @@ public class AwsLambdaPrepareRollbackRequest implements AwsLambdaCommandRequest,
   AwsLambdaCommandTypeNG awsLambdaCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {
     return AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK;
-  }
-
-  @Override
-  public AwsLambdaInfraConfig getAwsLambdaInfraConfig() {
-    return null;
   }
 }
