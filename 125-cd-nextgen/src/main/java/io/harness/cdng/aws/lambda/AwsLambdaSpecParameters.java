@@ -26,6 +26,7 @@ public interface AwsLambdaSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList(AwsLambdaCommandUnitConstants.deploy.toString());
+    return Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
+        AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), AwsLambdaCommandUnitConstants.deploy.toString());
   }
 }

@@ -183,20 +183,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
 
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        }
-      }
-    }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));

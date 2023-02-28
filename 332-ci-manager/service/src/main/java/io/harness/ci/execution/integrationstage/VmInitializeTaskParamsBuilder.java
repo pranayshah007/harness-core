@@ -428,9 +428,10 @@ public class VmInitializeTaskParamsBuilder {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
         if (parameterFieldValue.getValue() == null) {
-          throw new CIStageExecutionException(String.format("Env. variable [%s] value found to be null", key));
+          log.warn(String.format("Env variable [%s] value found to be null", key));
+        } else {
+          res.put(key, parameterFieldValue.getValue().toString());
         }
-        res.put(key, parameterFieldValue.getValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {

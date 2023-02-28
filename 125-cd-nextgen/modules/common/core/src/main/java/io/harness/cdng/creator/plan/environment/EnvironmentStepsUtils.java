@@ -184,4 +184,18 @@ public class EnvironmentStepsUtils {
       return Scope.fromString(refSplit[0]);
     }
   }
+
+  public static String getEnvironmentRef(String environmentRef, Scope envGroupScope) {
+    // project level env groups not modified
+    if (envGroupScope == null || Scope.PROJECT.equals(envGroupScope) || Scope.UNKNOWN.equals(envGroupScope)) {
+      return environmentRef;
+    }
+
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
+      return envGroupScope.getYamlRepresentation() + "." + environmentRef;
+    } else {
+      return environmentRef;
+    }
+  }
 }

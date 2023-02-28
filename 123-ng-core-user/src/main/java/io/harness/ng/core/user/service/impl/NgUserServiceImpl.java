@@ -309,17 +309,19 @@ public class NgUserServiceImpl implements NgUserService {
       return user.map(UserMetadataMapper::toDTO);
     } else {
       Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));
-      UserMetadataDTO userMetadataDTO = userInfo
-                                            .map(user
-                                                -> UserMetadataDTO.builder()
-                                                       .uuid(user.getUuid())
-                                                       .name(user.getName())
-                                                       .email(user.getEmail())
-                                                       .locked(user.isLocked())
-                                                       .disabled(user.isDisabled())
-                                                       .externallyManaged(user.isExternallyManaged())
-                                                       .build())
-                                            .orElse(null);
+      UserMetadataDTO userMetadataDTO =
+          userInfo
+              .map(user
+                  -> UserMetadataDTO.builder()
+                         .uuid(user.getUuid())
+                         .name(user.getName())
+                         .email(user.getEmail())
+                         .locked(user.isLocked())
+                         .disabled(user.isDisabled())
+                         .externallyManaged(user.isExternallyManaged())
+                         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+                         .build())
+              .orElse(null);
       return Optional.ofNullable(userMetadataDTO);
     }
   }
@@ -652,6 +654,7 @@ public class NgUserServiceImpl implements NgUserService {
                                     .locked(userInfo.isLocked())
                                     .disabled(userInfo.isDisabled())
                                     .externallyManaged(userInfo.isExternallyManaged())
+                                    .twoFactorAuthenticationEnabled(userInfo.isTwoFactorAuthenticationEnabled())
                                     .build();
     try {
       userMetadataRepository.save(userMetadata);
@@ -749,12 +752,20 @@ public class NgUserServiceImpl implements NgUserService {
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
     }
     if (!isBlank(user.getEmail()) && !user.getEmail().equals(savedUserOpt.get().getEmail())) {
       update.set(UserMetadataKeys.email, user.getEmail());
       update.set(UserMetadataKeys.locked, user.isLocked());
       update.set(UserMetadataKeys.disabled, user.isDisabled());
       update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
+    }
+    if (user.isTwoFactorAuthenticationEnabled() != savedUserOpt.get().isTwoFactorAuthenticationEnabled()) {
+      update.set(UserMetadataKeys.locked, user.isLocked());
+      update.set(UserMetadataKeys.disabled, user.isDisabled());
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+      update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, user.isTwoFactorAuthenticationEnabled());
     }
     return userMetadataRepository.updateFirst(user.getUuid(), update) != null;
   }

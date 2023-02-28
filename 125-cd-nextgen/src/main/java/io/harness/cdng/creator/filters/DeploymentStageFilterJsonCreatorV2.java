@@ -22,6 +22,7 @@ import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
+import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -79,16 +80,26 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   @Override
-  public PipelineFilter getFilter(FilterCreationContext filterCreationContext, DeploymentStageNode yamlField) {
+  public PipelineFilter getFilter(
+      FilterCreationContext filterCreationContext, DeploymentStageNode deploymentStageNode) {
     CdFilterBuilder filterBuilder = CdFilter.builder();
 
-    final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
+    validateStrategy(deploymentStageNode);
+
+    final DeploymentStageConfig deploymentStageConfig = deploymentStageNode.getDeploymentStageConfig();
 
     validate(filterCreationContext, deploymentStageConfig);
     addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
     addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
     return filterBuilder.build();
+  }
+
+  private void validateStrategy(DeploymentStageNode stageNode) {
+    if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
+      throw new InvalidYamlRuntimeException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
+    }
   }
 
   // This validation is added due to limitations of oneof wherein it introduces strict yaml checking breaking old

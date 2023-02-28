@@ -48,6 +48,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String DEPLOYMENT_RECONCILIATION_CACHE = "deploymentReconciliationCache";
 
+  public static final String WAIT_ENGINE_EVENT_CACHE = "waitEngineEventsCache";
+
   @Provides
   @Named(AUTH_TOKEN_CACHE)
   @Singleton
@@ -127,6 +129,16 @@ public class ManagerCacheRegistrar extends AbstractModule {
         CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
+  @Provides
+  @Singleton
+  @Named(WAIT_ENGINE_EVENT_CACHE)
+  public Cache<String, Integer> waitEngineEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(WAIT_ENGINE_EVENT_CACHE, String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
+        true);
+  }
+
   @Override
   protected void configure() {
     registerRequiredBindings();
@@ -153,6 +165,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
     }, Names.named(APIKEY_RESTRICTION_CACHE)));
     mapBinder.addBinding(WHITELIST_CACHE).to(Key.get(new TypeLiteral<Cache<String, WhitelistConfig>>() {
     }, Names.named(WHITELIST_CACHE)));
+    mapBinder.addBinding(WAIT_ENGINE_EVENT_CACHE).to(Key.get(new TypeLiteral<Cache<String, Integer>>() {
+    }, Names.named(WAIT_ENGINE_EVENT_CACHE)));
   }
 
   private void registerRequiredBindings() {

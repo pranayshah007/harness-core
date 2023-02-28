@@ -178,7 +178,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
     if (stageNode.getStrategy() != null && MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      throw new InvalidRequestException("Both strategy and multi-deployment is not supported. Please use any one");
+      throw new InvalidRequestException(
+          "Looping Strategy and Multi Service/Environment configurations are not supported together in a single stage. Please use any one of these");
     }
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));

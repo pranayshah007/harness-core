@@ -356,8 +356,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
     Map<String, LocalStoreFetchFilesResult> localStoreFetchFilesResultMap =
         nativeHelmStepPassThroughData.getLocalStoreFileMapContents();
-    if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFetchFilesResultMap)
-        || isNotEmpty(customFetchContent) || isNotEmpty(localStoreFetchFilesResultMap)) {
+    if (isNotEmpty(nativeHelmStepPassThroughData.getManifestOutcomeList())) {
       valuesFileContents.addAll(
           getManifestFilesContents(gitFetchFilesResultMap, nativeHelmStepPassThroughData.getManifestOutcomeList(),
               helmChartValuesFetchFilesResultMap, customFetchContent, localStoreFetchFilesResultMap));
@@ -399,12 +398,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
 
     List<ValuesManifestOutcome> aggregatedValuesManifest = new ArrayList<>();
     aggregatedValuesManifest.addAll(nativeHelmStepPassThroughData.getValuesManifestOutcomes());
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
-      }
-    }
+
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
       nativeHelmStepPassThroughData.setShouldCloseFetchFilesStream(true);
       return executeValuesFetchTask(ambiance, stepElementParameters, aggregatedValuesManifest,
@@ -414,10 +408,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       addValuesFileFromHelmChartManifest(helmValuesFetchFilesResultMap, valuesFileContents, helmChartIdentifier);
       List<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
       manifestOutcomeList.addAll(aggregatedValuesManifest);
-      if (isNotEmpty(manifestOutcomeList)
-          && (isNotEmpty(helmValuesFetchFilesResultMap)
-              || isNotEmpty(nativeHelmStepPassThroughData.getCustomFetchContent())
-              || isNotEmpty(nativeHelmStepPassThroughData.getLocalStoreFileMapContents()))) {
+      if (isNotEmpty(manifestOutcomeList)) {
         valuesFileContents.addAll(getManifestFilesContents(new HashMap<>(), manifestOutcomeList,
             helmValuesFetchFilesResultMap, nativeHelmStepPassThroughData.getCustomFetchContent(),
             nativeHelmStepPassThroughData.getLocalStoreFileMapContents()));
@@ -471,12 +462,6 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
           k8sStepPassThroughData.getValuesManifestOutcomes(), updatedK8sStepPassThroughData, storeConfig);
     }
 
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
-      }
-    }
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
       LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
       if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {

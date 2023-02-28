@@ -953,6 +953,7 @@ public class InviteServiceImpl implements InviteService {
                 .locked(user.isLocked())
                 .disabled(user.isDisabled())
                 .externallyManaged(user.isExternallyManaged())
+                .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
                 .build()));
     for (String email : userEmails) {
       userMetadataMap.computeIfAbsent(email, email1 -> UserMetadataDTO.builder().email(email1).build());
