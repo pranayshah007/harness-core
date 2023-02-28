@@ -3862,24 +3862,10 @@
           "type": "object",
           "properties": {
             "connector": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string"
             },
             "image": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+              "type": "string"
             }
           }
         }
