@@ -7,7 +7,7 @@
 
 package io.harness.ssca.beans.source;
 
-import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.pms.yaml.ParameterField;
@@ -20,9 +20,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ImageSbomSource implements SbomSourceSpec {
-  @YamlSchemaTypes(value = {string})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<String> connector;
+  @YamlSchemaTypes(value = {string}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connector;
 
-  @YamlSchemaTypes(value = {string}) @ApiModelProperty(dataType = STRING_MAP_CLASSPATH) ParameterField<String> image;
+  @YamlSchemaTypes(value = {string}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
 }
