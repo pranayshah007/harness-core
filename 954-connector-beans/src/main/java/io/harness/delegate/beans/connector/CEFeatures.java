@@ -16,7 +16,8 @@ public enum CEFeatures {
   OPTIMIZATION("Lightwing Cost Optimization"),
   VISIBILITY("Receive Events For Cloud Accounts"),
   GOVERNANCE("Cloud asset governance"),
-  COMMITMENT_ORCHESTRATOR("Commitment Orchestrator");
+  COMMITMENT_ORCHESTRATOR("Commitment Orchestrator"),
+  CLUSTER_ORCHESTRATOR("Cluster Orchestrator");
 
   @Getter private final String description;
   CEFeatures(String description) {
