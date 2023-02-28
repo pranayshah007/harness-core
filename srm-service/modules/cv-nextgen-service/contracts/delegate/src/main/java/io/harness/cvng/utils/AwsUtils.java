@@ -190,7 +190,7 @@ public class AwsUtils {
 
   private AwsCredentialsProvider getStsAssumeRoleAwsCredentialsProvider(
       AwsInternalConfig awsConfig, AwsCredentialsProvider primaryCredentialProvider) {
-    AssumeRoleRequest assumeRoleRequest = (AssumeRoleRequest) AssumeRoleRequest.builder()
+    AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
                                               .roleArn(awsConfig.getCrossAccountAttributes().getCrossAccountRoleArn())
                                               .roleSessionName(UUID.randomUUID().toString())
                                               .externalId(awsConfig.getCrossAccountAttributes().getExternalId())
