@@ -44,7 +44,7 @@ public class PlanNode {
 
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
-  List<AdviserObtainment> advisorObtainmentsForRollbackMode;
+  @Singular(value = "advisorObtainmentForRollbackMode") List<AdviserObtainment> advisorObtainmentsForRollbackMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<SdkTimeoutObtainment> timeoutObtainments;
 
