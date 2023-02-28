@@ -35,4 +35,6 @@ public class AwsLambdaPrepareRollbackOutcome implements Outcome, ExecutionSweepi
   @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
   boolean firstDeployment;
+  String functionCode;
+  String functionConfiguration;
 }
