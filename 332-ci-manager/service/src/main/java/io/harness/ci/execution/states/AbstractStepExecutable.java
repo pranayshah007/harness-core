@@ -8,6 +8,7 @@
 package io.harness.ci.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
@@ -596,6 +597,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       case SECURITY:
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
+      case SSCA_ORCHESTRATION:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);

@@ -23,6 +23,7 @@ import io.harness.cdng.provision.terraformcloud.TerraformCloudRunSpecParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunType;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.TerraformCloudRunOutcomeBuilder;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
@@ -148,8 +149,7 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
                             .build();
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-        Collections.singletonList(TerraformCloudCommandUnit.RUN.name()),
-        TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
+        getCommandUnits(runSpec.getType()), TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(runStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
@@ -190,23 +190,28 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
     TerraformCloudRunType runType = runStepParameters.getSpec().getType();
     if (CommandExecutionStatus.SUCCESS == terraformCloudRunTaskResponse.getCommandExecutionStatus()
         && runType != TerraformCloudRunType.REFRESH_STATE) {
-      if (runType == PLAN) {
-        TerraformCloudPlanSpecParameters planSpecParameters =
-            (TerraformCloudPlanSpecParameters) runStepParameters.getSpec();
-        helper.saveTerraformCloudPlanOutput(planSpecParameters, terraformCloudRunTaskResponse, ambiance);
-      }
+      String provisionerIdentifier = helper.getProvisionIdentifier(runStepParameters.getSpec());
+      String policyChecksJsonFileId = terraformCloudRunTaskResponse.getPolicyChecksJsonFileId();
+      String tfPlanJsonFileId = terraformCloudRunTaskResponse.getTfPlanJsonFileId();
+      helper.saveTerraformPlanExecutionDetails(
+          ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionerIdentifier);
 
       TerraformCloudRunOutcomeBuilder terraformCloudRunOutcomeBuilder =
           TerraformCloudRunOutcome.builder()
               .detailedExitCode(terraformCloudRunTaskResponse.getDetailedExitCode())
+              .policyChecksFilePath(policyChecksJsonFileId != null && provisionerIdentifier != null
+                      ? TerraformCloudPolicyChecksJsonFunctor.getExpression(provisionerIdentifier)
+                      : null)
+              .jsonFilePath((helper.isExportTfPlanJson(runStepParameters.getSpec()) && tfPlanJsonFileId != null
+                                && provisionerIdentifier != null)
+                      ? TerraformPlanJsonFunctor.getExpression(provisionerIdentifier)
+                      : null)
               .runId(terraformCloudRunTaskResponse.getRunId());
 
-      if (helper.isExportTfPlanJson(runStepParameters.getSpec())
-          && terraformCloudRunTaskResponse.getTfPlanJsonFileId() != null) {
-        String provisionerIdentifier = helper.getProvisionIdentifier(runStepParameters.getSpec());
-
-        helper.saveTerraformPlanExecutionDetails(ambiance, terraformCloudRunTaskResponse, provisionerIdentifier);
-        terraformCloudRunOutcomeBuilder.jsonFilePath(TerraformPlanJsonFunctor.getExpression(provisionerIdentifier));
+      if (runType == PLAN) {
+        TerraformCloudPlanSpecParameters planSpecParameters =
+            (TerraformCloudPlanSpecParameters) runStepParameters.getSpec();
+        helper.saveTerraformCloudPlanOutput(planSpecParameters, terraformCloudRunTaskResponse, ambiance);
       }
 
       if (runType == TerraformCloudRunType.APPLY || runType == TerraformCloudRunType.PLAN_AND_APPLY
@@ -221,5 +226,23 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
           StepOutcome.builder().name(OUTCOME_NAME).outcome(terraformCloudRunOutcomeBuilder.build()).build());
     }
     return stepResponseBuilder.build();
+  }
+
+  private List<String> getCommandUnits(TerraformCloudRunType type) {
+    switch (type) {
+      case REFRESH_STATE:
+      case PLAN_ONLY:
+      case PLAN:
+        return List.of(
+            TerraformCloudCommandUnit.PLAN.getDisplayName(), TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName());
+      case PLAN_AND_APPLY:
+      case PLAN_AND_DESTROY:
+        return List.of(TerraformCloudCommandUnit.PLAN.getDisplayName(),
+            TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), TerraformCloudCommandUnit.APPLY.getDisplayName());
+      case APPLY:
+        return Collections.singletonList(TerraformCloudCommandUnit.APPLY.getDisplayName());
+      default:
+        throw new IllegalStateException("Unexpected value: " + type);
+    }
   }
 }

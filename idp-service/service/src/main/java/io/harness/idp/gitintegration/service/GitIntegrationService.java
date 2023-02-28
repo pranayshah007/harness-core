@@ -9,6 +9,6 @@ package io.harness.idp.gitintegration.service;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 public interface GitIntegrationService {
-  public boolean createConnectorsSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
+  public void createConnectorsSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) throws Exception;
 }

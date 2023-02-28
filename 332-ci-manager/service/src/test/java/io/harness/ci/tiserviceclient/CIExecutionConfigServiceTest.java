@@ -399,6 +399,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("bpdr:1.2.4");
     assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("cachegcs:1.2.3");
     assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
+    assertThat(ciExecutionImages.getSscaOrchestrationTag()).isEqualTo("sscaorchestrate:0.0.1");
   }
 
   @Test

@@ -125,6 +125,9 @@ public class CIExecutionConfigService {
       case SECURITY:
         executionConfig.setSecurityImage(value);
         break;
+      case SSCA_ORCHESTRATION:
+        executionConfig.setSscaOrchestrationTag(value);
+        break;
       default:
         throw new BadRequestException(String.format("Field %s does not exist for infra type: K8", field));
     }
@@ -344,6 +347,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSConfig().getImage())
         .cacheS3Tag(config.getCacheS3Config().getImage())
         .securityTag(config.getSecurityConfig().getImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .build();
   }
 
@@ -362,6 +366,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(config.getCacheGCSTag())
         .cacheS3Tag(config.getCacheS3Tag())
         .securityTag(config.getSecurityImage())
+        .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .build();
   }
 
@@ -495,6 +500,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getGitCloneImage();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSscaOrchestrationTag())) {
+          image = ciExecutionConfig.getSscaOrchestrationTag();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -532,6 +542,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
       case GIT_CLONE:
         return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      case SSCA_ORCHESTRATION:
+        return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
