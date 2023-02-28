@@ -581,7 +581,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "  - name: \"v2\"\n"
         + "    type: \"String\"\n"
         + "    default: \"num\"\n"
-        + "    value: \"<+input>\"\n";
+        + "    value: \"<+input>\"\n"
+        + "  - name: \"v3\"\n"
+        + "    type: \"String\"\n"
+        + "    default: \"num\"\n"
+        + "    value: \"this one should not be in the template\"\n";
     String runtime = "pipeline:\n"
         + "  variables:\n"
         + "  - name: \"v2\"\n"

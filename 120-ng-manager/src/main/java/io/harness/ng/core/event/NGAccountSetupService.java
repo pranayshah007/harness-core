@@ -196,7 +196,7 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.DO_NOT_MIGRATE_CG_USERS_TO_NG, accountIdentifier)) {
+      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
         cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
       } else {
         cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
@@ -242,7 +242,7 @@ public class NGAccountSetupService {
 
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.DO_NOT_MIGRATE_CG_USERS_TO_NG, accountIdentifier)) {
+      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
         cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
       } else {
         cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));

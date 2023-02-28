@@ -164,6 +164,10 @@ public class InputSetErrorsHelper {
     if (!checkOnlyValidators && (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap()))) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
+    } else if (templateConfig == null || EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
+      // empty runtime input template means that all runtime input values are redundant, and hence no need to check for
+      // FQNs that fail any validator, because there is no validators in the pipeline yaml to begin with
+      return null;
     }
 
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {

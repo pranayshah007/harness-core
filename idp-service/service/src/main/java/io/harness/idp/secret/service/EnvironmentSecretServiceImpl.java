@@ -46,7 +46,6 @@ import org.apache.commons.lang3.StringUtils;
 public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   private static final String SUCCEEDED = "succeeded";
   private static final String FAILED = "failed";
-  private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
   private EnvironmentSecretRepository environmentSecretRepository;
   private K8sClient k8sClient;
   @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
@@ -182,10 +181,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   private String getNamespaceForAccount(String accountIdentifier) {
-    Optional<NamespaceInfo> namespaceOpt = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
-    if (namespaceOpt.isEmpty()) {
-      throw new InvalidRequestException(format(IDP_NOT_ENABLED, accountIdentifier));
-    }
-    return namespaceOpt.get().getNamespace();
+    NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+    return namespaceInfo.getNamespace();
   }
 }

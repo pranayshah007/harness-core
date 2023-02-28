@@ -27,4 +27,5 @@ public class TerraformCloudRollbackTaskResponse extends TerraformCloudDelegateTa
   Integer detailedExitCode;
   String runId;
   String tfOutput;
+  String policyChecksJsonFileId;
 }

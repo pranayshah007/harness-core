@@ -324,9 +324,6 @@ public class GitAwareEntityHelper {
 
   private String getRepoUrl(Scope scope) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    if (!isNullOrDefault(gitEntityInfo.getParentEntityRepoUrl())) {
-      return gitEntityInfo.getParentEntityRepoUrl();
-    }
     String parentEntityRepoUrl = scmGitSyncHelper
                                      .getRepoUrl(scope, gitEntityInfo.getParentEntityRepoName(),
                                          gitEntityInfo.getParentEntityConnectorRef(), Collections.emptyMap())

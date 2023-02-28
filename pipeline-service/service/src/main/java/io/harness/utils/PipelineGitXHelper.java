@@ -33,6 +33,7 @@ public class PipelineGitXHelper {
       if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
         gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
       }
+      // setting connector and repo name. This is required to pass to child pipeline from parent pipeline
       if (!GitAwareContextHelper.isNullOrDefault(connectorRef)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorRef);
       }
@@ -55,6 +56,12 @@ public class PipelineGitXHelper {
       }
       if (EmptyPredicate.isNotEmpty(entityGitDetails.getFilePath())) {
         gitEntityInfo.setFilePath(entityGitDetails.getFilePath());
+      }
+      if (isNotEmpty(entityGitDetails.getParentEntityConnectorRef())) {
+        gitEntityInfo.setParentEntityConnectorRef(entityGitDetails.getParentEntityConnectorRef());
+      }
+      if (isNotEmpty(entityGitDetails.getParentEntityRepoName())) {
+        gitEntityInfo.setParentEntityRepoName(entityGitDetails.getParentEntityRepoName());
       }
     }
   }

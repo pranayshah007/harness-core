@@ -7,6 +7,9 @@
 
 package io.harness.idp.namespace.service;
 
+import static java.lang.String.format;
+
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.repositories.NamespaceRepository;
@@ -17,17 +20,25 @@ import javax.inject.Inject;
 
 public class NamespaceServiceImpl implements NamespaceService {
   @Inject private NamespaceRepository namespaceRepository;
+  private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
+  private static final String IDP_NAMESPACE_NOT_LINKED = "Namespace - [%s] is not linked to any account";
 
   @Override
-  public Optional<NamespaceInfo> getNamespaceForAccountIdentifier(String accountId) {
+  public NamespaceInfo getNamespaceForAccountIdentifier(String accountId) {
     Optional<NamespaceEntity> namespaceName = namespaceRepository.findByAccountIdentifier(accountId);
-    return namespaceName.map(NamespaceMapper::toDTO);
+    if (namespaceName.isEmpty()) {
+      throw new InvalidRequestException(format(IDP_NOT_ENABLED, accountId));
+    }
+    return namespaceName.map(NamespaceMapper::toDTO).get();
   }
 
   @Override
-  public Optional<NamespaceInfo> getAccountIdForNamespace(String namespace) {
+  public NamespaceInfo getAccountIdForNamespace(String namespace) {
     Optional<NamespaceEntity> namespaceName = namespaceRepository.findById(namespace);
-    return namespaceName.map(NamespaceMapper::toDTO);
+    if (namespaceName.isEmpty()) {
+      throw new InvalidRequestException(format(IDP_NAMESPACE_NOT_LINKED, namespace));
+    }
+    return namespaceName.map(NamespaceMapper::toDTO).get();
   }
 
   @Override

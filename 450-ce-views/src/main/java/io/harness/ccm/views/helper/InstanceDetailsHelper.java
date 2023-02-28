@@ -102,17 +102,38 @@ public class InstanceDetailsHelper {
           .cloudProviderInstanceId(entry.getMetaData().getOrDefault(CLOUD_PROVIDER_INSTANCE_ID, DEFAULT_STRING_VALUE))
           .podCapacity(entry.getMetaData().getOrDefault(K8S_POD_CAPACITY, DEFAULT_STRING_VALUE))
           .totalCost(costDataEntry.getCost().doubleValue())
-          .idleCost(costDataEntry.getClusterData().getIdleCost())
-          .systemCost(costDataEntry.getClusterData().getSystemCost())
-          .unallocatedCost(costDataEntry.getClusterData().getUnallocatedCost())
-          .networkCost(costDataEntry.getClusterData().getNetworkCost())
-          .memoryBillingAmount(costDataEntry.getClusterData().getMemoryBillingAmount())
-          .cpuBillingAmount(costDataEntry.getClusterData().getCpuBillingAmount())
-          .storageUnallocatedCost(costDataEntry.getClusterData().getStorageUnallocatedCost())
-          .memoryUnallocatedCost(costDataEntry.getClusterData().getMemoryUnallocatedCost())
-          .cpuUnallocatedCost(costDataEntry.getClusterData().getCpuUnallocatedCost())
-          .memoryIdleCost(costDataEntry.getClusterData().getMemoryActualIdleCost())
-          .cpuIdleCost(costDataEntry.getClusterData().getCpuActualIdleCost())
+          .idleCost(
+              costDataEntry.getClusterData().getIdleCost() != null ? costDataEntry.getClusterData().getIdleCost() : 0)
+          .systemCost(costDataEntry.getClusterData().getSystemCost() != null
+                  ? costDataEntry.getClusterData().getSystemCost()
+                  : 0)
+          .unallocatedCost(costDataEntry.getClusterData().getUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getUnallocatedCost()
+                  : 0)
+          .networkCost(costDataEntry.getClusterData().getNetworkCost() != null
+                  ? costDataEntry.getClusterData().getNetworkCost()
+                  : 0)
+          .memoryBillingAmount(costDataEntry.getClusterData().getMemoryBillingAmount() != null
+                  ? costDataEntry.getClusterData().getMemoryBillingAmount()
+                  : 0)
+          .cpuBillingAmount(costDataEntry.getClusterData().getCpuBillingAmount() != null
+                  ? costDataEntry.getClusterData().getCpuBillingAmount()
+                  : 0)
+          .storageUnallocatedCost(costDataEntry.getClusterData().getStorageUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getStorageUnallocatedCost()
+                  : 0)
+          .memoryUnallocatedCost(costDataEntry.getClusterData().getMemoryUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getMemoryUnallocatedCost()
+                  : 0)
+          .cpuUnallocatedCost(costDataEntry.getClusterData().getCpuUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getCpuUnallocatedCost()
+                  : 0)
+          .memoryIdleCost(costDataEntry.getClusterData().getMemoryActualIdleCost() != null
+                  ? costDataEntry.getClusterData().getMemoryActualIdleCost()
+                  : 0)
+          .cpuIdleCost(costDataEntry.getClusterData().getCpuActualIdleCost() != null
+                  ? costDataEntry.getClusterData().getCpuActualIdleCost()
+                  : 0)
           .cpuAllocatable(-1D)
           .memoryAllocatable(-1D)
           .machineType(entry.getMetaData().getOrDefault(OPERATING_SYSTEM, DEFAULT_STRING_VALUE))
@@ -156,24 +177,51 @@ public class InstanceDetailsHelper {
           .node(entry.getMetaData().getOrDefault(PARENT_RESOURCE_ID, DEFAULT_STRING_VALUE))
           .nodePoolName(entry.getMetaData().getOrDefault(NODE_POOL_NAME, DEFAULT_STRING_VALUE))
           .totalCost(costDataEntry.getCost().doubleValue())
-          .idleCost(costDataEntry.getClusterData().getIdleCost())
-          .systemCost(costDataEntry.getClusterData().getSystemCost())
-          .unallocatedCost(costDataEntry.getClusterData().getUnallocatedCost())
-          .memoryBillingAmount(costDataEntry.getClusterData().getMemoryBillingAmount())
-          .cpuBillingAmount(costDataEntry.getClusterData().getCpuBillingAmount())
-          .storageUnallocatedCost(costDataEntry.getClusterData().getStorageUnallocatedCost())
-          .memoryUnallocatedCost(costDataEntry.getClusterData().getMemoryUnallocatedCost())
-          .cpuUnallocatedCost(costDataEntry.getClusterData().getCpuUnallocatedCost())
-          .memoryIdleCost(costDataEntry.getClusterData().getMemoryActualIdleCost())
-          .cpuIdleCost(costDataEntry.getClusterData().getCpuActualIdleCost())
-          .networkCost(costDataEntry.getClusterData().getNetworkCost())
-          .storageCost(viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageCost()))
-          .storageActualIdleCost(
-              viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageActualIdleCost()))
-          .storageUtilizationValue(viewsQueryHelper.getRoundedDoubleValue(
-              costDataEntry.getClusterData().getStorageUtilizationValue() / 1024D))
-          .storageRequest(
-              viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageRequest() / 1024D))
+          .idleCost(
+              costDataEntry.getClusterData().getIdleCost() != null ? costDataEntry.getClusterData().getIdleCost() : 0)
+          .systemCost(costDataEntry.getClusterData().getSystemCost() != null
+                  ? costDataEntry.getClusterData().getSystemCost()
+                  : 0)
+          .unallocatedCost(costDataEntry.getClusterData().getUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getUnallocatedCost()
+                  : 0)
+          .memoryBillingAmount(costDataEntry.getClusterData().getMemoryBillingAmount() != null
+                  ? costDataEntry.getClusterData().getMemoryBillingAmount()
+                  : 0)
+          .cpuBillingAmount(costDataEntry.getClusterData().getCpuBillingAmount() != null
+                  ? costDataEntry.getClusterData().getCpuBillingAmount()
+                  : 0)
+          .storageUnallocatedCost(costDataEntry.getClusterData().getStorageUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getStorageUnallocatedCost()
+                  : 0)
+          .memoryUnallocatedCost(costDataEntry.getClusterData().getMemoryUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getMemoryUnallocatedCost()
+                  : 0)
+          .cpuUnallocatedCost(costDataEntry.getClusterData().getCpuUnallocatedCost() != null
+                  ? costDataEntry.getClusterData().getCpuUnallocatedCost()
+                  : 0)
+          .memoryIdleCost(costDataEntry.getClusterData().getMemoryActualIdleCost() != null
+                  ? costDataEntry.getClusterData().getMemoryActualIdleCost()
+                  : 0)
+          .cpuIdleCost(costDataEntry.getClusterData().getCpuActualIdleCost() != null
+                  ? costDataEntry.getClusterData().getCpuActualIdleCost()
+                  : 0)
+          .networkCost(costDataEntry.getClusterData().getNetworkCost() != null
+                  ? costDataEntry.getClusterData().getNetworkCost()
+                  : 0)
+          .storageCost(costDataEntry.getClusterData().getStorageCost() != null
+                  ? viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageCost())
+                  : 0)
+          .storageActualIdleCost(costDataEntry.getClusterData().getStorageActualIdleCost() != null
+                  ? viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageActualIdleCost())
+                  : 0)
+          .storageUtilizationValue(costDataEntry.getClusterData().getStorageUtilizationValue() != null
+                  ? viewsQueryHelper.getRoundedDoubleValue(
+                      costDataEntry.getClusterData().getStorageUtilizationValue() / 1024D)
+                  : 0)
+          .storageRequest(costDataEntry.getClusterData().getStorageRequest() != null
+                  ? viewsQueryHelper.getRoundedDoubleValue(costDataEntry.getClusterData().getStorageRequest() / 1024D)
+                  : 0)
           .cpuRequested(-1D)
           .memoryRequested(-1D);
       if (entry.getUsageStopTime() != null) {
