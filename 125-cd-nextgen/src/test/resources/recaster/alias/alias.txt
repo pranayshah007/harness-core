@@ -809,3 +809,7 @@ io.harness.cdng.gitops.syncstep.SyncStepParameters
 io.harness.cdng.gitops.syncstep.SyncStepInfo
 io.harness.cdng.gitops.syncstep.SyncStepNode
 io.harness.cdng.gitops.syncstep.SyncStepOutcome
+io.harness.cdng.provision.terraform.TerraformCloudCliPlanExecutionData
+io.harness.cdng.provision.terraform.TerraformCloudCliExecutionData
+io.harness.cdng.provision.terraform.TerraformCloudCliStepConfiguration
+io.harness.cdng.provision.terraform.TerraformCloudCliStepConfigurationParameters

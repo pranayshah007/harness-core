@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 package io.harness.cdng.provision.terraform;
@@ -13,10 +13,8 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.provision.terraform.TerraformExecutionDataParameters.TerraformExecutionDataParametersBuilder;
+import io.harness.cdng.provision.terraform.TerraformPlanExecutionDataParameters.TerraformPlanExecutionDataParametersBuilder;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.yaml.YamlSchemaTypes;
@@ -29,21 +27,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.lang3.StringUtils;
+import lombok.experimental.FieldNameConstants;
 
 @Data
-@NoArgsConstructor
-@OwnedBy(HarnessTeam.CDP)
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@RecasterAlias("io.harness.cdng.provision.terraform.TerraformExecutionData")
-public class TerraformExecutionData {
+@OwnedBy(HarnessTeam.CDP)
+@FieldNameConstants(innerTypeName = "TerraformCloudCliPlanExecutionDataKeys")
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformCloudCliPlanExecutionData")
+public class TerraformCloudCliPlanExecutionData {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @NotNull @JsonProperty("configFiles") TerraformConfigFilesWrapper terraformConfigFilesWrapper;
   @JsonProperty("varFiles") List<TerraformVarFileWrapper> terraformVarFiles;
   @JsonProperty("backendConfig") TerraformBackendConfig terraformBackendConfig;
@@ -52,13 +49,15 @@ public class TerraformExecutionData {
   ParameterField<List<String>> targets;
   List<NGVariable> environmentVariables;
 
-  public TerraformExecutionDataParameters toStepParameters() {
+  @NotNull TerraformPlanCommand command;
+
+  public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
-    TerraformExecutionDataParametersBuilder builder =
-        TerraformExecutionDataParameters.builder()
-            .workspace(workspace)
+    TerraformPlanExecutionDataParametersBuilder builder =
+        TerraformPlanExecutionDataParameters.builder()
             .configFiles(terraformConfigFilesWrapper)
             .backendConfig(terraformBackendConfig)
+            .command(command)
             .targets(targets)
             .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L));
     LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
@@ -67,20 +66,17 @@ public class TerraformExecutionData {
         if (terraformVarFile != null) {
           TerraformVarFile varFile = terraformVarFile.getVarFile();
           if (varFile != null) {
-            if (StringUtils.isEmpty(varFile.getIdentifier())) {
-              throw new InvalidRequestException("Identifier in Var File can't be empty", WingsException.USER);
-            }
             varFiles.put(varFile.getIdentifier(), varFile);
           }
         }
       });
     }
     builder.varFiles(varFiles);
-    builder.isTerraformCloudCli(ParameterField.createValueField(false));
+    builder.isTerraformCloudCli(ParameterField.createValueField(true));
     return builder.build();
   }
 
-  void validateParams() {
+  public void validateParams() {
     Validator.notNullCheck("Config files are null", terraformConfigFilesWrapper);
     terraformConfigFilesWrapper.validateParams();
   }

@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 package io.harness.cdng.provision.terraform;
@@ -39,11 +39,10 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@RecasterAlias("io.harness.cdng.provision.terraform.TerraformExecutionData")
-public class TerraformExecutionData {
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformCloudCliExecutionData")
+public class TerraformCloudCliExecutionData {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @NotNull @JsonProperty("configFiles") TerraformConfigFilesWrapper terraformConfigFilesWrapper;
   @JsonProperty("varFiles") List<TerraformVarFileWrapper> terraformVarFiles;
   @JsonProperty("backendConfig") TerraformBackendConfig terraformBackendConfig;
@@ -56,7 +55,6 @@ public class TerraformExecutionData {
     validateParams();
     TerraformExecutionDataParametersBuilder builder =
         TerraformExecutionDataParameters.builder()
-            .workspace(workspace)
             .configFiles(terraformConfigFilesWrapper)
             .backendConfig(terraformBackendConfig)
             .targets(targets)
@@ -76,7 +74,7 @@ public class TerraformExecutionData {
       });
     }
     builder.varFiles(varFiles);
-    builder.isTerraformCloudCli(ParameterField.createValueField(false));
+    builder.isTerraformCloudCli(ParameterField.createValueField(true));
     return builder.build();
   }
 
