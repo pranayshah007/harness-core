@@ -204,11 +204,11 @@ public class InputSetsApiUtils {
     return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
-  public boolean isSameRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {
+  public boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {
     String isGitClientEnabledString =
         NGRestUtils
             .getResponse(ngSettingsClient.getSetting(
-                GitSyncConstants.SAME_REPO_FOR_PIPELINE_AND_INPUT_SETS, accountId, null, null))
+                GitSyncConstants.ALLOW_DIFFERENT_REPO_FOR_PIPELINE_AND_INPUT_SETS, accountId, null, null))
             .getValue();
     return GitSyncConstants.TRUE_VALUE.equals(isGitClientEnabledString);
   }
