@@ -22,7 +22,6 @@ java_library(
         "//954-connector-beans:module",
         "//957-cg-beans:module",
         "//960-api-services/src/main/java/io/harness/aws/beans:module",
-        "//960-api-services/src/main/java/io/harness/aws/v2:module",
         "//960-api-services/src/main/java/io/harness/gcp/helpers:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
@@ -46,6 +45,12 @@ java_library(
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_json_json",
         "@maven//:org_mongodb_mongodb_driver_core",
+        "@maven//:software_amazon_awssdk_applicationautoscaling",
+        "@maven//:software_amazon_awssdk_auth",
+        "@maven//:software_amazon_awssdk_aws_core",
+        "@maven//:software_amazon_awssdk_regions",
+        "@maven//:software_amazon_awssdk_sdk_core",
+        "@maven//:software_amazon_awssdk_sts",
     ],
 )
 
