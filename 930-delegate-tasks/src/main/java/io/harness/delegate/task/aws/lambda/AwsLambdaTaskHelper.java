@@ -26,6 +26,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions.AwsLambdaFunctionWithActiveVersionsBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
@@ -512,22 +513,21 @@ public class AwsLambdaTaskHelper {
   public AwsLambdaFunctionWithActiveVersions convertToAwsLambdaFunctionWithActiveVersion(
       GetFunctionResponse result, ListAliasesResponse listAliasesResult, List<String> activeVersions) {
     final FunctionConfiguration config = result.configuration();
-    final AwsLambdaFunctionWithActiveVersions.AwsLambdaFunctionWithActiveVersionsBuilder builder =
-        AwsLambdaFunctionWithActiveVersions.builder()
-            .functionArn(config.functionArn())
-            .functionName(config.functionName())
-            .runtime(config.runtime().toString())
-            .role(config.role())
-            .handler(config.handler())
-            .codeSize(config.codeSize())
-            .description(config.description())
-            .timeout(config.timeout())
-            .memorySize(config.memorySize())
-            .codeSha256(config.codeSha256())
-            .versions(activeVersions)
-            .kMSKeyArn(config.kmsKeyArn())
-            .masterArn(config.masterArn())
-            .revisionId(config.revisionId());
+    final AwsLambdaFunctionWithActiveVersionsBuilder builder = AwsLambdaFunctionWithActiveVersions.builder()
+                                                                   .functionArn(config.functionArn())
+                                                                   .functionName(config.functionName())
+                                                                   .runtime(config.runtime().toString())
+                                                                   .role(config.role())
+                                                                   .handler(config.handler())
+                                                                   .codeSize(config.codeSize())
+                                                                   .description(config.description())
+                                                                   .timeout(config.timeout())
+                                                                   .memorySize(config.memorySize())
+                                                                   .codeSha256(config.codeSha256())
+                                                                   .versions(activeVersions)
+                                                                   .kMSKeyArn(config.kmsKeyArn())
+                                                                   .masterArn(config.masterArn())
+                                                                   .revisionId(config.revisionId());
 
     if (Strings.isNotEmpty(config.lastModified())) {
       try {
