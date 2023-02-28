@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.ACCOUNT;
 import static io.harness.encryption.Scope.ORG;
@@ -38,7 +37,6 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.ListingScope;
@@ -284,12 +282,12 @@ public class NGTemplateServiceHelper {
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {
-    FilterDTO pipelineFilterDTO =
+    FilterDTO templateFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.TEMPLATE);
-    if (pipelineFilterDTO == null) {
+    if (templateFilterDTO == null) {
       throw new InvalidRequestException("Could not find a Template filter with the identifier ");
     } else {
-      populateFilter(criteria, (TemplateFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), searchTerm,
+      populateFilter(criteria, (TemplateFilterPropertiesDTO) templateFilterDTO.getFilterProperties(), searchTerm,
           includeAllTemplatesCriteria);
     }
   }
@@ -318,7 +316,7 @@ public class NGTemplateServiceHelper {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
     addRepoFilter(criteria, templateFilter.getRepoName());
-    populateTagsFilter(criteria, templateFilter.getTags());
+    populateInFilter(criteria, TemplateEntityKeys.tags, TagMapper.convertToList(templateFilter.getTags()));
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
   }
@@ -347,7 +345,7 @@ public class NGTemplateServiceHelper {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
     addRepoFilter(criteria, templateFilter.getRepoName());
-    populateTagsFilter(criteria, templateFilter.getTags());
+    populateInFilter(criteria, TemplateEntityKeys.tags, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
   }
@@ -400,20 +398,6 @@ public class NGTemplateServiceHelper {
           .regex(pattern, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS);
     }
     return null;
-  }
-
-  private static void populateTagsFilter(Criteria criteria, Map<String, String> tags) {
-    if (isEmpty(tags)) {
-      return;
-    }
-    criteria.and(TemplateEntityKeys.tags).in(TagMapper.convertToList(tags));
-  }
-
-  private static void populateTagsFilter(Criteria criteria, List<NGTag> tags) {
-    if (isEmpty(tags)) {
-      return;
-    }
-    criteria.and(TemplateEntityKeys.tags).in(tags.stream().map(NGTag::getValue).collect(Collectors.toList()));
   }
 
   private Criteria getCriteriaToReturnAllTemplatesAccessible(String orgIdentifier, String projectIdentifier) {
