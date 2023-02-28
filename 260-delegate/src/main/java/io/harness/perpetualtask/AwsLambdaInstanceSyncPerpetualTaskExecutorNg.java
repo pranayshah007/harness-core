@@ -7,12 +7,7 @@
 
 package io.harness.perpetualtask;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.network.SafeHttpCall.execute;
-
-import static java.lang.String.format;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,14 +23,18 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
 import io.harness.serializer.KryoSerializer;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.network.SafeHttpCall.execute;
+import static java.lang.String.format;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
