@@ -127,13 +127,15 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    ArgumentCaptor<List<String>> commandUnitsCaptor = ArgumentCaptor.forClass(List.class);
 
     TaskRequest taskRequest = terraformCloudRunStep.obtainTaskAfterRbac(
         ambiance, getStepElementParams(TerraformCloudRunType.PLAN), stepInputPackage);
 
     assertThat(taskRequest).isNotNull();
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
-    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    TaskRequestsUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), commandUnitsCaptor.capture(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformCloudTaskParams taskParameters =
@@ -145,6 +147,9 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(taskParameters.getPlanType()).isEqualTo(io.harness.delegate.beans.terraformcloud.PlanType.APPLY);
     assertThat(taskParameters.getOrganization()).isEqualTo("org");
     assertThat(taskParameters.getWorkspace()).isEqualTo("ws");
+    assertThat(commandUnitsCaptor.getValue()).isNotNull();
+    assertThat(commandUnitsCaptor.getValue()).contains("Plan");
+    assertThat(commandUnitsCaptor.getValue()).contains("Policy check");
   }
 
   @Test
@@ -185,7 +190,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any());
+    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
   }
 
   @Test
@@ -209,7 +214,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
-    verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
+    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
@@ -232,7 +237,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
+    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
@@ -254,7 +259,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs()).isNull();
     verify(helper, times(1)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any());
+    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
     verify(helper, times(0)).parseTerraformOutputs(any());
   }
 
@@ -276,7 +281,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(0)).saveTerraformPlanExecutionDetails(any(), any(), any());
+    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
