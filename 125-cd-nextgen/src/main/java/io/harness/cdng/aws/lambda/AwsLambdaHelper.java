@@ -207,6 +207,8 @@ public class AwsLambdaHelper extends CDStepHelper {
             .functionName(awsLambdaPrepareRollbackResponse.getFunctionName())
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .functionCode(awsLambdaPrepareRollbackResponse.getFunctionCode())
+            .functionConfiguration(awsLambdaPrepareRollbackResponse.getFunctionConfiguration())
             .build();
 
     executionSweepingOutputService.consume(ambiance,

@@ -119,8 +119,9 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
             .awsLambdaArtifactConfig(awsLambdaPrepareRollbackOutcome.getAwsLambdaArtifactConfig())
-            .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackOutcome.getAwsLambdaDeployManifestContent())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .functionCode(awsLambdaPrepareRollbackOutcome.getFunctionCode())
+            .functionConfiguration(awsLambdaPrepareRollbackOutcome.getFunctionConfiguration())
             .build();
 
     return awsLambdaHelper

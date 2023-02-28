@@ -29,13 +29,14 @@ public class AwsLambdaRollbackRequest implements AwsLambdaCommandRequest, Nested
   AwsLambdaCommandTypeNG awsLambdaCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String functionName;
   @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
   boolean firstDeployment;
+  String functionCode;
+  String functionConfiguration;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {
