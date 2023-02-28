@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DINESH;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
@@ -84,12 +85,14 @@ import software.wings.api.ServiceElement;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.Type;
 import software.wings.beans.Application;
+import software.wings.beans.ConfigFile;
 import software.wings.beans.Variable;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.template.TemplateUtils;
 import software.wings.delegatetasks.HttpTask;
 import software.wings.service.impl.AccountServiceImpl;
 import software.wings.service.impl.ActivityHelperService;
+import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.StateExecutionService;
@@ -109,6 +112,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.sun.jna.platform.linux.LibC;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -177,6 +181,7 @@ public class HttpStateTest extends WingsBaseTest {
   @Mock private StateExecutionService stateExecutionService;
   @Mock private AccountServiceImpl accountService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
+  @Mock private ConfigService configService;
 
   private ExecutionResponse asyncExecutionResponse;
 
@@ -242,6 +247,38 @@ public class HttpStateTest extends WingsBaseTest {
     assertThat(patternsForRequiredContextElementType)
         .contains(
             "(${httpResponseCode}==200 || ${httpResponseCode}==201) && ${xmlFormat()} && ${xpath('//health/status/text()')}.equals('Enabled')");
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void httpStepShouldHaveDefaultIsJsonFileFalse() {
+    HttpState httpState = getHttpState(httpStateBuilder, context);
+    assertThat(httpState.getIsJsonFile()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void httpStepShouldResolveBodyFromFile() throws IllegalAccessException {
+    wireMockRule.stubFor(
+        get(urlEqualTo("/health/status"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "text/json")
+                    .withBody(
+                        "{\"status\":{\"code\":\"SUCCESS\"},\"data\":{\"title\":\"Some server\",\"version\":\"2.31.0-MASTER-SNAPSHOT\",\"buildTimestamp\":1506086747259}}")));
+    HttpState httpState = getHttpState(httpStateBuilder, context);
+    httpState.setIsJsonFile(true);
+    httpState.setAppId("appId");
+    httpState.setConfigFileId("configFileId");
+    ConfigFile configFile = ConfigFile.builder().build();
+    FieldUtils.writeField(httpState, "stateExecutionService", stateExecutionService, true);
+    when(configService.get(anyString(), any())).thenReturn(configFile);
+    when(configService.getFileContent(anyString(), any())).thenReturn(new byte[10]);
+    httpState.execute(context);
+    verify(configService).getFileContent(anyString(), any());
   }
 
   /**
@@ -803,6 +840,7 @@ public class HttpStateTest extends WingsBaseTest {
     on(httpState).set("accountService", accountService);
     on(httpState).set("infrastructureMappingService", infrastructureMappingService);
     on(httpState).set("featureFlagService", featureFlagService);
+    on(httpState).set("configService", configService);
     on(httpState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     WorkflowStandardParamsParamMapper workflowStandardParamsParamMapper =
