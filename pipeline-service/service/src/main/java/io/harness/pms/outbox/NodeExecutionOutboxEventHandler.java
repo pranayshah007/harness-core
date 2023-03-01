@@ -7,6 +7,8 @@
 
 package io.harness.pms.outbox;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,8 +19,10 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEvents;
+import io.harness.logging.AutoLogContext;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.pms.outbox.autoLog.OutboxLogContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,23 +104,25 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
 
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
-    try {
-      switch (outboxEvent.getEventType()) {
-        case NodeExecutionOutboxEvents.PIPELINE_START:
-          return handlePipelineStartEvent(outboxEvent);
-        case NodeExecutionOutboxEvents.PIPELINE_END:
-          return handlePipelineEndEvent(outboxEvent);
-        case NodeExecutionOutboxEvents.STAGE_START:
-          return handleStageStartEvent(outboxEvent);
-        case NodeExecutionOutboxEvents.STAGE_END:
-          return handleStageEndEvent(outboxEvent);
-        default:
-          log.info(String.format("Current type of event is not supported for Audits!"));
-          return false;
+    try (AutoLogContext ignore = new OutboxLogContext(outboxEvent.getId(), OVERRIDE_NESTS)) {
+      try {
+        switch (outboxEvent.getEventType()) {
+          case NodeExecutionOutboxEvents.PIPELINE_START:
+            return handlePipelineStartEvent(outboxEvent);
+          case NodeExecutionOutboxEvents.PIPELINE_END:
+            return handlePipelineEndEvent(outboxEvent);
+          case NodeExecutionOutboxEvents.STAGE_START:
+            return handleStageStartEvent(outboxEvent);
+          case NodeExecutionOutboxEvents.STAGE_END:
+            return handleStageEndEvent(outboxEvent);
+          default:
+            log.info(String.format("Current type of event is not supported for Audits!"));
+            return false;
+        }
+      } catch (Exception ex) {
+        log.error(String.format("Unexpected error occurred during handling of event", ex));
+        return false;
       }
-    } catch (Exception ex) {
-      log.error(String.format("Unexpected error occurred during handling of OutboxEvent: {}", outboxEvent), ex);
-      return false;
     }
   }
 }
