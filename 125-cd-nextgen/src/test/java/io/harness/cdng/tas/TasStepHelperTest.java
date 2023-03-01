@@ -201,6 +201,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -293,6 +294,19 @@ public class TasStepHelperTest extends CategoryTest {
       + "      health-check-invocation-timeout: 10\n"
       + "      instances: 1\n"
       + "      memory: 100M";
+  public static String COMMAND_SCRIPT_WITHOUT_REPOROOT = "## Performing cf login\n"
+      + "\n"
+      + "\n"
+      + "cf login\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/manifest.yml\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/vars.yml\n"
+      + "\n"
+      + "## Get apps\n"
+      + "cf apps";
+  public static String COMMAND_SCRIPT_WITHOUT_REPOROOT_WITHOUT_COMMENTS = "cf login\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/manifest.yml\n"
+      + "cat ${service.manifest.repoRoot}/pcf-app1/vars.yml\n"
+      + "cf apps";
   public static String COMMAND_SCRIPT = "## Performing cf login\n"
       + "\n"
       + "\n"
@@ -517,26 +531,28 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder().build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
             CfCommandUnitConstants.Wrapup));
-    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
-                   TasStepPassThroughData.builder().shouldExecuteCustomFetch(true).build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.FetchCustomFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
-    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
-                   TasStepPassThroughData.builder().shouldExecuteGitStoreFetch(true).build()))
+    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
+                                                                .pathsFromScript(Arrays.asList("path"))
+                                                                .shouldExecuteCustomFetch(true)
+                                                                .build()))
+        .isEqualTo(asList(
+            CfCommandUnitConstants.FetchCustomFiles, CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
+                                                                .pathsFromScript(Arrays.asList("path"))
+                                                                .shouldExecuteGitStoreFetch(true)
+                                                                .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, K8sCommandUnitConstants.FetchFiles,
             CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
-    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
-                   TasStepPassThroughData.builder().shouldExecuteHarnessStoreFetch(true).build()))
-        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(TasStepPassThroughData.builder()
-                                                                .shouldExecuteCustomFetch(true)
-                                                                .shouldExecuteGitStoreFetch(true)
+                                                                .pathsFromScript(Arrays.asList("path"))
                                                                 .shouldExecuteHarnessStoreFetch(true)
                                                                 .build()))
         .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.FetchFiles,
-            CfCommandUnitConstants.FetchCustomFiles, K8sCommandUnitConstants.FetchFiles,
             CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+    assertThat(tasStepHelper.getCommandUnitsForTanzuCommand(
+                   TasStepPassThroughData.builder().pathsFromScript(Arrays.asList("path")).build()))
+        .isEqualTo(asList(CfCommandUnitConstants.FetchCommandScript, CfCommandUnitConstants.Pcfplugin,
+            CfCommandUnitConstants.Wrapup));
   }
 
   @Test
@@ -1575,7 +1591,7 @@ public class TasStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
-  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideHarnessStore() {
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideHarnessStoreWithOrg() {
     List<String> files = asList("org:/path/to/tas/manifests/script.sh");
     HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
     String extractionScript = "git clone something.git";
@@ -1595,7 +1611,7 @@ public class TasStepHelperTest extends CategoryTest {
                       .build())
             .build();
     doReturn(Optional.of(getFileStoreNode("path/to/tas/manifests/script.sh", "manifest.yaml", COMMAND_SCRIPT)))
-        .doReturn(Optional.of(getFolderStoreNode("/path/to/tas/manifests", "manifests")))
+        .doReturn(Optional.of(getFolderStoreNode("/path/to/tas/manifests/", "manifests")))
         .when(fileStoreService)
         .getWithChildrenByPath(any(), any(), any(), any(), eq(true));
     OptionalOutcome manifestsOutcome =
@@ -1608,7 +1624,7 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
     TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
-    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isEmpty();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isNull();
     assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
     assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
     assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
@@ -1622,25 +1638,192 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
 
-    assertCustomManifestConfig(customManifestValuesFetchRequest.getCustomManifestSource(), "test-account",
-        extractionScript, asList("folderPath/manifest.yaml"));
-    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(3);
+    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(1);
     assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource(),
-        "test-account", extractionScript, asList("folderPath/manifest.yaml"));
-    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(1).getCustomManifestSource(),
-        "test-account", null, asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"));
-    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(2).getCustomManifestSource(),
-        "test-account", null, asList("path/to/tas/manifest/autoscalar.yml"));
+        "test-account", extractionScript, asList("manifest.yml", "pcf-app1/vars.yml"));
   }
 
   @Test
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
-  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideInline() {
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideHarnessStoreWithAccountRepo() {
+    List<String> files = asList("account:/path/to/tas/manifests/script.sh");
+    HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
+    String extractionScript = "git clone something.git";
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
+        getTasManifestOutcome(0, getCustomRemoteStoreConfig(extractionScript, "folderPath/manifest.yaml"), "tas",
+            asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalar.yml"));
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TasCommandStepParameters.infoBuilder()
+                      .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
+                      .script(
+                          TasCommandScript.builder()
+                              .store(
+                                  StoreConfigWrapper.builder().spec(harnessStore).type(StoreConfigType.HARNESS).build())
+                              .build())
+                      .build())
+            .build();
+    doReturn(Optional.of(getFileStoreNode("path/to/tas/manifests/script.sh", "manifest.yaml", COMMAND_SCRIPT)))
+        .doReturn(Optional.of(getFolderStoreNode("/path/to/tas/manifests/", "manifests")))
+        .when(fileStoreService)
+        .getWithChildrenByPath(any(), any(), any(), any(), eq(true));
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    TaskChainResponse taskChainResponse =
+        tasStepHelper.startChainLinkForCommandStep(tasStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isNull();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
+    assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isTrue();
+    assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
+    CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
+
+    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(1);
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource(),
+        "test-account", extractionScript, asList("manifest.yml", "pcf-app1/vars.yml"));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideHarnessStore() {
+    List<String> files = asList("/path/to/tas/manifests/script.sh");
+    HarnessStore harnessStore = HarnessStore.builder().files(ParameterField.createValueField(files)).build();
+    String extractionScript = "git clone something.git";
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
+        getTasManifestOutcome(0, getCustomRemoteStoreConfig(extractionScript, "folderPath/manifest.yaml"), "tas",
+            asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalar.yml"));
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TasCommandStepParameters.infoBuilder()
+                      .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
+                      .script(
+                          TasCommandScript.builder()
+                              .store(
+                                  StoreConfigWrapper.builder().spec(harnessStore).type(StoreConfigType.HARNESS).build())
+                              .build())
+                      .build())
+            .build();
+    doReturn(Optional.of(getFileStoreNode("path/to/tas/manifests/script.sh", "manifest.yaml", COMMAND_SCRIPT)))
+        .doReturn(Optional.of(getFolderStoreNode("/path/to/tas/manifests/", "manifests")))
+        .when(fileStoreService)
+        .getWithChildrenByPath(any(), any(), any(), any(), eq(true));
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    TaskChainResponse taskChainResponse =
+        tasStepHelper.startChainLinkForCommandStep(tasStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isNull();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
+    assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isTrue();
+    assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(1)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(CustomManifestValuesFetchParams.class);
+    CustomManifestValuesFetchParams customManifestValuesFetchRequest = (CustomManifestValuesFetchParams) taskParameters;
+
+    assertThat(customManifestValuesFetchRequest.getFetchFilesList().size()).isEqualTo(1);
+    assertCustomManifestConfig(customManifestValuesFetchRequest.getFetchFilesList().get(0).getCustomManifestSource(),
+        "test-account", extractionScript, asList("manifest.yml", "pcf-app1/vars.yml"));
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideInlineWithFolder() {
     InlineStoreConfig inlineStoreConfig =
         InlineStoreConfig.builder().content(ParameterField.createValueField(COMMAND_SCRIPT)).build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
-        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/tasManifest.yml"), "git-connector"),
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest"), "git-connector"), "tas",
+            asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
+            "path/to/tas/manifest/autoscalar.yml"));
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url("SOME_URL").build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TasCommandStepParameters.infoBuilder()
+                      .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
+                      .script(TasCommandScript.builder()
+                                  .store(StoreConfigWrapper.builder()
+                                             .spec(inlineStoreConfig)
+                                             .type(StoreConfigType.INLINE)
+                                             .build())
+                                  .build())
+                      .build())
+            .build();
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+
+    TaskChainResponse taskChainResponse =
+        tasStepHelper.startChainLinkForCommandStep(tasStepExecutor, ambiance, stepElementParameters);
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
+    TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isNull();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript())
+        .isEqualTo(asList("/path/to/tas/manifest/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/path/to/tas/manifest");
+    assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isTrue();
+    assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
+    assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs()).isNotEmpty();
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(1);
+    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 2,
+        asList("/path/to/tas/manifest/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testCommandStepShouldPrepareTasCustomManifestWithTasManifestOverrideInlineWithoutFolder() {
+    InlineStoreConfig inlineStoreConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField(COMMAND_SCRIPT_WITHOUT_REPOROOT)).build();
+    Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("tas",
+        getTasManifestOutcome(0, getGitStore("master", asList("path/to/tas/manifest/manifest.yml"), "git-connector"),
             "tas", asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"),
             "path/to/tas/manifest/autoscalar.yml"));
     doReturn(
@@ -1675,26 +1858,24 @@ public class TasStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasStepPassThroughData.class);
     TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) taskChainResponse.getPassThroughData();
-    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isEmpty();
-    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_COMMENTS);
-    assertThat(tasStepPassThroughData.getPathsFromScript()).isEqualTo(asList("/manifest.yml", "/pcf-app1/vars.yml"));
-    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/");
+    assertThat(tasStepPassThroughData.getVarsManifestOutcomeList()).isNull();
+    assertThat(tasStepPassThroughData.getRawScript()).isEqualTo(COMMAND_SCRIPT_WITHOUT_REPOROOT_WITHOUT_COMMENTS);
+    assertThat(tasStepPassThroughData.getPathsFromScript())
+        .isEqualTo(asList("/pcf-app1/manifest.yml", "/pcf-app1/vars.yml"));
+    assertThat(tasStepPassThroughData.getRepoRoot()).isEqualTo("/path/to/tas/manifest/manifest.yml");
     assertThat(tasStepPassThroughData.getShouldExecuteGitStoreFetch()).isTrue();
     assertThat(tasStepPassThroughData.getShouldExecuteCustomFetch()).isFalse();
     assertThat(tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()).isFalse();
     assertThat(tasStepPassThroughData.getAutoScalerManifestOutcome()).isNull();
     ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
-    verify(kryoSerializer, times(4)).asDeflatedBytes(argumentCaptor.capture());
+    verify(kryoSerializer, times(2)).asDeflatedBytes(argumentCaptor.capture());
     TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
     assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
     assertThat(gitFetchRequest.getGitFetchFilesConfigs()).isNotEmpty();
-    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(3);
-    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(0), 2,
-        asList("path/to/tas/manifest/vars1.yml", "path/to/tas/manifest/vars2.yml"));
-    assertGitConfig(gitFetchRequest.getGitFetchFilesConfigs().get(1), 1, asList("path/to/tas/manifest/autoscalar.yml"));
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(1);
     assertGitConfig(
-        gitFetchRequest.getGitFetchFilesConfigs().get(2), 1, asList("path/to/tas/manifest/tasManifest.yml"));
+        gitFetchRequest.getGitFetchFilesConfigs().get(0), 2, asList("/pcf-app1/manifest.yml", "/pcf-app1/vars.yml"));
     assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
   }
 
