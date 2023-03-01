@@ -118,6 +118,7 @@ message GetFileRequest {
   io.harness.security.Principal principal = 8;
   CacheRequestParams cacheRequestParams = 9;
   EntityType entityType = 10;
+  bool getOnlyFileContent = 11;
 }
 
 message GetFileResponse {
