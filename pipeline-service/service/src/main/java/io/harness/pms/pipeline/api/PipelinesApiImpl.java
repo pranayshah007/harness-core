@@ -30,6 +30,7 @@ import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
@@ -132,7 +133,7 @@ public class PipelinesApiImpl implements PipelinesApi {
     try {
       PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline,
           false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
       pipelineEntity = pipelineGetResult.getPipelineEntity();
       validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {

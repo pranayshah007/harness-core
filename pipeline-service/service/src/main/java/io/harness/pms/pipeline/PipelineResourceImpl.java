@@ -44,6 +44,7 @@ import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -202,7 +203,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     try {
       PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId,
           pipelineId, false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
       pipelineEntity = pipelineGetResult.getPipelineEntity();
       validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {

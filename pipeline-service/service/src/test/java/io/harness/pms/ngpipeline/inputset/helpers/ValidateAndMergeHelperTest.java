@@ -94,19 +94,20 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   public void testGetInputSetTemplateResponseDTOWithNoRuntime() {
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    assertThatThrownBy(
-        () -> validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, pipelineId, null))
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false, false, false);
+    assertThatThrownBy(()
+                           -> validateAndMergeHelper.getInputSetTemplateResponseDTO(
+                               accountId, orgId, projectId, pipelineId, null, false))
         .isInstanceOf(InvalidRequestException.class);
     String pipelineYamlWithNoRuntime = getPipelineYamlWithNoRuntime();
     PipelineEntity pipelineEntityWithNoRuntime =
         PipelineEntity.builder().yaml(pipelineYamlWithNoRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithNoRuntime))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, "no_runtime", false);
+        .getAndValidatePipeline(accountId, orgId, projectId, "no_runtime", false, false, false);
     doReturn(false).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "no_runtime");
     InputSetTemplateResponseDTOPMS responseWithNoRuntime =
-        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "no_runtime", null);
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "no_runtime", null, false);
     assertThat(responseWithNoRuntime.getHasInputSets()).isFalse();
     assertThat(responseWithNoRuntime.getModules()).containsExactly("pms");
     assertThat(responseWithNoRuntime.getReplacedExpressions()).isNull();
@@ -122,10 +123,29 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithRuntime))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false);
+        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false, false, false);
     doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
     InputSetTemplateResponseDTOPMS responseWithNoRuntime =
-        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null);
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null, false);
+    assertThat(responseWithNoRuntime.getHasInputSets()).isTrue();
+    assertThat(responseWithNoRuntime.getModules()).containsExactly("pms");
+    assertThat(responseWithNoRuntime.getReplacedExpressions()).isNull();
+    assertThat(responseWithNoRuntime.getInputSetTemplateYaml()).isEqualTo(getRuntimeTemplate());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetInputSetTemplateResponseDTOWithRuntimeWithCaching() {
+    String pipelineYamlWithRuntime = getPipelineYamlWithRuntime();
+    PipelineEntity pipelineEntityWithRuntime =
+        PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
+    doReturn(Optional.of(pipelineEntityWithRuntime))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false, false, true);
+    doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
+    InputSetTemplateResponseDTOPMS responseWithNoRuntime =
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null, true);
     assertThat(responseWithNoRuntime.getHasInputSets()).isTrue();
     assertThat(responseWithNoRuntime.getModules()).containsExactly("pms");
     assertThat(responseWithNoRuntime.getReplacedExpressions()).isNull();
@@ -146,10 +166,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         PipelineEntity.builder().yaml(pipelineYamlWithRuntime).filters(Collections.singletonMap("pms", null)).build();
     doReturn(Optional.of(pipelineEntityWithRuntime))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false);
+        .getAndValidatePipeline(accountId, orgId, projectId, "has_runtime", false, false, false);
     doReturn(true).when(pmsInputSetService).checkForInputSetsForPipeline(accountId, orgId, projectId, "has_runtime");
     InputSetTemplateResponseDTOPMS response =
-        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null);
+        validateAndMergeHelper.getInputSetTemplateResponseDTO(accountId, orgId, projectId, "has_runtime", null, false);
     assertThat(response.getHasInputSets()).isTrue();
     assertThat(response.getModules()).containsExactly("pms");
     assertThat(response.getReplacedExpressions()).isNull();

@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.sdk.CacheState;
@@ -17,7 +18,9 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
-public class CacheStateMapper {
+public class GitXCacheMapper {
+  public static final String BOOLEAN_TRUE_VALUE = "true";
+
   public CacheResponseMetadataDTO.CacheStateEnum getCacheStateEnum(CacheState cacheState) {
     if (CacheState.STALE_CACHE.equals(cacheState)) {
       return CacheResponseMetadataDTO.CacheStateEnum.STALE_CACHE;
@@ -25,5 +28,13 @@ public class CacheStateMapper {
       return CacheResponseMetadataDTO.CacheStateEnum.VALID_CACHE;
     }
     return CacheResponseMetadataDTO.CacheStateEnum.UNKNOWN;
+  }
+
+  public boolean parseLoadFromCacheHeaderParam(String loadFromCache) {
+    if (isEmpty(loadFromCache)) {
+      return false;
+    } else {
+      return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
+    }
   }
 }

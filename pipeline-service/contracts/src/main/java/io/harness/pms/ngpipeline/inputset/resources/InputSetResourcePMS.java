@@ -379,7 +379,8 @@ public interface InputSetResourcePMS {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = "Pipeline identifier for which we need the Runtime Input Template.") String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, InputSetTemplateRequestDTO inputSetTemplateRequestDTO);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, InputSetTemplateRequestDTO inputSetTemplateRequestDTO,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("merge")

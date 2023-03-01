@@ -488,23 +488,25 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(InputSetTemplateResponseDTOPMS.builder().inputSetTemplateYaml(inputSetYaml).build())
         .when(validateAndMergeHelper)
         .getInputSetTemplateResponseDTO(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList());
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), false);
     ResponseDTO<InputSetTemplateResponseDTOPMS> inputSetTemplateResponseDTO =
         inputSetResourcePMSImpl.getTemplateFromPipeline(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, "false");
     assertEquals(inputSetTemplateResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(inputSetTemplateResponseDTO.getData().getInputSetTemplateYaml(), inputSetYaml);
 
     doReturn(InputSetTemplateResponseDTOPMS.builder().inputSetTemplateYaml(inputSetYaml).build())
         .when(validateAndMergeHelper)
-        .getInputSetTemplateResponseDTO(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages);
+        .getInputSetTemplateResponseDTO(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages, false);
     inputSetTemplateResponseDTO =
         inputSetResourcePMSImpl.getTemplateFromPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, null, InputSetTemplateRequestDTO.builder().stageIdentifiers(stages).build());
+            PIPELINE_IDENTIFIER, null, InputSetTemplateRequestDTO.builder().stageIdentifiers(stages).build(), "false");
     assertEquals(inputSetTemplateResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(inputSetTemplateResponseDTO.getData().getInputSetTemplateYaml(), inputSetYaml);
     verify(validateAndMergeHelper, times(1))
-        .getInputSetTemplateResponseDTO(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages);
+        .getInputSetTemplateResponseDTO(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, stages, false);
   }
 
   @Test
