@@ -1056,14 +1056,23 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void getCurrentReplicas() throws Exception {
     doReturn(K8sTestHelper.buildProcessResult(0, "3"))
         .doReturn(K8sTestHelper.buildProcessResult(1))
+        .doReturn(K8sTestHelper.buildProcessResult(0, ""))
         .when(spyK8sTaskHelperBase)
         .runK8sExecutableSilent(any(), any());
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isEqualTo(3);
 
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
+        .isNull();
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isNull();
   }
 

@@ -609,6 +609,7 @@ public class K8sTaskHelperBase {
   /**
    * This method arranges resources to be deleted in the reverse order of their creation.
    * To see order of create, please refer to KubernetesResourceComparer.kindOrder
+   *
    * @param resourceIdsToDelete
    */
   public List<KubernetesResourceId> arrangeResourceIdsInDeletionOrder(List<KubernetesResourceId> resourceIdsToDelete) {
@@ -1139,18 +1140,26 @@ public class K8sTaskHelperBase {
     return "";
   }
 
-  public Integer getCurrentReplicas(
-      Kubectl client, KubernetesResourceId resourceId, K8sDelegateTaskParams k8sDelegateTaskParams) throws Exception {
+  public Integer getCurrentReplicas(Kubectl client, KubernetesResourceId resourceId,
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     GetCommand getCommand = client.get()
                                 .resources(resourceId.kindNameRef())
                                 .namespace(resourceId.getNamespace())
                                 .output("jsonpath={$.spec.replicas}");
     ProcessResult result = runK8sExecutableSilent(k8sDelegateTaskParams, getCommand);
     if (result.getExitValue() == 0) {
-      return Integer.valueOf(result.outputUTF8());
-    } else {
-      return null;
+      if (result.hasOutput()) {
+        if (isNotEmpty(result.outputUTF8().trim())) {
+          return Integer.valueOf(result.outputUTF8());
+        }
+        executionLogCallback.saveExecutionLog(
+            format("Unable to retrieve current replicas count based on path $.spec.replicas. "
+                    + "Resource '%s' may not be supported for scaling.",
+                resourceId.getKind()),
+            WARN);
+      }
     }
+    return null;
   }
 
   @VisibleForTesting
