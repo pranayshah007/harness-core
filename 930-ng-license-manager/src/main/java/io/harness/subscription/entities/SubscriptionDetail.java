@@ -57,6 +57,19 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   @CreatedDate protected Long createdAt;
   @LastModifiedDate protected Long lastUpdatedAt;
 
+  //  public static List<MongoIndex> mongoIndexes() {
+  //    return ImmutableList.<MongoIndex>builder()
+  //        .add(CompoundMongoIndex.builder()
+  //                 .name("accountIdentifier_and_moduletype_subscriptionDetail_query_index")
+  //                 .fields(Arrays.asList(SubscriptionDetailKeys.accountIdentifier, SubscriptionDetailKeys.moduleType))
+  //                 .build())
+  //        .add(CompoundMongoIndex.builder()
+  //                 .name("subscriptionId_subscriptionDetail_query_index")
+  //                 .fields(Arrays.asList(SubscriptionDetailKeys.subscriptionId))
+  //                 .build())
+  //        .build();
+  //  }
+
   public boolean isIncomplete() {
     return INCOMPLETE.equalsIgnoreCase(status);
   }
