@@ -631,7 +631,8 @@ public enum FeatureName {
   GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
   FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE(
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
-      HarnessTeam.PIPELINE);
+      HarnessTeam.PIPELINE),
+  CD_TERRAFORM_CLOUD_CLI_NG("FF to enable terraform cloud backend cli in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

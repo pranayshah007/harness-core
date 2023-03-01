@@ -385,16 +385,18 @@ public class TerraformStepHelperTest extends CategoryTest {
         TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.GITLAB, gitStoreVarFiles);
     LinkedHashMap<String, TerraformVarFile> varFilesMap =
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
-    TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
-                                                  .configuration(TerraformStepConfigurationParameters.builder()
-                                                                     .type(TerraformStepConfigurationType.INLINE)
-                                                                     .spec(TerraformExecutionDataParameters.builder()
-                                                                               .configFiles(configFilesWrapper)
-                                                                               .varFiles(varFilesMap)
-                                                                               .build())
-                                                                     .build())
-                                                  .build();
+    TerraformApplyStepParameters parameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder()
+                                         .configFiles(configFilesWrapper)
+                                         .varFiles(varFilesMap)
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
+                                         .build())
+                               .build())
+            .build();
     TerraformTaskNGResponse response =
         TerraformTaskNGResponse.builder()
             .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",
@@ -1326,16 +1328,18 @@ public class TerraformStepHelperTest extends CategoryTest {
     LinkedHashMap<String, TerraformVarFile> varFilesMap =
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
 
-    TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
-                                                  .configuration(TerraformStepConfigurationParameters.builder()
-                                                                     .type(TerraformStepConfigurationType.INLINE)
-                                                                     .spec(TerraformExecutionDataParameters.builder()
-                                                                               .configFiles(configFilesWrapper)
-                                                                               .varFiles(varFilesMap)
-                                                                               .build())
-                                                                     .build())
-                                                  .build();
+    TerraformApplyStepParameters parameters =
+        TerraformApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INLINE)
+                               .spec(TerraformExecutionDataParameters.builder()
+                                         .configFiles(configFilesWrapper)
+                                         .varFiles(varFilesMap)
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
+                                         .build())
+                               .build())
+            .build();
     TerraformTaskNGResponse response =
         TerraformTaskNGResponse.builder()
             .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1",
