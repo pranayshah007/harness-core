@@ -96,7 +96,7 @@ public class FailDelegateTaskIteratorHelper {
     long now = clock.millis();
     if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getBroadcastRound() <= MAX_BROADCAST_ROUND
         && delegateTask.getNextBroadcast() < (now + TimeUnit.MINUTES.toMillis(1))) {
-      log.info("Marking following timed out tasks as failed [{}]", delegateTask.getUuid());
+      log.info("Marking non acquired task after multiple broadcast attempts, as failed [{}]", delegateTask.getUuid());
       endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
     }
   }
