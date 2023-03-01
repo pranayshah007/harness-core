@@ -3020,6 +3020,7 @@
 9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
 9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 9800010:io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig
+9800012:io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO

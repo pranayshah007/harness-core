@@ -945,6 +945,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateCo
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -2243,6 +2244,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
     kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
     kryo.register(AzureArtifactDelegateConfig.class, 9800010);
+    kryo.register(EcrArtifactDelegateConfig.class, 9800012);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
