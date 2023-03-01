@@ -10,16 +10,9 @@ package io.harness.engine.pms.audits.events;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.audit.ResourceTypeConstants;
-import io.harness.ng.core.ProjectScope;
-import io.harness.ng.core.Resource;
-import io.harness.ng.core.ResourceConstants;
-import io.harness.ng.core.ResourceScope;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -41,24 +34,6 @@ public class StageStartEvent extends NodeExecutionEvent {
     this.stageType = stageType;
     this.startTs = startTs;
     this.nodeExecutionId = nodeExecutionId;
-  }
-
-  @JsonIgnore
-  @Override
-  public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
-  }
-
-  @JsonIgnore
-  @Override
-  public Resource getResource() {
-    Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
-    return Resource.builder()
-        .identifier(stageIdentifier)
-        .type(ResourceTypeConstants.NODE_EXECUTION)
-        .labels(labels)
-        .build();
   }
 
   @JsonIgnore

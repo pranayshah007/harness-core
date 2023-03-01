@@ -25,9 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+/***
+ * Handler Methods in this class handle events for OutboxDb for NodeExecutionEvents during a pipeline execution
+ * NodeExecution Can be Stage/Step/Pipeline etc.
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -108,10 +111,11 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
         case NodeExecutionOutboxEvents.STAGE_END:
           return handleStageEndEvent(outboxEvent);
         default:
+          log.info(String.format("Current type of event is not supported for Audits!"));
           return false;
       }
-    } catch (IOException ex) {
-      log.error(String.format("Unexpected error occurred during handling of event", ex));
+    } catch (Exception ex) {
+      log.error(String.format("Unexpected error occurred during handling of OutboxEvent: {}", outboxEvent), ex);
       return false;
     }
   }

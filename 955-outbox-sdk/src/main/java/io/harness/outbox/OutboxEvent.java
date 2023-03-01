@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -48,6 +49,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "outboxEvents", noClassnameStored = true)
 @Document("outboxEvents")
 @TypeAlias("outboxEvents")
+@ToString
 public class OutboxEvent implements PersistentEntity {
   @Id @dev.morphia.annotations.Id String id;
 
