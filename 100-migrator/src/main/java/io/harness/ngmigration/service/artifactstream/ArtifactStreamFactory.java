@@ -52,11 +52,14 @@ public class ArtifactStreamFactory {
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {
-    ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(artifactStream.getArtifactStreamType());
+    return getArtifactStreamMapper(artifactStream.getArtifactStreamType());
+  }
+
+  public static ArtifactStreamMapper getArtifactStreamMapper(String streamType) {
+    ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(streamType);
     if (ARTIFACT_STREAM_MAPPER_MAP.containsKey(artifactStreamType)) {
       return ARTIFACT_STREAM_MAPPER_MAP.get(artifactStreamType);
     }
-    throw new InvalidRequestException(
-        String.format("Unsupported artifact stream of type %s", artifactStream.getArtifactStreamType()));
+    throw new InvalidRequestException(String.format("Unsupported artifact stream of type %s", streamType));
   }
 }

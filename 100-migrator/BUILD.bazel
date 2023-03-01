@@ -60,6 +60,7 @@ java_binary(
         "//980-commons:module",
         "//999-annotations:module",
         "//pipeline-service/contracts:module",
+        "//pipeline-service/modules/ng-triggers/contracts:module",
         "//pipeline-service/modules/orchestration-beans:module",
         "//pipeline-service/modules/orchestration-steps:module",
         "//pipeline-service/modules/orchestration-steps/contracts:module",

@@ -9,9 +9,12 @@ package io.harness.http;
 
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
+import io.harness.logging.LogCallback;
 
 import java.io.IOException;
 
 public interface HttpService {
   HttpInternalResponse executeUrl(HttpInternalConfig internalConfig) throws IOException;
+
+  HttpInternalResponse executeUrl(HttpInternalConfig internalConfig, LogCallback logCallback) throws IOException;
 }

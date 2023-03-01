@@ -230,7 +230,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     doReturn(overlayEntity)
         .when(inputSetService)
         .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
@@ -264,7 +264,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
@@ -299,7 +299,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());

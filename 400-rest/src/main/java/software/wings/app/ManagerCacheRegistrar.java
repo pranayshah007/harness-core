@@ -135,8 +135,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public Cache<String, Integer> waitEngineEventsCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache(WAIT_ENGINE_EVENT_CACHE, String.class, Integer.class,
-        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
-        true);
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Override
