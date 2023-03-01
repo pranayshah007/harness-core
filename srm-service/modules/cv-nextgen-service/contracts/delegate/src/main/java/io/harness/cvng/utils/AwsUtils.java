@@ -51,6 +51,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -95,13 +96,18 @@ public class AwsUtils {
     return awsRegions;
   }
 
-  public AwsAccessKeysPair getAwsCredentials(AwsConnectorDTO awsConnectorDTO) {
+  public AwsAccessKeys getAwsCredentials(AwsConnectorDTO awsConnectorDTO) {
     AwsInternalConfig awsInternalConfig = createAwsInternalConfig(awsConnectorDTO);
     AwsCredentialsProvider awsCredentialsProvider = getAwsCredentialsProvider(awsInternalConfig);
     AwsCredentials awsCredentials = awsCredentialsProvider.resolveCredentials();
-    return AwsAccessKeysPair.builder()
+    String sessionToken = null;
+    if (awsCredentials instanceof AwsSessionCredentials) {
+      sessionToken = ((AwsSessionCredentials) awsCredentials).sessionToken();
+    }
+    return AwsAccessKeys.builder()
         .accessKeyId(awsCredentials.accessKeyId())
         .secretAccessKey(awsCredentials.secretAccessKey())
+        .sessionToken(sessionToken)
         .build();
   }
   private AwsInternalConfig createAwsInternalConfig(AwsConnectorDTO awsConnectorDTO) {
@@ -207,8 +213,9 @@ public class AwsUtils {
 
   @Value
   @Builder
-  public static class AwsAccessKeysPair {
+  public static class AwsAccessKeys {
     String accessKeyId;
     String secretAccessKey;
+    String sessionToken;
   }
 }

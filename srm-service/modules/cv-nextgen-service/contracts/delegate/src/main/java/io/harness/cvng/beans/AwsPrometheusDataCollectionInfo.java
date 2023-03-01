@@ -8,7 +8,7 @@
 package io.harness.cvng.beans;
 
 import io.harness.cvng.utils.AwsUtils;
-import io.harness.cvng.utils.AwsUtils.AwsAccessKeysPair;
+import io.harness.cvng.utils.AwsUtils.AwsAccessKeys;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 
 import com.google.common.base.Preconditions;
@@ -64,7 +64,7 @@ public class AwsPrometheusDataCollectionInfo extends TimeSeriesDataCollectionInf
       }
     });
     Preconditions.checkState(queryList.size() == metricNameList.size());
-    AwsAccessKeysPair awsCredentials = AwsUtils.getAwsCredentials(awsConnectorDTO);
+    AwsAccessKeys awsCredentials = AwsUtils.getAwsCredentials(awsConnectorDTO);
     Map<String, Object> dslEnvVariables = new HashMap<>();
     dslEnvVariables.put("collectHostData", Boolean.toString(this.isCollectHostData()));
     dslEnvVariables.put("serviceName", AWS_SERVICE);
@@ -73,6 +73,7 @@ public class AwsPrometheusDataCollectionInfo extends TimeSeriesDataCollectionInf
     dslEnvVariables.put("groupName", groupName);
     dslEnvVariables.put("awsSecretKey", awsCredentials.getSecretAccessKey());
     dslEnvVariables.put("awsAccessKey", awsCredentials.getAccessKeyId());
+    dslEnvVariables.put("awsSecurityToken", awsCredentials.getSessionToken());
     dslEnvVariables.put("baseUrlForDataCollection", baseUrlForDataCollection);
     dslEnvVariables.put("queryList", queryList);
     dslEnvVariables.put("baseUrlsForHostCollection", baseUrlsForHostCollection);
