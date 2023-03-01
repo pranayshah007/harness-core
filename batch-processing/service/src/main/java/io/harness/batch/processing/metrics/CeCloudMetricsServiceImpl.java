@@ -21,8 +21,10 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,22 +78,20 @@ public class CeCloudMetricsServiceImpl implements CeCloudMetricsService {
   public double getTotalCloudCostCH(String accountId, String cloudProviderType, Instant start, Instant end) {
     BillingDataPipelineRecord billingDataPipelineRecord = billingDataPipelineRecordDao.getByAccountId(accountId);
     if (billingDataPipelineRecord != null) {
-      try {
-        String tableName = format("%s.%s", "ccm", "preAggregated");
-
-        ResultSet result = null;
-        String query = String.format(TOTAL_CLOUD_COST_QUERY_BQ, tableName, cloudProviderType, start, end);
-        result = bigQueryService.get().query(QueryJobConfiguration.newBuilder(query).build());
+      String tableName = format("%s.%s", "ccm", "preAggregated");
+      ResultSet resultSet;
+      String query = String.format(TOTAL_CLOUD_COST_QUERY_CH, tableName, cloudProviderType, start, end);
+      try (Connection connection = clickHouseService.getConnection(batchMainConfig.getClickHouseConfig());
+           Statement statement = connection.createStatement()) {
+        resultSet = statement.executeQuery(query);
         double totalCloudCost = 0;
-        for (FieldValueList row : result.iterateAll()) {
-          FieldValue value = row.get("COST");
-          if (!value.isNull()) {
-            totalCloudCost = value.getDoubleValue();
-          }
+        while (resultSet != null && resultSet.next()) {
+          totalCloudCost = resultSet.getDouble("COST");
         }
         return totalCloudCost;
+
       } catch (SQLException e) {
-        log.error("Failed to get total cloud cost from PreAggregateBilling. ", e);
+        log.error("Failed to check for data. {}", e);
         Thread.currentThread().interrupt();
         return 0;
       }
