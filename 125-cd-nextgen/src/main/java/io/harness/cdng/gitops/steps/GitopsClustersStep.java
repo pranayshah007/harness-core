@@ -23,11 +23,13 @@ import static java.util.function.Predicate.not;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Cluster;
@@ -220,6 +222,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       throw new InvalidRequestException("No GitOps Cluster is selected with the current environment configuration");
     }
 
+    updateEnvRefsWithEnvGroupScope(envClusterRefs, params.getEnvGroupRef());
+
     logEnvironments(envClusterRefs, logger);
 
     // clusterId -> IndividualClusterInternal list, 1 cluster can be referenced by multiple environments
@@ -232,6 +236,17 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     return filterClustersFromGitopsService(ambiance, individualClusters, logger);
+  }
+
+  private void updateEnvRefsWithEnvGroupScope(Collection<EnvClusterRefs> envClusterRefs, String envGroupRef) {
+    if (org.apache.commons.lang.StringUtils.isEmpty(envGroupRef)) {
+      return;
+    }
+    Scope envGroupScope = EnvironmentStepsUtils.getScopeForRef(envGroupRef);
+    for (EnvClusterRefs envClusterRef : envClusterRefs) {
+      String envRefWithScope = EnvironmentStepsUtils.getEnvironmentRef(envClusterRef.getEnvRef(), envGroupScope);
+      envClusterRef.setEnvRef(envRefWithScope);
+    }
   }
 
   @NotNull

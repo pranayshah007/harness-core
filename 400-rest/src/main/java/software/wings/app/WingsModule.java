@@ -255,6 +255,8 @@ import io.harness.service.EventService;
 import io.harness.service.EventServiceImpl;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
+import io.harness.service.impl.stackdriver.DelegateStackdriverLogServiceImpl;
+import io.harness.service.intfc.DelegateStackdriverLogService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -1077,6 +1079,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateService.class).to(DelegateServiceImpl.class);
     bind(DelegateScopeService.class).to(DelegateScopeServiceImpl.class);
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
+    bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);

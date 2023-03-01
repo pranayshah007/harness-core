@@ -31,6 +31,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.gitops.models.Cluster;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
@@ -256,6 +257,13 @@ public class EnvironmentInfraFilterHelper {
             new HashSet<>(allPossibleEnvs), deploymentType);
         // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
         environmentGroup.setEnvironments(ParameterField.createValueField(finalyamlV2List));
+      }
+    } else {
+      if (EnvironmentInfraFilterUtils.areFiltersPresent(environments)
+          || EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroup)) {
+        throw new InvalidRequestException(
+            "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.",
+            WingsException.USER);
       }
     }
   }

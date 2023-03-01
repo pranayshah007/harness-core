@@ -25,8 +25,6 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.event.EventsModule;
 import io.harness.event.handler.marketo.MarketoConfig;
@@ -48,15 +46,12 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
-import io.harness.service.impl.DelegateCacheImpl;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -94,7 +89,6 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Named;
 import dev.morphia.converters.TypeConverter;
 import graphql.GraphQL;
 import java.io.Closeable;
@@ -113,8 +107,6 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.redisson.api.RLocalCachedMap;
-import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -273,43 +265,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
             .build();
       }
     });
-    modules.add(new ProviderModule() {
-      @Provides
-      @Named("delegate")
-      @Singleton
-      public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
 
-      @Provides
-      @Named("delegate_group")
-      @Singleton
-      public RLocalCachedMap<String, DelegateGroup> getDelegateGroupCache(DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Named("delegates_from_group")
-      @Singleton
-      public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
-          DelegateRedissonCacheManager cacheManager) {
-        return mock(RLocalCachedMap.class);
-      }
-
-      @Provides
-      @Singleton
-      @Named("enableRedisForDelegateService")
-      boolean isEnableRedisForDelegateService() {
-        return false;
-      }
-
-      @Provides
-      @Singleton
-      @Named("redissonClient")
-      RedissonClient redissonClient() {
-        return mock(RedissonClient.class);
-      }
-    });
     modules.add(new AbstractCfModule() {
       @Override
       public CfClientConfig cfClientConfig() {
@@ -351,7 +307,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       @Override
       protected void configure() {
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
-        bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });
 

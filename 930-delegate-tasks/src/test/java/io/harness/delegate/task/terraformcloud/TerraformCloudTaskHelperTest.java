@@ -26,7 +26,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 import io.harness.terraformcloud.TerraformCloudApiException;
@@ -37,6 +39,7 @@ import io.harness.terraformcloud.model.ApplyData;
 import io.harness.terraformcloud.model.Attributes;
 import io.harness.terraformcloud.model.OrganizationData;
 import io.harness.terraformcloud.model.PlanData;
+import io.harness.terraformcloud.model.PolicyCheckData;
 import io.harness.terraformcloud.model.Relationship;
 import io.harness.terraformcloud.model.ResourceLinkage;
 import io.harness.terraformcloud.model.RunData;
@@ -48,6 +51,7 @@ import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,8 +67,8 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformCloudTaskHelperTest {
-  private static String URL = "url";
-  private static String TOKEN = "token";
+  private static final String URL = "url";
+  private static final String TOKEN = "token";
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private TerraformCloudClient terraformCloudClient;
@@ -280,7 +284,6 @@ public class TerraformCloudTaskHelperTest {
     doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
     doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).getRun(any(), any(), any());
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
-    doReturn(getApplyResponse()).when(terraformCloudClient).getApply(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
     RunData runData =
@@ -290,7 +293,6 @@ public class TerraformCloudTaskHelperTest {
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
     verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
     verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
-    verify(terraformCloudClient, times(1)).getApply(any(), any(), any());
   }
 
   @Test
@@ -327,6 +329,47 @@ public class TerraformCloudTaskHelperTest {
     verify(terraformCloudClient, times(1)).applyRun(any(), any(), any(), any());
 
     assertThat(output).isEqualTo("{ \"x1\" : { \"value\" : {\"x1\":\"y1\"}, \"sensitive\" : false } }");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testStreamSentinelPoliciesFailed() throws IOException {
+    List<PolicyCheckData> policyCheckData = getPolicyCheckData(true);
+    doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+
+    taskHelper.streamSentinelPolicies("url", "token", policyCheckData, logCallback);
+
+    verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
+    verify(logCallback, times(1))
+        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testStreamSentinelPoliciesPassed() throws IOException {
+    List<PolicyCheckData> policyCheckData = getPolicyCheckData(false);
+    doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+
+    taskHelper.streamSentinelPolicies("url", "token", policyCheckData, logCallback);
+
+    verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
+    verify(logCallback, times(1))
+        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testOverrideSentinelPolicies() throws IOException {
+    List<PolicyCheckData> policyCheckData = getPolicyCheckData(false);
+
+    taskHelper.overridePolicy("url", "token", policyCheckData, logCallback);
+
+    verify(terraformCloudClient, times(1)).overridePolicyChecks("url", "token", "id1");
+    verify(terraformCloudClient, times(1)).overridePolicyChecks("url", "token", "id2");
+    verify(terraformCloudClient, times(0)).overridePolicyChecks("url", "token", "id3");
   }
 
   private TerraformCloudResponse getCreateRunResponse(RunStatus status) {
@@ -368,5 +411,32 @@ public class TerraformCloudTaskHelperTest {
         .data(Collections.singletonList(stateVersionOutputData))
         .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
         .build();
+  }
+
+  private List<PolicyCheckData> getPolicyCheckData(boolean failed) {
+    List<PolicyCheckData> list = new ArrayList<>();
+    PolicyCheckData policyCheckData = new PolicyCheckData();
+    policyCheckData.setAttributes(PolicyCheckData.Attributes.builder()
+                                      .status(failed ? "hard_failed" : "passed")
+                                      .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                      .build());
+    policyCheckData.setId("id1");
+    list.add(policyCheckData);
+    PolicyCheckData policyCheckData2 = new PolicyCheckData();
+    policyCheckData2.setAttributes(PolicyCheckData.Attributes.builder()
+                                       .status("passed")
+                                       .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                       .build());
+    policyCheckData2.setId("id2");
+    list.add(policyCheckData2);
+    PolicyCheckData policyCheckData3 = new PolicyCheckData();
+    policyCheckData3.setAttributes(
+        PolicyCheckData.Attributes.builder()
+            .status("passed")
+            .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(false).build())
+            .build());
+    policyCheckData3.setId("id3");
+    list.add(policyCheckData3);
+    return list;
   }
 }

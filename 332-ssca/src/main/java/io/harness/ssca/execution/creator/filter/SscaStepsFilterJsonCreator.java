@@ -10,6 +10,7 @@ package io.harness.ssca.execution.creator.filter;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filters.GenericStepPMSFilterJsonCreatorV2;
+import io.harness.ssca.beans.SscaConstants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -18,6 +19,6 @@ import java.util.Set;
 public class SscaStepsFilterJsonCreator extends GenericStepPMSFilterJsonCreatorV2 {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet();
+    return Sets.newHashSet(SscaConstants.SSCA_ORCHESTRATION_STEP);
   }
 }

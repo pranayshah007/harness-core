@@ -112,7 +112,7 @@ public abstract class StepMapper {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
     templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(template, context.getWorkflow().getAccountId()));
+        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId()));
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));

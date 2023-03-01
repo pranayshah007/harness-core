@@ -170,7 +170,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   @Override
   public Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly,
-      boolean loadFromFallbackBranch) {
+      boolean loadFromFallbackBranch, boolean loadFromCache) {
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, notDeleted);
     Query query = new Query(criteria);
@@ -184,10 +184,11 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       String branch = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
       if (loadFromFallbackBranch) {
-        savedEntity =
-            fetchRemoteEntityWithFallBackBranch(accountId, orgIdentifier, projectIdentifier, savedEntity, branch);
+        savedEntity = fetchRemoteEntityWithFallBackBranch(
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
       } else {
-        savedEntity = fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch);
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
       }
     }
 
@@ -195,9 +196,10 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   }
 
   private InputSetEntity fetchRemoteEntityWithFallBackBranch(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, InputSetEntity savedEntity, String branch) {
+      String projectIdentifier, InputSetEntity savedEntity, String branch, boolean loadFromCache) {
     try {
-      savedEntity = fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch);
+      savedEntity =
+          fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       log.info(String.format("Failed to fetch input-set from default branch [%s]", branch));
       String fallBackBranch = savedEntity.getFallBackBranch();
@@ -206,8 +208,8 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
         GitAwareContextHelper.updateGitEntityContextWithBranch(fallBackBranch);
-        savedEntity =
-            fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch);
+        savedEntity = fetchRemoteEntity(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
       } else {
         throw ex;
       }
@@ -215,8 +217,8 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     return savedEntity;
   }
 
-  InputSetEntity fetchRemoteEntity(
-      String accountId, String orgIdentifier, String projectIdentifier, InputSetEntity savedEntity, String branch) {
+  InputSetEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      InputSetEntity savedEntity, String branch, boolean loadFromCache) {
     // fetch yaml from git
     return (InputSetEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
         Scope.of(accountId, orgIdentifier, projectIdentifier),
@@ -226,6 +228,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
             .entityType(EntityType.INPUT_SETS)
+            .loadFromCache(loadFromCache)
             .build(),
         Collections.emptyMap());
   }

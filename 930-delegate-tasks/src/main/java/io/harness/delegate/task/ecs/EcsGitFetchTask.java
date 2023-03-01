@@ -102,8 +102,8 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
 
       FetchFilesResult ecsTaskDefinitionFetchFilesResult = null;
       if (ecsTaskDefinitionGitFetchFileConfig != null) {
-        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(
-            ecsTaskDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+        ecsTaskDefinitionFetchFilesResult = fetchManifestFile(ecsTaskDefinitionGitFetchFileConfig, executionLogCallback,
+            ecsGitFetchRequest.getAccountId(), ecsGitFetchRequest.isCloseLogStream());
       }
       // Fetch Ecs Service Definition
       EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig =
@@ -111,16 +111,16 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
 
       FetchFilesResult ecsServiceDefinitionFetchFilesResult = null;
       if (ecsServiceDefinitionGitFetchFileConfig != null) {
-        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(
-            ecsServiceDefinitionGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+        ecsServiceDefinitionFetchFilesResult = fetchManifestFile(ecsServiceDefinitionGitFetchFileConfig,
+            executionLogCallback, ecsGitFetchRequest.getAccountId(), ecsGitFetchRequest.isCloseLogStream());
       }
 
       List<FetchFilesResult> ecsScalableTargetFetchFilesResults = new ArrayList<>();
       if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs())) {
         for (EcsGitFetchFileConfig ecsScalableTargetGitFetchFileConfig :
             ecsGitFetchRequest.getEcsScalableTargetGitFetchFileConfigs()) {
-          FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(
-              ecsScalableTargetGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          FetchFilesResult ecsScalableTargetFetchFilesResult = fetchManifestFile(ecsScalableTargetGitFetchFileConfig,
+              executionLogCallback, ecsGitFetchRequest.getAccountId(), ecsGitFetchRequest.isCloseLogStream());
           ecsScalableTargetFetchFilesResults.add(ecsScalableTargetFetchFilesResult);
         }
       }
@@ -129,8 +129,8 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       if (CollectionUtils.isNotEmpty(ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs())) {
         for (EcsGitFetchFileConfig ecsScalingPolicyGitFetchFileConfig :
             ecsGitFetchRequest.getEcsScalingPolicyGitFetchFileConfigs()) {
-          FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(
-              ecsScalingPolicyGitFetchFileConfig, executionLogCallback, ecsGitFetchRequest.getAccountId());
+          FetchFilesResult ecsScalingPolicyFetchFilesResult = fetchManifestFile(ecsScalingPolicyGitFetchFileConfig,
+              executionLogCallback, ecsGitFetchRequest.getAccountId(), ecsGitFetchRequest.isCloseLogStream());
           ecsScalingPolicyFetchFilesResults.add(ecsScalingPolicyFetchFilesResult);
         }
       }
@@ -157,7 +157,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchManifestFile(EcsGitFetchFileConfig ecsGitFetchFileConfig,
-      LogCallback executionLogCallback, String accountId) throws Exception {
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
     executionLogCallback.saveExecutionLog(
         color(format("Fetching %s config file with identifier: %s", ecsGitFetchFileConfig.getManifestType(),
                   ecsGitFetchFileConfig.getIdentifier()),
@@ -187,7 +187,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
         String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
-        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
+        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
         try {
           filesResult =
               gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);

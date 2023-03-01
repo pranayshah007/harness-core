@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -20,14 +21,20 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.AMIRegistrySpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.AmiArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +74,49 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
                   .filters(ParameterField.createValueField(filters))
                   .version(ParameterField.createValueField("<+input>"))
                   .build())
+        .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.AMI;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    String connectorRef = getConnectorRef(migratedEntities, artifactStream);
+    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    String region = "us-east-1";
+    List<AMITag> tags = Collections.emptyList();
+    List<AMIFilter> filters = Collections.emptyList();
+    String version = PLEASE_FIX_ME;
+
+    if (artifactStream != null) {
+      AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;
+      region = amiArtifactStream.getRegion();
+      if (isNotEmpty(amiArtifactStream.getTags())) {
+        tags = amiArtifactStream.getTags()
+                   .stream()
+                   .map(t -> AMITag.builder().name(t.getKey()).value(t.getValue()).build())
+                   .collect(Collectors.toList());
+      }
+
+      if (isNotEmpty(amiArtifactStream.getFilters())) {
+        filters = amiArtifactStream.getFilters()
+                      .stream()
+                      .map(f -> AMIFilter.builder().name(f.getKey()).value(f.getValue()).build())
+                      .collect(Collectors.toList());
+      }
+    }
+
+    return AMIRegistrySpec.builder()
+        .connectorRef(connectorRef)
+        .eventConditions(eventConditions)
+        .region(region)
+        .tags(tags)
+        .filters(filters)
+        .version(version)
         .build();
   }
 }

@@ -309,7 +309,7 @@ public class ExecutionHelper {
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
             .setIsDebug(isDebug);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }

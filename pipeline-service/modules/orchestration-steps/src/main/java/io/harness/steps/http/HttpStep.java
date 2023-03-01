@@ -9,25 +9,32 @@ package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.common.NGTimeConversionHelper;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
@@ -39,7 +46,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
@@ -50,6 +59,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +74,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private StepHelper stepHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -79,6 +90,9 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     int socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds("10m");
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.openStream(HttpTaskNG.COMMAND_UNIT);
+
     if (stepParameters.getTimeout() != null && stepParameters.getTimeout().getValue() != null) {
       socketTimeoutMillis =
           (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
@@ -113,51 +127,72 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
             .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
             .build();
 
-    return TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-        TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
+            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
+        null, null, TaskSelectorYaml.toTaskSelector(httpStepParameters.getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
-    NGLogCallback logCallback = getNGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
+    try {
+      NGLogCallback logCallback =
+          getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
 
-    StepResponseBuilder responseBuilder = StepResponse.builder();
-    HttpStepResponse httpStepResponse = responseSupplier.get();
+      StepResponseBuilder responseBuilder = StepResponse.builder();
+      HttpStepResponse httpStepResponse = responseSupplier.get();
 
-    HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+      HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
 
-    logCallback.saveExecutionLog(
-        String.format("Successfully executed the http request %s .", httpStepParameters.url.getValue()));
+      logCallback.saveExecutionLog(
+          String.format("Successfully executed the http request %s .", httpStepParameters.url.getValue()));
 
-    Map<String, Object> outputVariables =
-        httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
-    Map<String, String> outputVariablesEvaluated = evaluateOutputVariables(outputVariables, httpStepResponse);
+      Map<String, Object> outputVariables =
+          httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
+      Map<String, String> outputVariablesEvaluated = evaluateOutputVariables(outputVariables, httpStepResponse);
 
-    logCallback.saveExecutionLog("Validating the assertions...");
-    boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
-    HttpOutcome executionData = HttpOutcome.builder()
-                                    .httpUrl(httpStepParameters.getUrl().getValue())
-                                    .httpMethod(httpStepParameters.getMethod().getValue())
-                                    .httpResponseCode(httpStepResponse.getHttpResponseCode())
-                                    .httpResponseBody(httpStepResponse.getHttpResponseBody())
-                                    .status(httpStepResponse.getCommandExecutionStatus())
-                                    .errorMsg(httpStepResponse.getErrorMessage())
-                                    .outputVariables(outputVariablesEvaluated)
-                                    .build();
+      logCallback.saveExecutionLog("Validating the assertions...");
+      boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
+      HttpOutcome executionData = HttpOutcome.builder()
+                                      .httpUrl(httpStepParameters.getUrl().getValue())
+                                      .httpMethod(httpStepParameters.getMethod().getValue())
+                                      .httpResponseCode(httpStepResponse.getHttpResponseCode())
+                                      .httpResponseBody(httpStepResponse.getHttpResponseBody())
+                                      .status(httpStepResponse.getCommandExecutionStatus())
+                                      .errorMsg(httpStepResponse.getErrorMessage())
+                                      .outputVariables(outputVariablesEvaluated)
+                                      .build();
 
-    if (!assertionSuccessful) {
-      responseBuilder.status(Status.FAILED);
-      responseBuilder.failureInfo(FailureInfo.newBuilder().setErrorMessage("assertion failed").build());
-      logCallback.saveExecutionLog("Assertions failed", LogLevel.INFO, CommandExecutionStatus.FAILURE);
-    } else {
-      responseBuilder.status(Status.SUCCEEDED);
-      logCallback.saveExecutionLog("Assertions passed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      if (!assertionSuccessful) {
+        responseBuilder.status(Status.FAILED);
+        responseBuilder.failureInfo(FailureInfo.newBuilder().setErrorMessage("assertion failed").build());
+        logCallback.saveExecutionLog("Assertions failed", LogLevel.INFO, CommandExecutionStatus.FAILURE);
+      } else {
+        responseBuilder.status(Status.SUCCEEDED);
+        logCallback.saveExecutionLog("Assertions passed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      }
+      responseBuilder.stepOutcome(
+          StepOutcome.builder().name(YAMLFieldNameConstants.OUTPUT).outcome(executionData).build());
+
+      return responseBuilder.build();
+    } finally {
+      closeLogStream(ambiance);
     }
-    responseBuilder.stepOutcome(
-        StepOutcome.builder().name(YAMLFieldNameConstants.OUTPUT).outcome(executionData).build());
+  }
 
-    return responseBuilder.build();
+  private void closeLogStream(Ambiance ambiance) {
+    try {
+      Thread.sleep(500, 0);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("Close Log Stream was interrupted", e);
+    } finally {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+    }
   }
 
   public static boolean validateAssertions(HttpStepResponse httpStepResponse, HttpStepParameters stepParameters) {
@@ -204,5 +239,11 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       });
     }
     return outputVariablesEvaluated;
+  }
+
+  @Override
+  public void handleAbort(
+      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+    closeLogStream(ambiance);
   }
 }

@@ -21,6 +21,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
@@ -121,4 +123,12 @@ public interface PipelineServiceClient {
       @Query(GitSyncApiConstants.NEW_BRANCH) Boolean isNewBranch,
       @Query(GitSyncApiConstants.CREATE_PR_KEY) Boolean createPr,
       @Query(GitSyncApiConstants.BASE_BRANCH) String baseBranch);
+
+  @POST(PIPELINE_INPUT_SET_ENDPOINT + "template/")
+  Call<ResponseDTO<InputSetTemplateResponseDTOPMS>> getTemplateFromPipeline(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Body InputSetTemplateRequestDTO inputSetTemplateRequestDTO);
 }

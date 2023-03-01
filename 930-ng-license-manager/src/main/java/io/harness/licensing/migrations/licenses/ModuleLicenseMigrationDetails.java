@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -31,7 +31,6 @@ public class ModuleLicenseMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, ModuleLicenseMigration.class))
         .add(Pair.of(2, LocalDevAdminAccountCDLicenseMigration.class))
-        .add(Pair.of(3, ModuleLicenseToSubscriptionMigration.class))
         .build();
   }
 }
