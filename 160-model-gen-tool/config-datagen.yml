@@ -102,6 +102,16 @@ mongo:
     mongoTrustStorePassword:
   aliasDBName: harness
 
+dms-mongo:
+  uri: mongodb://localhost:27017/dms-harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: dms-harness
+
 watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
 delegateMetadataUrl: file:///local-storage/wingsdelegates/delegatelocal.txt
 apiUrl: "https://localhost:9090"
