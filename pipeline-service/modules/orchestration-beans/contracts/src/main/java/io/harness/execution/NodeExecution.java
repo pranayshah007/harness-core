@@ -27,6 +27,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -49,6 +50,7 @@ import com.google.protobuf.ByteString;
 import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -330,5 +332,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
       return skipGraphType;
     }
     return planNode == null ? null : planNode.getSkipGraphType();
+  }
+
+  public List<AdviserObtainment> getAdvisorObtainmentsFromNode() {
+    return planNode == null ? Collections.emptyList() : planNode.getAdviserObtainments();
   }
 }
