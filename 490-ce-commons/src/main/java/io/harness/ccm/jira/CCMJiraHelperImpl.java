@@ -19,11 +19,10 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
-import io.harness.encryption.FieldWithPlainTextOrSecretValueHelper;
+import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraClient;
-import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueNG;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
@@ -97,7 +96,7 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
     JiraConnectorDTO jiraConnectorDTO = (JiraConnectorDTO) connectorConfigDTO;
     BaseNGAccess baseNGAccess = getBaseNGAccess(jiraConnectorRef);
     if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
-      NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(jiraConnectorRef.getAccountIdentifier(),
+      return NGRestUtils.getResponse(secretManagerClient.getEncryptionDetails(jiraConnectorRef.getAccountIdentifier(),
           NGAccessWithEncryptionConsumer.builder()
               .ngAccess(baseNGAccess)
               .decryptableEntity(jiraConnectorDTO.getAuth().getCredentials())
@@ -109,12 +108,22 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
 
   private JiraConnectorDTO decryptJiraConnectorDTO(
       JiraConnectorDTO dto, List<EncryptedDataDetail> encryptionDetails, String accountIdentifier) {
-    return (JiraConnectorDTO) NGRestUtils.getResponse(
-        secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
-                                                        .decryptableEntity(dto)
-                                                        .encryptedDataDetailList(encryptionDetails)
-                                                        .build(),
-            accountIdentifier));
+    if (!isNull(dto.getAuth()) && !isNull(dto.getAuth().getCredentials())) {
+      NGRestUtils.getResponse(
+          secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
+                                                          .decryptableEntity(dto.getAuth().getCredentials())
+                                                          .encryptedDataDetailList(encryptionDetails)
+                                                          .build(),
+              accountIdentifier));
+      return dto;
+    } else {
+      return (JiraConnectorDTO) NGRestUtils.getResponse(
+          secretManagerClient.decryptEncryptedDetails(DecryptableEntityWithEncryptionConsumers.builder()
+                                                          .decryptableEntity(dto)
+                                                          .encryptedDataDetailList(encryptionDetails)
+                                                          .build(),
+              accountIdentifier));
+    }
   }
 
   private BaseNGAccess getBaseNGAccess(IdentifierRef ref) {
@@ -126,13 +135,6 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
   }
 
   protected JiraClient getNGJiraClient(JiraConnectorDTO dto) {
-    JiraInternalConfig jiraNGConfig =
-        JiraInternalConfig.builder()
-            .jiraUrl(dto.getJiraUrl())
-            .username(FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
-                dto.getUsername(), dto.getUsernameRef()))
-            .password(String.valueOf(dto.getPasswordRef().getDecryptedValue()))
-            .build();
-    return new JiraClient(jiraNGConfig);
+    return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(dto));
   }
 }

@@ -17,7 +17,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @OwnedBy(CDC)
 @Schema(name = "JiraAuthCredentials", description = "This contains details of credentials for Jira Authentication")
-@JsonSubTypes({ @JsonSubTypes.Type(value = JiraUserNamePasswordDTO.class, name = JiraConstants.USERNAME_PASSWORD) })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = JiraUserNamePasswordDTO.class, name = JiraConstants.USERNAME_PASSWORD)
+  , @JsonSubTypes.Type(value = JiraPATDTO.class, name = JiraConstants.PAT)
+})
 public interface JiraAuthCredentialsDTO extends DecryptableEntity {
   void validate();
 }
