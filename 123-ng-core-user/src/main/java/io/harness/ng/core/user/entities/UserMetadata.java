@@ -59,6 +59,7 @@ public class UserMetadata implements PersistentEntity {
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean locked;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean disabled;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean externallyManaged;
+  @Getter(value = AccessLevel.PRIVATE) Boolean twoFactorAuthenticationEnabled;
 
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
@@ -74,5 +75,9 @@ public class UserMetadata implements PersistentEntity {
 
   public boolean isExternallyManaged() {
     return Boolean.TRUE.equals(externallyManaged);
+  }
+
+  public boolean isTwoFactorAuthenticationEnabled() {
+    return Boolean.TRUE.equals(twoFactorAuthenticationEnabled);
   }
 }

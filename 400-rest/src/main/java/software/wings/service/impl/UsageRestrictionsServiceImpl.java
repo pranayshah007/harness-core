@@ -659,7 +659,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
                                     .addFilter("appId", Operator.IN, appMap.keySet().toArray(new String[0]))
                                     .addFieldsIncluded("_id", "name", "environmentType")
                                     .build(),
-            false, null);
+            false, null, true);
 
     Map<String, String> envMap =
         envPageResponse.getResponse().stream().collect(Collectors.toMap(Base::getUuid, Environment::getName));

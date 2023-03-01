@@ -18,7 +18,7 @@ import io.swagger.annotations.ApiModel;
               CustomArtifactSummary.class, AcrArtifactSummary.class, ArtifactoryGenericArtifactSummary.class,
               EcrArtifactSummary.class, GcrArtifactSummary.class, S3ArtifactSummary.class, JenkinsArtifactSummary.class,
               GithubPackagesArtifactSummary.class, AzureArtifactsSummary.class, AMIArtifactSummary.class,
-              GarArtifactSummary.class})
+              GarArtifactSummary.class, BambooArtifactSummary.class})
 public interface ArtifactSummary {
   String getType();
   String getDisplayName();

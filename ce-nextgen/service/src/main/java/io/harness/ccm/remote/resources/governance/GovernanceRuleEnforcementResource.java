@@ -25,6 +25,7 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -128,7 +129,7 @@ public class GovernanceRuleEnforcementResource {
   public static final String SCHEDULER_IS_DEBUG = "true";
   public static final String CODE_MESSAGE_BODY = "code: {}, message: {}, body: {}";
   private final RuleEnforcementService ruleEnforcementService;
-  // private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final TelemetryReporter telemetryReporter;
   private final CENextGenConfiguration configuration;
   @Inject SchedulerClient schedulerClient;
@@ -139,9 +140,9 @@ public class GovernanceRuleEnforcementResource {
   @Inject
   public GovernanceRuleEnforcementResource(RuleEnforcementService ruleEnforcementService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService, CENextGenConfiguration configuration) {
+      OutboxService outboxService, CENextGenConfiguration configuration, CCMRbacHelper rbacHelper) {
     this.ruleEnforcementService = ruleEnforcementService;
-    // this.rbacHelper rbacHelper
+    this.rbacHelper = rbacHelper;
     this.telemetryReporter = telemetryReporter;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -163,7 +164,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Rule Enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // to do rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -268,7 +269,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("enforcementID") @Parameter(
           required = true, description = "Unique identifier for the rule enforcement") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleEnforcementDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementDeletePermission(accountId, null, null);
 
     if (configuration.getGovernanceConfig().isUseDkron()) {
       log.info("Use dkron is enabled in config");
@@ -310,7 +311,7 @@ public class GovernanceRuleEnforcementResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule enforcement object")
       @Valid CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    //  rbacHelper checkRuleEnforcementEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementEditPermission(accountId, null, null);
     if (createRuleEnforcementDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -363,7 +364,7 @@ public class GovernanceRuleEnforcementResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing  Rule Enforcement  object") @Valid
       @NotNull CreateRuleEnforcementDTO createRuleEnforcementDTO) {
-    // rbacHelper checkRuleEnforcementViewPermission(accountId, null, null)
+    rbacHelper.checkRuleEnforcementViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ruleEnforcementService.list(accountId));
   }
   // TO DO list rule information

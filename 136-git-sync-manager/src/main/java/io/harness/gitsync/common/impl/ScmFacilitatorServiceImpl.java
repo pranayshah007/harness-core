@@ -32,6 +32,7 @@ import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
@@ -98,6 +99,7 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.utils.ConnectorUtils;
 import io.harness.utils.FilePathUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
@@ -354,27 +356,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .build()),
             scmConnector);
 
-    handleIfFailureForGetFileOperation(scope.getAccountIdentifier(), gitFileResponse, scmConnector,
+    processGetFileOperationResponse(scope.getAccountIdentifier(), gitFileResponse, scmConnector,
         scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
-        scmGetFileByBranchRequestDTO.getFilePath());
-
-    try {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(scope.getAccountIdentifier())
-                                          .completeFilePath(scmGetFileByBranchRequestDTO.getFilePath())
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-                                          .ref(gitFileResponse.getBranch())
-                                          .isDefaultBranch(isEmpty(scmGetFileByBranchRequestDTO.getBranchName()))
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(gitFileResponse.getContent())
-              .commitId(gitFileResponse.getCommitId())
-              .objectId(gitFileResponse.getObjectId())
-              .build());
-    } catch (Exception exception) {
-      handleUpsertCacheFailure(exception);
-    }
+        scmGetFileByBranchRequestDTO.getFilePath(), scmGetFileByBranchRequestDTO.getBranchName());
 
     return getScmGetFileResponseDTO(gitFileResponse);
   }
@@ -745,6 +729,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(
       ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
+
+    if (isEmpty(gitRepository.getOrg())
+        && GitConnectionType.ACCOUNT.equals(ConnectorUtils.getConnectionType(scmConnector))) {
+      return emptyIfNull(response.getReposList())
+          .stream()
+          .map(repository
+              -> GitRepositoryResponseDTO.builder()
+                     .name(repository.getNamespace() + "/" + repository.getName())
+                     .build())
+          .collect(Collectors.toList());
+    }
+
     if (isNotEmpty(gitRepository.getName())) {
       return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
@@ -986,8 +982,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       ScmGetBatchFileRequestIdentifier identifier =
           ScmGetBatchFileRequestIdentifier.fromGetBatchFileRequestIdentifier(requestIdentifier);
       try {
-        handleIfFailureForGetFileOperation(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
-            gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath());
+        processGetFileOperationResponse(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
+            gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath(),
+            gitFileRequest.getBranch());
         finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));
@@ -997,8 +994,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmGetBatchFilesResponseDTO.builder().scmGetFileResponseV2DTOMap(finalResponseMap).build();
   }
 
-  private void handleIfFailureForGetFileOperation(String accountIdentifier, GitFileResponse gitFileResponse,
-      ScmConnector scmConnector, String connectorRef, String repoName, String filepath) {
+  private void processGetFileOperationResponse(String accountIdentifier, GitFileResponse gitFileResponse,
+      ScmConnector scmConnector, String connectorRef, String repoName, String filepath, String requestBranch) {
     if (ScmApiErrorHandlingHelper.isFailureResponse(gitFileResponse.getStatusCode(), scmConnector.getConnectorType())) {
       try {
         ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
@@ -1015,6 +1012,24 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         }
         throw wingsException;
       }
+    }
+
+    try {
+      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                          .accountIdentifier(accountIdentifier)
+                                          .completeFilePath(filepath)
+                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                          .repoName(repoName)
+                                          .ref(gitFileResponse.getBranch())
+                                          .isDefaultBranch(isEmpty(requestBranch))
+                                          .build(),
+          GitFileCacheObject.builder()
+              .fileContent(gitFileResponse.getContent())
+              .commitId(gitFileResponse.getCommitId())
+              .objectId(gitFileResponse.getObjectId())
+              .build());
+    } catch (Exception exception) {
+      handleUpsertCacheFailure(exception);
     }
   }
 

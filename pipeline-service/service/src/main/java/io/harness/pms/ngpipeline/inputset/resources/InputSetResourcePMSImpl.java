@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.resources;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -92,6 +93,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final ValidateAndMergeHelper validateAndMergeHelper;
   private final InputSetsApiUtils inputSetsApiUtils;
   private final PMSExecutionService executionService;
+  private final boolean allowDifferentReposForPipelineAndInputSets;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
@@ -260,9 +262,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;
     try {
-      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
-          mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
+      mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch,
+          pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
     } catch (InvalidInputSetException e) {
       InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
       return ResponseDTO.newResponse(
@@ -361,9 +363,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo) {
+    if (allowDifferentReposForPipelineAndInputSets
+        && inputSetsApiUtils.isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(accountId)
+        && EmptyPredicate.isEmpty(pipelineBranch)) {
+      throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
+    }
     return ResponseDTO.newResponse(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService,
         pipelineService, validateAndMergeHelper, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        inputSetIdentifier, pipelineBranch, pipelineRepoID));
+        inputSetIdentifier, pipelineBranch, pipelineRepoID, allowDifferentReposForPipelineAndInputSets));
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)

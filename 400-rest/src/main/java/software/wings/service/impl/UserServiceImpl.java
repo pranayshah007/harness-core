@@ -2040,6 +2040,8 @@ public class UserServiceImpl implements UserService {
       user = anUser().build();
       user.setEmail(userInvite.getEmail().trim().toLowerCase());
       user.setName(userInvite.getName().trim());
+      user.setGivenName(userInvite.getGivenName());
+      user.setFamilyName(userInvite.getFamilyName());
       user.setRoles(new ArrayList<>());
       user.setEmailVerified(true);
       user.setAppId(GLOBAL_APP_ID);
@@ -2545,6 +2547,9 @@ public class UserServiceImpl implements UserService {
 
   private void updatePasswordAndPostSteps(User existingUser, char[] password) {
     User user = resetUserPassword(existingUser, password);
+    log.info("UPDATE_USER_LOCKOUTINFO: Clearing and re-setting lockout info for user {} post password reset",
+        user.getUuid());
+    loginSettingsService.updateUserLockoutInfo(user, accountService.get(user.getDefaultAccountId()), 0);
     sendPasswordChangeEmail(user);
     user.getAccounts().forEach(account
         -> auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Type.RESET_PASSWORD));
@@ -2582,9 +2587,10 @@ public class UserServiceImpl implements UserService {
           Account defaultAccount = authenticationUtils.getDefaultAccount(user);
           log.info("User {} default account Id is {}", user.getEmail(), defaultAccount.getUuid());
           if (defaultAccount.getUuid().equals(accountId) && !user.isTwoFactorAuthenticationEnabled()) {
-            user = enableTwoFactorAuthenticationForUser(user, defaultAccount);
-            log.info("Sending 2FA reset email to user {}", user.getEmail());
-            totpAuthHandler.sendTwoFactorAuthenticationResetEmail(user);
+            User updatedUser = enableTwoFactorAuthenticationForUser(user, defaultAccount);
+            log.info("Sending 2FA reset email to user {}", updatedUser.getEmail());
+            totpAuthHandler.sendTwoFactorAuthenticationResetEmail(updatedUser);
+            publishUserEvent(user, updatedUser);
           }
         }
       }
@@ -2600,7 +2606,9 @@ public class UserServiceImpl implements UserService {
     TwoFactorAuthenticationSettings twoFactorAuthenticationSettings =
         totpAuthHandler.createTwoFactorAuthenticationSettings(user, account);
     twoFactorAuthenticationSettings.setTwoFactorAuthenticationEnabled(true);
-    return updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
+    User updatedUser = updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
+    publishUserEvent(user, updatedUser);
+    return updatedUser;
   }
 
   /**
@@ -2740,7 +2748,9 @@ public class UserServiceImpl implements UserService {
     updateOperations.set(UserKeys.twoFactorAuthenticationEnabled, settings.isTwoFactorAuthenticationEnabled());
     addTwoFactorAuthenticationOperation(settings.getMechanism(), updateOperations);
     addTotpSecretKeyOperation(settings.getTotpSecretKey(), updateOperations);
-    return this.applyUpdateOperations(user, updateOperations);
+    User updatedUser = this.applyUpdateOperations(user, updateOperations);
+    publishUserEvent(user, updatedUser);
+    return updatedUser;
   }
 
   private void addTwoFactorAuthenticationOperation(
@@ -3092,7 +3102,8 @@ public class UserServiceImpl implements UserService {
        * Dont send unnecessary events. Right now we only send events when username has changed or user is
        * created/deleted or user locked status has changed.
        */
-      if (updatedUser.getName().equals(oldUser.getName()) && updatedUser.isUserLocked() == oldUser.isUserLocked()) {
+      if (updatedUser.getName().equals(oldUser.getName()) && updatedUser.isUserLocked() == oldUser.isUserLocked()
+          && updatedUser.isTwoFactorAuthenticationEnabled() == oldUser.isTwoFactorAuthenticationEnabled()) {
         return;
       }
     }
@@ -3102,6 +3113,9 @@ public class UserServiceImpl implements UserService {
     userDTOBuilder.setName(updatedUser != null ? updatedUser.getName() : oldUser.getName());
     userDTOBuilder.setEmail(updatedUser != null ? updatedUser.getEmail() : oldUser.getEmail());
     userDTOBuilder.setLocked(updatedUser != null ? updatedUser.isUserLocked() : oldUser.isUserLocked());
+    userDTOBuilder.setIsTwoFactorAuthenticationEnabled(updatedUser != null
+            ? updatedUser.isTwoFactorAuthenticationEnabled()
+            : oldUser.isTwoFactorAuthenticationEnabled());
     userDTO = userDTOBuilder.build();
 
     try {

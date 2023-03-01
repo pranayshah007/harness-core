@@ -113,9 +113,17 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
     }
 
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
-    List<String> varFilePaths =
-        terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(taskParameters.getVarFileInfos(),
-            scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory, commitIdToFetchedFilesMap);
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
+        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli());
+
+    if (taskParameters.isTerraformCloudCli() && !varFilePaths.isEmpty()) {
+      logCallback.saveExecutionLog(format("Var files are moved in %s having a suffix: .auto.tfvars", scriptDirectory),
+          INFO, CommandExecutionStatus.RUNNING);
+      for (String varFilePath : varFilePaths) {
+        TerraformHelperUtils.copytfCloudVarFilesToScriptDirectory(varFilePath, scriptDirectory);
+      }
+    }
 
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
     String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
@@ -153,6 +161,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
+              .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
               .build();
 
       TerraformStepResponse terraformStepResponse =

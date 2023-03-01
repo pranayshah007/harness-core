@@ -604,6 +604,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
+            .oldRetry(false)
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .startTs(500L)
@@ -630,6 +631,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .module("CD")
+            .oldRetry(true)
             .startTs(200L)
             .build();
     String nodeUuid2 = generateUuid();
@@ -653,6 +655,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .identifier("stage2")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+            .oldRetry(false)
             .startTs(400L)
             .module("CD")
             .build();
@@ -678,6 +681,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .startTs(500L)
             .identifier("stage3")
+            .oldRetry(false)
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
             .module("CD")
             .build();

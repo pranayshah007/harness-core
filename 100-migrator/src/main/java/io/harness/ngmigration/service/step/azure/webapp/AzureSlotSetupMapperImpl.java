@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.azure.webapp;
 
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -31,6 +32,11 @@ public class AzureSlotSetupMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.AZURE_WEBAPP;
   }
 
   @Override

@@ -10,10 +10,12 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.aws.lambda.AwsLambdaSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -31,5 +33,9 @@ public class AwsLambdaDeployStepParameters extends AwsLambdaDeployBaseStepInfo i
   @Builder(builderMethodName = "infoBuilder")
   public AwsLambdaDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
+  }
+  public List<String> getCommandUnits() {
+    return Arrays.asList(AwsLambdaCommandUnitConstants.fetchManifests.toString(),
+        AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), AwsLambdaCommandUnitConstants.deploy.toString());
   }
 }

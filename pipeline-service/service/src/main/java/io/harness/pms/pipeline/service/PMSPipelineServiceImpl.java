@@ -61,7 +61,7 @@ import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
-import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
@@ -79,6 +79,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -162,8 +163,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
       createdEntity = pipelineCRUDResult.getPipelineEntity();
       try {
-        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
-            createdEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+        String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+        pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
+            GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+            Action.CRUD);
       } catch (Exception e) {
         log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
       }
@@ -333,6 +336,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         optionalPipelineEntity =
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
+        // TODO: currently we are setting up the same in PipelineStageFilterCreator. Check if can call this only once
+        PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier, null, null);
         optionalPipelineEntity = pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier,
             !deleted, getMetadataOnly, loadFromFallbackBranch, loadFromCache);
       }
@@ -352,6 +357,18 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
     return optionalPipelineEntity;
+  }
+
+  @Override
+  public PipelineEntity getPipelineMetadata(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly) {
+    Optional<PipelineEntity> pipelineEntityOnlyMetadata =
+        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnly, false, false);
+    if (pipelineEntityOnlyMetadata.isEmpty()) {
+      throw new InvalidRequestException(
+          PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
+    }
+    return pipelineEntityOnlyMetadata.get();
   }
 
   PipelineGetResult getPipelineAndAsyncValidationId(String accountId, String orgIdentifier, String projectIdentifier,
@@ -400,8 +417,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
     try {
-      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(
-          updatedEntity, GitAwareContextHelper.getBranchInRequest(), governanceMetadata, Action.CRUD);
+      String branchInRequest = GitAwareContextHelper.getBranchInRequest();
+      pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
+          GitAwareContextHelper.DEFAULT.equals(branchInRequest) ? "" : branchInRequest, governanceMetadata,
+          Action.CRUD);
     } catch (Exception e) {
       log.error("Unable to save validation event for Pipeline: " + e.getMessage(), e);
     }
@@ -812,11 +831,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
       pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForInlineToRemote(
           accountIdentifier, orgIdentifier, projectIdentifier, moveConfigDTO);
-      metadataUpdate = metadataUpdate.set(PipelineMetadataV2.PipelineMetadataV2Keys.branch, moveConfigDTO.getBranch());
+      metadataUpdate = metadataUpdate.set(PipelineMetadataV2Keys.branch, moveConfigDTO.getBranch());
 
     } else if (REMOTE_TO_INLINE.equals(moveConfigDTO.getMoveConfigOperationType())) {
       pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForRemoteToInline();
-      metadataUpdate = metadataUpdate.unset(PipelineMetadataV2.PipelineMetadataV2Keys.entityGitDetails);
+      metadataUpdate = metadataUpdate.unset(PipelineMetadataV2Keys.entityGitDetails);
     } else {
       log.error("Invalid move config operation provided: {}", moveConfigDTO.getMoveConfigOperationType().name());
       throw new InvalidRequestException(String.format(

@@ -213,14 +213,14 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      // fetch yaml from git
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+            accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       } else {
-        savedEntity = fetchRemoteEntity(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
       }
     }
     return Optional.of(savedEntity);

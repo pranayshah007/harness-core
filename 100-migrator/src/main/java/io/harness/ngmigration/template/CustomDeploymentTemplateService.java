@@ -9,6 +9,7 @@ package io.harness.ngmigration.template;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT;
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
 import io.harness.cdng.creator.plan.customDeployment.CustomDeploymentInstanceAttributes;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
@@ -80,8 +81,7 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
     }
 
     List<CustomDeploymentInstanceAttributes> attributes = new ArrayList<>();
-    attributes.add(
-        CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath("__PLEASE_FIX_ME__").build());
+    attributes.add(CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath(PLEASE_FIX_ME).build());
     if (isNotEmpty(customDeploymentTypeTemplate.getHostAttributes())) {
       customDeploymentTypeTemplate.getHostAttributes().forEach(
           (k, v) -> { attributes.add(CustomDeploymentInstanceAttributes.builder().name(k).jsonPath(v).build()); });

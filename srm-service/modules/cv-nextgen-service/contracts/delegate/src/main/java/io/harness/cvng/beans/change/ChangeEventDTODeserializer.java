@@ -7,6 +7,7 @@
 
 package io.harness.cvng.beans.change;
 
+import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOKeys;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,39 +37,34 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
   public ChangeEventDTO deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
       throws IOException {
     JsonNode tree = jsonParser.readValueAsTree();
-    ChangeSourceType type = JsonUtils.treeToValue(tree.get(ChangeEventDTO.Fields.type), ChangeSourceType.class);
+    ChangeSourceType type = JsonUtils.treeToValue(tree.get(ChangeEventDTOKeys.type), ChangeSourceType.class);
 
-    String id = tree.has(ChangeEventDTO.Fields.id) ? tree.get(ChangeEventDTO.Fields.id).asText() : null;
-    String accountId =
-        tree.has(ChangeEventDTO.Fields.accountId) ? tree.get(ChangeEventDTO.Fields.accountId).asText() : null;
+    String id = tree.has(ChangeEventDTOKeys.id) ? tree.get(ChangeEventDTOKeys.id).asText() : null;
+    String accountId = tree.has(ChangeEventDTOKeys.accountId) ? tree.get(ChangeEventDTOKeys.accountId).asText() : null;
     String orgIdentifier =
-        tree.has(ChangeEventDTO.Fields.orgIdentifier) ? tree.get(ChangeEventDTO.Fields.orgIdentifier).asText() : null;
-    String projectIdentifier = tree.has(ChangeEventDTO.Fields.projectIdentifier)
-        ? tree.get(ChangeEventDTO.Fields.projectIdentifier).asText()
-        : null;
+        tree.has(ChangeEventDTOKeys.orgIdentifier) ? tree.get(ChangeEventDTOKeys.orgIdentifier).asText() : null;
+    String projectIdentifier =
+        tree.has(ChangeEventDTOKeys.projectIdentifier) ? tree.get(ChangeEventDTOKeys.projectIdentifier).asText() : null;
 
-    String serviceIdentifier = tree.has(ChangeEventDTO.Fields.serviceIdentifier)
-        ? tree.get(ChangeEventDTO.Fields.serviceIdentifier).asText()
-        : null;
+    String serviceIdentifier =
+        tree.has(ChangeEventDTOKeys.serviceIdentifier) ? tree.get(ChangeEventDTOKeys.serviceIdentifier).asText() : null;
     String serviceName =
-        tree.has(ChangeEventDTO.Fields.serviceName) ? tree.get(ChangeEventDTO.Fields.serviceName).asText() : null;
+        tree.has(ChangeEventDTOKeys.serviceName) ? tree.get(ChangeEventDTOKeys.serviceName).asText() : null;
 
     String envIdentifier =
-        tree.has(ChangeEventDTO.Fields.envIdentifier) ? tree.get(ChangeEventDTO.Fields.envIdentifier).asText() : null;
-    String envName = tree.has(ChangeEventDTO.Fields.environmentName)
-        ? tree.get(ChangeEventDTO.Fields.environmentName).asText()
+        tree.has(ChangeEventDTOKeys.envIdentifier) ? tree.get(ChangeEventDTOKeys.envIdentifier).asText() : null;
+    String envName =
+        tree.has(ChangeEventDTOKeys.environmentName) ? tree.get(ChangeEventDTOKeys.environmentName).asText() : null;
+
+    String name = tree.has(ChangeEventDTOKeys.name) ? tree.get(ChangeEventDTOKeys.name).asText() : null;
+    String monitoredServiceIdentifier = tree.has(ChangeEventDTOKeys.monitoredServiceIdentifier)
+        ? tree.get(ChangeEventDTOKeys.monitoredServiceIdentifier).asText()
+        : null;
+    String changeSourceIdentifier = tree.has(ChangeEventDTOKeys.changeSourceIdentifier)
+        ? tree.get(ChangeEventDTOKeys.changeSourceIdentifier).asText()
         : null;
 
-    String name = tree.has(ChangeEventDTO.Fields.name) ? tree.get(ChangeEventDTO.Fields.name).asText() : null;
-    String monitoredServiceIdentifier = tree.has(ChangeEventDTO.Fields.monitoredServiceIdentifier)
-        ? tree.get(ChangeEventDTO.Fields.monitoredServiceIdentifier).asText()
-        : null;
-    String changeSourceIdentifier = tree.has(ChangeEventDTO.Fields.changeSourceIdentifier)
-        ? tree.get(ChangeEventDTO.Fields.changeSourceIdentifier).asText()
-        : null;
-
-    Long eventTime =
-        tree.has(ChangeEventDTO.Fields.eventTime) ? tree.get(ChangeEventDTO.Fields.eventTime).asLong() : null;
+    Long eventTime = tree.has(ChangeEventDTOKeys.eventTime) ? tree.get(ChangeEventDTOKeys.eventTime).asLong() : null;
 
     ChangeEventDTO changeEventDTO = ChangeEventDTO.builder()
                                         .id(id)
@@ -86,7 +82,7 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
                                         .type(type)
                                         .build();
 
-    JsonNode metadata = tree.get(ChangeEventDTO.Fields.metadata);
+    JsonNode metadata = tree.get(ChangeEventDTOKeys.metadata);
     if (metadata == null) {
       throw new BadRequestException("Spec is not serializable.");
     }

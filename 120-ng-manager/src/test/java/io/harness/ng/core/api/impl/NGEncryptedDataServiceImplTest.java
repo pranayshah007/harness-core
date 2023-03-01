@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -40,12 +41,14 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
+import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefParsedData;
@@ -810,5 +813,68 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     boolean result = ngEncryptedDataService.validateSecretRef(
         accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, secretRefPath);
     assertThat(result).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testGetEncryptionDetails_secretsWithEncryptionTypeLocal() {
+    DecryptableEntity decryptableEntity =
+        VaultConnectorDTO.builder()
+            .basePath("")
+            .vaultUrl("https://vaultqa.harness.io")
+            .secretEngineName("secret")
+            .authToken(SecretRefData.builder().identifier(identifier).scope(Scope.ACCOUNT).build())
+            .build();
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(accountIdentifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build();
+
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .encryptionType(LOCAL)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                           .build();
+    when(encryptedDataDao.get(accountIdentifier, null, null, identifier)).thenReturn(encryptedDataDTO);
+    ngEncryptedDataService.getEncryptionDetails(ngAccess, decryptableEntity);
+    verify(ngConnectorSecretManagerService, times(1)).getLocalConfigDTO(accountIdentifier);
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testGetEncryptionDetails_secretsWithEncryptionTypeOtherThanLocal() {
+    DecryptableEntity decryptableEntity =
+        VaultConnectorDTO.builder()
+            .basePath("")
+            .vaultUrl("https://vaultqa.harness.io")
+            .secretEngineName("secret")
+            .authToken(SecretRefData.builder().identifier(identifier).scope(Scope.ACCOUNT).build())
+            .build();
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(accountIdentifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build();
+
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .encryptionType(EncryptionType.GCP_KMS)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                           .build();
+    when(encryptedDataDao.get(accountIdentifier, null, null, identifier)).thenReturn(encryptedDataDTO);
+    ngEncryptedDataService.getEncryptionDetails(ngAccess, decryptableEntity);
+    verify(ngConnectorSecretManagerService, times(0)).getLocalConfigDTO(accountIdentifier);
+    verify(ngConnectorSecretManagerService, times(1))
+        .getUsingIdentifier(accountIdentifier, null, null, encryptedDataDTO.getSecretManagerIdentifier(), false);
   }
 }

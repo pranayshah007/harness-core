@@ -136,7 +136,6 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
@@ -203,7 +202,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject ServiceDependencyService serviceDependencyService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
-  @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
 
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject CVNGLogService cvngLogService;
@@ -341,8 +339,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testGetMonitoredServiceChangeDetails_inRange() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
+    serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
     List<MonitoredServiceChangeDetailSLO> monitoredServiceChangeDetailSLOS =
         monitoredServiceService.getMonitoredServiceChangeDetails(
             builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), null, null);
@@ -358,8 +356,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   public void testGetMonitoredServiceChangeDetails_notInRange() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjectiveService.create(
-        builderFactory.getProjectParams(), builderFactory.getServiceLevelObjectiveDTOBuilder().build());
+    serviceLevelObjectiveV2Service.create(
+        builderFactory.getProjectParams(), builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build());
     List<MonitoredServiceChangeDetailSLO> monitoredServiceChangeDetailSLOS =
         monitoredServiceService.getMonitoredServiceChangeDetails(
             builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), 1640058000000l, 1641058000000l);

@@ -127,7 +127,9 @@ public class TerraformStepDataGenerator {
                            .type(TerraformStepConfigurationType.INLINE)
                            .spec(TerraformExecutionDataParameters.builder()
                                      .configFiles(configFilesWrapper)
+                                     .workspace(ParameterField.createValueField("test-workspace"))
                                      .varFiles(varFilesMap)
+                                     .isTerraformCloudCli(ParameterField.createValueField(false))
                                      .build())
                            .build())
         .build();
@@ -206,6 +208,8 @@ public class TerraformStepDataGenerator {
                            .type(TerraformStepConfigurationType.INLINE)
                            .spec(TerraformExecutionDataParameters.builder()
                                      .configFiles(configFilesWrapper)
+                                     .workspace(ParameterField.createValueField("test-workspace"))
+                                     .isTerraformCloudCli(ParameterField.createValueField(false))
                                      .varFiles(varFilesMap)
                                      .build())
                            .build())
@@ -364,12 +368,14 @@ public class TerraformStepDataGenerator {
     return TerraformPlanStepParameters.infoBuilder()
         .provisionerIdentifier(ParameterField.createValueField("id"))
         .configuration(TerraformPlanExecutionDataParameters.builder()
+                           .workspace(ParameterField.createValueField("test-workspace"))
                            .configFiles(configFilesWrapper)
                            .command(TerraformPlanCommand.APPLY)
                            .secretManagerRef(ParameterField.createValueField("secret"))
                            .varFiles(varFilesMap)
                            .environmentVariables(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
                            .backendConfig(terraformBackendConfig)
+                           .isTerraformCloudCli(ParameterField.createValueField(false))
                            .build())
         .build();
   }

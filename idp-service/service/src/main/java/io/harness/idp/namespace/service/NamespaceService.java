@@ -7,14 +7,14 @@
 
 package io.harness.idp.namespace.service;
 
-import io.harness.idp.namespace.beans.dto.Namespace;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
+import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import java.util.Optional;
 
 public interface NamespaceService {
-  Optional<Namespace> getNamespaceForAccountIdentifier(String accountIdentifier);
+  NamespaceInfo getNamespaceForAccountIdentifier(String accountIdentifier);
 
-  Optional<Namespace> getAccountIdForNamespace(String namespace);
+  NamespaceInfo getAccountIdForNamespace(String namespace);
   NamespaceEntity saveAccountIdNamespace(String accountIdentifier);
 }

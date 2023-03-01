@@ -27,6 +27,7 @@ import static io.harness.provision.TerraformConstants.ACTIVITY_ID_BASED_TF_BASE_
 import static io.harness.provision.TerraformConstants.PLAN_HUMAN_READABLE_TXT_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_BACKEND_CONFIGS_FILE_NAME;
+import static io.harness.provision.TerraformConstants.TERRAFORM_CLOUD_VARIABLES_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME;
@@ -90,6 +91,7 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.terraform.TerraformClient;
 import io.harness.terraform.TerraformHelperUtils;
 import io.harness.terraform.TerraformStepResponse;
+import io.harness.terraform.TerraformStepResponse.TerraformStepResponseBuilder;
 import io.harness.terraform.request.TerraformApplyCommandRequest;
 import io.harness.terraform.request.TerraformDestroyCommandRequest;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
@@ -204,29 +206,38 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     terraformClient.init(terraformInitCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
-    String workspace = terraformExecuteStepRequest.getWorkspace();
-    if (isNotEmpty(workspace)) {
-      selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
-    }
+    TerraformStepResponse terraformPlanStepResponse = null;
 
-    if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
-      TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-          TerraformRefreshCommandRequest.builder()
-              .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-              .varParams(terraformExecuteStepRequest.getVarParams())
-              .targets(terraformExecuteStepRequest.getTargets())
-              .uiLogs(terraformExecuteStepRequest.getUiLogs())
-              .build();
-      terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
-    }
+    if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+      String workspace = terraformExecuteStepRequest.getWorkspace();
+      if (isNotEmpty(workspace)) {
+        selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
+      }
 
-    // Execute TF plan
-    TerraformStepResponse terraformPlanStepResponse = executeTerraformPlanCommand(terraformExecuteStepRequest);
+      if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
+              && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+        TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+            TerraformRefreshCommandRequest.builder()
+                .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+                .varParams(terraformExecuteStepRequest.getVarParams())
+                .targets(terraformExecuteStepRequest.getTargets())
+                .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                .build();
+        terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      }
+
+      // Execute TF plan
+      terraformPlanStepResponse = executeTerraformPlanCommand(terraformExecuteStepRequest);
+    }
 
     TerraformApplyCommandRequest terraformApplyCommandRequest =
-        TerraformApplyCommandRequest.builder().planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME).build();
+        TerraformApplyCommandRequest.builder()
+            .planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME)
+            .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
+            .targets(terraformExecuteStepRequest.getTargets())
+            .build();
+
     terraformClient.apply(terraformApplyCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
@@ -234,10 +245,12 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
         terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
-    return TerraformStepResponse.builder()
-        .cliResponse(response)
-        .terraformPlanSummary(terraformPlanStepResponse.getTerraformPlanSummary())
-        .build();
+    TerraformStepResponseBuilder applyResponse = TerraformStepResponse.builder();
+    if (terraformPlanStepResponse != null) {
+      applyResponse.terraformPlanSummary(terraformPlanStepResponse.getTerraformPlanSummary());
+    }
+    applyResponse.cliResponse(response);
+    return applyResponse.build();
   }
 
   private void selectWorkspaceIfExist(TerraformExecuteStepRequest terraformExecuteStepRequest, String workspace)
@@ -288,36 +301,37 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
               .targets(terraformExecuteStepRequest.getTargets())
               .destroySet(terraformExecuteStepRequest.isTfPlanDestroy())
               .uiLogs(terraformExecuteStepRequest.getUiLogs())
+              .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
               .build();
       response = terraformClient.plan(terraformPlanCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
           terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
           terraformExecuteStepRequest.getLogCallback());
 
-      if (terraformExecuteStepRequest.isSaveTerraformJson()) {
+      if (terraformExecuteStepRequest.isSaveTerraformJson() && !terraformExecuteStepRequest.isTerraformCloudCli()) {
         response =
             executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
                 terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
                 terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
                 terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
                 terraformExecuteStepRequest.isUseOptimizedTfPlan());
-      }
 
-      // Generating Human Readable Representation of the tfplan
-      if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()) {
-        executeTerraformHumanReadableShowCommandWithTfClient(
-            terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-            terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
-            terraformExecuteStepRequest.isUseOptimizedTfPlan());
-      }
+        // Generating Human Readable Representation of the tfplan
+        if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()) {
+          executeTerraformHumanReadableShowCommandWithTfClient(
+              terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+              terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+              terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+              terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
+              terraformExecuteStepRequest.isUseOptimizedTfPlan());
+        }
 
-      terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
-          terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
-          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-          terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
-          terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
-                                                        : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+        terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
+            terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
+            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
+            terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
+                                                          : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+      }
     }
     return TerraformStepResponse.builder().cliResponse(response).terraformPlanSummary(terraformPlanSummary).build();
   }
@@ -338,21 +352,23 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     terraformClient.init(terraformInitCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
-    String workspace = terraformExecuteStepRequest.getWorkspace();
-    if (isNotEmpty(workspace)) {
-      selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
-    }
+    if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+      String workspace = terraformExecuteStepRequest.getWorkspace();
+      if (isNotEmpty(workspace)) {
+        selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
+      }
 
-    // Plan step always performs a refresh
-    TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-        TerraformRefreshCommandRequest.builder()
-            .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-            .varParams(terraformExecuteStepRequest.getVarParams())
-            .targets(terraformExecuteStepRequest.getTargets())
-            .uiLogs(terraformExecuteStepRequest.getUiLogs())
-            .build();
-    terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-        terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      // Plan step always performs a refresh
+      TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+          TerraformRefreshCommandRequest.builder()
+              .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+              .varParams(terraformExecuteStepRequest.getVarParams())
+              .targets(terraformExecuteStepRequest.getTargets())
+              .uiLogs(terraformExecuteStepRequest.getUiLogs())
+              .build();
+      terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+    }
 
     return executeTerraformPlanCommand(terraformExecuteStepRequest);
   }
@@ -375,22 +391,24 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     terraformClient.init(terraformInitCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
-    String workspace = terraformExecuteStepRequest.getWorkspace();
-    if (isNotEmpty(workspace)) {
-      selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
-    }
+    if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+      String workspace = terraformExecuteStepRequest.getWorkspace();
+      if (isNotEmpty(workspace)) {
+        selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
+      }
 
-    if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
-      TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-          TerraformRefreshCommandRequest.builder()
-              .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-              .varParams(terraformExecuteStepRequest.getVarParams())
-              .targets(terraformExecuteStepRequest.getTargets())
-              .uiLogs(terraformExecuteStepRequest.getUiLogs())
-              .build();
-      terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
+              && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+        TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+            TerraformRefreshCommandRequest.builder()
+                .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+                .varParams(terraformExecuteStepRequest.getVarParams())
+                .targets(terraformExecuteStepRequest.getTargets())
+                .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                .build();
+        terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      }
     }
 
     if (terraformExecuteStepRequest.isRunPlanOnly()) {
@@ -433,6 +451,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 .varParams(terraformExecuteStepRequest.getVarParams())
                 .uiLogs(terraformExecuteStepRequest.getUiLogs())
                 .targets(terraformExecuteStepRequest.getTargets())
+                .isTerraformCloudCli(terraformExecuteStepRequest.isTerraformCloudCli())
                 .build();
         response = terraformClient.destroy(terraformDestroyCommandRequest,
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
@@ -895,14 +914,20 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   public List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo,
       String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,
-      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
+      Map<String, String> commitIdToFetchedFilesMap, boolean isTerraformCloudCli) throws IOException {
     Path tfVarDirAbsPath = Paths.get(tfVarDirectory).toAbsolutePath();
     if (EmptyPredicate.isNotEmpty(varFileInfo)) {
       List<String> varFilePaths = new ArrayList<>();
       for (TerraformVarFileInfo varFile : varFileInfo) {
         if (varFile instanceof InlineTerraformVarFileInfo) {
-          varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
-              ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir, TERRAFORM_VARIABLES_FILE_NAME));
+          if (isTerraformCloudCli) {
+            varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
+                ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir,
+                TERRAFORM_CLOUD_VARIABLES_FILE_NAME));
+          } else {
+            varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
+                ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir, TERRAFORM_VARIABLES_FILE_NAME));
+          }
         } else if (varFile instanceof RemoteTerraformVarFileInfo) {
           checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) varFile, logCallback, accountId,
               tfVarDirectory, varFilePaths, tfVarDirAbsPath, commitIdToFetchedFilesMap);

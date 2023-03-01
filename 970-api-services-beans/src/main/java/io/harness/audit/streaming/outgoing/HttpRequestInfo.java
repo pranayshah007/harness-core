@@ -10,11 +10,11 @@ package io.harness.audit.streaming.outgoing;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.experimental.FieldNameConstants;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Builder
-@FieldNameConstants(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class HttpRequestInfo {
   String requestMethod;
   String clientIP;

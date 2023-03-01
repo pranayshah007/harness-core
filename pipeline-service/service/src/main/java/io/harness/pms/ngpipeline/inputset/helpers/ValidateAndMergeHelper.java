@@ -14,6 +14,8 @@ import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline;
+import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipelineForGivenStages;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -27,9 +29,11 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
+import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
+import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -38,7 +42,6 @@ import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.utils.PipelineExceptionsHelper;
 import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -135,12 +138,12 @@ public class ValidateAndMergeHelper {
 
       String pipelineYaml = optionalPipelineEntity.get().getYaml();
       if (EmptyPredicate.isEmpty(stageIdentifiers)) {
-        template = createTemplateFromPipeline(pipelineYaml);
+        template = InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline(pipelineYaml);
       } else {
         String yaml = getYaml(accountId, orgIdentifier, projectIdentifier, pipelineYaml, optionalPipelineEntity);
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(yaml, stageIdentifiers);
         replacedExpressions = new ArrayList<>(StagesExpressionExtractor.getNonLocalExpressions(yaml, stageIdentifiers));
-        template = createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+        template = createTemplateWithDefaultValuesFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
       }
 
       boolean hasInputSets = pmsInputSetService.checkForInputSetsForPipeline(
@@ -170,6 +173,7 @@ public class ValidateAndMergeHelper {
     return pipelineYaml;
   }
 
+  //  use this method when the pipelineYaml is not available
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> stageIdentifiers) {
     Optional<PipelineEntity> optionalPipelineEntity =
@@ -188,6 +192,7 @@ public class ValidateAndMergeHelper {
     }
   }
 
+  //  use this method when the pipelineYaml is not available
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, List<String> stageIdentifiers) {
     String pipelineYaml = getPipelineEntity(
@@ -199,26 +204,52 @@ public class ValidateAndMergeHelper {
     return createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
   }
 
+  //  use this method when the pipelineYaml is available
+  public String getPipelineTemplate(String pipelineYaml, List<String> stageIdentifiers) {
+    if (EmptyPredicate.isEmpty(stageIdentifiers)) {
+      return createTemplateFromPipeline(pipelineYaml);
+    }
+    return createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+  }
+
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
     return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null);
+        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, null, false);
+  }
+
+  public String getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(String accountId,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences,
+      String pipelineBranch, String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge) {
+    return getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, stageIdentifiers, lastYamlToMerge,
+        true);
   }
 
   public String getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch,
-      String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge) {
+      String pipelineRepoID, List<String> stageIdentifiers, String lastYamlToMerge, boolean keepDefaultValues) {
     Set<String> inputSetVersions = new HashSet<>();
-    PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier);
-    PipelineEntity pipelineEntity = getPipelineEntity(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    GitSyncBranchContext branchContext = setupGitContext(accountId, orgIdentifier, projectIdentifier, pipelineBranch);
+    PipelineEntity pipelineEntity;
+    PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier, null, null);
+    try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
+      pipelineEntity = getPipelineEntity(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    }
     String pipelineYaml = pipelineEntity.getYaml();
     String pipelineTemplate = "";
     if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
-      pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-          ? createTemplateFromPipeline(pipelineYaml)
-          : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+      if (keepDefaultValues) {
+        pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+            ? createTemplateWithDefaultValuesFromPipeline(pipelineYaml)
+            : createTemplateWithDefaultValuesFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+      } else {
+        pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+            ? createTemplateFromPipeline(pipelineYaml)
+            : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+      }
       if (EmptyPredicate.isEmpty(pipelineTemplate)) {
         throw new InvalidRequestException(
             "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
@@ -294,5 +325,13 @@ public class ValidateAndMergeHelper {
               "Remote Pipeline %s cannot be used with inline input-set %s, please move input-set to from inline to remote to use them",
               pipelineEntity.getIdentifier(), inputSetEntity.getIdentifier())));
     }
+  }
+
+  private GitSyncBranchContext setupGitContext(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineBranch) {
+    PipelineGitXHelper.setupGitParentEntityDetails(accountIdentifier, orgIdentifier, projectIdentifier, null, null);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    return InputSetValidationHelper.buildGitSyncBranchContext(
+        gitEntityInfo.getParentEntityRepoName(), pipelineBranch, gitEntityInfo.getParentEntityConnectorRef());
   }
 }

@@ -92,6 +92,10 @@ public interface AccountClient {
   @PUT(ACCOUNT_API + "/{accountId}/default-experience")
   Call<RestResponse<AccountDTO>> updateDefaultExperience(@Path("accountId") String accountId, @Body AccountDTO dto);
 
+  @PUT(ACCOUNT_API + "/{accountId}/cross-generation-access")
+  Call<RestResponse<AccountDTO>> updateCrossGenerationAccessEnabled(
+      @Path("accountId") String accountId, @Body AccountDTO dto);
+
   @GET(FEATURE_FLAG_LIST_API)
   Call<RestResponse<Collection<FeatureFlag>>> listAllFeatureFlagsForAccount(@Path("accountId") String accountId);
 

@@ -138,7 +138,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, false);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -495,8 +495,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testGetMergeInputSetFromPipelineTemplate() {
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null);
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .mergeInputSetIntoPipeline(
@@ -514,8 +514,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
 
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
 
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
                                                                      .withMergedPipelineYaml(false)
@@ -527,8 +527,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
     verify(validateAndMergeHelper, times(1))
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
   }
 
   @Test
@@ -540,8 +540,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
     doThrow(new InvalidInputSetException("merging error", dummyErrorResponse))
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-            PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null);
     MergeInputSetRequestDTOPMS inputSetRequestDTO = MergeInputSetRequestDTOPMS.builder()
                                                         .withMergedPipelineYaml(true)
                                                         .inputSetReferences(inputSetReferences)
@@ -560,7 +560,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     when(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService, pipelineService,
              validateAndMergeHelper, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID,
-             "branch", "repo"))
+             "branch", "repo", false))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     ResponseDTO<InputSetYamlDiffDTO> inputSetYAMLDiff = inputSetResourcePMSImpl.getInputSetYAMLDiff(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, "branch", "repo", null);

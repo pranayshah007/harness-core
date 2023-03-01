@@ -18,12 +18,16 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -186,6 +190,26 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testexecuteTerraformApplyStepWhenTfCloudCli() throws InterruptedException, TimeoutException, IOException {
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().isTerraformCloudCli(true).build();
+
+    doReturn(Arrays.asList("w1")).when(spyTerraformBaseHelper).parseOutput("* w1\n");
+
+    spyTerraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
+
+    Mockito.verify(terraformClient, times(1)).init(any(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0))
+        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).plan(any(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(1)).apply(any(), anyLong(), any(), anyString(), any());
+  }
+
+  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testexecuteTerraformPlanStep() throws InterruptedException, TimeoutException, IOException {
@@ -228,6 +252,33 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testexecuteTerraformPlanStepAndTfCloudCli() throws InterruptedException, TimeoutException, IOException {
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().isTerraformCloudCli(true).build();
+
+    doReturn(Arrays.asList("w1")).when(spyTerraformBaseHelper).parseOutput("* w1\n");
+
+    terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
+
+    Mockito.verify(terraformClient, times(1))
+        .init(TerraformInitCommandRequest.builder()
+                  .tfBackendConfigsFilePath(terraformExecuteStepRequest.getTfBackendConfigsFile())
+                  .build(),
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+
+    Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
+
+    Mockito.verify(terraformClient, times(1))
+        .plan(any(), eq(terraformExecuteStepRequest.getTimeoutInMillis()), eq(terraformExecuteStepRequest.getEnvVars()),
+            eq(terraformExecuteStepRequest.getScriptDirectory()), eq(terraformExecuteStepRequest.getLogCallback()));
+  }
+
+  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testexecuteTerraformDestroyStep() throws InterruptedException, TimeoutException, IOException {
@@ -258,6 +309,30 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .destroy(TerraformDestroyCommandRequest.builder().targets(terraformExecuteStepRequest.getTargets()).build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testexecuteTerraformDestroyStepWhenTfCloudCli()
+      throws InterruptedException, TimeoutException, IOException {
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().isTerraformCloudCli(true).build();
+    doReturn(Arrays.asList("w1")).when(spyTerraformBaseHelper).parseOutput("* w1\n");
+
+    terraformBaseHelper.executeTerraformDestroyStep(terraformExecuteStepRequest);
+
+    Mockito.verify(terraformClient, times(1))
+        .init(TerraformInitCommandRequest.builder()
+                  .tfBackendConfigsFilePath(terraformExecuteStepRequest.getTfBackendConfigsFile())
+                  .build(),
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0))
+        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(1)).destroy(any(), anyLong(), any(), anyString(), any());
   }
 
   private File createBackendConfigFile(String content, String fileName) throws IOException {
@@ -541,12 +616,30 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap);
+        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, false);
     assertThat(varFilePaths.size()).isEqualTo(2);
     assertThat(varFilePaths.get(0))
         .isEqualTo(Paths.get(tfvarDir).toAbsolutePath() + "/"
             + "filepath1");
     assertThat(commitIdMap.get("varFiles")).isEqualTo("varFilesCommitId");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testCheckoutRemoteGitVarFileAndConvertToVarFilePathsWhenTfCloudCli() throws IOException {
+    HashMap<String, String> commitIdMap = new HashMap<>();
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    String tfvarDir = "repository/tfVarDir";
+    FileIo.createDirectoryIfDoesNotExist(tfvarDir);
+    doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
+
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        getGitTerraformFileInfoListInline(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, true);
+    assertThat(varFilePaths.size()).isEqualTo(1);
+    assertThat(varFilePaths.get(0)).contains(scriptDirectory);
+    assertThat(varFilePaths.get(0)).contains(".auto.tfvars");
   }
 
   @Test
@@ -614,7 +707,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         Arrays.asList(
             RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build()),
-        scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>());
+        scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false);
 
     verify(artifactoryNgService, times(2)).downloadArtifacts(any(), any(), any(), any(), any());
     assertThat(varFilePaths.size()).isEqualTo(2);
@@ -661,7 +754,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>());
+        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>(), false);
 
     assertThat(varFilePaths.size()).isEqualTo(3);
   }
@@ -705,6 +798,16 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             .build();
 
     varFileInfos.add(remoteTerraformVarFileInfo);
+
+    return varFileInfos;
+  }
+
+  private List<TerraformVarFileInfo> getGitTerraformFileInfoListInline() {
+    List<TerraformVarFileInfo> varFileInfos = new ArrayList<>();
+    InlineTerraformVarFileInfo inlineTerraformVarFileInfo =
+        InlineTerraformVarFileInfo.builder().varFileContent("test-key=test-value").build();
+
+    varFileInfos.add(inlineTerraformVarFileInfo);
 
     return varFileInfos;
   }

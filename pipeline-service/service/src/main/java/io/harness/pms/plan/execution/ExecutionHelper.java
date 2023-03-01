@@ -309,7 +309,7 @@ public class ExecutionHelper {
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
             .setIsDebug(isDebug);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }
@@ -325,7 +325,6 @@ public class ExecutionHelper {
 
   public String getPipelineYamlWithUnResolvedTemplates(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfigForSchemaValidations;
-    ;
     if (isEmpty(mergedRuntimeInputYaml)) {
       pipelineYamlConfigForSchemaValidations = new YamlConfig(pipelineEntity.getYaml());
     } else {
@@ -370,7 +369,7 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+          pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
               BOOLEAN_FALSE_VALUE);

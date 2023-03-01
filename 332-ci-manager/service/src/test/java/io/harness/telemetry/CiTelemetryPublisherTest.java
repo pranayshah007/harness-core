@@ -28,12 +28,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.licensing.entities.modules.ModuleLicense;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
 
-import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

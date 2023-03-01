@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetService {
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
   @Inject private OutboxService outboxService;
@@ -41,7 +41,7 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   @Override
   public SLOErrorBudgetResetDTO resetErrorBudget(
       ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO) {
-    AbstractServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveService.getEntity(
+    AbstractServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(
         projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());

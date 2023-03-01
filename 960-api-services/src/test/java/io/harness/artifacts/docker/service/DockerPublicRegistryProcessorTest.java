@@ -12,6 +12,7 @@ import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -174,5 +175,23 @@ public class DockerPublicRegistryProcessorTest extends CategoryTest {
 
     boolean image = dockerPublicRegistryProcessor.verifyImageName(dockerConfig, "image");
     assertThat(image).isTrue();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testVerifyBuildNumber() throws IOException {
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+
+    DockerPublicImageTagResponse dockerPublicImageTagResponse = new DockerPublicImageTagResponse();
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2/repositories/image/tags/"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerPublicImageTagResponse))));
+
+    BuildDetailsInternal buildDetailsInternal =
+        dockerPublicRegistryProcessor.verifyBuildNumber(dockerConfig, "image", null);
+    assertThat(buildDetailsInternal).isNotNull();
+    assertThat(buildDetailsInternal.getNumber()).isNull();
   }
 }

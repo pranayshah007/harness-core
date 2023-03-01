@@ -698,10 +698,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                   secretsFileService.getFileContents(String.valueOf(encryptedData.getEncryptedValue()));
               encryptedData.setEncryptedValue(fileContent);
             }
-
+            SecretManagerConfigDTO secretManager;
             // get secret manager with which this was secret was encrypted
-            SecretManagerConfigDTO secretManager = getSecretManager(
-                accountIdentifier, orgIdentifier, projectIdentifier, encryptedData.getSecretManagerIdentifier(), false);
+            if (encryptedData.getEncryptionType() == LOCAL) {
+              secretManager = ngConnectorSecretManagerService.getLocalConfigDTO(accountIdentifier);
+            } else {
+              secretManager = getSecretManager(accountIdentifier, orgIdentifier, projectIdentifier,
+                  encryptedData.getSecretManagerIdentifier(), false);
+            }
 
             if (secretManager != null) {
               EncryptionConfig encryptionConfig = SecretManagerConfigMapper.fromDTO(secretManager);

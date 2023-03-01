@@ -7,6 +7,7 @@
 
 package io.harness.idp.status.service;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +21,6 @@ import io.harness.idp.status.repositories.StatusInfoRepository;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import java.util.Optional;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,7 +49,7 @@ public class StatusInfoServiceImplTest {
     when(statusInfoRepository.findByAccountIdentifierAndType(ACCOUNT_ID, type))
         .thenReturn(Optional.of(statusInfoEntity));
     Optional<StatusInfo> statusInfo = statusInfoServiceImpl.findByAccountIdentifierAndType(ACCOUNT_ID, type);
-    Assert.assertTrue(statusInfo.get().getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
+    assertTrue(statusInfo.get().getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
   }
 
   @Test
@@ -63,7 +63,7 @@ public class StatusInfoServiceImplTest {
     statusInfo.setReason(statusInfoEntity.getReason());
     statusInfo.setUpdatedAt(statusInfoEntity.getLastModifiedAt());
     StatusInfo statusInfo1 = statusInfoServiceImpl.save(statusInfo, ACCOUNT_ID, type);
-    Assert.assertTrue(statusInfo1.getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
+    assertTrue(statusInfo1.getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
   }
 
   StatusInfoEntity initializeStatusInfoEntity() {

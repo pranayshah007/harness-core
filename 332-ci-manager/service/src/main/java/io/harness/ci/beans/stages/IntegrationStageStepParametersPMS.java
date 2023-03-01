@@ -155,25 +155,27 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     }
   }
 
-  private static List<String> getStepIdentifiers(IntegrationStageConfig integrationStageConfig) {
+  public static List<String> getStepIdentifiers(IntegrationStageConfig integrationStageConfig) {
     List<String> stepIdentifiers = new ArrayList<>();
     integrationStageConfig.getExecution().getSteps().forEach(
-        executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers));
+        executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
     return stepIdentifiers;
   }
 
-  private static void addStepIdentifier(ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers) {
+  private static void addStepIdentifier(
+      ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers, String parentId) {
     if (executionWrapper != null) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         CIAbstractStepNode stepNode = getStepElementConfig(executionWrapper);
-        stepIdentifiers.add(stepNode.getIdentifier());
+        stepIdentifiers.add(parentId + stepNode.getIdentifier());
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
-        parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
+        parallelStepElementConfig.getSections().forEach(
+            section -> addStepIdentifier(section, stepIdentifiers, parentId));
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
         for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-          addStepIdentifier(wrapper, stepIdentifiers);
+          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
         }
       } else {
         throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");

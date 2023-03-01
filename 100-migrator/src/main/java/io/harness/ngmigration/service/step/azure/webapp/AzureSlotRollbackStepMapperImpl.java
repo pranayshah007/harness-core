@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.azure.webapp;
 
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -30,6 +31,11 @@ public class AzureSlotRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.AZURE_WEBAPP;
   }
 
   @Override

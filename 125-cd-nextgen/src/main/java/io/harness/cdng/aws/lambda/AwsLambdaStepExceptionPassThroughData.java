@@ -10,7 +10,6 @@ package io.harness.cdng.aws.lambda;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
@@ -21,10 +20,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("awslambdaStepExceptionPassThroughData")
+@TypeAlias("awsLambdaStepExceptionPassThroughData")
 @RecasterAlias("io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData")
 public class AwsLambdaStepExceptionPassThroughData implements PassThroughData {
   String errorMsg;
   UnitProgressData unitProgressData;
-  InfrastructureOutcome infrastructureOutcome;
 }

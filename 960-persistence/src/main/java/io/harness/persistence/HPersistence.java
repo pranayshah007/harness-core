@@ -82,11 +82,22 @@ public interface HPersistence extends HealthMonitor {
     return getDatastore(entity.getClass());
   }
 
+  default AdvancedDatastore getDatastore(PersistentEntity entity, boolean isMigrationEnabled) {
+    if (isMigrationEnabled) {
+      Optional<Store> secondaryStore = getSecondaryStore(entity.getClass());
+      if (secondaryStore.isPresent()) {
+        return getDatastore(secondaryStore.get());
+      }
+      logger().warn("Serious: Trying to migrate data without secondaryStore.");
+    }
+    return getDatastore(getPrimaryStore(entity.getClass()));
+  }
+
   Map<Class, Store> getClassStores();
 
   Map<Class, Store> getSecondaryClassStores();
 
-  boolean isMigrationEnabled(Class cls);
+  boolean isMigrationEnabled(String className);
 
   /**
    * Gets the datastore.
@@ -98,7 +109,15 @@ public interface HPersistence extends HealthMonitor {
 
   default AdvancedDatastore getDatastore(Class cls) {
     Optional<Store> secondaryStore = getSecondaryStore(cls);
-    if (secondaryStore.isPresent() && isMigrationEnabled(cls)) {
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls.getName())) {
+      return getDatastore(secondaryStore.get());
+    }
+    return getDatastore(getPrimaryStore(cls));
+  }
+
+  default AdvancedDatastore getDatastore(Class cls, boolean isMigrationEnabled) {
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled) {
       return getDatastore(secondaryStore.get());
     }
     return getDatastore(getPrimaryStore(cls));
@@ -191,6 +210,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
 
+  <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, boolean isMigrationEnabled);
+
   /**
    * Creates the query for analytics.
    *
@@ -219,6 +240,9 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, Set<QueryChecks> queryChecks);
 
+  <T extends PersistentEntity> Query<T> createQuery(
+      Class<T> cls, Set<QueryChecks> queryChecks, boolean isMigrationEnabled);
+
   /**
    * Creates the query.
    *
@@ -246,6 +270,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls);
 
+  <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls, boolean isMigrationEnabled);
+
   /**
    * Convert DBObject to java entity.
    *
@@ -261,6 +287,8 @@ public interface HPersistence extends HealthMonitor {
    * @return the key of the entity
    */
   <T extends PersistentEntity> String save(T entity);
+
+  <T extends PersistentEntity> String save(T entity, boolean isMigrationEnabled);
 
   /**
    * Save.
@@ -311,6 +339,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> T get(Class<T> cls, String id);
 
+  <T extends PersistentEntity> T get(Class<T> cls, String id, boolean isMigrationEnabled);
+
   /**
    * Delete.
    *
@@ -335,6 +365,8 @@ public interface HPersistence extends HealthMonitor {
    * @return true, if successful
    */
   <T extends PersistentEntity> boolean deleteOnServer(Query<T> query);
+
+  <T extends PersistentEntity> boolean deleteOnServer(Query<T> query, boolean isMigrationEnabled);
 
   /**
    * Delete.
@@ -377,6 +409,8 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops);
 
+  <T extends PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops, boolean isMigrationEnabled);
+
   /**
    * Update.
    *
@@ -385,6 +419,9 @@ public interface HPersistence extends HealthMonitor {
    * @return the update results
    */
   <T extends PersistentEntity> UpdateResults update(Query<T> updateQuery, UpdateOperations<T> updateOperations);
+
+  <T extends PersistentEntity> UpdateResults update(
+      Query<T> updateQuery, UpdateOperations<T> updateOperations, boolean isMigrationEnabled);
 
   FindAndModifyOptions returnNewOptions = new FindAndModifyOptions().upsert(false).returnNew(true);
   FindAndModifyOptions returnOldOptions = new FindAndModifyOptions().upsert(false).returnNew(false);
@@ -400,6 +437,9 @@ public interface HPersistence extends HealthMonitor {
   <T extends PersistentEntity> T findAndModify(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
 
+  <T extends PersistentEntity> T findAndModify(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled);
+
   /**
    * Find and modify data that is system and it should not refresh any of the trackers.
    *
@@ -410,6 +450,9 @@ public interface HPersistence extends HealthMonitor {
    */
   <T extends PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
+
+  <T extends PersistentEntity> T findAndModifySystemData(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled);
 
   /**
    * Find and delete.

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,4 +20,6 @@ import lombok.Value;
 @OwnedBy(CDP)
 public class TerraformApplyCommandRequest {
   String planName;
+  List<String> targets;
+  boolean isTerraformCloudCli;
 }

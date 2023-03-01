@@ -10,6 +10,7 @@ package software.wings.scim;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
@@ -643,6 +644,72 @@ public class ScimUserServiceTest extends WingsBaseTest {
 
     updateOperations.set(UserKeys.email, updatedEmail.toLowerCase());
     verify(userService, times(1)).updateUser(userId, updateOperations);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateUserName_changeOnIdPUserPrincipalName() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("user_name_changed@harness.io");
+    scimUser.setDisplayName("display_name");
+    scimUser.setActive(true);
+    setEmailsForUser(scimUser);
+    setNameForScimUser(scimUser);
+
+    User user = new User();
+    user.setEmail("user_name_original@harness.io");
+    user.setDisabled(false);
+    user.setUuid(generateUuid());
+    user.setName("display_name");
+    user.setAccounts(Arrays.asList(account));
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setUuid(generateUuid());
+
+    when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
+    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
+    verify(userService, times(1)).updateUser(user.getUuid(), updateOperations);
+    assertThat(response.getStatus()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateUserName_noChangeIdPEmailChange() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("account_name");
+
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("user_name@harness.io");
+    scimUser.setDisplayName("display_name");
+    setEmailsForUser(scimUser);
+    setNameForScimUser(scimUser);
+
+    User user = new User();
+    user.setEmail("user_name@harness.io");
+    user.setFamilyName("family_name");
+    user.setGivenName("given_name");
+    user.setUuid(generateUuid());
+    user.setName("display_name");
+    user.setAccounts(Arrays.asList(account));
+
+    UserInvite userInvite = new UserInvite();
+    userInvite.setUuid(generateUuid());
+
+    when(userService.get(account.getUuid(), user.getUuid())).thenReturn(user);
+    when(featureFlagService.isEnabled(eq(FeatureName.UPDATE_EMAILS_VIA_SCIM), any())).thenReturn(true);
+    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
+    Response response = scimUserService.updateUser(user.getUuid(), account.getUuid(), scimUser);
+    verify(userService, times(0)).updateUser(user.getUuid(), updateOperations);
+    assertThat(response.getStatus()).isNotNull();
   }
 
   private PatchRequest getOktaActivityReplaceOperation() {

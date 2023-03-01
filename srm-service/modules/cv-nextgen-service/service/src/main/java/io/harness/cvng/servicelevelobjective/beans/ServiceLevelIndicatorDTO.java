@@ -18,9 +18,9 @@ import lombok.Data;
 public class ServiceLevelIndicatorDTO {
   String name;
   String identifier;
-  @NotNull ServiceLevelIndicatorType type;
+  @Deprecated ServiceLevelIndicatorType type;
   @NotNull ServiceLevelIndicatorSpec spec;
-  @NotNull SLIMissingDataType sliMissingDataType;
+  @Deprecated SLIMissingDataType sliMissingDataType;
   @JsonIgnore
   @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
   String healthSourceRef; // TODO: we need to move health source ref to this level.

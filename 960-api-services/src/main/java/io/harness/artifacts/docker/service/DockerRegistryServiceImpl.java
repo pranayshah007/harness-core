@@ -95,7 +95,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
 
   @Override
   public List<BuildDetailsInternal> getBuilds(
-      DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds) {
+      DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds, String tagRegex) {
     List<BuildDetailsInternal> buildDetails;
     try {
       if (dockerConfig.hasCredentials()) {
@@ -112,6 +112,12 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
     // Sorting at build tag for docker artifacts.
     // Don't change this order.
+    if (tagRegex != null) {
+      buildDetails = buildDetails.stream()
+                         .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
+                         .collect(Collectors.toList());
+    }
+
     return buildDetails.stream().sorted(new BuildDetailsInternalComparatorAscending()).collect(toList());
   }
 
@@ -252,7 +258,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       DockerInternalConfig dockerConfig, String imageName, String tagRegex) {
-    List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS);
+    List<BuildDetailsInternal> builds = getBuilds(dockerConfig, imageName, MAX_NUMBER_OF_BUILDS, tagRegex);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                  .sorted(new BuildDetailsInternalComparatorDescending())

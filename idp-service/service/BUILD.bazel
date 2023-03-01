@@ -23,6 +23,9 @@ java_binary(
     ]),
     data = [":resource"],
     main_class = "io.harness.idp.app.IdpApplication",
+    resources = [
+        "//idp-service/service/src/main/resources:resource",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//:lombok",
@@ -30,17 +33,26 @@ java_binary(
         "//953-events-api:module",
         "//959-ng-persistence:module",
         "//960-persistence:module",
+        "//965-api-key-filter:module",
         "//980-commons/src/main/java/io/harness/health:module",
         "//980-commons/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/maintenance:module",
         "//999-annotations:module",
+        "//clients/access-control/sdk:module",
         "//idp-service/contracts:module",
+        "//idp-service/modules/contracts:module",
         "//idp-service/service/src/main/java/io/harness/idp/config:module",
+        "//idp-service/service/src/main/java/io/harness/idp/gitintegration:module",
         "//idp-service/service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/service/src/main/java/io/harness/idp/secret:module",
         "//idp-service/service/src/main/java/io/harness/idp/status:module",
+        "@maven//:ch_qos_logback_logback_access",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:ch_qos_logback_logback_core",
         "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
         "@maven//:com_google_inject_guice",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
     ],
 )
 
@@ -64,8 +76,6 @@ java_library(
 )
 
 run_tests()
-
-run_analysis()
 
 exports_files([
     "config.yml",

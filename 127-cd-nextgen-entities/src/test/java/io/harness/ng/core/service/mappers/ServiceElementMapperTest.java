@@ -7,13 +7,16 @@
 
 package io.harness.ng.core.service.mappers;
 
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -42,6 +45,17 @@ public class ServiceElementMapperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDataForMultipleManifestsFailureTest")
+  public void testToServiceEntity(ServiceRequestDTO input) {
+    assertThatThrownBy(() -> ServiceElementMapper.toServiceEntity("ACCOUNT_ID", input))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Multiple manifests found")
+        .hasMessageContaining("deployment support only one manifest of one of types");
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Parameters(method = "getDataForTestWriteDTO")
   @Category(UnitTests.class)
@@ -52,6 +66,48 @@ public class ServiceElementMapperTest extends CategoryTest {
   }
 
   // Method to provide parameters to test
+  private Object[] getDataForMultipleManifestsFailureTest() {
+    ServiceRequestDTO requestDTO1 = ServiceRequestDTO.builder()
+                                        .identifier("k1")
+                                        .orgIdentifier("ORG_ID")
+                                        .projectIdentifier("PROJECT_ID")
+                                        .name("k1")
+                                        .tags(ImmutableMap.of("k1", "v1", "k2", "v2"))
+                                        .yaml("service:\n"
+                                            + "  name: k1\n"
+                                            + "  identifier: k1\n"
+                                            + "  tags: {}\n"
+                                            + "  serviceDefinition:\n"
+                                            + "    spec:\n"
+                                            + "      manifests:\n"
+                                            + "        - manifest:\n"
+                                            + "            identifier: m1\n"
+                                            + "            type: K8sManifest\n"
+                                            + "            spec:\n"
+                                            + "              store:\n"
+                                            + "                type: Harness\n"
+                                            + "                spec:\n"
+                                            + "                  files:\n"
+                                            + "                    - /helm-chart1/templates\n"
+                                            + "              valuesPaths: []\n"
+                                            + "              skipResourceVersioning: false\n"
+                                            + "        - manifest:\n"
+                                            + "            identifier: m2\n"
+                                            + "            type: K8sManifest\n"
+                                            + "            spec:\n"
+                                            + "              store:\n"
+                                            + "                type: Harness\n"
+                                            + "                spec:\n"
+                                            + "                  files:\n"
+                                            + "                    - /k8s-render/templates\n"
+                                            + "              valuesPaths: []\n"
+                                            + "              skipResourceVersioning: false\n"
+                                            + "    type: Kubernetes\n")
+                                        .build();
+
+    return new Object[] {requestDTO1};
+  }
+
   private Object[][] getDataForTestToServiceEntity() {
     List<NGTag> tags_1 =
         Arrays.asList(NGTag.builder().key("k1").value("v1").build(), NGTag.builder().key("k2").value("v2").build());

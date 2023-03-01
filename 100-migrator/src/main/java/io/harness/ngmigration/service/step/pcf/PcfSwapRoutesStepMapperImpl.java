@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step.pcf;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
@@ -39,6 +40,11 @@ public class PcfSwapRoutesStepMapperImpl extends StepMapper {
     } else {
       return StepSpecTypeConstants.TAS_SWAP_ROUTES;
     }
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

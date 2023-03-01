@@ -20,8 +20,8 @@ You can run multiple PR check triggers by comma separating them in a single comm
 
 - Compile: `trigger compile`
 - CodeformatCheckstyle: `trigger checkstylecodeformat`
-    - CodeFormat: `trigger codeformat`
-    - Checkstyle: `trigger checkstyle`
+  - CodeFormat: `trigger codeformat`
+  - Checkstyle: `trigger checkstyle`
 - MessageMetadata: `trigger messagecheck`
 - File-Permission-Check: `trigger checkpermission`
 - Recency: `trigger recency`
@@ -29,12 +29,12 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - PMD: `trigger pmd`
 - Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
-- TI-ALL: `trigger tiAll`
-- TI-bootstrap: `trigger ti0`
-- TI-bootstrap1: `trigger ti1`
-- TI-bootstrap2: `trigger ti2`
-- TI-bootstrap3: `trigger ti3`
-- TI-bootstrap4: `trigger ti4`
+- UnitTests-ALL: `trigger utAll`
+- UnitTests-0: `trigger ut0`
+- UnitTests-1: `trigger ut1`
+- UnitTests-2: `trigger ut2`
+- UnitTests-3: `trigger ut3`
+- UnitTests-4: `trigger ut4`
 - FunctionalTest1: `trigger ft1`
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`

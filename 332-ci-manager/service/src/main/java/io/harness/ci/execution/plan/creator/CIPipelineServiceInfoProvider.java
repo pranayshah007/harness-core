@@ -10,6 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -86,6 +87,9 @@ import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.ssca.execution.creator.filter.SscaStepsFilterJsonCreator;
+import io.harness.ssca.execution.creator.plan.SscaOrchestrationStepPlanCreator;
+import io.harness.ssca.execution.creator.variable.SscaStepVariableCreator;
 import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
@@ -131,6 +135,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
     planCreators.add(new BitriseStepPlanCreator());
+    planCreators.add(new SscaOrchestrationStepPlanCreator());
 
     // add V1 plan creators
     planCreators.add(new IntegrationStagePMSPlanCreatorV3());
@@ -155,6 +160,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
+    filterJsonCreators.add(new SscaStepsFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -187,6 +193,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
+    variableCreators.add(new SscaStepVariableCreator());
 
     return variableCreators;
   }
@@ -335,6 +342,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToS3);
     stepInfos.add(actionStepInfo);
     stepInfos.add(bitriseStepInfo);
+
+    stepInfos.addAll(sscaStepPaletteSteps);
 
     return stepInfos;
   }

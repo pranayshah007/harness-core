@@ -35,6 +35,7 @@ import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.template.NgTemplateService;
 import io.harness.ngmigration.template.TemplateFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -74,6 +75,7 @@ import retrofit2.Response;
 public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private SecretRefUtils secretRefUtils;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -124,6 +126,11 @@ public class TemplateMigrationService extends NgMigrationService {
             .type(NGMigrationEntityType.TEMPLATE)
             .id(template.getUuid())
             .build();
+    Set<String> expressions = TemplateFactory.getTemplateService(template).getExpressions(template);
+    List<CgEntityId> secretRefs = secretRefUtils.getSecretRefFromExpressions(template.getAccountId(), expressions);
+    if (EmptyPredicate.isNotEmpty(secretRefs)) {
+      children.addAll(secretRefs);
+    }
     return DiscoveryNode.builder().children(children).entityNode(templateNode).build();
   }
 

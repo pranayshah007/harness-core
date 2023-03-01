@@ -11,9 +11,9 @@ import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -51,6 +51,7 @@ import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -644,7 +645,8 @@ public class EnvironmentResourceV2 {
     if (isNotEmpty(environmentYamlMetadata.getEnvIdentifiers())) {
       envIdentifiers.addAll(environmentYamlMetadata.getEnvIdentifiers());
     }
-    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())) {
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())
+        && !EngineExpressionEvaluator.hasExpressions(environmentYamlMetadata.getEnvGroupIdentifier())) {
       Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
           accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
       environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));
