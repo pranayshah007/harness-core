@@ -21,7 +21,6 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -31,9 +30,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 public class CeCloudMetricsServiceImpl implements CeCloudMetricsService {
   private static final String TOTAL_CLOUD_COST_QUERY_BQ =
-          "SELECT SUM(cost) AS COST  FROM `%s` WHERE cloudProvider='%s' and startTime>= '%s' and startTime<'%s'";
+      "SELECT SUM(cost) AS COST  FROM `%s` WHERE cloudProvider='%s' and startTime>= '%s' and startTime<'%s'";
   private static final String TOTAL_CLOUD_COST_QUERY_CH =
-          "SELECT SUM(cost) AS COST  FROM `%s` WHERE cloudProvider='%s' and startTime>= '%s' and startTime<'%s'";
+      "SELECT SUM(cost) AS COST  FROM `%s` WHERE cloudProvider='%s' and startTime>= '%s' and startTime<'%s'";
   @Autowired @Inject private BatchMainConfig batchMainConfig;
   @Autowired @Inject private BigQueryService bigQueryService;
   @Autowired @Inject private BillingDataPipelineRecordDao billingDataPipelineRecordDao;
@@ -42,7 +41,7 @@ public class CeCloudMetricsServiceImpl implements CeCloudMetricsService {
   @Override
   public double getTotalCloudCost(String accountId, String cloudProviderType, Instant start, Instant end) {
     return batchMainConfig.isClickHouseEnabled() ? getTotalCloudCostCH(accountId, cloudProviderType, start, end)
-            : getTotalCloudCostBQ(accountId, cloudProviderType, start, end);
+                                                 : getTotalCloudCostBQ(accountId, cloudProviderType, start, end);
   }
 
   public double getTotalCloudCostBQ(String accountId, String cloudProviderType, Instant start, Instant end) {
