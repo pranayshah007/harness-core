@@ -25,7 +25,6 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -149,12 +148,6 @@ public class PipelinesApiImpl implements PipelinesApi {
           PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
       pipelineGetResponseBody.setYamlErrorWrapper(
           PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
-      pipelineGetResponseBody.setValid(false);
-      return Response.status(200).entity(pipelineGetResponseBody).build();
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
-      pipelineGetResponseBody.setGitDetails(
-          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
       pipelineGetResponseBody.setValid(false);
       return Response.status(200).entity(pipelineGetResponseBody).build();
     }
