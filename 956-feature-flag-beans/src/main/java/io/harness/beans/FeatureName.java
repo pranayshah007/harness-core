@@ -635,7 +635,10 @@ public enum FeatureName {
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
       HarnessTeam.PIPELINE),
   CD_TERRAFORM_CLOUD_CLI_NG("FF to enable terraform cloud backend cli in NG", HarnessTeam.CDP),
-  PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE);
+  PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE),
+  CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS);
 
   @Deprecated
   FeatureName() {
