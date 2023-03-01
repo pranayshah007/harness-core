@@ -133,7 +133,8 @@ public interface InputSetResourcePMS {
           description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
       String pipelineRepoID,
       @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @GET
   @Path("overlay/{inputSetIdentifier}")
@@ -164,7 +165,8 @@ public interface InputSetResourcePMS {
           description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
       String pipelineRepoID,
       @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")

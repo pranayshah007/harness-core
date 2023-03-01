@@ -63,6 +63,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
+import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -100,12 +101,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity =
-        pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
-            false, pipelineBranch, pipelineRepoId, false, loadFromFallbackBranch);
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false,
+        loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
@@ -122,13 +123,13 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity =
-        pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
-            false, pipelineBranch, pipelineRepoId, false, loadFromFallbackBranch);
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, pipelineBranch, pipelineRepoId, false,
+        loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
