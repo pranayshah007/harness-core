@@ -23,7 +23,7 @@ public class LogFeedback {
   String clusterId;
   String verificationJobInstanceId;
   long createdAt;
-  long lastUpdatedAt;
+  long updatedAt;
   String createdBy;
-  String lastUpdatedBy;
+  String updatedby;
 }

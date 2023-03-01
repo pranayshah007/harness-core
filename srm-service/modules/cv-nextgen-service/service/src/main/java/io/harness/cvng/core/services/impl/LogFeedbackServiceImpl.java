@@ -154,9 +154,9 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
         .environmentIdentifier(logFeedbackEntity.getEnvironmentIdentifier())
         .description(logFeedbackEntity.getDescription())
         .createdAt(logFeedbackEntity.getCreatedAt())
-        .lastUpdatedAt(logFeedbackEntity.getLastUpdatedAt())
+        .updatedAt(logFeedbackEntity.getLastUpdatedAt())
         .createdBy(logFeedbackEntity.getCreatedByUser())
-        .lastUpdatedBy(logFeedbackEntity.getUpdatedByUser())
+        .updatedby(logFeedbackEntity.getUpdatedByUser())
         .build();
   }
 
@@ -275,9 +275,9 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .environmentIdentifier(logFeedbackEntity.getEnvironmentIdentifier())
             .serviceIdentifier(logFeedbackEntity.getServiceIdentifier())
             .createdBy(logFeedbackEntity.getCreatedByUser())
-            .lastUpdatedBy(logFeedbackEntity.getUpdatedByUser())
+            .updatedby(logFeedbackEntity.getUpdatedByUser())
             .createdAt(logFeedbackEntity.getCreatedAt())
-            .lastUpdatedAt(logFeedbackEntity.getLastUpdatedAt())
+            .updatedAt(logFeedbackEntity.getLastUpdatedAt())
             .sampleMessage(logFeedbackEntity.getSampleMessage());
     return logFeedbackBuilder.build();
   }

@@ -624,8 +624,7 @@ public enum FeatureName {
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
   PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY(
       "Allow different Service Principal in Auth Token and Request Body. Used for Internal purpose only.",
-      HarnessTeam.PL),
-  SRM_LOG_FEEDBACK_ENABLE_UI("Enable FE for Log feedback", HarnessTeam.CV);
+      HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
