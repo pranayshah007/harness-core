@@ -20,6 +20,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
@@ -27,11 +28,15 @@ import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.serializer.JsonUtils;
 import io.harness.steps.wait.WaitStepInfo;
 import io.harness.steps.wait.WaitStepNode;
 import io.harness.when.beans.StepWhenCondition;
@@ -53,8 +58,11 @@ import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,6 +79,7 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 import org.apache.commons.validator.routines.UrlValidator;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -548,5 +557,59 @@ public class MigratorUtility {
                                                                .build()));
     }
     return waitStepNode;
+  }
+
+  public static <T> MigrationImportSummaryDTO handleEntityMigrationResp(
+      NGYamlFile yamlFile, Response<ResponseDTO<T>> resp) throws IOException {
+    if (resp.code() >= 200 && resp.code() < 300) {
+      return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
+    }
+    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
+    Map<String, Object> error = JsonUtils.asObject(
+        resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
+    log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",
+        yamlFile.getType(), resp, error));
+    return MigrationImportSummaryDTO.builder()
+        .errors(Collections.singletonList(
+            ImportError.builder()
+                .message(error.containsKey("message")
+                        ? error.get("message").toString()
+                        : String.format("There was an error creating the %s", yamlFile.getType()))
+                .entity(yamlFile.getCgBasicInfo())
+                .build()))
+        .build();
+  }
+
+  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+    Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
+    Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
+    Map<String, Object> expressions = new HashMap<>();
+    if (importDTO.getInputs() != null) {
+      overrides = importDTO.getInputs().getOverrides();
+      defaults = importDTO.getInputs().getDefaults();
+      expressions = importDTO.getInputs().getExpressions();
+    }
+
+    // We do not want to auto migrate WFs/Pipelines. We want customers to migrate WFs/Pipelines by choice.
+    if (!Sets.newHashSet(NGMigrationEntityType.WORKFLOW, NGMigrationEntityType.PIPELINE)
+             .contains(importDTO.getEntityType())) {
+      InputDefaults wfDefaults = defaults.getOrDefault(NGMigrationEntityType.WORKFLOW, new InputDefaults());
+      wfDefaults.setSkipMigration(true);
+      defaults.put(NGMigrationEntityType.WORKFLOW, wfDefaults);
+
+      InputDefaults pipelineDefaults = defaults.getOrDefault(NGMigrationEntityType.PIPELINE, new InputDefaults());
+      pipelineDefaults.setSkipMigration(true);
+      defaults.put(NGMigrationEntityType.PIPELINE, pipelineDefaults);
+    }
+
+    return MigrationInputDTO.builder()
+        .accountIdentifier(importDTO.getAccountIdentifier())
+        .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
+        .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
+        .migrateReferencedEntities(importDTO.isMigrateReferencedEntities())
+        .overrides(overrides)
+        .defaults(defaults)
+        .customExpressions(expressions)
+        .build();
   }
 }
