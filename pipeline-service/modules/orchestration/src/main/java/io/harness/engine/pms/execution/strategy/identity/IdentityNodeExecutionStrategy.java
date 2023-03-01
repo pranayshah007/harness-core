@@ -13,10 +13,12 @@ import io.harness.ModuleType;
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkAsFailureAdviseHandler;
@@ -26,6 +28,7 @@ import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
+import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
@@ -69,6 +72,8 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
+  @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
   @Override
@@ -221,7 +226,11 @@ public class IdentityNodeExecutionStrategy
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       NodeExecution newNodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
-      processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
+      if (EmptyPredicate.isNotEmpty(newNodeExecution.getAdvisorObtainmentsFromNode())) {
+        nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, newNodeExecution.getNode(), newNodeExecution.getStatus());
+      } else {
+        processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
+      }
     } catch (Exception ex) {
       log.error("Exception Occurred in handleStepResponse NodeExecutionId : {}, PlanExecutionId: {}", nodeExecutionId,
           ambiance.getPlanExecutionId(), ex);
