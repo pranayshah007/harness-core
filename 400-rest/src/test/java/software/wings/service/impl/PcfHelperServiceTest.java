@@ -81,12 +81,13 @@ public class PcfHelperServiceTest extends WingsBaseTest {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     encryptedDataDetails.add(EncryptedDataDetail.builder().fieldName("password").build());
 
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(CfCommandExecutionResponse.builder().build());
+    when(delegateService.executeTaskV2(any(DelegateTask.class)))
+        .thenReturn(CfCommandExecutionResponse.builder().build());
     doReturn(true).when(mockFeatureFlagService).isEnabled(any(), anyString());
 
     pcfHelperService.validate(pcfConfig, encryptedDataDetails);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).executeTask(captor.capture());
+    verify(delegateService).executeTaskV2(captor.capture());
     DelegateTask delegateTask = captor.getValue();
     assertThat(delegateTask.getData().getParameters()).hasSize(2);
     List<EncryptedDataDetail> parameter = (List<EncryptedDataDetail>) (delegateTask.getData().getParameters()[1]);
@@ -128,7 +129,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
     CfCommandExecutionResponse perpetualTaskResponse =
         CfCommandExecutionResponse.builder().pcfCommandResponse(cfInstanceSyncResponse).build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     List<PcfInstanceInfo> applicationDetails =
         pcfHelperService.getApplicationDetails(APP_NAME, ORG_NAME, SPACE, pcfConfig, null);
@@ -163,7 +164,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                            .build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     Integer runningInstanceCountResult =
         pcfHelperService.getRunningInstanceCount(pcfConfig, ORG_NAME, SPACE, APP_PREFIX);
@@ -182,7 +183,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .errorMessage(ERROR_MSG)
                                                            .build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     assertThatThrownBy(() -> pcfHelperService.getRunningInstanceCount(pcfConfig, ORG_NAME, SPACE, APP_PREFIX))
         .isInstanceOf(InvalidRequestException.class)
@@ -196,7 +197,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
     PcfConfig pcfConfig = PcfConfig.builder().build();
 
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenThrow(new InterruptedException(ERROR_MSG));
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenThrow(new InterruptedException(ERROR_MSG));
 
     assertThatThrownBy(() -> pcfHelperService.getRunningInstanceCount(pcfConfig, ORG_NAME, SPACE, APP_PREFIX))
         .isInstanceOf(InvalidRequestException.class)
@@ -271,7 +272,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .build();
 
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     List<String> organizationsResult = pcfHelperService.listOrganizations(pcfConfig);
 
@@ -294,7 +295,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .build();
 
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     List<String> spacesResult = pcfHelperService.listSpaces(pcfConfig, ORG_NAME);
 
@@ -312,7 +313,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .errorMessage(ERROR_MSG)
                                                            .build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     assertThatThrownBy(() -> pcfHelperService.listSpaces(pcfConfig, ORG_NAME))
         .isInstanceOf(InvalidRequestException.class)
@@ -336,7 +337,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .build();
 
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     List<String> listRoutes = pcfHelperService.listRoutes(pcfConfig, ORG_NAME, SPACE);
 
@@ -354,7 +355,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .errorMessage(ERROR_MSG)
                                                            .build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     assertThatThrownBy(() -> pcfHelperService.listRoutes(pcfConfig, ORG_NAME, SPACE))
         .isInstanceOf(InvalidRequestException.class)
@@ -378,7 +379,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .build();
 
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     String route =
         pcfHelperService.createRoute(pcfConfig, ORG_NAME, SPACE, "host", "domain", "path", false, false, 8080);
@@ -397,7 +398,7 @@ public class PcfHelperServiceTest extends WingsBaseTest {
                                                            .errorMessage(ERROR_MSG)
                                                            .build();
     when(secretManager.getEncryptionDetails(pcfConfig, null, null)).thenReturn(Collections.emptyList());
-    when(delegateService.executeTask(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
+    when(delegateService.executeTaskV2(any(DelegateTask.class))).thenReturn(perpetualTaskResponse);
 
     assertThatThrownBy(
         () -> pcfHelperService.createRoute(pcfConfig, ORG_NAME, SPACE, "host", "domain", "path", false, false, 8080))
