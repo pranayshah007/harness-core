@@ -28,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class CloudRuntimeV1 implements RuntimeV1 {
   @Builder.Default @NotNull @ApiModelProperty(allowableValues = "cloud") Type type = Type.CLOUD;
   @NotNull CloudRuntimeSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Value
   @Builder
