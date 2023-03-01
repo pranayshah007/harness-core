@@ -122,6 +122,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
+import io.harness.tasks.FailureResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -219,11 +220,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     AsyncExecutableResponse.Builder responseBuilder =
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
@@ -231,6 +228,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    } else {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
 
     return responseBuilder.build();
@@ -311,23 +314,30 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     backgroundTaskUtility.queueJob(() -> saveInitialiseExecutionSweepingOutput(ambiance));
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
+    String errorMessage;
     responseData = serializedResponseDataHelper.deserialize(responseData);
-    if (responseData instanceof ErrorNotifyResponseData) {
-      FailureData failureData =
-          FailureData.newBuilder()
-              .addFailureTypes(FailureType.APPLICATION_FAILURE)
-              .setLevel(Level.ERROR.name())
-              .setCode(GENERAL_ERROR.name())
-              .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                  new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
-              .build();
+    if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
+      String message;
+      if (responseData instanceof ErrorNotifyResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        errorMessage = "Delegate is not able to connect to created build farm";
+      } else {
+        errorMessage = "Failed to initialise CI execution";
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
+      }
+
+      FailureData failureData = FailureData.newBuilder()
+                                    .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                    .setLevel(Level.ERROR.name())
+                                    .setCode(GENERAL_ERROR.name())
+                                    .setMessage(message)
+                                    .build();
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(errorMessage).addFailureData(failureData).build())
           .build();
     }
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
