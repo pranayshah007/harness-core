@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
@@ -29,6 +29,7 @@ import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.LogStreamingStepClientImpl;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -38,6 +39,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -53,6 +55,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -78,7 +81,15 @@ public class HttpStepTest extends CategoryTest {
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
+  @Mock private StepHelper stepHelper;
+
   private String TEST_URL = "https://www.google.com";
+
+  @Before
+  public void setup() {
+    LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
+    Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
+  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -223,7 +234,7 @@ public class HttpStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testObtainTask() {
     MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
-    aStatic.when(() -> TaskRequestsUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()
@@ -259,7 +270,6 @@ public class HttpStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTask() throws Exception {
     ambiance = Ambiance.newBuilder().build();
-    PowerMockito.mockStatic(StepUtils.class);
     PowerMockito.mockStatic(TaskRequestsUtils.class);
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
@@ -317,7 +327,7 @@ public class HttpStepTest extends CategoryTest {
                                   .parameters(new Object[] {expectedTaskParams})
                                   .build();
 
-    aStatic.when(() -> TaskRequestsUtils.prepareTaskRequestWithTaskSelector(any(), eq(taskData), any(), any()))
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()

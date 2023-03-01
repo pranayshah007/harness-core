@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.ApiServiceTestBase;
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.http.beans.HttpInternalConfig;
@@ -42,7 +43,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -53,7 +53,7 @@ import wiremock.org.apache.http.conn.ConnectTimeoutException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Http.class, GlobalContextManager.class, HttpServiceImpl.class})
-public class HttpServiceImplTest extends ApiServiceTestBase {
+public class HttpServiceImplTest extends CategoryTest {
   @InjectMocks HttpServiceImpl httpService;
 
   HttpInternalConfig httpInternalConfig_Proxy_T_CertValid_F_Error_T;
@@ -153,9 +153,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doReturn(new HttpInternalResponse())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_T_Error_T);
 
     PowerMockito.verifyStatic(Http.class, times(1));
@@ -171,9 +170,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
     Http.getProxyPassword();
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
@@ -211,9 +209,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doReturn(new HttpInternalResponse())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_T_Error_T);
 
     PowerMockito.verifyStatic(Http.class, times(1));
@@ -229,9 +226,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
     Http.getProxyPassword();
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
@@ -264,9 +260,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doReturn(new HttpInternalResponse())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_F_Error_T);
 
     PowerMockito.verifyStatic(Http.class, times(1));
@@ -276,9 +271,8 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
     Http.getHttpProxyHost();
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getMethod(),
@@ -296,7 +290,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
+    when(GlobalContextManager.get(any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -306,17 +300,15 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doReturn(new HttpInternalResponse())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     HttpInternalResponse output = spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
 
     assertThat(output.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
@@ -335,7 +327,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
+    when(GlobalContextManager.get(any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -345,15 +337,13 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doThrow(new SocketTimeoutException())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
@@ -372,7 +362,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
+    when(GlobalContextManager.get(any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -382,15 +372,13 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doThrow(new ConnectTimeoutException())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
@@ -409,7 +397,7 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     PowerMockito.mockStatic(GlobalContextManager.class);
 
-    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
+    when(GlobalContextManager.get(any(String.class))).thenAnswer((Answer<Void>) invocation -> null);
 
     doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
         .when(spyHttpService)
@@ -419,15 +407,13 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
 
     doThrow(new IOException())
         .when(spyHttpService)
-        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+        .executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class), any(HttpUriRequest.class),
+            any(HttpInternalConfig.class), anyBoolean(), any());
     spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
 
     verify(spyHttpService, times(1));
-    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
-        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
-        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeHttpStep(any(CloseableHttpClient.class), any(HttpInternalResponse.class),
+        any(HttpUriRequest.class), any(HttpInternalConfig.class), anyBoolean(), any());
 
     verify(spyHttpService, times(1));
     spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
