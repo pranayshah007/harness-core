@@ -63,8 +63,10 @@ public class BillingDataPipelineHealthStatusServiceImpl implements BillingDataPi
       + ">= DATE_SUB(@run_date , INTERVAL 3 DAY) AND cloudProvider = \"%s\";%n";
 
   private static final String CH_PRE_AGG_TABLE_DATACHECK_TEMPLATE =
-      "SELECT count(*) as count FROM `ccm.preAggregated` WHERE DATE(startTime) "
-      + ">= DATE_SUB(@run_date , INTERVAL 3 DAY) AND cloudProvider = \"%s\";%n";
+      "SELECT count(*) as count FROM `ccm.preAggregated` WHERE startTime "
+      + ">= %s AND cloudProvider = \"%s\";%n";
+
+  private static final String CH_TIME_FILTER = "%s - toIntervalDay(3)";
 
   @Autowired
   public BillingDataPipelineHealthStatusServiceImpl(BatchMainConfig mainConfig,
@@ -243,7 +245,8 @@ public class BillingDataPipelineHealthStatusServiceImpl implements BillingDataPi
   }
 
   private boolean isDataPresentPreAggCH(String cloudProvider) {
-    String query = String.format(CH_PRE_AGG_TABLE_DATACHECK_TEMPLATE, cloudProvider);
+    String query =
+        String.format(CH_PRE_AGG_TABLE_DATACHECK_TEMPLATE, String.format(CH_TIME_FILTER, Instant.now()), cloudProvider);
     // Get the results.
     ResultSet resultSet;
     try (Connection connection = clickHouseService.getConnection(mainConfig.getClickHouseConfig());
