@@ -7,8 +7,11 @@
 
 package io.harness.pms.outbox.autoLog;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogContext;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 public class OutboxLogContext extends AutoLogContext {
   public static final String ID = "accountId";
 
