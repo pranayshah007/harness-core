@@ -314,22 +314,18 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     backgroundTaskUtility.queueJob(() -> saveInitialiseExecutionSweepingOutput(ambiance));
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
+    String errorMessage;
     responseData = serializedResponseDataHelper.deserialize(responseData);
     if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
       String message;
       if (responseData instanceof ErrorNotifyResponseData) {
-        if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
-            == Infrastructure.Type.KUBERNETES_DIRECT) {
-          message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-              new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
-        } else {
-          message = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
-        }
-      } else if (responseData instanceof FailureResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        errorMessage = "Delegate is not able to connect to created build farm";
+      } else {
+        errorMessage = "Failed to initialise CI execution";
         message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
             new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
-      } else {
-        throw new CIStageExecutionException("Unexpected response received while process CI execution");
       }
 
       FailureData failureData = FailureData.newBuilder()
@@ -341,10 +337,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(errorMessage).addFailureData(failureData).build())
           .build();
     }
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
