@@ -210,11 +210,6 @@ public interface DelegateAgentManagerClient {
       @Query("taskId") String taskId, @Query("accountId") String accountId);
 
   @Consumes({"application/x-protobuf"})
-  @GET("agent/delegates/perpetual-task/context/v2")
-  Call<PerpetualTaskContextResponse> perpetualTaskContextV2(
-      @Query("taskId") String taskId, @Query("accountId") String accountId);
-
-  @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/perpetual-task/heartbeat")
   Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
 

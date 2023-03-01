@@ -56,7 +56,6 @@ import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
-import com.stripe.param.SubscriptionSearchParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,7 +73,6 @@ public class StripeHelperImpl implements StripeHelper {
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String MODULE_TYPE_KEY = "moduleType";
   private static final String CUSTOMER_EMAIL_KEY = "customer_email";
-  private static final String SEARCH_ACCOUNT_ID = "metadata['accountIdentifier']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
@@ -201,15 +199,6 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public Optional<Subscription> searchSubscription(String accountIdentifier) {
-    String searchString = String.format(SEARCH_ACCOUNT_ID, accountIdentifier);
-
-    SubscriptionSearchParams params = SubscriptionSearchParams.builder().setQuery(searchString).build();
-
-    return stripeHandler.searchSubscriptions(params).getData().stream().findFirst();
-  }
-
-  @Override
   public Optional<Price> getPrice(
       SubscriptionRequest subscriptionRequest, SubscriptionItemRequest subscriptionItemRequest) {
     String searchString = subscriptionItemRequest.isQuantityIncludedInPrice()
@@ -274,6 +263,7 @@ public class StripeHelperImpl implements StripeHelper {
     // Add metadata
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ACCOUNT_IDENTIFIER_KEY, stripeSubscriptionRequest.getAccountIdentifier());
+    metadata.put(MODULE_TYPE_KEY, stripeSubscriptionRequest.getModuleType());
     metadata.put(CUSTOMER_EMAIL_KEY, stripeSubscriptionRequest.getCustomerEmail());
     creationParamsBuilder.setMetadata(metadata);
 
@@ -288,19 +278,6 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public SubscriptionDetailDTO addToSubscription(
-      StripeSubscriptionRequest subscriptionRequest, Subscription subscription) {
-    subscription.getItems().getData().stream().forEach(subscriptionItem -> {
-      subscriptionRequest.getItems().add(StripeItemRequest.Builder.newInstance()
-                                             .withQuantity(subscriptionItem.getQuantity())
-                                             .withPriceId(subscriptionItem.getPrice().getId())
-                                             .build());
-    });
-
-    return updateSubscription(subscriptionRequest);
-  }
-
-  @Override
   public SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest) {
     Subscription subscription = stripeHandler.retrieveSubscription(stripeSubscriptionRequest.getSubscriptionId());
 
@@ -311,7 +288,7 @@ public class StripeHelperImpl implements StripeHelper {
     // Go through current subscription and update.
     SubscriptionUpdateParams.Builder updateParamBuilder = SubscriptionUpdateParams.builder();
     updateParamBuilder.setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.ALWAYS_INVOICE)
-        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.ALLOW_INCOMPLETE)
+        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.PENDING_IF_INCOMPLETE)
         .addAllExpand(subscriptionExpandList);
     if (!newItems.isEmpty()) {
       List<SubscriptionItem> data = subscription.getItems().getData();
@@ -580,6 +557,7 @@ public class StripeHelperImpl implements StripeHelper {
     SubscriptionDetailDTO dto = SubscriptionDetailDTO.builder()
                                     .subscriptionId(subscription.getId())
                                     .accountIdentifier(subscription.getMetadata().get(ACCOUNT_IDENTIFIER_KEY))
+                                    .moduletype(ModuleType.valueOf(subscription.getMetadata().get(MODULE_TYPE_KEY)))
                                     .customerId(subscription.getCustomer())
                                     .status(subscription.getStatus())
                                     .latestInvoice(subscription.getLatestInvoice())

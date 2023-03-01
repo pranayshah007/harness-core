@@ -45,6 +45,7 @@ import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowService;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.HashMap;
@@ -52,10 +53,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.StreamingOutput;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class MigrationResourceService {
   @Inject private ConnectorImportService connectorImportService;
   @Inject private SecretManagerImportService secretManagerImportService;
@@ -146,6 +151,8 @@ public class MigrationResourceService {
   }
 
   public List<Set<SimilarWorkflowDetail>> listSimilarWorkflow(String accountId) {
+    Stopwatch startTime = Stopwatch.createStarted();
+
     Map<String, Workflow> workflowMap = new HashMap<>();
     List<Workflow> workflowsWithAppId = hPersistence.createQuery(Workflow.class)
                                             .filter(WorkflowKeys.accountId, accountId)
@@ -157,9 +164,11 @@ public class MigrationResourceService {
     for (int i = 0; i < list.length; ++i) {
       list[i] = i;
     }
-
+    Map<Pair<String, String>, Long> timeTakenMap = new HashMap<>();
+    Stopwatch similarityStartTime = Stopwatch.createStarted();
     for (int i = 0; i < workflowsWithAppId.size(); ++i) {
       for (int j = i + 1; j < workflowsWithAppId.size(); ++j) {
+        Stopwatch innerLoopStartTime = Stopwatch.createStarted();
         if (!areConnected(list, i, j)) {
           Workflow workflow1 =
               getWorkflow(workflowMap, workflowsWithAppId.get(i).getUuid(), workflowsWithAppId.get(i).getAppId());
@@ -169,8 +178,12 @@ public class MigrationResourceService {
             connect(list, i, j);
           }
         }
+        timeTakenMap.put(Pair.of(workflowsWithAppId.get(i).getUuid(), workflowsWithAppId.get(j).getUuid()),
+            innerLoopStartTime.elapsed(TimeUnit.MILLISECONDS));
       }
     }
+    long similarityTimeTaken = similarityStartTime.elapsed(TimeUnit.MILLISECONDS);
+    Stopwatch similarGroupingStartTime = Stopwatch.createStarted();
     Map<Integer, Set<SimilarWorkflowDetail>> similarWorkflows = new HashMap<>();
     for (int i = 0; i < list.length; ++i) {
       Set<SimilarWorkflowDetail> ids = similarWorkflows.getOrDefault(list[i], new HashSet<>());
@@ -182,6 +195,12 @@ public class MigrationResourceService {
                   .build());
       similarWorkflows.put(list[i], ids);
     }
+    log.info(
+        "Total time for processing similarity: [{}], similar group: [{}], and overall total time: [{}], total workflows: [{}]",
+        similarityTimeTaken, similarGroupingStartTime.elapsed(TimeUnit.MILLISECONDS),
+        startTime.elapsed(TimeUnit.MILLISECONDS), workflowsWithAppId.size());
+
+    log.info("Detailed start time {}", timeTakenMap);
 
     return similarWorkflows.values().stream().filter(set -> set.size() > 1).collect(Collectors.toList());
   }

@@ -379,7 +379,6 @@ public enum FeatureName {
   NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
   SPG_WFE_PROJECTIONS_GRAPHQL_DEPLOYMENTS_PAGE(
       "Enable projection on deployments page and graphql executions", HarnessTeam.SPG),
-  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
   CD_GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
@@ -626,13 +625,14 @@ public enum FeatureName {
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
   PL_JPMC_SCIM_REQUIREMENTS(
       "This flag relates to all the changes requested by JPMC towards SCIM API calls", HarnessTeam.PL),
-  DO_NOT_MIGRATE_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
+  PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),
   GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
   FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE(
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
-      HarnessTeam.PIPELINE);
+      HarnessTeam.PIPELINE),
+  CD_TERRAFORM_CLOUD_CLI_NG("FF to enable terraform cloud backend cli in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

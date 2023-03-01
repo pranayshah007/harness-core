@@ -10,6 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -341,6 +342,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToS3);
     stepInfos.add(actionStepInfo);
     stepInfos.add(bitriseStepInfo);
+
+    stepInfos.addAll(sscaStepPaletteSteps);
 
     return stepInfos;
   }

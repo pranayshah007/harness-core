@@ -465,7 +465,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(425, "BAMBOO_ARTIFACT_TASK_NG");
     taskTypeOrdinalMapping.put(426, "AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG");
     taskTypeOrdinalMapping.put(427, "AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG");
-
+    taskTypeOrdinalMapping.put(428, "TERRAFORM_TASK_NG_V3");
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

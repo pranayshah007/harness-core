@@ -37,7 +37,7 @@ public interface PerpetualTaskService {
 
   String getPerpetualTaskType(String taskId);
 
-  PerpetualTaskExecutionContext perpetualTaskContext(String taskId, boolean referenceFalseKryoSerializer);
+  PerpetualTaskExecutionContext perpetualTaskContext(String taskId);
 
   boolean triggerCallback(String taskId, long heartbeatMillis, PerpetualTaskResponse perpetualTaskResponse);
 

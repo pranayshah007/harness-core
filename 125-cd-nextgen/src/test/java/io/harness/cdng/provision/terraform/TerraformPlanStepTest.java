@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -241,6 +242,77 @@ public class TerraformPlanStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacWithGithubStoreWhenTFCloudCli() {
+    Ambiance ambiance = getAmbiance();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreVarFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("VarFiles/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+    TerraformPlanStepParameters planStepParameters =
+        TerraformStepDataGenerator.generateStepPlanFile(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
+
+    planStepParameters.configuration.isTerraformCloudCli.setValue(true);
+
+    GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
+                                    .gitAuthType(GitAuthType.HTTP)
+                                    .gitConnectionType(GitConnectionType.ACCOUNT)
+                                    .delegateSelectors(Collections.singleton("delegateName"))
+                                    .url("https://github.com/wings-software")
+                                    .branchName("master")
+                                    .build();
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().branch("master").connectorName("terraform").gitConfigDTO(gitConfigDTO).build();
+    GitFetchFilesConfig gitFetchFilesConfig = GitFetchFilesConfig.builder()
+                                                  .identifier("terraform")
+                                                  .gitStoreDelegateConfig(gitStoreDelegateConfig)
+                                                  .succeedIfFileNotFound(false)
+                                                  .build();
+
+    List<TerraformVarFileInfo> varFileInfo = new ArrayList<>();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(planStepParameters).build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    doReturn("test-account/test-org/test-project/id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn("fileId").when(terraformStepHelper).getLatestFileId(any());
+    doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any(), any());
+    doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
+    doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
+    doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
+    doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
+        .when(terraformStepHelper)
+        .getEnvironmentVariablesMap(any());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskRequest taskRequest = terraformPlanStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+    assertThat(taskRequest).isNotNull();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    TerraformTaskNGParameters taskParameters =
+        (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskParameters.isSaveTerraformStateJson()).isFalse();
+    assertThat(taskParameters.isSaveTerraformHumanReadablePlan()).isFalse();
+    assertThat(taskParameters.getEncryptionConfig()).isNull();
+    assertThat(taskParameters.getWorkspace()).isNull();
+    assertThat(taskParameters.isTerraformCloudCli()).isTrue();
+  }
+
+  @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithArtifactoryStore() {
@@ -334,7 +406,10 @@ public class TerraformPlanStepTest extends CategoryTest {
     TerraformPlanStepParameters planStepParameters =
         TerraformPlanStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("id"))
-            .configuration(TerraformPlanExecutionDataParameters.builder().command(TerraformPlanCommand.APPLY).build())
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .isTerraformCloudCli(ParameterField.createValueField(false))
+                               .command(TerraformPlanCommand.APPLY)
+                               .build())
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(planStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
@@ -424,6 +499,7 @@ public class TerraformPlanStepTest extends CategoryTest {
                       .stepFqn("step1")
                       .provisionerIdentifier(ParameterField.createValueField("provisioner1"))
                       .configuration(TerraformPlanExecutionDataParameters.builder()
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
                                          .exportTerraformPlanJson(ParameterField.createValueField(true))
                                          .build())
                       .build())
@@ -465,6 +541,7 @@ public class TerraformPlanStepTest extends CategoryTest {
                       .provisionerIdentifier(ParameterField.createValueField("provisioner1"))
                       .configuration(TerraformPlanExecutionDataParameters.builder()
                                          .exportTerraformHumanReadablePlan(ParameterField.createValueField(true))
+                                         .isTerraformCloudCli(ParameterField.createValueField(false))
                                          .build())
                       .build())
             .build();

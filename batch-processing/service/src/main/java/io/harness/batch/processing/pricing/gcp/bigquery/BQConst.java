@@ -10,8 +10,6 @@ package io.harness.batch.processing.pricing.gcp.bigquery;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.text.SimpleDateFormat;
-
 @OwnedBy(HarnessTeam.CE)
 public class BQConst {
   private BQConst() {}

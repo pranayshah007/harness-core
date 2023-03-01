@@ -9,6 +9,7 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,8 +44,6 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateParams() {
     TerraformApplyStepInfo terraformApplyStepInfo = new TerraformApplyStepInfo();
-    Assertions.assertThatThrownBy(terraformApplyStepInfo::validateSpecParams)
-        .hasMessageContaining("Terraform Step configuration is null");
 
     TerraformStepConfiguration terraformStepConfiguration = new TerraformStepConfiguration();
     terraformApplyStepInfo.setTerraformStepConfiguration(terraformStepConfiguration);
@@ -162,14 +161,69 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
     SpecParameters specParameters = terraformApplyStepInfo.getSpecParameters();
     TerraformApplyStepParameters terraformApplyStepParameters = (TerraformApplyStepParameters) specParameters;
     assertThat(specParameters).isNotNull();
-    assertThat(terraformApplyStepParameters.configuration.type).isEqualTo(TerraformStepConfigurationType.INLINE);
-    assertThat(terraformApplyStepParameters.configuration.spec.configFiles.store.getType())
+    assertThat(terraformApplyStepParameters.configuration.getType()).isEqualTo(TerraformStepConfigurationType.INLINE);
+    assertThat(terraformApplyStepParameters.configuration.getSpec().configFiles.store.getType())
         .isEqualTo(StoreConfigType.GITHUB);
-    assertThat(terraformApplyStepParameters.configuration.spec.varFiles.get("var-file-1").type).isEqualTo("Remote");
-    assertThat(terraformApplyStepParameters.configuration.spec.varFiles.get("var-file-1").identifier)
+    assertThat(terraformApplyStepParameters.configuration.getSpec().varFiles.get("var-file-1").type)
+        .isEqualTo("Remote");
+    assertThat(terraformApplyStepParameters.configuration.getSpec().varFiles.get("var-file-1").identifier)
         .isEqualTo("var-file-1");
     assertThat(terraformApplyStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
         .isEqualTo("sel1");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetSpecParametersAndCloudCli() {
+    TerraformApplyStepInfo terraformApplyStepInfo = new TerraformApplyStepInfo();
+    TerraformCloudCliExecutionData terraformExecutionData = new TerraformCloudCliExecutionData();
+    TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
+    configFilesWrapper.setStore(StoreConfigWrapper.builder()
+                                    .spec(GithubStore.builder()
+                                              .branch(ParameterField.createValueField("master"))
+                                              .gitFetchType(FetchType.BRANCH)
+                                              .connectorRef(ParameterField.createValueField("terraform"))
+                                              .folderPath(ParameterField.createValueField("Config/"))
+                                              .build())
+                                    .type(StoreConfigType.GITHUB)
+                                    .build());
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+    remoteTerraformVarFileSpec.setStore(StoreConfigWrapper.builder()
+                                            .spec(GitLabStore.builder()
+                                                      .branch(ParameterField.createValueField("master"))
+                                                      .gitFetchType(FetchType.BRANCH)
+                                                      .connectorRef(ParameterField.createValueField("terraform"))
+                                                      .folderPath(ParameterField.createValueField("VarFiles/"))
+                                                      .build())
+                                            .type(StoreConfigType.GITLAB)
+                                            .build());
+    terraformExecutionData.setTerraformConfigFilesWrapper(configFilesWrapper);
+    TerraformVarFileWrapper terraformVarFileWrapper = new TerraformVarFileWrapper();
+    terraformVarFileWrapper.setVarFile(
+        TerraformVarFile.builder().identifier("var-file-1").type("Remote").spec(remoteTerraformVarFileSpec).build());
+    List<TerraformVarFileWrapper> varFiles = new LinkedList<>();
+    varFiles.add(terraformVarFileWrapper);
+    terraformExecutionData.setTerraformVarFiles(varFiles);
+    TerraformCloudCliStepConfiguration terraformStepConfiguration = new TerraformCloudCliStepConfiguration();
+    terraformStepConfiguration.setTerraformCloudCliExecutionData(terraformExecutionData);
+    terraformApplyStepInfo.setTerraformCloudCliStepConfiguration(terraformStepConfiguration);
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformApplyStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+
+    SpecParameters specParameters = terraformApplyStepInfo.getSpecParameters();
+    TerraformApplyStepParameters terraformApplyStepParameters = (TerraformApplyStepParameters) specParameters;
+    assertThat(specParameters).isNotNull();
+    assertThat(terraformApplyStepParameters.configuration.getSpec().configFiles.store.getType())
+        .isEqualTo(StoreConfigType.GITHUB);
+    assertThat(terraformApplyStepParameters.configuration.getSpec().varFiles.get("var-file-1").type)
+        .isEqualTo("Remote");
+    assertThat(terraformApplyStepParameters.configuration.getSpec().varFiles.get("var-file-1").identifier)
+        .isEqualTo("var-file-1");
+    assertThat(terraformApplyStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
+    assertThat(terraformApplyStepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue()).isTrue();
+    assertThat(terraformApplyStepParameters.getConfiguration().getType().getDisplayName()).isEqualTo("Inline");
   }
 
   @Test

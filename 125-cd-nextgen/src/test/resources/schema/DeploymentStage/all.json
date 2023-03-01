@@ -15415,10 +15415,12 @@
         {
           "type": "object",
           "required": [
-            "configuration",
             "provisionerIdentifier"
           ],
           "properties": {
+            "cloudCliConfiguration": {
+              "$ref": "#/definitions/TerraformCloudCliStepConfiguration"
+            },
             "configuration": {
               "$ref": "#/definitions/TerraformStepConfiguration"
             },
@@ -15444,6 +15446,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "configuration"
+              ]
+            },
+            {
+              "required": [
+                "cloudCliConfiguration"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -15513,6 +15529,123 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudCliExecutionData": {
+      "type": "object",
+      "required": [
+        "configFiles"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerraformBackendConfig"
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerraformConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformVarFileWrapper"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudCliPlanExecutionData": {
+      "type": "object",
+      "required": [
+        "command",
+        "configFiles"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerraformBackendConfig"
+        },
+        "command": {
+          "type": "string",
+          "enum": [
+            "Apply",
+            "Destroy"
+          ]
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerraformConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerraformVarFileWrapper"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerraformCloudCliStepConfiguration": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TerraformCloudCliExecutionData"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformCloudPlanAndApplySpec": {
@@ -16137,10 +16270,12 @@
         {
           "type": "object",
           "required": [
-            "configuration",
             "provisionerIdentifier"
           ],
           "properties": {
+            "cloudCliConfiguration": {
+              "$ref": "#/definitions/TerraformCloudCliStepConfiguration"
+            },
             "configuration": {
               "$ref": "#/definitions/TerraformStepConfiguration"
             },
@@ -16166,6 +16301,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "configuration"
+              ]
+            },
+            {
+              "required": [
+                "cloudCliConfiguration"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -16316,10 +16465,12 @@
         {
           "type": "object",
           "required": [
-            "configuration",
             "provisionerIdentifier"
           ],
           "properties": {
+            "cloudCliConfiguration": {
+              "$ref": "#/definitions/TerraformCloudCliPlanExecutionData"
+            },
             "configuration": {
               "$ref": "#/definitions/TerraformPlanExecutionData"
             },
@@ -16342,6 +16493,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "configuration"
+              ]
+            },
+            {
+              "required": [
+                "cloudCliConfiguration"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

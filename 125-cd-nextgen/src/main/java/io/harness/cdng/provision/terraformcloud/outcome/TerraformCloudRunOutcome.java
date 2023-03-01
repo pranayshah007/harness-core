@@ -26,4 +26,5 @@ public class TerraformCloudRunOutcome implements Outcome {
   String jsonFilePath;
   String runId;
   HashMap<String, Object> outputs;
+  String policyChecksFilePath;
 }
