@@ -10,9 +10,9 @@ package io.harness.idp.gitintegration.implementation;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.GitIntegrationConstants;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class GitlabConnectorProcessor extends ConnectorProcessor {
+public class BitbucketConnectorProcessor extends ConnectorProcessor {
   @Override
   public List<EnvironmentSecret> getConnectorSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
@@ -32,43 +32,44 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
     List<EnvironmentSecret> resultList = new ArrayList<>();
 
     if (connectorDTO.isEmpty()) {
-      throw new InvalidRequestException(String.format(
-          "Gitlab Connector not found for identifier: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
-    }
-
-    ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnectorInfo();
-    if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITLAB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
-          String.format("Connector with id - [%s] is not gitlab connector for accountId: [%s]", connectorIdentifier,
+          String.format("Bitbucket Connector not found for identifier: [%s], accountId: [%s]", connectorIdentifier,
               accountIdentifier));
     }
 
-    GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
-    GitlabHttpCredentialsOutcomeDTO outcome =
-        (GitlabHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_TOKEN_AUTH_TYPE)) {
+    ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnectorInfo();
+    if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
+      throw new InvalidRequestException(
+          String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
+              accountIdentifier));
+    }
+
+    BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    BitbucketHttpCredentialsOutcomeDTO outcome =
+        (BitbucketHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
+    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_PASSWORD_AUTH_TYPE)) {
       throw new InvalidRequestException(String.format(
-          " Authentication is not Username and Token for Gitlab Connector with id - [%s], accountId: [%s]",
+          " Authentication is not Username and Password for Bitbucket Connector with id - [%s], accountId: [%s]",
           connectorIdentifier, accountIdentifier));
     }
 
-    GitlabUsernameTokenDTO spec = (GitlabUsernameTokenDTO) outcome.getSpec();
-    String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
-    if (tokenSecretIdentifier.isEmpty()) {
+    BitbucketUsernamePasswordDTO spec = (BitbucketUsernamePasswordDTO) outcome.getSpec();
+    String pwdSecretIdentifier = spec.getPasswordRef().getIdentifier();
+    if (pwdSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(String.format(
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
     EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
-    tokenEnvironmentSecret.secretIdentifier(tokenSecretIdentifier);
-    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.GITLAB_TOKEN);
-    DecryptedSecretValue tokenDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
-        accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
-    if (tokenDecryptedSecretValue == null) {
+    tokenEnvironmentSecret.secretIdentifier(pwdSecretIdentifier);
+    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.BITBUCKET_TOKEN);
+    DecryptedSecretValue pwdDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
+        accountIdentifier, orgIdentifier, projectIdentifier, pwdSecretIdentifier);
+    if (pwdDecryptedSecretValue == null) {
       throw new InvalidRequestException(String.format(
-          "Token Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+          "Password Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
-    tokenEnvironmentSecret.setDecryptedValue(tokenDecryptedSecretValue.getDecryptedValue());
+    tokenEnvironmentSecret.setDecryptedValue(pwdDecryptedSecretValue.getDecryptedValue());
     resultList.add(tokenEnvironmentSecret);
     return resultList;
   }
