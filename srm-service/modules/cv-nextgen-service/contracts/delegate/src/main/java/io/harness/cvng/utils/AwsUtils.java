@@ -104,11 +104,13 @@ public class AwsUtils {
     if (awsCredentials instanceof AwsSessionCredentials) {
       sessionToken = ((AwsSessionCredentials) awsCredentials).sessionToken();
     }
-    return AwsAccessKeys.builder()
-        .accessKeyId(awsCredentials.accessKeyId())
-        .secretAccessKey(awsCredentials.secretAccessKey())
-        .sessionToken(sessionToken)
-        .build();
+    AwsAccessKeys awsAccessKeys = AwsAccessKeys.builder()
+                                      .accessKeyId(awsCredentials.accessKeyId())
+                                      .secretAccessKey(awsCredentials.secretAccessKey())
+                                      .sessionToken(sessionToken)
+                                      .build();
+    log.info("penguin awsAccessKeys {}", awsAccessKeys);
+    return awsAccessKeys;
   }
   private AwsInternalConfig createAwsInternalConfig(AwsConnectorDTO awsConnectorDTO) {
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
