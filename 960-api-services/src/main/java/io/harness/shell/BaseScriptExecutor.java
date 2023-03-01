@@ -31,5 +31,8 @@ public interface BaseScriptExecutor {
   ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis);
 
+  ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean disableCollectingVarsOnScriptExit);
+
   LogCallback getLogCallback();
 }

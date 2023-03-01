@@ -54,6 +54,8 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
 
+  boolean disableCollectingVarsOnScriptExit;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();

@@ -190,6 +190,12 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+    return executeCommandString(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis, true);
+  }
+
+  @Override
+  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean disableCollectingVarsOnScriptExit) {
     try {
       ExecuteCommandResponse executeCommandResponse = null;
 
@@ -202,7 +208,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
             executeCommandResponse = executeBashScript(command,
                 envVariablesToCollect == null ? Collections.emptyList() : envVariablesToCollect,
                 secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect,
-                timeoutInMillis);
+                timeoutInMillis, disableCollectingVarsOnScriptExit);
           } catch (Exception e) {
             log.error("[ScriptProcessExecutor-01] Error while executing script on delegate: ", e);
             saveExecutionLog(format("Exception: %s", e), ERROR);
@@ -220,7 +226,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   }
 
   private ExecuteCommandResponse executeBashScript(String command, List<String> envVariablesToCollect,
-      List<String> secretVariablesToCollect, Long timeoutInMillis) throws IOException {
+      List<String> secretVariablesToCollect, Long timeoutInMillis, boolean disableCollectingVarsOnScriptExit)
+      throws IOException {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
     ExecuteCommandResponseBuilder executeCommandResponseBuilder = ExecuteCommandResponse.builder();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
@@ -263,8 +270,14 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     if (!allVariablesToCollect.isEmpty()) {
       envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
       envVariablesOutputFile = new File(workingDirectory, envVariablesFilename);
-      command = addTrapForCollectingEnvVariables(
-          command, allVariablesToCollect, envVariablesOutputFile.getAbsolutePath(), this.scriptType);
+
+      if (disableCollectingVarsOnScriptExit) {
+        command = addEnvVariablesCollector(
+            command, allVariablesToCollect, envVariablesOutputFile.getAbsolutePath(), this.scriptType);
+      } else {
+        command = addTrapForCollectingEnvVariables(
+            command, allVariablesToCollect, envVariablesOutputFile.getAbsolutePath(), this.scriptType);
+      }
     }
 
     if (this.scriptType == ScriptType.POWERSHELL) {
@@ -316,7 +329,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
-      if (envVariablesOutputFile != null) {
+      if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         try (BufferedReader br = new BufferedReader(
                  new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);

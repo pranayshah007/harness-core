@@ -8,10 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.DISABLE_WINRM_COMMAND_ENCODING;
-import static io.harness.beans.FeatureName.LOCAL_DELEGATE_CONFIG_OVERRIDE;
-import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
-import static io.harness.beans.FeatureName.WINRM_SCRIPT_COMMAND_SPLIT;
+import static io.harness.beans.FeatureName.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -519,6 +516,8 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
                 featureFlagService.isEnabled(WINRM_SCRIPT_COMMAND_SPLIT, executionContext.getApp().getAccountId()))
             .disableWinRMEnvVariables(featureFlagService.isNotEnabled(
                 FeatureName.ENABLE_WINRM_ENV_VARIABLES, executionContext.getApp().getAccountId()))
+            .disableCollectingVarsOnScriptExit(featureFlagService.isEnabled(
+                DISABLE_COLLECTING_VARS_ON_SCRIPT_EXIT, executionContext.getApp().getAccountId()))
             .saveExecutionLogs(true)
             .enableJSchLogs(isJSchLogsEnabledPerAccount(executionContext.getApp().getAccountId()));
 

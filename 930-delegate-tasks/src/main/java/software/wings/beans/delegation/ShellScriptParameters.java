@@ -106,6 +106,8 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
   private boolean enableJSchLogs;
   private Integer sshTimeOut;
 
+  boolean disableCollectingVarsOnScriptExit;
+
   private Map<String, String> getResolvedEnvironmentVariables() {
     Map<String, String> resolvedEnvironment = new HashMap<>();
 

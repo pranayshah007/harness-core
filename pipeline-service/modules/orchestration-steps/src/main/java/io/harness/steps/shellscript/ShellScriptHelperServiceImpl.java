@@ -213,6 +213,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
     taskParametersNGBuilder.k8sInfraDelegateConfig(
         shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
 
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_COLLECTING_VARS_ON_SCRIPT_EXIT)) {
+      taskParametersNGBuilder.disableCollectingVarsOnScriptExit(true);
+    }
+
     if (!shellScriptStepParameters.onDelegate.getValue()) {
       ExecutionTarget executionTarget = shellScriptStepParameters.getExecutionTarget();
       validateExecutionTarget(executionTarget);
@@ -258,6 +263,13 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
     shellScriptHelperService.prepareTaskParametersForExecutionTarget(
         ambiance, shellScriptStepParameters, taskParametersNGBuilder);
+
+    // do not collect vars on script exit if FF on
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_COLLECTING_VARS_ON_SCRIPT_EXIT)) {
+      taskParametersNGBuilder.disableCollectingVarsOnScriptExit(true);
+    }
+
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
         .environmentVariables(

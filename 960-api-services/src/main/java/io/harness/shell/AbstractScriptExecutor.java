@@ -73,6 +73,10 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
   public abstract ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis);
 
+  @Override
+  public abstract ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean disableCollectingVarsOnScriptExit);
+
   public abstract String getAccountId();
 
   public abstract String getCommandUnitName();
@@ -136,11 +140,12 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
       String command, List<String> envVariablesToCollect, String envVariablesOutputFilePath, ScriptType scriptType) {
     StringBuilder wrapperCommand = new StringBuilder();
     if (ScriptType.BASH == scriptType) {
-      wrapperCommand.append("function finish {");
-      wrapperCommand.append("\n");
+      wrapperCommand.append("function finish {\n");
     } else if (ScriptType.POWERSHELL == scriptType) {
-      wrapperCommand.append("trap {");
-      wrapperCommand.append("\n");
+      // wrap the command within try block
+      wrapperCommand.append("try {\n");
+      wrapperCommand.append(command).append("\n}\n");
+      wrapperCommand.append("finally\n{\n");
     }
     String redirect = ">";
     for (String env : envVariablesToCollect) {
@@ -162,12 +167,11 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
     if (ScriptType.BASH == scriptType) {
       wrapperCommand.append("}").append("\n");
       wrapperCommand.append("trap finish EXIT").append("\n");
+      wrapperCommand.append(command);
     } else if (ScriptType.POWERSHELL == scriptType) {
       wrapperCommand.append("}");
-      wrapperCommand.append("\n");
     }
 
-    wrapperCommand.append(command);
     return wrapperCommand.toString();
   }
 

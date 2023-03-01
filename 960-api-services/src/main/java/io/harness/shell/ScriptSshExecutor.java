@@ -208,22 +208,30 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
+    return executeCommandString(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis, true);
+  }
+
+  @Override
+  public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, Long timeoutInMillis, boolean disableCollectingVarsOnScriptExit) {
     try {
       return getExecuteCommandResponse(command, envVariablesToCollect,
-          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false);
+          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, false,
+          disableCollectingVarsOnScriptExit);
     } catch (SshRetryableException ex) {
       log.info("As MaxSessions limit reached, fetching new session for executionId: {}, hostName: {}",
           config.getExecutionId(), config.getHost());
       saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
       return getExecuteCommandResponse(command, envVariablesToCollect,
-          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, true);
+          secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect, true,
+          disableCollectingVarsOnScriptExit);
     } finally {
       logCallback.dispatchLogs();
     }
   }
 
-  public ExecuteCommandResponse getExecuteCommandResponse(
-      String command, List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect, boolean isRetry) {
+  public ExecuteCommandResponse getExecuteCommandResponse(String command, List<String> envVariablesToCollect,
+      List<String> secretEnvVariablesToCollect, boolean isRetry, boolean disableCollectingVarsOnScriptExit) {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
     ExecuteCommandResponseBuilder executeCommandResponseBuilder = ExecuteCommandResponse.builder();
     CommandExecutionStatus commandExecutionStatus = FAILURE;
@@ -261,8 +269,13 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
       if (!allVariablesToCollect.isEmpty()) {
         envVariablesFilename = "harness-" + this.config.getExecutionId() + ".out";
-        command = addTrapForCollectingEnvVariables(
-            command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
+        if (disableCollectingVarsOnScriptExit) {
+          command = addEnvVariablesCollector(
+              command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
+        } else {
+          command = addTrapForCollectingEnvVariables(
+              command, allVariablesToCollect, "\"" + directoryPath + envVariablesFilename + "\"", ScriptType.BASH);
+        }
       }
 
       try (OutputStream outputStream = channel.getOutputStream(); InputStream inputStream = channel.getInputStream()) {

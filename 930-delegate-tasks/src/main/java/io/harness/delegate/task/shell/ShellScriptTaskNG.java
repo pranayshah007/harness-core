@@ -76,8 +76,12 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
         // if (taskParameters.isLocalOverrideFeatureFlag()) {
         //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
         // }
-        ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(
-            taskParameters.getScript(), taskParameters.getOutputVars(), taskParameters.getSecretOutputVars(), null);
+
+        boolean disableCollectingVarsOnScriptExit = taskParameters.isDisableCollectingVarsOnScriptExit();
+
+        ExecuteCommandResponse executeCommandResponse =
+            executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars(),
+                taskParameters.getSecretOutputVars(), null, disableCollectingVarsOnScriptExit);
         return ShellScriptTaskResponseNG.builder()
             .executeCommandResponse(executeCommandResponse)
             .status(executeCommandResponse.getStatus())

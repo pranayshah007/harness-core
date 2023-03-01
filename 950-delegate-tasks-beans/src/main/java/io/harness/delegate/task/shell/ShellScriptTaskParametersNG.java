@@ -48,6 +48,7 @@ public class ShellScriptTaskParametersNG
   List<EncryptedDataDetail> encryptionDetails;
   String host;
 
+  boolean disableCollectingVarsOnScriptExit;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
