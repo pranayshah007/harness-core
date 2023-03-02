@@ -5601,15 +5601,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.2.0-SNAPSHOT) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.2.0.Alpha2) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.2.0-SNAPSHOT",
-        "io.debezium:debezium-connector-mongodb:2.2.0-SNAPSHOT",
-        "io.debezium:debezium-core:2.2.0-SNAPSHOT",
+        "io.debezium:debezium-api:2.2.0.Alpha2",
+        "io.debezium:debezium-connector-mongodb:2.2.0.Alpha2",
+        "io.debezium:debezium-core:2.2.0.Alpha2",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5617,15 +5617,12 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.2.0-SNAPSHOT",
+            version = "2.2.0.Alpha2",
         ),
     ],
     repositories = [
-        "https://repo1.maven.org/maven2",
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
-        "https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core/4.3.4",
-        "https://oss.sonatype.org/content/repositories/snapshots/",
     ],
 )
 
