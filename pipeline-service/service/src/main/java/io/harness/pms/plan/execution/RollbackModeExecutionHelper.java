@@ -55,6 +55,7 @@ public class RollbackModeExecutionHelper {
         .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
             accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
         .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+        .setIsRollbackMode(true)
         .build();
   }
 

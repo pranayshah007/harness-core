@@ -28,6 +28,7 @@ message ExecutionMetadata {
   PipelineStageInfo pipelineStageInfo = 16;
   string harnessVersion = 17;
   bool isDebug = 18;
+  bool isRollbackMode = 19;
 }
 
 message RetryExecutionInfo {
