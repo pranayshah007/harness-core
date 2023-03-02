@@ -3134,7 +3134,7 @@ public class DelegateServiceImpl implements DelegateService {
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DISCONNECTED);
     remoteObserverInformer.sendEvent(
-        ReflectionUtils.getMethod(DelegateObserver.class, "onDisconnected", String.class, String.class),
+        ReflectionUtils.getMethod(DelegateObserver.class, "onDisconnected", String.class, String.class, String.class),
         DelegateServiceImpl.class, accountId, delegateId);
   }
 
