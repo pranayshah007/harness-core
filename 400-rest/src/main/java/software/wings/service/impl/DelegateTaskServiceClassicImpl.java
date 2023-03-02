@@ -2005,10 +2005,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
     String errorSubMsg = "disconnected while executing the task";
-    if (delegate.isImmutable() && reasonOfDisconnection.equals("RESTARTED")){
+    if (delegate.isImmutable() && reasonOfDisconnection.equals("RESTARTED")) {
       errorSubMsg = "restarted while executing the task";
     }
-    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] "+errorSubMsg;
+    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] "+ errorSubMsg;
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)
