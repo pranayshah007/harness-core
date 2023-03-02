@@ -31,6 +31,7 @@ import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
+import io.harness.delegate.task.terraform.TerraformTaskNGResponse.TerraformTaskNGResponseBuilder;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
@@ -122,9 +123,17 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     }
 
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
-    List<String> varFilePaths =
-        terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(taskParameters.getVarFileInfos(),
-            scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory, commitIdToFetchedFilesMap);
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory,
+        commitIdToFetchedFilesMap, taskParameters.isTerraformCloudCli());
+
+    if (taskParameters.isTerraformCloudCli() && !varFilePaths.isEmpty()) {
+      logCallback.saveExecutionLog(format("Var files are moved in %s having a suffix: .auto.tfvars", scriptDirectory),
+          INFO, CommandExecutionStatus.RUNNING);
+      for (String varFilePath : varFilePaths) {
+        TerraformHelperUtils.copytfCloudVarFilesToScriptDirectory(varFilePath, scriptDirectory);
+      }
+    }
 
     String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
 
@@ -168,6 +177,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
+              .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -184,52 +194,59 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
       String uploadedTfStateFile = terraformBaseHelper.uploadTfStateFile(
           taskParameters.getAccountId(), delegateId, taskId, taskParameters.getEntityId(), tfStateFile);
 
-      logCallback.saveExecutionLog(color("\nEncrypting terraform plan \n", LogColor.Yellow, LogWeight.Bold), INFO,
-          CommandExecutionStatus.RUNNING);
-
-      String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
-
-      EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
-          Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
-
+      EncryptedRecordData encryptedTfPlan = null;
       String tfHumanReadablePlanFileId = null;
-      if (taskParameters.isSaveTerraformHumanReadablePlan()) {
-        planHumanReadableOutputStream.flush();
-        planHumanReadableOutputStream.close();
-        String tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
-
-        tfHumanReadablePlanFileId = terraformBaseHelper.uploadTfPlanHumanReadable(taskParameters.getAccountId(),
-            delegateId, taskId, taskParameters.getEntityId(), planName, tfHumanReadableFilePath);
-      }
-
       String tfPlanJsonFileId = null;
-      if (taskParameters.isSaveTerraformStateJson()
-          && planJsonLogOutputStream.getTfPlanShowJsonStatus().equals(CommandExecutionStatus.SUCCESS)) {
-        // We're going to read content from json plan file and ideally no one should write anything into output
-        // stream at this stage. Just in case let's flush everything from buffer and close output stream
-        // We have enough guards at different layers to prevent repeat close as result of autocloseable
-        planJsonLogOutputStream.flush();
-        planJsonLogOutputStream.close();
-        String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
 
-        tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
-            taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+      if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+        logCallback.saveExecutionLog(color("\nEncrypting terraform plan \n", LogColor.Yellow, LogWeight.Bold), INFO,
+            CommandExecutionStatus.RUNNING);
 
-        logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
-            INFO, CommandExecutionStatus.RUNNING);
+        String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
+
+        encryptedTfPlan = terraformBaseHelper.encryptPlan(
+            Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
+
+        if (taskParameters.isSaveTerraformHumanReadablePlan()) {
+          planHumanReadableOutputStream.flush();
+          planHumanReadableOutputStream.close();
+          String tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
+
+          tfHumanReadablePlanFileId = terraformBaseHelper.uploadTfPlanHumanReadable(taskParameters.getAccountId(),
+              delegateId, taskId, taskParameters.getEntityId(), planName, tfHumanReadableFilePath);
+        }
+
+        if (taskParameters.isSaveTerraformStateJson()
+            && planJsonLogOutputStream.getTfPlanShowJsonStatus().equals(CommandExecutionStatus.SUCCESS)) {
+          // We're going to read content from json plan file and ideally no one should write anything into output
+          // stream at this stage. Just in case let's flush everything from buffer and close output stream
+          // We have enough guards at different layers to prevent repeat close as result of autocloseable
+          planJsonLogOutputStream.flush();
+          planJsonLogOutputStream.close();
+          String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
+
+          tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
+              taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+
+          logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
+              INFO, CommandExecutionStatus.RUNNING);
+        }
       }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);
 
-      return TerraformTaskNGResponse.builder()
-          .commitIdForConfigFilesMap(commitIdToFetchedFilesMap)
-          .encryptedTfPlan(encryptedTfPlan)
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .stateFileId(uploadedTfStateFile)
-          .detailedExitCode(detailedExitCode)
-          .tfPlanJsonFileId(tfPlanJsonFileId)
-          .tfHumanReadablePlanFileId(tfHumanReadablePlanFileId)
-          .build();
+      TerraformTaskNGResponseBuilder response = TerraformTaskNGResponse.builder();
+      response.commitIdForConfigFilesMap(commitIdToFetchedFilesMap);
+      response.commandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      response.stateFileId(uploadedTfStateFile);
+      response.detailedExitCode(detailedExitCode);
+
+      if (!terraformExecuteStepRequest.isTerraformCloudCli()) {
+        response.encryptedTfPlan(encryptedTfPlan);
+        response.tfPlanJsonFileId(tfPlanJsonFileId);
+        response.tfHumanReadablePlanFileId(tfHumanReadablePlanFileId);
+      }
+      return response.build();
     }
   }
 }

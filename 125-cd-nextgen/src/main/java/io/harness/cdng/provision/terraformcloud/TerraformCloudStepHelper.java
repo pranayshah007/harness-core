@@ -13,7 +13,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_DESTROY_PLAN_NAME_PREFIX_NG;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_OUTPUT_FORMAT;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudConstants.TFC_PLAN_NAME_PREFIX_NG;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_ONLY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -23,7 +26,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
-import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
+import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
+import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfigDAL;
 import io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters;
@@ -39,7 +43,6 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -57,7 +60,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -68,6 +70,7 @@ public class TerraformCloudStepHelper {
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
+  @Inject public TerraformCloudConfigDAL terraformCloudConfigDAL;
 
   public String generateFullIdentifier(String provisionerIdentifier, Ambiance ambiance) {
     if (Pattern.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN, provisionerIdentifier)) {
@@ -101,6 +104,10 @@ public class TerraformCloudStepHelper {
               .getConnectorConfig();
     }
     return (TerraformCloudConnectorDTO) connectorConfigDTO;
+  }
+
+  public TerraformCloudConnectorDTO getTerraformCloudConnectorWithRef(String connectorRef, Ambiance ambiance) {
+    return (TerraformCloudConnectorDTO) cdStepHelper.getConnector(connectorRef, ambiance).getConnectorConfig();
   }
 
   public void saveTerraformCloudPlanOutput(TerraformCloudPlanSpecParameters planSpecParameters,
@@ -171,7 +178,7 @@ public class TerraformCloudStepHelper {
   }
 
   public void saveTerraformPlanExecutionDetails(
-      Ambiance ambiance, TerraformCloudRunTaskResponse response, String provisionerIdentifier) {
+      Ambiance ambiance, String planFileJsonId, String policyCheckFileJsonId, String provisionerIdentifier) {
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -186,30 +193,13 @@ public class TerraformCloudStepHelper {
             .pipelineExecutionId(planExecutionId)
             .stageExecutionId(stageExecutionId)
             .provisionerId(provisionerIdentifier)
-            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
+            .tfPlanJsonFieldId(planFileJsonId)
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfcPolicyChecksFileId(policyCheckFileJsonId)
+            .tfcPolicyChecksFileBucket(FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS.name())
             .build();
 
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
-  }
-
-  @Nullable
-  public String saveTerraformPlanJsonOutput(
-      Ambiance ambiance, TerraformCloudRunTaskResponse response, String provisionIdentifier) {
-    if (isEmpty(response.getTfPlanJsonFileId())) {
-      return null;
-    }
-
-    TerraformPlanJsonOutput planJsonOutput = TerraformPlanJsonOutput.builder()
-                                                 .provisionerIdentifier(provisionIdentifier)
-                                                 .tfPlanFileId(response.getTfPlanJsonFileId())
-                                                 .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
-                                                 .build();
-
-    String outputName = TerraformPlanJsonOutput.getOutputName(provisionIdentifier);
-    executionSweepingOutputService.consume(ambiance, outputName, planJsonOutput, StepCategory.STEP.name());
-
-    return outputName;
   }
 
   private TerraformCloudPlanOutput getSavedTerraformCloudOutput(
@@ -244,5 +234,48 @@ public class TerraformCloudStepHelper {
       log.error("", exception);
     }
     return outputs;
+  }
+
+  public void saveTerraformCloudConfig(TerraformCloudRunSpecParameters spec, String runId, Ambiance ambiance) {
+    String connectorRef;
+    String provisionIdentifier = getProvisionIdentifier(spec);
+    TerraformCloudRunType type = spec.getType();
+    if (type == PLAN_AND_APPLY) {
+      TerraformCloudPlanAndApplySpecParameters planAndApplySpecParameters =
+          (TerraformCloudPlanAndApplySpecParameters) spec;
+      connectorRef = ParameterFieldHelper.getParameterFieldValue(planAndApplySpecParameters.getConnectorRef());
+    } else if (type == PLAN_AND_DESTROY) {
+      TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
+          (TerraformCloudPlanAndDestroySpecParameters) spec;
+      connectorRef = ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getConnectorRef());
+    } else if (type == APPLY) {
+      TerraformCloudPlanOutput savedTerraformCloudPlanOutput =
+          getSavedTerraformCloudOutput(provisionIdentifier, PLAN.getDisplayName(), ambiance);
+      connectorRef = savedTerraformCloudPlanOutput.getTerraformCloudConnectorRef();
+    } else {
+      throw new InvalidRequestException(format("Can't save Terraform Cloud Config for type: [%s]", type));
+    }
+    terraformCloudConfigDAL.saveTerraformCloudConfig(
+        TerraformCloudConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(generateFullIdentifier(provisionIdentifier, ambiance))
+            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .connectorRef(connectorRef)
+            .runId(runId)
+            .build());
+  }
+
+  public void saveTerraformCloudConfig(TerraformCloudConfig rollbackConfig, Ambiance ambiance) {
+    terraformCloudConfigDAL.saveTerraformCloudConfig(TerraformCloudConfig.builder()
+                                                         .accountId(AmbianceUtils.getAccountId(ambiance))
+                                                         .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+                                                         .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+                                                         .entityId(rollbackConfig.getEntityId())
+                                                         .pipelineExecutionId(ambiance.getPlanExecutionId())
+                                                         .connectorRef(rollbackConfig.getConnectorRef())
+                                                         .runId(rollbackConfig.getRunId())
+                                                         .build());
   }
 }

@@ -131,7 +131,7 @@ public class UserDaoImplTest extends AccessControlCoreTestBase {
     String scopeIdentifier = randomAlphabetic(10);
     UserDBO userDBO = UserDBO.builder().build();
     when(userRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-        .thenReturn(Lists.newArrayList(userDBO));
+        .thenReturn(Optional.of(userDBO));
     assertEquals(Optional.of(User.builder().build()), userDao.delete(identifier, scopeIdentifier));
     verify(userRepository, times(1)).deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
   }

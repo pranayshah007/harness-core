@@ -47,9 +47,10 @@ public class ErrorTrackingTemplateDataGenerator
 
   @Override
   public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, MonitoredServiceCodeErrorCondition condition, Map<String, String> notificationDataMap) {
-    final Map<String, String> templateData =
-        super.getTemplateData(projectParams, name, identifier, serviceIdentifier, condition, notificationDataMap);
+      String serviceIdentifier, String monitoredServiceIdentifier, MonitoredServiceCodeErrorCondition condition,
+      Map<String, String> notificationDataMap) {
+    final Map<String, String> templateData = super.getTemplateData(
+        projectParams, name, identifier, serviceIdentifier, monitoredServiceIdentifier, condition, notificationDataMap);
 
     templateData.putAll(getConditionTemplateVariables(condition));
 

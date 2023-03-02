@@ -121,6 +121,14 @@ else
   yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
+  export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
+  export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -131,3 +139,9 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value backstageSaToken "$BACKSTAGE_SA_TOKEN"
+replace_key_value backstageSaCaCrt "$BACKSTAGE_SA_CA_CRT"
+replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
+replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
+replace_key_value jwtAuthSecret "$JWT_SERVICE_SECRET"
+replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"

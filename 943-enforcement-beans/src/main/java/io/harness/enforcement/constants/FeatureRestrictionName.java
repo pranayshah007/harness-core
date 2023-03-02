@@ -88,6 +88,7 @@ public enum FeatureRestrictionName {
   SHELL_SCRIPT_PROVISION,
   K8S_DRY_RUN,
   TERRAFORM_CLOUD_RUN,
+  TERRAFORM_CLOUD_ROLLBACK,
 
   // STO Features
   SECURITY,

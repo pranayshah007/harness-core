@@ -19,6 +19,7 @@ import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -112,6 +113,8 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
       AsgBlueGreenSwapServiceOutcome asgBlueGreenSwapServiceOutcome =
           AsgBlueGreenSwapServiceOutcome.builder()
               .trafficShifted(asgBlueGreenSwapServiceResult.isTrafficShifted())
+              .stageAsg(asgBlueGreenSwapServiceResult.getStageAutoScalingGroupContainer())
+              .prodAsg(asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer())
               .build();
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME,
@@ -201,9 +204,9 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
-            .stageAsgName(asgBlueGreenDeployDataOutcome.getStageAutoScalingGroupContainer().getAutoScalingGroupName())
-            .downsizeOldAsg(asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue() != null
-                && asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue())
+            .stageAsgName(asgBlueGreenDeployDataOutcome.getStageAsg().getAutoScalingGroupName())
+            .downsizeOldAsg(ParameterFieldHelper.getBooleanParameterFieldValue(
+                asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg()))
             .build();
 
     return asgStepCommonHelper

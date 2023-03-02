@@ -7,20 +7,24 @@
 
 package io.harness.ng.core.environment.services.impl;
 
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -29,87 +33,82 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
+import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.rule.Owner;
+import io.harness.setupusage.EnvironmentEntitySetupUsageHelper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ClusterService clusterService;
   @Mock EntitySetupUsageService entitySetupUsageService;
-  @Inject @InjectMocks private EnvironmentServiceImpl environmentService;
+  @Mock Producer producer;
+  @Mock EnvironmentEntitySetupUsageHelper environmentEntitySetupUsageHelper;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private EnvironmentRepository environmentRepository;
+  @Mock private EnvironmentRepository mockEnvironmentRepository;
+  @Inject private OutboxService outboxService;
+  @InjectMocks private EnvironmentServiceImpl environmentService;
+  @InjectMocks private EnvironmentServiceImpl environmentServiceUsingMocks;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String ENV_ID = "ENV_ID";
 
-  private String pipelineInputYamlPath;
-  private String actualEntityYamlPath;
-  private String mergedInputYamlPath;
-  private boolean isMergedYamlEmpty;
-
   @Before
   public void setup() {
+    Reflect.on(environmentService).set("transactionTemplate", transactionTemplate);
+    Reflect.on(environmentService).set("environmentEntitySetupUsageHelper", environmentEntitySetupUsageHelper);
     Reflect.on(environmentService).set("entitySetupUsageService", entitySetupUsageService);
+    Reflect.on(environmentService).set("environmentRepository", environmentRepository);
+    Reflect.on(environmentService).set("outboxService", outboxService);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(Collections.emptyList()));
-  }
-
-  public EnvironmentServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
-      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
-    this.pipelineInputYamlPath = pipelineInputYamlPath;
-    this.actualEntityYamlPath = actualEntityYamlPath;
-    this.mergedInputYamlPath = mergedInputYamlPath;
-    this.isMergedYamlEmpty = isMergedYamlEmpty;
-  }
-
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {{"environment/env-inputs-in-pipeline.yaml", "environment/env-with-few-inputs.yaml",
-                                      "environment/environmentInput-merged.yaml", false},
-        {"environment/env-inputs-in-pipeline.yaml", "environment/env-with-no-inputs.yaml",
-            "infrastructure/empty-file.yaml", true},
-        {"infrastructure/empty-file.yaml", "environment/env-with-few-inputs.yaml",
-            "environment/environmentInput-merged.yaml", false}});
   }
 
   @Test
@@ -229,6 +228,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
         environmentService.get("ACCOUNT_ID", "ORG_ID_1", null, e3.getIdentifier(), false);
     assertThat(environment3).isPresent();
     assertThat(environment3.get().getIdentifier()).isEqualTo(e3.getIdentifier());
+    verify(producer, times(5)).send(any());
   }
 
   @Test
@@ -443,7 +443,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
-  public void testCreateEnvironmentInputs() throws IOException {
+  public void testCreateEnvironmentInputs() {
     String filename = "env-with-runtime-inputs.yaml";
     String yaml = readFile(filename);
     Environment createEnvironmentRequest = Environment.builder()
@@ -480,7 +480,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
-  public void testCreateEnvironmentInputsErrorCases() throws IOException {
+  public void testCreateEnvironmentInputsErrorCases() {
     assertThatThrownBy(
         () -> environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER"))
         .isInstanceOf(NotFoundException.class)
@@ -499,7 +499,9 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testMergeEnvironmentInputs() {
+  @Parameters(method = "data")
+  public void testMergeEnvironmentInputs(String pipelineInputYamlPath, String actualEntityYamlPath,
+      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
     String yaml = readFile(actualEntityYamlPath);
     Environment createRequest = Environment.builder()
                                     .accountId(ACCOUNT_ID)
@@ -524,6 +526,70 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
       assertThat(mergedYaml).isEqualTo(mergedTemplateInputsYaml);
     }
     assertThat(responseDto.getEnvironmentYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testFetchesNonDeletedEnvironmentFromListOfRefs() {
+    List<String> envRefs = Arrays.asList("env1", "org.env2", "account.env3");
+    Criteria projectCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                   .is(ACCOUNT_ID)
+                                   .and(EnvironmentKeys.orgIdentifier)
+                                   .is(ORG_ID)
+                                   .and(EnvironmentKeys.projectIdentifier)
+                                   .is(PROJECT_ID)
+                                   .and(EnvironmentKeys.identifier)
+                                   .in(Arrays.asList("env1"));
+
+    Criteria orgCriteria = Criteria.where(EnvironmentKeys.accountId)
+                               .is(ACCOUNT_ID)
+                               .and(EnvironmentKeys.orgIdentifier)
+                               .is(ORG_ID)
+                               .and(EnvironmentKeys.projectIdentifier)
+                               .is(null)
+                               .and(EnvironmentKeys.identifier)
+                               .in(Arrays.asList("env2"));
+
+    Criteria accountCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                   .is(ACCOUNT_ID)
+                                   .and(EnvironmentKeys.orgIdentifier)
+                                   .is(null)
+                                   .and(EnvironmentKeys.projectIdentifier)
+                                   .is(null)
+                                   .and(EnvironmentKeys.identifier)
+                                   .in(Arrays.asList("env3"));
+
+    Environment projectEnv = Environment.builder().build();
+    Environment orgEnv = Environment.builder().build();
+    Environment accEnv = Environment.builder().build();
+
+    doReturn(Arrays.asList(projectEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(projectCriteria);
+    doReturn(Arrays.asList(orgEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(orgCriteria);
+    doReturn(Arrays.asList(accEnv))
+        .when(mockEnvironmentRepository)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountCriteria);
+
+    List<Environment> environments = environmentServiceUsingMocks.fetchesNonDeletedEnvironmentFromListOfRefs(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, envRefs);
+
+    assertThat(environments).hasSize(3);
+    assertThat(environments).contains(accEnv);
+    assertThat(environments).contains(orgEnv);
+    assertThat(environments).contains(projectEnv);
+  }
+
+  private Object[][] data() {
+    return new Object[][] {{"environment/env-inputs-in-pipeline.yaml", "environment/env-with-few-inputs.yaml",
+                               "environment/environmentInput-merged.yaml", false},
+        {"environment/env-inputs-in-pipeline.yaml", "environment/env-with-no-inputs.yaml",
+            "infrastructure/empty-file.yaml", true},
+        {"infrastructure/empty-file.yaml", "environment/env-with-few-inputs.yaml",
+            "environment/environmentInput-merged.yaml", false}};
   }
 
   private String readFile(String filename) {

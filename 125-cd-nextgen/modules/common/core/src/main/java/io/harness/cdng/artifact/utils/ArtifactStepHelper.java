@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
@@ -53,6 +54,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelega
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -71,9 +73,11 @@ import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -332,6 +336,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof BambooConnectorDTO)) {
+          throw new InvalidConnectorTypeException("Provided Connector "
+                  + bambooArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + bambooArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        BambooConnectorDTO bambooConnectorDTO = (BambooConnectorDTO) connectorDTO.getConnectorConfig();
+        if (bambooConnectorDTO.getAuth() != null && bambooConnectorDTO.getAuth().getCredentials() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, bambooConnectorDTO.getAuth().getCredentials());
+        }
+        return ArtifactConfigToDelegateReqMapper.getBambooDelegateRequest(bambooArtifactConfig, bambooConnectorDTO,
+            encryptedDataDetails, bambooArtifactConfig.getConnectorRef().getValue());
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         /*
@@ -408,7 +428,7 @@ public class ArtifactStepHelper {
 
   private List<EncryptedDataDetail> getGithubEncryptedDetails(
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     if (githubConnectorDTO.getApiAccess() != null) {
       encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
@@ -421,7 +441,7 @@ public class ArtifactStepHelper {
 
   private List<EncryptedDataDetail> getGithubEncryptionDetails(
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedDataDetails;
 
     GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
@@ -482,6 +502,8 @@ public class ArtifactStepHelper {
         return TaskType.AZURE_ARTIFACT_TASK_NG;
       case AMI:
         return TaskType.AMI_ARTIFACT_TASK_NG;
+      case BAMBOO:
+        return TaskType.BAMBOO_ARTIFACT_TASK_NG;
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         return TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG;
       case GOOGLE_CLOUD_SOURCE_ARTIFACT:
@@ -574,6 +596,14 @@ public class ArtifactStepHelper {
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
         return TaskSelectorYaml.toTaskSelector(((JenkinsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case BAMBOO:
+        BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(bambooArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((BambooConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
@@ -674,8 +704,8 @@ public class ArtifactStepHelper {
 
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
     if (serviceSpecField == null) {
-      throw new InvalidRequestException(String.format(
-          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service"));
+      throw new InvalidRequestException(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service");
     }
 
     YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
@@ -712,7 +742,7 @@ public class ArtifactStepHelper {
           primaryNode.remove(YamlTypes.IDENTIFIER);
         }
       } else {
-        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+        primaryArtifactRefValue = resolvePrimaryArtifactRef(ambiance, primaryArtifactRefValue);
         if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
           throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
         }
@@ -734,5 +764,19 @@ public class ArtifactStepHelper {
       }
     }
     return yamlField;
+  }
+
+  private String resolvePrimaryArtifactRef(Ambiance ambiance, String primaryArtifactRefValue) {
+    // handle primaryArtifactRef with input set validators nginx.allowedValues(nginx,http)
+    final ParameterField<String> primaryArtifactRefParameterField =
+        RuntimeInputValuesValidator.getInputSetParameterField(primaryArtifactRefValue);
+    if (primaryArtifactRefParameterField != null) {
+      if (primaryArtifactRefParameterField.isExpression()) {
+        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+      } else {
+        primaryArtifactRefValue = primaryArtifactRefParameterField.getValue();
+      }
+    }
+    return primaryArtifactRefValue;
   }
 }

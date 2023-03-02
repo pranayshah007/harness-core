@@ -82,7 +82,8 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.security.spec.execution.steps.sto.timeout",
             "pipeline.stages.security.spec.execution.steps.sto.spec.privileged",
             "pipeline.stages.security.spec.execution.steps.sto.spec.runAsUser",
-            "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu");
+            "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu",
+            "pipeline.stages.security.spec.execution.steps.sto.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -95,8 +96,7 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.security.spec.execution.steps.sto.identifier",
             "pipeline.stages.security.spec.execution.steps.sto.type",
             "pipeline.stages.security.spec.execution.steps.sto.startTs",
-            "pipeline.stages.security.spec.execution.steps.sto.endTs",
-            "pipeline.stages.security.spec.execution.steps.sto.when");
+            "pipeline.stages.security.spec.execution.steps.sto.endTs");
 
     // yaml extra properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

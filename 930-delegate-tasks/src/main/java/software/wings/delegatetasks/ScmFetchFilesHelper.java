@@ -91,7 +91,7 @@ public class ScmFetchFilesHelper {
             .getFileContentsList()
             .stream()
             .filter(fileContent -> {
-              if (fileContent.getStatus() != 200) {
+              if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
                 throwFailedToFetchFileException(gitFileConfig, fileContent);
                 return false;
               } else {

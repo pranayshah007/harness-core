@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sTestHelper.service;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
@@ -22,6 +23,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -59,6 +61,7 @@ import io.harness.k8s.releasehistory.K8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sReleaseSecretHelper;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -416,6 +419,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2))
         .executeDeleteHandlingPartialExecution(
             any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
+    verify(logCallback).saveExecutionLog(anyString(), any(LogLevel.class), eq(SUCCESS));
   }
 
   @Test
@@ -435,6 +439,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     // Do nothing if colors are the same
     verifyNoMoreInteractions(releaseHistory);
     assertThat(resourcesPruned).isEmpty();
+    verify(logCallback).saveExecutionLog(anyString(), any(LogLevel.class), eq(SUCCESS));
   }
 
   @Test
@@ -452,7 +457,7 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     // Do nothing if colors are the same
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     assertThat(resourcesPruned).isEmpty();
-    verify(logCallback, times(1)).saveExecutionLog(captor.capture());
+    verify(logCallback, times(1)).saveExecutionLog(captor.capture(), any(LogLevel.class), eq(SUCCESS));
     assertThat(captor.getValue()).contains("No older releases are available in release history");
   }
 

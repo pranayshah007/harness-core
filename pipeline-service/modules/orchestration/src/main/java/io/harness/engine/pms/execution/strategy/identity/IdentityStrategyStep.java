@@ -66,11 +66,8 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
       }
     }
 
-    String childNodeId =
-        originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getChildren(0).getChildNodeId();
-
     List<ChildrenExecutableResponse.Child> children =
-        getChildrenFromNodeExecutions(childrenNodeExecutions, childNodeId, ambiance.getPlanId());
+        getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance.getPlanId());
     long maxConcurrency =
         originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
@@ -90,13 +87,13 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
   }
 
   private List<ChildrenExecutableResponse.Child> getChildrenFromNodeExecutions(
-      List<NodeExecution> childrenNodeExecutions, String childNodeId, String planId) {
+      List<NodeExecution> childrenNodeExecutions, String planId) {
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
       if (StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(childNodeId)
+                         .setChildNodeId(nodeExecution.getNode().getUuid())
                          .setStrategyMetadata(
                              AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
                          .build());

@@ -71,6 +71,10 @@ if [[ "" != "$ECR_PUSH_IMAGE" ]]; then
   export ECR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushECRConfig.image=env(ECR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
@@ -443,14 +447,6 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
       INDEX=$(expr $INDEX + 1)
     done
   fi
-fi
-
-if [[ "" != "$HSQS_BASE_URL" ]]; then
-  export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClient.queueServiceConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
-  export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

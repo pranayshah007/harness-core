@@ -84,7 +84,7 @@ public class FacilitatorEventHandler extends PmsBaseEventHandler<FacilitatorEven
     } catch (Exception ex) {
       log.error("Error while facilitating execution", ex);
       sdkNodeExecutionService.handleFacilitationResponse(event.getAmbiance(), event.getNotifyId(),
-          FacilitatorResponseProto.newBuilder().setIsSuccessful(false).build());
+          FacilitatorResponseProto.newBuilder().setPassThroughData(ex.getMessage()).setIsSuccessful(false).build());
     }
   }
 

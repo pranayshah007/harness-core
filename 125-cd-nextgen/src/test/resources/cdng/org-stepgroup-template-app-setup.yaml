@@ -21,6 +21,18 @@ template:
                       tasInstanceCountType: FromManifest
                       existingVersionToKeep: 3
                     timeout: 10m
+                - stepGroup:
+                    name: stp
+                    identifier: stp
+                    template:
+                      templateRef: account.accountStepGrpTemplate
+                      versionLabel: v1
+                - stepGroup:
+                    name: stp
+                    identifier: stp
+                    template:
+                      templateRef: account.emptyStepGrpTemplate
+                      versionLabel: v1
                 - step:
                     type: AppResize
                     name: App Resize_1

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 /**
  * EnqueueRequest Request object for Enqueuing message
@@ -21,10 +22,7 @@ import lombok.Value;
 @Builder
 public class EnqueueRequest {
   String payload;
-
   String producerName;
-
   String subTopic;
-
-  String topic;
+  @With String topic;
 }

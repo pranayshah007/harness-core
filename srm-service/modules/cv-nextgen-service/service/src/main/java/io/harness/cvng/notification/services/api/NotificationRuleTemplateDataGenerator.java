@@ -51,10 +51,11 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
   @Inject private AccountClient accountClient;
   @Inject private NextGenService nextGenService;
   @Inject @Named("portalUrl") String portalUrl;
-  @Inject private Clock clock;
+  @Inject protected Clock clock;
 
   public Map<String, String> getTemplateData(ProjectParams projectParams, String name, String identifier,
-      String serviceIdentifier, T condition, Map<String, String> notificationDataMap) {
+      String serviceIdentifier, String monitoredServiceIdentifier, T condition,
+      Map<String, String> notificationDataMap) {
     Instant currentInstant = clock.instant();
     long startTime = currentInstant.getEpochSecond();
     long startTimeInMillis = startTime * 1000;

@@ -62,7 +62,7 @@ iacmmanager-mongo:
 enableAuth: false
 
 logServiceConfig:
-  baseUrl: https://aec2-35-197-221-21.ngrok.io
+  baseUrl: https://qa.harness.io/log-service/
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
@@ -75,7 +75,7 @@ stoServiceConfig:
 
 iacmServiceConfig:
   baseUrl: http://localhost:8080
-  externalUrl: https://37a4-35-197-221-21.eu.ngrok.io
+  externalUrl: http://localhost:8080
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
 managerTarget: localhost:9880
@@ -99,12 +99,13 @@ ciExecutionServiceConfig:
     gcsCreds: null
     projectId: null
     bucketName: null
-  queueServiceClient:
-    queueServiceConfig:
+  queueServiceClientConfig:
+    httpClientConfig:
       baseUrl: http://localhost:9091/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
-    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+    queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500
@@ -240,7 +241,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: true
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 
 eventsFramework:

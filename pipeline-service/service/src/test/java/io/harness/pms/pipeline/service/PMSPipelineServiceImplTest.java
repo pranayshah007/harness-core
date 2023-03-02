@@ -61,6 +61,7 @@ import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepData;
 import io.harness.pms.pipeline.StepPalleteInfo;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
@@ -106,6 +107,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PMSPipelineRepository pmsPipelineRepositoryMock;
   @Mock private PipelineCloneHelper pipelineCloneHelper;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
 
   StepCategory library;
   StepCategory cv;

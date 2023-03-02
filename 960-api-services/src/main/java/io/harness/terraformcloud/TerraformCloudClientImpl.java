@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 import io.harness.terraformcloud.model.ApplyData;
@@ -24,6 +26,7 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -144,9 +147,9 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
 
   @Override
   public TerraformCloudResponse<List<StateVersionOutputData>> getStateVersionOutputs(
-      String url, String token, String stateVersionId) throws IOException {
+      String url, String token, String stateVersionId, int page) throws IOException {
     Call<TerraformCloudResponse<List<StateVersionOutputData>>> call =
-        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId);
+        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId, page);
     return executeRestCall(call);
   }
 
@@ -156,6 +159,12 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
     return executeHttpCall(new HttpGet(url));
   }
 
+  @Override
+  public void overridePolicyChecks(String url, String token, String policyChecksId) throws IOException {
+    Call<Void> call = getRestClient(url).overridePolicyChecks(getAuthorization(token), policyChecksId);
+    executeRestCall(call);
+  }
+
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()
@@ -163,6 +172,8 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
                             .baseUrl(url)
                             .addConverterFactory(ScalarsConverterFactory.create())
                             .addConverterFactory(JacksonConverterFactory.create())
+                            .addConverterFactory(JacksonConverterFactory.create(
+                                new ObjectMapper().enable(READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)))
                             .build();
     return retrofit.create(TerraformCloudRestClient.class);
   }

@@ -10,6 +10,9 @@ package io.harness.cache;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.threading.Morpheus.sleep;
+
+import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -21,13 +24,17 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 public class HarnessCacheManagerImpl implements HarnessCacheManager {
   private final CacheManager cacheManager;
   private final Optional<CacheManager> enterpriseRedisCacheManagerOptional;
   private final CacheConfig cacheConfig;
   static final String CACHE_PREFIX = "hCache";
+  private static final int NUM_OF_RETRIES = 3;
+  private static final int WAIT_TIME_BETWEEN_RETRIES = 1000;
 
   HarnessCacheManagerImpl(
       CacheManager cacheManager, Optional<CacheManager> enterpriseRedisCacheManagerOptional, CacheConfig cacheConfig) {
@@ -85,14 +92,20 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
         ? enterpriseRedisCacheManagerOptional.get()
         : cacheManager;
 
-    try {
-      return Optional.ofNullable(manager.getCache(internalCacheName, keyType, valueType))
-          .orElseGet(() -> manager.createCache(internalCacheName, jCacheConfiguration));
-    } catch (CacheException ce) {
-      if (isCacheExistsError(ce, internalCacheName)) {
-        return manager.getCache(internalCacheName, keyType, valueType);
+    int failedAttempts = 0;
+    while (true) {
+      try {
+        return Optional.ofNullable(manager.getCache(internalCacheName, keyType, valueType))
+            .orElseGet(() -> manager.createCache(internalCacheName, jCacheConfiguration));
+      } catch (Exception e) {
+        failedAttempts++;
+        if (failedAttempts == NUM_OF_RETRIES) {
+          log.error("Exception occurred when creating redis cache.", e);
+          throw e;
+        }
+        log.warn("Exception occurred when creating redis cache. Trial num: {}", failedAttempts, e);
+        sleep(ofMillis(WAIT_TIME_BETWEEN_RETRIES));
       }
-      throw ce;
     }
   }
 

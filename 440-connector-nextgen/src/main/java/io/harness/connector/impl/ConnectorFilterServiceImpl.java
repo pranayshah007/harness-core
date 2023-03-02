@@ -37,7 +37,6 @@ import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector.Gc
 import io.harness.connector.services.ConnectorFilterService;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.dto.FilterPropertiesDTO;
@@ -45,6 +44,7 @@ import io.harness.filter.service.FilterService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.utils.URLDecoderUtility;
+import io.harness.scope.ScopeHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -286,7 +286,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
 
   public Criteria createCriteriaFromConnectorFilter(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType connectorType, ConnectorCategory category,
-      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled) {
+      ConnectorCategory sourceCategory, boolean isBuiltInSMDisabled, String version) {
     Criteria criteria = new Criteria();
     criteria.and(ConnectorKeys.accountIdentifier).is(accountIdentifier);
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
@@ -310,6 +310,11 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
           where(NGCommonEntityConstants.IDENTIFIER_KEY).regex(searchTerm, "i"),
           where(NGCommonEntityConstants.TAGS_KEY).regex(searchTerm, "i"));
       criteria.andOperator(seachCriteria);
+    }
+    if (connectorType == ConnectorType.NEXUS && version != null) {
+      if (version.equals("2.x") || version.equals("3.x")) {
+        criteria.and("nexusVersion").is(version);
+      }
     }
     return criteria;
   }

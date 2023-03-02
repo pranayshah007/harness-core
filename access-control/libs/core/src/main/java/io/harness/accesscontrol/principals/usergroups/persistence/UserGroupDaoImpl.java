@@ -77,9 +77,8 @@ public class UserGroupDaoImpl implements UserGroupDao {
 
   @Override
   public Optional<UserGroup> delete(String identifier, String scopeIdentifier) {
-    return userGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(ug -> Optional.of(UserGroupDBOMapper.fromDBO(ug)));
+    Optional<UserGroupDBO> optionalUserGroupDBO =
+        userGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    return optionalUserGroupDBO.map(UserGroupDBOMapper::fromDBO);
   }
 }

@@ -84,7 +84,8 @@ public class GCSSaveCacheStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.timeout",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.spec.key",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.spec.override",
-            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.spec.sourcePaths");
+            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.spec.sourcePaths",
+            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.when");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -96,7 +97,6 @@ public class GCSSaveCacheStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.type",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.identifier",
-            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.when",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.startTs",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.endTs");
 

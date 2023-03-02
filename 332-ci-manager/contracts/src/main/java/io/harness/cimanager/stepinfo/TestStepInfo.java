@@ -81,8 +81,8 @@ public class TestStepInfo extends CIAbstractStepInfo {
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> envs;
-  public ParameterField<Map<String, String>> getEnvs() {
+  ParameterField<Map<String, ParameterField<String>>> envs;
+  public ParameterField<Map<String, ParameterField<String>>> getEnvs() {
     if (ParameterField.isNull(this.envs)) {
       this.envs.setValue(Collections.emptyMap());
     }
@@ -129,9 +129,10 @@ public class TestStepInfo extends CIAbstractStepInfo {
   @ConstructorProperties({"uuid", "image", "uses", "with", "resources", "envs", "outputs", "reports", "privileged",
       "user", "pull", "shell", "volumes", "splitting"})
   public TestStepInfo(String uuid, ParameterField<String> image, BuildTool uses, Map<String, JsonNode> with,
-      ContainerResource resources, ParameterField<Map<String, String>> envs, ParameterField<List<String>> outputs,
-      ParameterField<List<Report>> reports, ParameterField<Boolean> privileged, ParameterField<Integer> user,
-      PullPolicy pull, Shell shell, ParameterField<List<Volume>> volumes, Splitting splitting) {
+      ContainerResource resources, ParameterField<Map<String, ParameterField<String>>> envs,
+      ParameterField<List<String>> outputs, ParameterField<List<Report>> reports, ParameterField<Boolean> privileged,
+      ParameterField<Integer> user, PullPolicy pull, Shell shell, ParameterField<List<Volume>> volumes,
+      Splitting splitting) {
     this.uuid = uuid;
     this.image = image;
     this.uses = uses;

@@ -9,12 +9,12 @@ package io.harness.delegate.taskagent.client.delegate;
 
 import io.harness.delegate.taskagent.servicediscovery.ServiceEndpoint;
 import io.harness.exception.SslContextBuilderException;
-import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.TokenGenerator;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -24,29 +24,29 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 // FixMe: This add deps to 980-commons & 920-delegate-beans which we don't want - create task specific tokens and auth
 // mechanism
 @RequiredArgsConstructor
 public class DelegateCoreClientFactory {
+  // FIXME: remove this after proto response api merges
+  private final DelegateKryoConverterFactory kryoConverterFactory;
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().registerModules(new Jdk8Module(), new GuavaModule(), new JavaTimeModule());
 
   private final TokenGenerator tokenGenerator;
 
   public DelegateCoreClient createDelegateCoreClient(final ServiceEndpoint serviceEndpoint) {
-    final HttpUrl baseUrl =
-        new HttpUrl.Builder().host(serviceEndpoint.getHost()).port(serviceEndpoint.getPort()).build();
-
-    final Retrofit retrofit = new Retrofit.Builder()
-                                  .baseUrl(baseUrl)
-                                  .client(getUnsafeOkHttpClient())
-                                  .addConverterFactory(JacksonConverterFactory.create(OBJECT_MAPPER))
-                                  .build();
+    final Retrofit retrofit =
+        new Retrofit.Builder()
+            .baseUrl(String.format("http://%s:%d/api/", serviceEndpoint.getHost(), serviceEndpoint.getPort()))
+            .client(getUnsafeOkHttpClient())
+            // FIXME: use json converter
+            .addConverterFactory(kryoConverterFactory)
+            .build();
     return retrofit.create(DelegateCoreClient.class);
   }
 
@@ -70,7 +70,8 @@ public class DelegateCoreClientFactory {
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
         .connectionPool(Http.connectionPool)
         .retryOnConnectionFailure(true)
-        .addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))
+        // FIXME: need auth interceptor
+        //.addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))
         .readTimeout(1, TimeUnit.MINUTES)
         .build();
   }

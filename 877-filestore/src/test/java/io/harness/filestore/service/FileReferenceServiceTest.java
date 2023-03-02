@@ -134,6 +134,22 @@ public class FileReferenceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldVerifyFolderIsReferencedBy() {
+    String identifier1 = "testFolder1";
+    NGFile folder1 =
+        NGFile.builder().identifier(identifier1).accountIdentifier(ACCOUNT_IDENTIFIER).type(NGFileType.FOLDER).build();
+    String folderFqn = ACCOUNT_IDENTIFIER.concat("/").concat(identifier1);
+    when(fileStructureService.listFolderChildrenFQNs(any())).thenReturn(Lists.newArrayList());
+    when(entitySetupUsageService.referredByEntityCount(ACCOUNT_IDENTIFIER, folderFqn, EntityType.FILES)).thenReturn(1L);
+
+    assertThatThrownBy(() -> fileReferenceService.validateReferenceByAndThrow(folder1))
+        .isInstanceOf(ReferencedEntityException.class)
+        .hasMessage("Folder [testFolder1] is referenced by " + 1 + " other entities and can not be deleted.");
+  }
+
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void shouldValidateFileIsReferencedByOtherEntities() {

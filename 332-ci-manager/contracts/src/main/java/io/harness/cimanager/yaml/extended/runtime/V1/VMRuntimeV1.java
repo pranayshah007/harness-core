@@ -29,7 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class VMRuntimeV1 implements RuntimeV1 {
   @Builder.Default @NotNull @ApiModelProperty(allowableValues = "vm") RuntimeV1.Type type = RuntimeV1.Type.VM;
   @NotNull VMRuntimeSpec spec;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @Value
   @Builder
   public static class VMRuntimeSpec {

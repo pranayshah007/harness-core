@@ -30,7 +30,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.SourcePrincipalContextBuilder;
-import io.harness.service.intfc.DelegateCache;
 import io.harness.utils.Misc;
 
 import software.wings.beans.Account;
@@ -61,18 +60,15 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   private static final String DEFAULT_TOKEN_NAME = "default_token";
   private final HPersistence persistence;
   private final OutboxService outboxService;
-  private final DelegateCache delegateCache;
 
   @Inject
-  public DelegateNgTokenServiceImpl(
-      HPersistence persistence, OutboxService outboxService, DelegateCache delegateCache) {
+  public DelegateNgTokenServiceImpl(HPersistence persistence, OutboxService outboxService) {
     this.persistence = persistence;
     this.outboxService = outboxService;
-    this.delegateCache = delegateCache;
   }
 
   @Override
-  public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name) {
+  public DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name, Long revokeAfter) {
     DelegateToken delegateToken = DelegateToken.builder()
                                       .accountId(accountId)
                                       .owner(owner)
@@ -81,7 +77,10 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                       .status(DelegateTokenStatus.ACTIVE)
                                       .value(encodeBase64(Misc.generateSecretKey()))
                                       .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
+                                      .revokeAfter(revokeAfter)
                                       .build();
+
+    validateCreateDelegateTokenRequest(delegateToken);
 
     try {
       persistence.save(delegateToken);
@@ -94,9 +93,11 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public DelegateTokenDetails revokeDelegateToken(String accountId, DelegateEntityOwner owner, String tokenName) {
+  public DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName) {
     Query<DelegateToken> filterQuery = matchNameTokenQuery(accountId, tokenName);
     validateTokenToBeRevoked(filterQuery.get());
+
+    log.info("Revoking delegate token: {} for account: {}", tokenName, accountId);
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
@@ -232,6 +233,19 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     return owner == null ? DEFAULT_TOKEN_NAME : DEFAULT_TOKEN_NAME.concat("_" + owner.getIdentifier());
   }
 
+  public void autoRevokeExpiredTokens() {
+    List<DelegateToken> delegateTokenList = persistence.createQuery(DelegateToken.class)
+                                                .filter(DelegateTokenKeys.isNg, true)
+                                                .filter(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
+                                                .field(DelegateTokenKeys.revokeAfter)
+                                                .lessThan(System.currentTimeMillis())
+                                                .project(DelegateTokenKeys.accountId, true)
+                                                .project(DelegateTokenKeys.name, true)
+                                                .asList();
+    delegateTokenList.forEach(
+        delegateToken -> revokeDelegateToken(delegateToken.getAccountId(), delegateToken.getName()));
+  }
+
   private Query<DelegateToken> matchNameTokenQuery(String accountId, String tokenName) {
     return persistence.createQuery(DelegateToken.class)
         .field(DelegateTokenKeys.accountId)
@@ -254,6 +268,10 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
     if (delegateToken.getOwner() != null) {
       delegateTokenDetailsBuilder.ownerIdentifier(delegateToken.getOwner().getIdentifier());
+    }
+
+    if (delegateToken.getRevokeAfter() != null) {
+      delegateTokenDetailsBuilder.revokeAfter(delegateToken.getRevokeAfter());
     }
 
     return delegateTokenDetailsBuilder.build();
@@ -314,5 +332,12 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         -> delegateTokenStatusMap.put(
             delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
+  }
+
+  private void validateCreateDelegateTokenRequest(DelegateToken delegateToken) {
+    Long revokeAfter = delegateToken.getRevokeAfter();
+    if (revokeAfter != null && revokeAfter < System.currentTimeMillis()) {
+      throw new InvalidRequestException("Token revocation time can not be less than current time.");
+    }
   }
 }

@@ -15,9 +15,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStep;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
+import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
@@ -72,11 +75,12 @@ public class InstanceSyncStepResolver {
       ElastigroupSwapRouteStep.STEP_TYPE.getType(), ElastigroupRollbackStep.STEP_TYPE.getType(),
       TasRollingDeployStep.STEP_TYPE.getType(), TasRollingRollbackStep.STEP_TYPE.getType(),
       AsgRollingDeployStep.STEP_TYPE.getType(), AsgCanaryDeployStep.STEP_TYPE.getType(),
-      AsgRollingRollbackStep.STEP_TYPE.getType(), AsgBlueGreenDeployStep.STEP_TYPE.getType(),
-      AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(), AsgBlueGreenRollbackStep.STEP_TYPE.getType(),
-      GoogleFunctionsDeployStep.STEP_TYPE.getType(), GoogleFunctionsRollbackStep.STEP_TYPE.getType(),
-      GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
-      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType()));
+      AsgCanaryDeleteStep.STEP_TYPE.getType(), AsgRollingRollbackStep.STEP_TYPE.getType(),
+      AsgBlueGreenDeployStep.STEP_TYPE.getType(), AsgBlueGreenSwapServiceStep.STEP_TYPE.getType(),
+      AsgBlueGreenRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployStep.STEP_TYPE.getType(),
+      GoogleFunctionsRollbackStep.STEP_TYPE.getType(), GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE.getType(),
+      GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(),
+      AwsLambdaRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

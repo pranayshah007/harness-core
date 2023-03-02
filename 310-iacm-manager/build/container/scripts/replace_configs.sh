@@ -214,6 +214,10 @@ if [[ "" != "$IACM_SERVICE_ENDPOINT" ]]; then
   export IACM_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.baseUrl=env(IACM_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IACM_EXTERNAL_SERVICE_ENDPOINT" ]]; then
+  export IACM_EXTERNAL_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.externalUrl=env(IACM_EXTERNAL_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$API_URL" ]]; then
   export API_URL; yq -i '.apiUrl=env(API_URL)' $CONFIG_FILE
 fi

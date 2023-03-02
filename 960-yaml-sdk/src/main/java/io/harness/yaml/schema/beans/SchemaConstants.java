@@ -51,6 +51,9 @@ public class SchemaConstants {
   public static final String RUNTIME_INPUT_PATTERN =
       "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$";
 
+  public static final String RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED = "(" + RUNTIME_INPUT_PATTERN + "|^$"
+      + ")";
+
   // Only runtime input pattern. should not match execution input string. So doing negative lookahead for
   // .executionInput().
   // default, allowedValues and regex are allowed after <+input>

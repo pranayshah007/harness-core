@@ -9,27 +9,30 @@ package io.harness.pms.expressions.functors;
 
 import static io.harness.NGCommonEntityConstants.FUNCTOR_BASE64_METHOD_NAME;
 import static io.harness.NGCommonEntityConstants.FUNCTOR_STRING_METHOD_NAME;
-import static io.harness.common.EntityTypeConstants.FILES;
-import static io.harness.common.EntityTypeConstants.SECRETS;
+import static io.harness.pms.expressions.functors.ConfigFileFunctor.MAX_CONFIG_FILE_SIZE;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.configfile.ConfigFileOutcome;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.filestore.dto.node.FileNodeDTO;
-import io.harness.filestore.service.FileStoreService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,16 +42,17 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ConfigFileFunctorTest extends CategoryTest {
-  private static final String SECRET_REF = "secretRef";
   private static final Long EXPRESSION_FUNCTOR_TOKEN = 1L;
-  private static final String FILE_REF_PATH = "/folder1/filename";
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
-  private static final String FILENAME = "filename";
   private static final String FILE_CONTENT = "file content";
+  private static final String CONFIG_FILE_IDENTIFIER = "configFileIdentifier";
+  private static final String SCOPED_FILE_PATH = "scoped-file-path";
+  private static final String SCOPED_SECRET_FILE_PATH = "scoped-secret-file-path";
+  private static final String BASE64_FILE_CONTENT = "ZmlsZSBjb250ZW50";
 
-  @Mock private FileStoreService fileStoreService;
+  @Mock private CDStepHelper cdStepHelper;
 
   @InjectMocks private ConfigFileFunctor configFileFunctor;
 
@@ -63,25 +67,87 @@ public class ConfigFileFunctorTest extends CategoryTest {
   public void testGetNotValidArgs() {
     assertThatThrownBy(() -> configFileFunctor.get(Ambiance.newBuilder().build(), FUNCTOR_STRING_METHOD_NAME))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("Invalid number of config file functor arguments: [getAsString]");
+        .hasMessage("Invalid configFile functor arguments: [getAsString]");
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetNotValidSecretTypeFunctorMethod() {
-    assertThatThrownBy(() -> configFileFunctor.get(Ambiance.newBuilder().build(), "obtainSecret", SECRET_REF))
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithSecretFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, "obtainSecret", CONFIG_FILE_IDENTIFIER))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("Unsupported config secret file functor method: obtainSecret, ref: secretRef");
+        .hasMessage("Unsupported configFile functor method: obtainSecret, secretRef: scoped-secret-file-path");
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetNotValidFileTypeFunctorMethod() {
-    assertThatThrownBy(() -> configFileFunctor.get(Ambiance.newBuilder().build(), "obtainSecret", FILE_REF_PATH))
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, "obtainFile", CONFIG_FILE_IDENTIFIER))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("Unsupported config file functor method: obtainSecret, ref: /folder1/filename");
+        .hasMessage("Unsupported configFile functor method: obtainFile, scopedFilePath: scoped-file-path");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithFileAndSecretFile() {
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithFileAndSecretFile();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(
+            "Found file and encrypted file both attached to config file, configFileIdentifier: configFileIdentifier");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithWithoutFileAndSecretFile() {
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithFileAndSecretFile();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(
+            "Found file and encrypted file both attached to config file, configFileIdentifier: configFileIdentifier");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithMoreFiles() {
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithMoreFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Found more files attached to config file, configFileIdentifier: configFileIdentifier");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithMoreSecretFiles() {
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithMoreSecretFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+
+    assertThatThrownBy(() -> configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Found more encrypted files attached to config file, configFileIdentifier: configFileIdentifier");
   }
 
   @Test
@@ -89,11 +155,12 @@ public class ConfigFileFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFileGetAsString() {
     Ambiance ambiance = getAmbiance();
-    when(fileStoreService.getWithChildrenByPath(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_REF_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+    when(cdStepHelper.getFileContentAsString(ambiance, SCOPED_FILE_PATH, MAX_CONFIG_FILE_SIZE))
+        .thenReturn(FILE_CONTENT);
 
-    String fileContent = (String) configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, FILE_REF_PATH);
+    String fileContent = (String) configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER);
 
     assertThat(fileContent).isEqualTo(FILE_CONTENT);
   }
@@ -102,57 +169,101 @@ public class ConfigFileFunctorTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testFileGetAsBase64() {
-    when(fileStoreService.getWithChildrenByPath(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_REF_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
+    when(cdStepHelper.getFileContentAsBase64(ambiance, SCOPED_FILE_PATH, MAX_CONFIG_FILE_SIZE))
+        .thenReturn(BASE64_FILE_CONTENT);
 
-    String base64FileContent = (String) configFileFunctor.get(getAmbiance(), FUNCTOR_BASE64_METHOD_NAME, FILE_REF_PATH);
+    String base64FileContent =
+        (String) configFileFunctor.get(getAmbiance(), FUNCTOR_BASE64_METHOD_NAME, CONFIG_FILE_IDENTIFIER);
 
-    assertThat(base64FileContent).isEqualTo("ZmlsZSBjb250ZW50");
+    assertThat(base64FileContent).isEqualTo(BASE64_FILE_CONTENT);
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testSecretFileGetAsString() {
-    Ambiance ambiance = mock(Ambiance.class);
-    when(ambiance.getExpressionFunctorToken()).thenReturn(EXPRESSION_FUNCTOR_TOKEN);
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithSecretFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    String secretExpression = (String) configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, SECRET_REF);
+    String secretExpression =
+        (String) configFileFunctor.get(ambiance, FUNCTOR_STRING_METHOD_NAME, CONFIG_FILE_IDENTIFIER);
 
-    assertThat(secretExpression).isEqualTo("${ngSecretManager.obtainSecretFileAsString(\"secretRef\", 1)}");
+    assertThat(secretExpression)
+        .isEqualTo("${ngSecretManager.obtainSecretFileAsString(\"scoped-secret-file-path\", 1)}");
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testSecretFileGetAsBase64() {
-    Ambiance ambiance = mock(Ambiance.class);
-    when(ambiance.getExpressionFunctorToken()).thenReturn(EXPRESSION_FUNCTOR_TOKEN);
+    Ambiance ambiance = getAmbiance();
+    ConfigFilesOutcome configFilesOutcome = mockGetConfigFileOutcomeWithSecretFiles();
+    when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    String secretExpression = (String) configFileFunctor.get(ambiance, FUNCTOR_BASE64_METHOD_NAME, SECRET_REF);
+    String secretExpression =
+        (String) configFileFunctor.get(ambiance, FUNCTOR_BASE64_METHOD_NAME, CONFIG_FILE_IDENTIFIER);
 
-    assertThat(secretExpression).isEqualTo("${ngSecretManager.obtainSecretFileAsBase64(\"secretRef\", 1)}");
+    assertThat(secretExpression)
+        .isEqualTo("${ngSecretManager.obtainSecretFileAsBase64(\"scoped-secret-file-path\", 1)}");
   }
 
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testGetReferenceType() {
-    assertThat(configFileFunctor.getReferenceType("account:/folder")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("account:/folder/file")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("account:/folder/file1.txt")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("org:/folder")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("org:/folder/file")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("org:/folder/file1/txt")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("/folder")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("/folder/file")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("/folder/file1.txt")).isEqualTo(FILES);
-    assertThat(configFileFunctor.getReferenceType("/file1.txt")).isEqualTo(FILES);
+  @NotNull
+  private ConfigFilesOutcome mockGetConfigFileOutcomeWithFiles() {
+    HarnessStore harnessStore =
+        HarnessStore.builder().files(ParameterField.createValueField(List.of(SCOPED_FILE_PATH))).build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
+  }
 
-    assertThat(configFileFunctor.getReferenceType("account.secretRef")).isEqualTo(SECRETS);
-    assertThat(configFileFunctor.getReferenceType("org.secretRef")).isEqualTo(SECRETS);
-    assertThat(configFileFunctor.getReferenceType(SECRET_REF)).isEqualTo(SECRETS);
+  @NotNull
+  private ConfigFilesOutcome mockGetConfigFileOutcomeWithSecretFiles() {
+    HarnessStore harnessStore =
+        HarnessStore.builder().secretFiles(ParameterField.createValueField(List.of(SCOPED_SECRET_FILE_PATH))).build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
+  }
+
+  @NotNull
+  private ConfigFilesOutcome mockGetConfigFileOutcomeWithFileAndSecretFile() {
+    HarnessStore harnessStore = HarnessStore.builder()
+                                    .files(ParameterField.createValueField(List.of(SCOPED_FILE_PATH)))
+                                    .secretFiles(ParameterField.createValueField(List.of(SCOPED_SECRET_FILE_PATH)))
+                                    .build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
+  }
+
+  @NotNull
+  private ConfigFilesOutcome mockGetConfigFileOutcomeWithMoreFiles() {
+    HarnessStore harnessStore = HarnessStore.builder()
+                                    .files(ParameterField.createValueField(List.of(SCOPED_FILE_PATH, SCOPED_FILE_PATH)))
+                                    .build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
+  }
+
+  @NotNull
+  private ConfigFilesOutcome mockGetConfigFileOutcomeWithMoreSecretFiles() {
+    HarnessStore harnessStore =
+        HarnessStore.builder()
+            .secretFiles(ParameterField.createValueField(List.of(SCOPED_SECRET_FILE_PATH, SCOPED_SECRET_FILE_PATH)))
+            .build();
+    ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+    configFilesOutcome.put(CONFIG_FILE_IDENTIFIER,
+        ConfigFileOutcome.builder().identifier(CONFIG_FILE_IDENTIFIER).store(harnessStore).build());
+    return configFilesOutcome;
   }
 
   private Ambiance getAmbiance() {
@@ -160,10 +271,7 @@ public class ConfigFileFunctorTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+        .setExpressionFunctorToken(EXPRESSION_FUNCTOR_TOKEN)
         .build();
-  }
-
-  private FileNodeDTO getFileNodeDTO() {
-    return FileNodeDTO.builder().name(FILENAME).path(FILE_REF_PATH).content(FILE_CONTENT).build();
   }
 }

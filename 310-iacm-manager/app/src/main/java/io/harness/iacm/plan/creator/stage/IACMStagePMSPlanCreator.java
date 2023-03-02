@@ -93,10 +93,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageNode> {
-  private static final String TERRAFORM_PLAN = "IACMTerraformPlan";
-  private static final String TERRAFORM_APPLY = "IACMTerraformApply";
-  private static final String TERRAFORM_DESTROY = "IACMTerraformDestroy";
-
+  private static final String TERRAFORM_PLAN_ID = "IACMTerraformPlan";
+  private static final String TERRAFORM_APPLY_ID = "IACMTerraformApply";
+  private static final String TERRAFORM_DESTROY_ID = "IACMTerraformDestroy";
+  private static final String TERRAFORM_PLAN_NAME = "Terraform Plan";
+  private static final String TERRAFORM_APPLY_NAME = "Terraform Apply";
+  private static final String TERRAFORM_DESTROY_NAME = "Terraform Destroy";
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
@@ -195,12 +197,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         HashMap<String, String> env = new HashMap<>();
         env.put("command", "plan");
         IACMTerraformPlanInfo iacmTerraformPlanInfo =
-            IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).name(TERRAFORM_PLAN).build();
+            IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).name(TERRAFORM_PLAN_NAME).build();
         String uuid = generateUuid();
         try {
           String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_PLAN)
-                                                                    .name(TERRAFORM_PLAN)
+                                                                    .identifier(TERRAFORM_PLAN_ID)
+                                                                    .name(TERRAFORM_PLAN_NAME)
                                                                     .uuid(uuid)
                                                                     .timeout(ParameterField.createValueField(timeout))
                                                                     .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
@@ -215,13 +217,15 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       case "TerraformApply": {
         HashMap<String, String> env = new HashMap<>();
         env.put("command", "apply");
-        IACMTerraformPlanInfo iacmTerraformPlanInfo =
-            IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).name(TERRAFORM_APPLY).build();
+        IACMTerraformPlanInfo iacmTerraformPlanInfo = IACMTerraformPlanInfo.builder()
+                                                          .env(ParameterField.createValueField(env))
+                                                          .name(TERRAFORM_APPLY_NAME)
+                                                          .build();
         String uuid = generateUuid();
         try {
           String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_APPLY)
-                                                                    .name(TERRAFORM_APPLY)
+                                                                    .identifier(TERRAFORM_APPLY_ID)
+                                                                    .name(TERRAFORM_APPLY_NAME)
                                                                     .uuid(uuid)
                                                                     .timeout(ParameterField.createValueField(timeout))
                                                                     .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
@@ -236,13 +240,15 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       case "TerraformDestroy": {
         HashMap<String, String> env = new HashMap<>();
         env.put("command", "destroy");
-        IACMTerraformPlanInfo iacmTerraformPlanInfo =
-            IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).name(TERRAFORM_DESTROY).build();
+        IACMTerraformPlanInfo iacmTerraformPlanInfo = IACMTerraformPlanInfo.builder()
+                                                          .env(ParameterField.createValueField(env))
+                                                          .name(TERRAFORM_DESTROY_NAME)
+                                                          .build();
         String uuid = generateUuid();
         try {
           String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_DESTROY)
-                                                                    .name(TERRAFORM_DESTROY)
+                                                                    .identifier(TERRAFORM_DESTROY_ID)
+                                                                    .name(TERRAFORM_DESTROY_NAME)
                                                                     .uuid(uuid)
                                                                     .timeout(ParameterField.createValueField(timeout))
                                                                     .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
@@ -330,7 +336,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         .stepParameters(stageParameters.build())
         .stepType(getStepType(stageNode))
         .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+        .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -486,7 +492,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
           ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined
-      if (!Objects.equals(stack.getRepository(), "")) {
+      if (!Objects.equals(stack.getRepository(), "") && stack.getRepository() != null) {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(stack.getRepository()).build());
       } else {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
@@ -502,12 +508,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       // We support 2,
 
       BuildBuilder build = Build.builder();
-      if (!Objects.equals(stack.getRepository_branch(), "")) {
+      if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
         build.type(BuildType.BRANCH);
         build.spec(BranchBuildSpec.builder()
                        .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
                        .build());
-      } else if (!Objects.equals(stack.getRepository_commit(), "")) {
+      } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
         build.type(BuildType.TAG);
         build.spec(TagBuildSpec.builder()
                        .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())

@@ -10,11 +10,15 @@ package io.harness.ngtriggers.beans.config;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.validator.EntityIdentifier;
+import io.harness.data.validator.EntityName;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
+import io.harness.validator.NGRegexValidatorConstants;
 
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,8 +26,8 @@ import lombok.Data;
 @Builder
 @OwnedBy(PIPELINE)
 public class NGTriggerConfigV2 implements NGTriggerInterface {
-  String name;
-  @NotNull String identifier;
+  @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
+  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
   String description;
   String orgIdentifier;
   String projectIdentifier;

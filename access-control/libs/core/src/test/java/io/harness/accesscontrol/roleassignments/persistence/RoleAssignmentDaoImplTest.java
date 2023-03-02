@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -242,7 +241,7 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
     RoleAssignmentDBO roleAssignmentDBO = toDBO(roleAssignment);
     when(roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(
              roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
-        .thenReturn(singletonList(roleAssignmentDBO));
+        .thenReturn(Optional.of(roleAssignmentDBO));
     Optional<RoleAssignment> roleAssignmentOptional =
         roleAssignmentDao.delete(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier());
     assertTrue(roleAssignmentOptional.isPresent());
@@ -256,7 +255,7 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
     String identifier = randomAlphabetic(10);
     String scopeIdentifier = randomAlphabetic(10);
     when(roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-        .thenReturn(emptyList());
+        .thenReturn(Optional.empty());
     Optional<RoleAssignment> roleAssignmentOptional = roleAssignmentDao.delete(identifier, scopeIdentifier);
     assertFalse(roleAssignmentOptional.isPresent());
   }

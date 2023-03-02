@@ -146,6 +146,7 @@ import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.LimitEnforcementUtils;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
 import io.harness.limits.counter.service.CounterSyncer;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.observer.Rejection;
 import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
@@ -459,11 +460,15 @@ public class WorkflowServiceImpl implements WorkflowService {
   }
 
   @Override
-  public List<Workflow> list(String accountId, List<String> projectFields) {
+  public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
-    return emptyIfNull(workflowQuery.asList());
+    FindOptions findOptions = new FindOptions();
+    if (isNotEmpty(queryHint)) {
+      findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
+    }
+    return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
   /**
@@ -671,7 +676,7 @@ public class WorkflowServiceImpl implements WorkflowService {
   public PageResponse<Workflow> listWorkflows(
       PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -4013,7 +4018,10 @@ public class WorkflowServiceImpl implements WorkflowService {
     // Do we need checks for isServiceTemplatized or isInfraDefinitionTemplatized
 
     DeploymentType deploymentType = null;
-    Service service = serviceResourceService.get(appId, serviceId, false);
+    Service service = null;
+    if (serviceId != null) {
+      service = serviceResourceService.get(appId, serviceId, false);
+    }
 
     if (service != null) {
       deploymentType = service.getDeploymentType();

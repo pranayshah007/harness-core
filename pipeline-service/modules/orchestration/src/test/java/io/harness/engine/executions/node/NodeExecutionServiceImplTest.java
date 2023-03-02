@@ -26,6 +26,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -54,16 +56,20 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -598,6 +604,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
+            .oldRetry(false)
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .startTs(500L)
@@ -624,6 +631,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .identifier("stage1")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .module("CD")
+            .oldRetry(true)
             .startTs(200L)
             .build();
     String nodeUuid2 = generateUuid();
@@ -647,6 +655,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .identifier("stage2")
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+            .oldRetry(false)
             .startTs(400L)
             .module("CD")
             .build();
@@ -672,6 +681,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .name("name")
             .startTs(500L)
             .identifier("stage3")
+            .oldRetry(false)
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
             .module("CD")
             .build();
@@ -725,10 +735,16 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDeleteAllNodeExecutionAndMetadata() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
     Reflect.on(nodeExecutionService).set("nodeDeleteObserverSubject", nodeDeleteObserverSubject);
+
     List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    Set<String> batchNodeExecutionIds = new HashSet<>();
     for (int i = 0; i < 1200; i++) {
-      nodeExecutionList.add(NodeExecution.builder().uuid(generateUuid()).build());
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+      batchNodeExecutionIds.add(uuid);
     }
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
@@ -737,5 +753,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
     nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
     verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
+
+    verify(mongoTemplateMock, times(1))
+        .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
   }
 }

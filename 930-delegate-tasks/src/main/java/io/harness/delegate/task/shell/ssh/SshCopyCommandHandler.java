@@ -116,7 +116,8 @@ public class SshCopyCommandHandler implements CommandHandler {
             new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
       }
       if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
-        log.info("Artifactory docker registry found, skipping copy artifact.");
+        log.info(
+            "Docker {} registry found, skipping copy artifact.", context.getArtifactDelegateConfig().getArtifactType());
         executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
         return ExecuteCommandResponse.builder().status(result).build();
       }

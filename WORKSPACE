@@ -18,6 +18,21 @@ http_archive(
     url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
 )
 
+# Workaround for https://github.com/bazelbuild/bazel-gazelle/issues/1285. Ideally,
+# we can remove this if gazelle ships a fix since we didn't need it before.
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "f7be3474d42aae265405a592bb7da8e171919d74c16f082a5457840f06054728",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.2.1/bazel-skylib-1.2.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.2.1/bazel-skylib-1.2.1.tar.gz",
+    ],
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+
 http_archive(
     name = "com_google_protobuf",
     sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
@@ -1281,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:TB0fL4RpUrIngifmZ6CWFOJQpVKtKJGjLGGj00TLqYE=",
-    version = "v1.28.2-0.20230130112242-4428a9bf64df",
+    sum = "h1:9ZrokpIAX+BANYGahqJp6vJqgYiD5c8v5A4iVk+oyZo=",
+    version = "v1.29.1",
 )
 
 go_repository(
@@ -4781,9 +4796,6 @@ plain_artifacts = [
     "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.1",
     "com.graphql-java:graphql-java:12.0",
     "com.graphql-java:java-dataloader:2.1.1",
-    "com.hazelcast:hazelcast-aws:2.4",
-    "com.hazelcast:hazelcast-kubernetes:1.5.3",
-    "com.hazelcast:hazelcast:5.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
     "com.helger:profiler:1.1.1",
     "com.hierynomus:asn-one:0.6.0",
@@ -4807,7 +4819,7 @@ plain_artifacts = [
     "com.nimbusds:nimbus-jose-jwt:8.19",
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
-    "com.novemberain:quartz-mongodb-harness-mongo-ssl:2.1.1-harness-mongo-ssl",
+    "com.novemberain:quartz-mongodb:2.2.0-rc2",
     "com.offbytwo.jenkins:jenkins-client:0.3.9",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
@@ -5099,9 +5111,6 @@ plain_artifacts = [
     "org.apache.lucene:lucene-suggest:8.11.1",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
-    "org.apache.maven:maven-artifact:3.3.3",
-    "org.apache.maven:maven-core:3.6.3",
-    "org.apache.maven:maven-model:3.0.5",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.neethi:neethi:3.1.1",
@@ -5110,7 +5119,6 @@ plain_artifacts = [
     "org.apache.sshd:sshd-common:2.9.2",
     "org.apache.sshd:sshd-scp:2.9.2",
     "org.apache.ws.xmlschema:xmlschema-core:2.2.5",
-    "org.atmosphere:atmosphere-hazelcast:2.6.5",
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
@@ -5125,7 +5133,7 @@ plain_artifacts = [
     "org.cloudfoundry:cloudfoundry-client:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-operations:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-util:5.9.0.RELEASE",
-    "org.codehaus.groovy:groovy:3.0.7",
+    "org.codehaus.groovy:groovy:3.0.15",
     "org.codehaus.jackson:jackson-core-asl:1.9.11",
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",
@@ -5238,11 +5246,10 @@ plain_artifacts = [
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
     "dev.morphia.morphia:core:1.6.1",
-    "org.mongodb:mongodb-driver-legacy:3.12.2",
-    "org.mongodb:mongodb-driver-sync:3.12.2",
-    "org.mongodb:mongodb-driver-core:3.12.2",
-    "org.mongodb:mongo-java-driver:3.12.2",
-    "org.mongodb:bson:3.12.2",
+    "org.mongodb:mongodb-driver-legacy:4.6.1",
+    "org.mongodb:mongodb-driver-sync:4.6.1",
+    "org.mongodb:mongodb-driver-core:4.6.1",
+    "org.mongodb:bson:4.6.1",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",
@@ -5279,22 +5286,22 @@ plain_artifacts = [
     "org.springframework.boot:spring-boot-loader:2.4.5",
     "org.springframework.boot:spring-boot-starter-batch:2.1.6.RELEASE",
     "org.springframework.boot:spring-boot:2.3.2.RELEASE",
-    "org.springframework.data:spring-data-commons:2.2.7.RELEASE",
-    "org.springframework.data:spring-data-mongodb:2.2.7.RELEASE",
+    "org.springframework.data:spring-data-commons:2.7.7",
+    "org.springframework.data:spring-data-mongodb:3.4.7",
     "org.springframework.guice:spring-guice:1.1.3.RELEASE",
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
     "org.springframework:spring-aop:5.3.23",
-    "org.springframework:spring-beans:5.3.23",
-    "org.springframework:spring-context:5.3.23",
-    "org.springframework:spring-core:5.3.23",
-    "org.springframework:spring-expression:5.3.23",
-    "org.springframework:spring-jcl:5.3.23",
-    "org.springframework:spring-messaging:5.3.23",
-    "org.springframework:spring-test:5.3.23",
-    "org.springframework:spring-tx:5.3.23",
-    "org.springframework:spring-web:5.3.23",
+    "org.springframework:spring-beans:5.3.25",
+    "org.springframework:spring-context:5.3.25",
+    "org.springframework:spring-core:5.3.25",
+    "org.springframework:spring-expression:5.3.25",
+    "org.springframework:spring-jcl:5.3.25",
+    "org.springframework:spring-messaging:5.3.25",
+    "org.springframework:spring-test:5.3.25",
+    "org.springframework:spring-tx:5.3.25",
+    "org.springframework:spring-web:5.3.25",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
@@ -5519,7 +5526,7 @@ maven_install(
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
         "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
-        "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongo_java_driver",
+        "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5831,7 +5838,7 @@ http_archive(
     name = "contrib_rules_jvm",
     sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
     strip_prefix = "rules_jvm-0.4.0",
-    url = "https://github.com/bazel-contrib/rules_jvm/archive/v0.4.0.tar.gz",
+    url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
 )
 
 # Fetches the contrib_rules_jvm dependencies.

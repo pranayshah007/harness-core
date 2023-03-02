@@ -55,6 +55,7 @@ public class InterventionWaitTimeoutCallbackTest extends OrchestrationTestBase {
     shouldTestGetInterruptPackageInternal(RepairActionCode.CUSTOM_FAILURE, InterruptType.CUSTOM_FAILURE);
     shouldTestGetInterruptPackageInternal(RepairActionCode.UNKNOWN, InterruptType.ABORT_ALL);
     shouldTestGetInterruptPackageInternal(RepairActionCode.END_EXECUTION, InterruptType.ABORT_ALL);
+    shouldTestGetInterruptPackageInternal(RepairActionCode.MARK_AS_FAILURE, InterruptType.MARK_FAILED);
 
     assertThatThrownBy(
         () -> shouldTestGetInterruptPackageInternal(RepairActionCode.MANUAL_INTERVENTION, InterruptType.ABORT_ALL))

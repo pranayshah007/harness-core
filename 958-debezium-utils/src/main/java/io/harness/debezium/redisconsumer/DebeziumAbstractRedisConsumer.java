@@ -18,6 +18,7 @@ import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -39,9 +40,10 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
   @Inject private PersistentLocker persistentLocker;
   private static final String LOCK_PREFIX = "DEBEZIUM_SNAPSHOT_CONSUMER_";
   private static final String CACHE_PREFIX = "DEBEZIUM_EVENT_";
-  private static final int WAIT_TIME_IN_SECONDS = 30;
-  private static final int TIMEOUT_IN_SECONDS = 30;
+  private static final int WAIT_TIME_IN_MILLIS = 500;
+  private static final int TIMEOUT_IN_SECONDS = 10;
   private static final int SLEEP_SECONDS = 10;
+  private static final int THREAD_SLEEP_TIME_MILLIS = 500;
   Consumer redisConsumer;
   DebeziumAbstractRedisEventHandler eventHandler;
   QueueController queueController;
@@ -65,6 +67,10 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
 
     try {
       do {
+        if (redisConsumer instanceof NoOpConsumer) {
+          log.info("Closing the thread as the redis consumer is NoOp");
+          break;
+        }
         while (getMaintenanceFlag()) {
           log.info("We are under maintenance, will try again after {} seconds", SLEEP_SECONDS);
           sleep(ofSeconds(SLEEP_SECONDS));
@@ -76,6 +82,9 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
           continue;
         }
         readEventsFrameworkMessages();
+        // Adding the sleep of 500ms to give time to consumer to consume the batch of already read messages before
+        // reading the new batch
+        sleep(Duration.ofMillis(THREAD_SLEEP_TIME_MILLIS));
       } while (!Thread.currentThread().isInterrupted() && !shouldStop.get());
     } catch (Exception ex) {
       log.error("Consumer {} unexpectedly stopped", this.getClass().getSimpleName(), ex);
@@ -87,12 +96,12 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
       pollAndProcessMessages();
     } catch (EventsFrameworkDownException e) {
       log.error("Events framework is down for Redis Consumer. Retrying again...", e);
-      TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
+      TimeUnit.MILLISECONDS.sleep(WAIT_TIME_IN_MILLIS);
     }
   }
 
   private void pollAndProcessMessages() {
-    List<Message> messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
+    List<Message> messages = redisConsumer.read(Duration.ofMillis(WAIT_TIME_IN_MILLIS));
     for (Message message : messages) {
       String messageId = message.getId();
       boolean messageProcessed = handleMessage(message);

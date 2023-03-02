@@ -26,6 +26,7 @@ import io.harness.perpetualtask.instancesync.AsgInstanceSyncPerpetualTaskParamsN
 import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
@@ -145,6 +146,8 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(AsgInstanceSyncPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(GoogleFunctionInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(GoogleFunctionInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AwsLambdaInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(AwsLambdaInstanceSyncPerpetualTaskExecutorNg.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

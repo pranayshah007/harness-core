@@ -152,13 +152,14 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   public void testGetInputSet() {
     doReturn(Optional.of(inputSetEntity))
         .when(pmsInputSetService)
-        .get(account, org, project, pipeline, inputSet, false, null, null, true);
+        .get(account, org, project, pipeline, inputSet, false, null, null, true, false, false);
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
     inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
 
-    Response response = inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null);
+    Response response =
+        inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null, false);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);

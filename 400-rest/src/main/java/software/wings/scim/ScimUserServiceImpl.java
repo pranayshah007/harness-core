@@ -8,6 +8,8 @@
 package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -62,6 +64,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   private static final Integer MAX_RESULT_COUNT = 20;
   private static final String GIVEN_NAME = "givenName";
   private static final String FAMILY_NAME = "familyName";
+  private static final String FORMATTED_NAME = "formatted";
   private static final String VALUE = "value";
   private static final String PRIMARY = "primary";
 
@@ -139,10 +142,10 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Override
   public ScimUser getUser(String userId, String accountId) {
     User user = userService.get(accountId, userId);
-    return buildUserResponse(user);
+    return buildUserResponse(user, accountId);
   }
 
-  private ScimUser buildUserResponse(User user) {
+  private ScimUser buildUserResponse(User user, String accountId) {
     ScimUser userResource = new ScimUser();
     if (user == null) {
       return null;
@@ -155,8 +158,17 @@ public class ScimUserServiceImpl implements ScimUserService {
 
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
-        put(GIVEN_NAME, user.getGivenName() != null ? user.getGivenName() : user.getName());
-        put(FAMILY_NAME, user.getFamilyName() != null ? user.getFamilyName() : user.getName());
+        final String givenNm = user.getGivenName() == null ? user.getName() : user.getGivenName();
+        final String familyNm = user.getFamilyName() == null ? user.getName() : user.getFamilyName();
+        put(FAMILY_NAME, familyNm);
+        put(GIVEN_NAME, givenNm);
+        if (featureFlagService.isEnabled(PL_JPMC_SCIM_REQUIREMENTS, accountId)) {
+          if (user.getGivenName() == null && user.getFamilyName() == null) {
+            put(FORMATTED_NAME, user.getName());
+          } else {
+            put(FORMATTED_NAME, givenNm + ", " + familyNm);
+          }
+        }
       }
     };
 
@@ -219,7 +231,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.field(UserKeys.email).equal(searchQuery);
     }
     List<User> userList = userQuery.asList(new FindOptions().skip(startIndex).limit(count));
-    return userList.stream().map(this::buildUserResponse).collect(Collectors.toList());
+    return userList.stream().map(user -> buildUserResponse(user, accountId)).collect(Collectors.toList());
   }
 
   @Override
@@ -416,21 +428,24 @@ public class ScimUserServiceImpl implements ScimUserService {
         }
       }
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-          && userResource.getEmails() != null && userResource.getEmails().get(0) != null
-          && userResource.getEmails().get(0).get("value") != null
-          && userResource.getEmails().get(0).get("value").asText() != null
-          && !user.getEmail().equalsIgnoreCase(userResource.getEmails().get(0).get("value").asText())) {
+      final String userPrimaryEmail =
+          isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
+
+      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
+          && !userPrimaryEmail.equals(user.getEmail())) {
+        UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+        updateOperation.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
-        String emailFromScim = userResource.getEmails().get(0).get("value").asText().toLowerCase();
-        updateOperations.set(UserKeys.email, emailFromScim);
-        log.info("SCIM: Updating user's {}, email from {} to email id: {}", userId, user.getEmail(), emailFromScim);
+        log.info(
+            "SCIM: Updated users {}, email from {} to updated email id: {}", userId, user.getEmail(), userPrimaryEmail);
       }
+
       if (userUpdate) {
         updateOperations.set(UserKeys.imported, true);
         userService.updateUser(user.getUuid(), updateOperations);
       }
-      log.info("SCIM: user {} was updated {} with updateOperations {}", user.getUuid(), userUpdate, updateOperations);
+      log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,
+          updateOperations, accountId);
       return Response.status(Status.OK).entity(getUser(user.getUuid(), accountId)).build();
     }
   }

@@ -22,7 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.beans.ExecutionNode;
 import io.harness.gitaware.helper.GitImportInfoDTO;
-import io.harness.gitaware.helper.MoveConfigRequestDTO;
+import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -35,7 +35,6 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -627,7 +626,7 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
-      @BeanParam MoveConfigRequestDTO moveConfigRequestDTO);
+      @BeanParam PipelineMoveConfigRequestDTO pipelineMoveConfigRequestDTO);
 
   @POST
   @Path("/{pipelineIdentifier}/validate")
@@ -654,7 +653,7 @@ public interface PipelineResource {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 
-  @POST
+  @GET
   @Path("validate/{uuid}")
   @Hidden
   @ApiOperation(value = "Get Pipeline validation event data", nickname = "getPipelineValidateResult")
@@ -667,7 +666,7 @@ public interface PipelineResource {
         ApiResponse(responseCode = "default", description = "Return uuid of the started event")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  ResponseDTO<PipelineValidationResponseBody>
+  ResponseDTO<PipelineValidationResponseDTO>
   getPipelineValidateResult(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,

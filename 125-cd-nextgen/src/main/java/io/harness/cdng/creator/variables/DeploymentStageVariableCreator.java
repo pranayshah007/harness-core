@@ -64,6 +64,7 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
@@ -254,16 +255,15 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<YamlProperties> outputProperties = new LinkedList<>();
     Map<String, YamlExtraProperties> yamlPropertiesMap = new LinkedHashMap<>();
 
+    YamlField specField = currentField.getNode().getField(YAMLFieldNameConstants.SPEC);
     // service node in v2 yaml
-    YamlField serviceField =
-        currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.SERVICE_ENTITY);
+    YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     if (serviceField == null) {
-      serviceField =
-          currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.SERVICE_ENTITIES);
+      serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITIES);
     }
 
     if (isNotEmpty(serviceRef.getValue()) && !serviceRef.isExpression()) {
-      outputProperties.addAll(handleServiceStepOutcome());
+      outputProperties.addAll(handleServiceStepOutcome(serviceField));
 
       // scoped service ref used here
       Optional<ServiceEntity> optionalService =
@@ -273,16 +273,16 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (optionalService.isPresent()) {
         ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(optionalService.get());
       }
-      outputProperties.addAll(handleManifestProperties(ngServiceConfig));
-      outputProperties.addAll(handleArtifactProperties(ngServiceConfig));
+      outputProperties.addAll(handleManifestProperties(specField, ngServiceConfig));
+      outputProperties.addAll(handleArtifactProperties(specField, ngServiceConfig));
       if (environmentRef != null && !environmentRef.isExpression()) {
         serviceVariables.addAll(getServiceOverridesVariables(ctx, environmentRef, ngServiceConfig));
       }
-      outputProperties.addAll(handleServiceVariables(serviceVariables, ngServiceConfig));
+      outputProperties.addAll(handleServiceVariables(specField, serviceVariables, ngServiceConfig));
     } else {
-      outputProperties.addAll(handleServiceStepOutcome());
+      outputProperties.addAll(handleServiceStepOutcome(serviceField));
       // handle serviceVariables from env
-      outputProperties.addAll(handleServiceVariables(serviceVariables, null));
+      outputProperties.addAll(handleServiceVariables(specField, serviceVariables, null));
     }
     yamlPropertiesMap.put(serviceField.getNode().getUuid(),
         YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
@@ -290,8 +290,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         VariableCreationResponse.builder().yamlExtraProperties(yamlPropertiesMap).build());
   }
 
-  private void createVariablesForInfraDefinitions(VariableCreationContext ctx, ParameterField<String> environmentRef,
-      LinkedHashMap<String, VariableCreationResponse> responseMap, EnvironmentYamlV2 environmentYamlV2) {
+  private void createVariablesForInfraDefinitions(VariableCreationContext ctx, YamlField specField,
+      ParameterField<String> environmentRef, LinkedHashMap<String, VariableCreationResponse> responseMap,
+      EnvironmentYamlV2 environmentYamlV2) {
     if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()) {
       final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
       final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
@@ -313,13 +314,14 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       try (HIterator<InfrastructureEntity> iterator = infrastructureEntityService.listIterator(
                accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraIdentifiers)) {
         for (InfrastructureEntity entity : iterator) {
-          addInfrastructureProperties(entity, responseMap, identifierToNodeUuid.get(entity.getIdentifier()));
+          addInfrastructureProperties(entity, specField, responseMap, identifierToNodeUuid.get(entity.getIdentifier()));
         }
       }
     }
   }
-  private void createVariablesForInfraDefinition(VariableCreationContext ctx, ParameterField<String> environmentRef,
-      LinkedHashMap<String, VariableCreationResponse> responseMap, EnvironmentYamlV2 environmentYamlV2) {
+  private void createVariablesForInfraDefinition(VariableCreationContext ctx, YamlField specField,
+      ParameterField<String> environmentRef, LinkedHashMap<String, VariableCreationResponse> responseMap,
+      EnvironmentYamlV2 environmentYamlV2) {
     if (!environmentYamlV2.getInfrastructureDefinition().isExpression()) {
       final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
       final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
@@ -334,12 +336,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
             infrastructureEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier,
                 environmentRef.getValue(), infraStructureDefinitionYaml.getIdentifier().getValue());
         infrastructureEntityOpt.ifPresent(
-            i -> addInfrastructureProperties(i, responseMap, infraStructureDefinitionYaml.getUuid()));
+            i -> addInfrastructureProperties(i, specField, responseMap, infraStructureDefinitionYaml.getUuid()));
       }
     }
   }
 
-  private void addInfrastructureProperties(InfrastructureEntity infrastructureEntity,
+  private void addInfrastructureProperties(InfrastructureEntity infrastructureEntity, YamlField specField,
       LinkedHashMap<String, VariableCreationResponse> responseMap, String infraNodeUuid) {
     Map<String, YamlExtraProperties> yamlPropertiesMap = new LinkedHashMap<>();
     List<YamlProperties> outputProperties = new LinkedList<>();
@@ -353,8 +355,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);
 
+    final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     for (String outputExpression : infraStepOutputExpressions) {
-      outputProperties.add(YamlProperties.newBuilder().setLocalName(outputExpression).setVisible(true).build());
+      String fqn = stageFqn + "." + outputExpression;
+      outputProperties.add(
+          YamlProperties.newBuilder().setLocalName(outputExpression).setFqn(fqn).setVisible(true).build());
     }
 
     yamlPropertiesMap.put(
@@ -399,6 +404,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
     final ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
 
+    final YamlField specField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC);
     if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
       // scoped environment ref provided here
       Optional<Environment> optionalEnvironment =
@@ -406,7 +412,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (optionalEnvironment.isPresent()) {
         final NGEnvironmentConfig ngEnvironmentConfig =
             EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
-        outputProperties.addAll(handleEnvironmentOutcome(ngEnvironmentConfig));
+        outputProperties.addAll(handleEnvironmentOutcome(specField, ngEnvironmentConfig));
         // all env.variables also accessed by serviceVariables
         List<NGVariable> envVariables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
         if (isNotEmpty(envVariables)) {
@@ -414,7 +420,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         }
       }
     } else {
-      outputProperties.addAll(handleEnvironmentOutcome(null));
+      outputProperties.addAll(handleEnvironmentOutcome(specField, null));
     }
     yamlPropertiesMap.put(
         environmentYamlV2.getUuid(), YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
@@ -423,13 +429,14 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
     // Create variables for infrastructure definitions/infrastructure definition
     if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())) {
-      createVariablesForInfraDefinitions(ctx, environmentRef, responseMap, environmentYamlV2);
+      createVariablesForInfraDefinitions(ctx, specField, environmentRef, responseMap, environmentYamlV2);
     } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
-      createVariablesForInfraDefinition(ctx, environmentRef, responseMap, environmentYamlV2);
+      createVariablesForInfraDefinition(ctx, specField, environmentRef, responseMap, environmentYamlV2);
     }
   }
 
-  private List<YamlProperties> handleEnvironmentOutcome(NGEnvironmentConfig ngEnvironmentConfig) {
+  private List<YamlProperties> handleEnvironmentOutcome(YamlField specField, NGEnvironmentConfig ngEnvironmentConfig) {
+    final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     List<YamlProperties> outputProperties = new ArrayList<>();
 
     List<NGVariable> envVariables = ngEnvironmentConfig == null
@@ -445,7 +452,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         VariableCreatorHelper.getExpressionsInObject(environmentOutcome, OutputExpressionConstants.ENVIRONMENT);
 
     for (String outputExpression : envStepOutputExpressions) {
-      outputProperties.add(YamlProperties.newBuilder().setLocalName(outputExpression).setVisible(true).build());
+      String fqn = stageFqn + "." + outputExpression;
+      outputProperties.add(
+          YamlProperties.newBuilder().setLocalName(outputExpression).setFqn(fqn).setVisible(true).build());
     }
     return outputProperties;
   }
@@ -466,20 +475,26 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return null;
   }
 
-  private List<YamlProperties> handleServiceStepOutcome() {
+  private List<YamlProperties> handleServiceStepOutcome(YamlField serviceField) {
     List<YamlProperties> outputProperties = new ArrayList<>();
+    String fqn = YamlUtils.getFullyQualifiedName(serviceField.getNode());
     ServiceStepOutcome serviceStepOutcome = ServiceStepOutcome.builder().build();
     // constance for service
-    List<String> serviceStepOutputExpressions =
-        VariableCreatorHelper.getExpressionsInObject(serviceStepOutcome, "service");
+    List<String> serviceStepOutputExpressions = VariableCreatorHelper.getExpressionsInObject(serviceStepOutcome, "");
 
     for (String outputExpression : serviceStepOutputExpressions) {
-      outputProperties.add(YamlProperties.newBuilder().setLocalName(outputExpression).setVisible(true).build());
+      outputProperties.add(YamlProperties.newBuilder()
+                               .setFqn(fqn + "." + outputExpression)
+                               .setLocalName("service"
+                                   + "." + outputExpression)
+                               .setVisible(true)
+                               .build());
     }
     return outputProperties;
   }
 
-  private List<YamlProperties> handleArtifactProperties(NGServiceConfig ngServiceConfig) {
+  private List<YamlProperties> handleArtifactProperties(YamlField specField, NGServiceConfig ngServiceConfig) {
+    final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     List<YamlProperties> outputProperties = new ArrayList<>();
     if (ngServiceConfig != null) {
       ArtifactListConfig artifactListConfig =
@@ -497,10 +512,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
                   VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
 
               for (String outputExpression : sideCarOutputExpressions) {
-                outputProperties.add(YamlProperties.newBuilder()
-                                         .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
-                                         .setVisible(true)
-                                         .build());
+                String localFqn = SIDECARS_PREFIX + "." + outputExpression;
+                String fqn = stageFqn + "." + localFqn;
+                outputProperties.add(
+                    YamlProperties.newBuilder().setLocalName(localFqn).setFqn(fqn).setVisible(true).build());
               }
             }
           }
@@ -509,7 +524,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         if (primaryArtifact != null) {
           Set<String> expressions = new HashSet<>();
           if (primaryArtifact.getSpec() != null) {
-            populateExpressionsForArtifact(outputProperties, primaryArtifact.getSpec(), expressions);
+            populateExpressionsForArtifact(specField, outputProperties, primaryArtifact.getSpec(), expressions);
           }
           if (ParameterField.isNotNull(primaryArtifact.getPrimaryArtifactRef())
               && isNotEmpty(primaryArtifact.getSources())) {
@@ -520,10 +535,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
                       .stream()
                       .filter(s -> primaryArtifact.getPrimaryArtifactRef().getValue().equals(s.getIdentifier()))
                       .findFirst();
-              source.ifPresent(s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+              source.ifPresent(
+                  s -> populateExpressionsForArtifact(specField, outputProperties, s.getSpec(), expressions));
             } else {
               primaryArtifact.getSources().forEach(
-                  s -> populateExpressionsForArtifact(outputProperties, s.getSpec(), expressions));
+                  s -> populateExpressionsForArtifact(specField, outputProperties, s.getSpec(), expressions));
             }
           }
         }
@@ -533,25 +549,27 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   }
 
   private void populateExpressionsForArtifact(
-      List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
+      YamlField specField, List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
     // in case of template source, spec will be null
     if (spec != null) {
+      final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
       ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
       List<String> primaryArtifactExpressions =
           VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
 
       for (String outputExpression : primaryArtifactExpressions) {
         if (expressions.add(outputExpression)) {
-          outputProperties.add(YamlProperties.newBuilder()
-                                   .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
-                                   .setVisible(true)
-                                   .build());
+          String localName = OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression;
+          String fqn = stageFqn + "." + localName;
+          outputProperties.add(
+              YamlProperties.newBuilder().setLocalName(localName).setFqn(fqn).setVisible(true).build());
         }
       }
     }
   }
 
-  private List<YamlProperties> handleManifestProperties(NGServiceConfig ngServiceConfig) {
+  private List<YamlProperties> handleManifestProperties(YamlField specField, NGServiceConfig ngServiceConfig) {
+    final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     List<YamlProperties> outputProperties = new ArrayList<>();
     if (ngServiceConfig != null && ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition() != null) {
       List<ManifestConfigWrapper> manifestConfigWrappers =
@@ -567,10 +585,10 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           List<String> manifestOutputExpressions = VariableCreatorHelper.getExpressionsInObject(outcome, identifier);
 
           for (String outputExpression : manifestOutputExpressions) {
-            outputProperties.add(YamlProperties.newBuilder()
-                                     .setLocalName(OutcomeExpressionConstants.MANIFESTS + "." + outputExpression)
-                                     .setVisible(true)
-                                     .build());
+            String localFqn = OutcomeExpressionConstants.MANIFESTS + "." + outputExpression;
+            String fqn = stageFqn + "." + localFqn;
+            outputProperties.add(
+                YamlProperties.newBuilder().setLocalName(localFqn).setFqn(fqn).setVisible(true).build());
           }
         }
       }
@@ -579,7 +597,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   }
 
   private List<YamlProperties> handleServiceVariables(
-      Set<String> existingServiceVariables, NGServiceConfig ngServiceConfig) {
+      YamlField specField, Set<String> existingServiceVariables, NGServiceConfig ngServiceConfig) {
+    final String stageFqn = YamlUtils.getFullyQualifiedName(specField.getNode());
     List<YamlProperties> outputProperties = new ArrayList<>();
     if (ngServiceConfig != null) {
       List<NGVariable> ngVariableList =
@@ -594,7 +613,9 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
                                            .collect(Collectors.toList());
 
       for (String outputExpression : outputExpressions) {
-        outputProperties.add(YamlProperties.newBuilder().setLocalName(outputExpression).setVisible(true).build());
+        String fqn = stageFqn + "." + outputExpression;
+        outputProperties.add(
+            YamlProperties.newBuilder().setLocalName(outputExpression).setFqn(fqn).setVisible(true).build());
       }
     }
     return outputProperties;

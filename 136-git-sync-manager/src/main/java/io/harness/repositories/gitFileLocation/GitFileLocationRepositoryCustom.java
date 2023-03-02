@@ -15,6 +15,7 @@ import io.harness.gitsync.common.beans.GitFileLocation;
 import io.harness.gitsync.common.dtos.GitSyncEntityListDTO;
 import io.harness.gitsync.common.dtos.GitSyncRepoFilesDTO;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +40,7 @@ public interface GitFileLocationRepositoryCustom {
 
   GitFileLocation update(Query query, Update update);
 
-  List<GitFileLocation> deleteAll(Query query);
+  DeleteResult deleteAll(Query query);
 
   GitFileLocation findOne(Criteria criteria);
 }

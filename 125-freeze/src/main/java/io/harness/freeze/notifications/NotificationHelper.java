@@ -7,7 +7,6 @@
 
 package io.harness.freeze.notifications;
 
-import io.harness.beans.FeatureName;
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeEvent;
 import io.harness.freeze.beans.FreezeNotificationChannelWrapper;
@@ -42,9 +41,6 @@ public class NotificationHelper {
   public void sendNotification(String yaml, boolean pipelineRejectedNotification, boolean freezeWindowNotification,
       Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze)
       throws IOException {
-    if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDC_SEND_NOTIFICATION_FOR_FREEZE)) {
-      return;
-    }
     FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(yaml);
     FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
     if (freezeInfoConfig == null || freezeInfoConfig.getNotifications() == null) {

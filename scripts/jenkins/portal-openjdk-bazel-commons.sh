@@ -29,7 +29,6 @@ function copy_cg_manager_jars(){
 	cd dist/manager
 
 	cp ${BAZEL_BIN}/360-cg-manager/module_deploy.jar rest-capsule.jar
-	cp ../../400-rest/src/main/resources/hazelcast.xml .
 	cp ../../keystore.jks .
 	cp ../../360-cg-manager/key.pem .
 	cp ../../360-cg-manager/cert.pem .
@@ -130,3 +129,24 @@ function copy_ng_dashboard_jars(){
 
 	cd ../..
 }
+
+function copy_dms_jars(){
+	mkdir -p dist/delegate-service-app ;
+  cd dist/delegate-service-app
+
+	cp ${HOME}/.bazel-dirs/bin/419-delegate-service-app/src/main/java/io/harness/dms/app/module_deploy.jar delegate-service-capsule.jar
+  cp ../../419-delegate-service-app/config/config.yml .
+  cp ../../419-delegate-service-app/config/redisson-jcache.yaml .
+  
+  cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-cie-jdk ./Dockerfile-cie-jdk
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp -r ../../419-delegate-service-app/container/scripts/ .
+
+	copy_common_files
+
+	cd ../..
+}
+
+
+

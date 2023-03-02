@@ -16,6 +16,8 @@ import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
+import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -25,6 +27,11 @@ public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
   DowntimeResponse create(ProjectParams projectParams, DowntimeDTO downtimeDTO);
 
   DowntimeResponse get(ProjectParams projectParams, String identifier);
+
+  List<MonitoredServiceDetail> getAssociatedMonitoredServices(ProjectParams projectParams, String identifier);
+
+  PageResponse<MSDropdownResponse> getDowntimeAssociatedMonitoredServices(
+      ProjectParams projectParams, PageParams pageParams);
 
   Downtime getEntity(ProjectParams projectParams, String identifier);
   DowntimeResponse update(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO);

@@ -73,7 +73,6 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -233,7 +232,8 @@ public class TriggerExecutionHelper {
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       String runtimeInputYaml = null;
-      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+      if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
       } else {
@@ -296,9 +296,11 @@ public class TriggerExecutionHelper {
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+          log.info("Principal is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           TemplateMergeResponseDTO templateMergeResponseDTO =
-              pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
-                  pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
+              pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
+                  pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                  pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
                   featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
                   BOOLEAN_FALSE_VALUE);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
@@ -346,9 +348,10 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-            pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-                ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
+            String yamlForValidatingSchema =
+                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
+            pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;
           default:
         }

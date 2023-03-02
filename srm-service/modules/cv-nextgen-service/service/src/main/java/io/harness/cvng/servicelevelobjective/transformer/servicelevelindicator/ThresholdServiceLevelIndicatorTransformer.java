@@ -29,7 +29,6 @@ public class ThresholdServiceLevelIndicatorTransformer
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
         .name(serviceLevelIndicatorDTO.getName())
-        .type(serviceLevelIndicatorDTO.getType())
         .sliMissingDataType(serviceLevelIndicatorDTO.getSliMissingDataType())
         .metric1(thresholdSLIMetricSpec.getMetric1())
         .thresholdValue(thresholdSLIMetricSpec.getThresholdValue())

@@ -62,6 +62,7 @@ import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.remote.mapper.UserMetadataMapper;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.userprofile.services.api.UserInfoService;
+import io.harness.rest.RestResponse;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -547,6 +548,25 @@ public class UserResource {
   disableTFA(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(userInfoService.disableTFA());
+  }
+
+  @GET
+  @Path("reset-two-factor-auth/{userId}")
+  @ApiOperation(value = "resend email for two factor authorization", nickname = "resetTwoFactorAuth")
+  @Operation(operationId = "reset2fa", summary = "Reset two factor authorization",
+      description = "Reset Two-Factor authorization.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully reset two factor authorization for an account")
+      })
+  @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
+  public RestResponse<Boolean>
+  reset2fa(@PathParam("userId") @NotEmpty String userId,
+      @AccountIdentifier @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userId), MANAGE_USER_PERMISSION);
+    return new RestResponse<>(userInfoService.sendTwoFactorAuthenticationResetEmail(userId, accountIdentifier));
   }
 
   @DELETE

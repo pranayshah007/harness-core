@@ -9,11 +9,27 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.service.step.arm.AzureCreateARMResourceStepMapperImpl;
 import io.harness.ngmigration.service.step.arm.AzureRollbackARMResourceStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgBlueGreenRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgBlueGreenSwapStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgRollingDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.asg.AsgRollingRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSetupMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotShiftTrafficMapperImpl;
+import io.harness.ngmigration.service.step.azure.webapp.AzureSlotSwapMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateStepMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
+import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.cv.NewRelicDeploymentMarkerStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsServiceRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupSwapRouteStepMapperImpl;
+import io.harness.ngmigration.service.step.helm.HelmDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.helm.HelmRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sBlueGreenDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sCanaryDeployStepMapperImpl;
@@ -22,10 +38,21 @@ import io.harness.ngmigration.service.step.k8s.K8sRollingRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sRollingStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sScaleStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sSwapServiceSelectorsStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sTrafficSplitStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfBGMapRouteStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfPluginStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfSetupStepMapperImpl;
+import io.harness.ngmigration.service.step.pcf.PcfSwapRoutesStepMapperImpl;
+import io.harness.ngmigration.service.step.shellscriptprovisioner.ShellScriptProvisionerStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntDestroyStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntProvisionStepMapperImpl;
+import io.harness.ngmigration.service.step.terragrunt.TerragruntRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.ApmVerificationStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.AppDynamicsStepMapperImpl;
 import io.harness.ngmigration.service.step.verification.BugsnagStepMapperImpl;
@@ -52,6 +79,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class StepMapperFactory {
+  @Inject EcsServiceSetupStepMapperImpl ecsServiceSetupStepMapper;
+  @Inject EcsServiceRollbackStepMapperImpl ecsServiceRollbackStepMapper;
+  @Inject HelmDeployStepMapperImpl helmDeployStepMapper;
+  @Inject HelmRollbackStepMapperImpl helmRollbackStepMapper;
   @Inject CustomFetchInstancesStepMapperImpl customFetchInstancesStepMapper;
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
@@ -60,6 +91,7 @@ public class StepMapperFactory {
   @Inject BarrierStepMapperImpl barrierStepMapper;
   @Inject K8sApplyStepMapperImpl k8sApplyStepMapper;
   @Inject K8sDeleteStepMapperImpl k8sDeleteStepMapper;
+  @Inject K8sTrafficSplitStepMapperImpl k8sTrafficSplitStepMapper;
   @Inject EmailStepMapperImpl emailStepMapper;
   @Inject K8sRollingRollbackStepMapperImpl k8sRollingRollbackStepMapper;
   @Inject K8sCanaryDeployStepMapperImpl k8sCanaryDeployStepMapper;
@@ -74,6 +106,15 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject TerragruntProvisionStepMapperImpl terragruntProvisionStepMapper;
+  @Inject TerragruntDestroyStepMapperImpl terragruntDestroyStepMapper;
+  @Inject PcfSetupStepMapperImpl pcfSetupStepMapper;
+  @Inject PcfSwapRoutesStepMapperImpl pcfSwapRoutesStepMapper;
+  @Inject PcfPluginStepMapperImpl pcfPluginStepMapper;
+  @Inject PcfDeployStepMapperImpl pcfDeployStepMapper;
+  @Inject PcfBGMapRouteStepMapperImpl pcfBGMapRouteStepMapper;
+  @Inject PcfRollbackStepMapperImpl pcfRollbackStepMapper;
+  @Inject TerragruntRollbackStepMapperImpl terragruntRollbackStepMapper;
   @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
   @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
   @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
@@ -101,10 +142,32 @@ public class StepMapperFactory {
   @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
   @Inject AzureCreateARMResourceStepMapperImpl azureCreateARMResourceStepMapper;
   @Inject AzureRollbackARMResourceStepMapperImpl azureRollbackARMResourceStepMapper;
+  @Inject CloudformationCreateStepMapperImpl cloudformationCreateStepMapper;
+  @Inject CloudformationDeleteStepMapperImpl cloudformationDeleteStepMapper;
+  @Inject CloudformationRollbackStepMapperImpl cloudformationRollbackStepMapper;
+  @Inject AzureSlotRollbackStepMapperImpl azureSlotRollbackStepMapper;
+  @Inject AzureSlotSetupMapperImpl azureSlotSetupMapper;
+  @Inject AzureSlotShiftTrafficMapperImpl azureSlotShiftTrafficMapper;
+  @Inject AzureSlotSwapMapperImpl azureSlotSwapMapper;
+  @Inject NewRelicDeploymentMarkerStepMapperImpl newRelicDeploymentMarkerStepMapper;
+  @Inject AsgRollingDeployStepMapperImpl asgRollingDeployStepMapper;
+  @Inject AsgRollingRollbackStepMapperImpl asgRollingRollbackStepMapper;
+  @Inject AsgBlueGreenSwapStepMapperImpl asgBlueGreenSwapStepMapper;
+  @Inject AsgBlueGreenRollbackStepMapperImpl asgBlueGreenRollbackStepMapper;
+  @Inject ShellScriptProvisionerStepMapperImpl shellScriptProvisionerStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
+      case "HELM_DEPLOY":
+        return helmDeployStepMapper;
+      case "HELM_ROLLBACK":
+        return helmRollbackStepMapper;
+      case "ECS_SERVICE_SETUP":
+        return ecsServiceSetupStepMapper;
+      case "ECS_SERVICE_ROLLBACK":
+      case "ECS_SERVICE_SETUP_ROLLBACK":
+        return ecsServiceRollbackStepMapper;
       case "SHELL_SCRIPT":
         return shellScriptStepMapper;
       case "K8S_DEPLOYMENT_ROLLING":
@@ -127,6 +190,8 @@ public class StepMapperFactory {
         return k8sRollingRollbackStepMapper;
       case "K8S_CANARY_DEPLOY":
         return k8sCanaryDeployStepMapper;
+      case "K8S_TRAFFIC_SPLIT":
+        return k8sTrafficSplitStepMapper;
       case "JENKINS":
         return jenkinsStepMapper;
       case "KUBERNETES_SWAP_SERVICE_SELECTORS":
@@ -189,6 +254,8 @@ public class StepMapperFactory {
       case "DC_NODE_SELECT":
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
+      case "ECS_STEADY_STATE_CHECK":
+      case "ECS_SERVICE_DEPLOY":
         return emptyStepMapper;
       case "SPOTINST_SETUP":
         return elastigroupSetupStepMapper;
@@ -206,6 +273,58 @@ public class StepMapperFactory {
         return azureRollbackARMResourceStepMapper;
       case "CUSTOM_DEPLOYMENT_FETCH_INSTANCES":
         return customFetchInstancesStepMapper;
+      case "TERRAGRUNT_PROVISION":
+        return terragruntProvisionStepMapper;
+      case "TERRAGRUNT_DESTROY":
+        return terragruntDestroyStepMapper;
+      case "TERRAGRUNT_ROLLBACK":
+        return terragruntRollbackStepMapper;
+      case "PCF_SETUP":
+        return pcfSetupStepMapper;
+      case "PCF_RESIZE":
+        return pcfDeployStepMapper;
+      case "PCF_BG_MAP_ROUTE":
+        return pcfSwapRoutesStepMapper;
+      case "PCF_PLUGIN":
+        return pcfPluginStepMapper;
+      case "PCF_ROLLBACK":
+        return pcfRollbackStepMapper;
+      case "PCF_MAP_ROUTE":
+      case "PCF_UNMAP_ROUTE":
+        return unsupportedStepMapper;
+      case "CLOUD_FORMATION_CREATE_STACK":
+        return cloudformationCreateStepMapper;
+      case "CLOUD_FORMATION_DELETE_STACK":
+        return cloudformationDeleteStepMapper;
+      case "CLOUD_FORMATION_ROLLBACK_STACK":
+        return cloudformationRollbackStepMapper;
+      case "AZURE_WEBAPP_SLOT_SETUP":
+        return azureSlotSetupMapper;
+      case "AZURE_WEBAPP_SLOT_SHIFT_TRAFFIC":
+        return azureSlotShiftTrafficMapper;
+      case "AZURE_WEBAPP_SLOT_SWAP":
+        return azureSlotSwapMapper;
+      case "AZURE_WEBAPP_SLOT_ROLLBACK":
+        return azureSlotRollbackStepMapper;
+      case "NEW_RELIC_DEPLOYMENT_MARKER":
+        return newRelicDeploymentMarkerStepMapper;
+      case "AWS_AMI_SERVICE_SETUP":
+        return asgRollingDeployStepMapper;
+      case "AWS_AMI_SERVICE_ROLLBACK":
+        return asgRollingRollbackStepMapper;
+      case "AWS_AMI_SWITCH_ROUTES":
+        return asgBlueGreenSwapStepMapper;
+      case "AWS_AMI_ROLLBACK_SWITCH_ROUTES":
+        return asgBlueGreenRollbackStepMapper;
+      case "AWS_AMI_SERVICE_DEPLOY":
+        return emptyStepMapper;
+      case "ASG_AMI_ALB_SHIFT_SWITCH_ROUTES":
+      case "ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY":
+      case "ASG_AMI_SERVICE_ALB_SHIFT_SETUP":
+      case "ASG_AMI_ROLLBACK_ALB_SHIFT_SWITCH_ROUTES":
+        return unsupportedStepMapper;
+      case "SHELL_SCRIPT_PROVISION":
+        return shellScriptProvisionerStepMapper;
       default:
         return unsupportedStepMapper;
     }

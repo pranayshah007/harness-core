@@ -57,9 +57,9 @@ paths:
           description: List of Pipeline identifiers on the basis of which the Pipelines are filtered.
         - schema:
             type: string
-            pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+            pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
             minLength: 1
-            maxLength: 64
+            maxLength: 128
           in: query
           name: name
           description: Pipeline Name on the basis of which the Pipelines are filtered.
@@ -373,6 +373,12 @@ paths:
           in: query
           name: parent_entity_repo_name
           description: Repository name for Parent Entity (Pipeline).
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: load_from_fallback_branch
+          description: Flag to load the pipeline from the created non default branch
     put:
       summary: Update an Input Set
       operationId: update-input-set
@@ -476,9 +482,9 @@ components:
         object_id:
           type: string
           description: Object identifier / blob id
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         branch_name:
           type: string
           description: Name of the branch.
@@ -563,20 +569,20 @@ components:
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Organization identifier
         project:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Project identifier
         description:
           type: string
@@ -704,9 +710,9 @@ components:
         name:
           type: string
           description: Pipeline name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         description:
           type: string
           maxLength: 1024
@@ -871,9 +877,9 @@ components:
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline name
         description:
           type: string
@@ -963,18 +969,18 @@ components:
       properties:
         identifier:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Entity identifier
         type:
           type: string
           description: Type of Entity
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Name of Entity
         fqn:
           type: string
@@ -990,9 +996,9 @@ components:
           $ref: '#/components/schemas/ExecutorInfo'
         execution_id:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Execution identifier
         execution_status:
           type: string
@@ -1038,6 +1044,8 @@ components:
           format: int32
           description: The Execution number of this Pipeline.
           example: 0
+        parent_stage_info:
+          $ref: '#/components/schemas/ParentStageInfo'
       x-examples:
         example-recent:
           executor_info:
@@ -1282,9 +1290,9 @@ components:
           description: Pipeline identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline name
         description:
           type: string
@@ -1393,15 +1401,15 @@ components:
           description: Input Set YAML (to be passed as a String).
         identifier:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Input Set identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Input Set name
         description:
           type: string
@@ -1432,26 +1440,26 @@ components:
         identifier:
           type: string
           description: Input Set identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Input Set name
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         org:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Organization identifier
         project:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Project identifier
         description:
           type: string
@@ -1661,15 +1669,15 @@ components:
           description: Input Set YAML (to be passed as a String).
         identifier:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Input Set identifier
         name:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Input Set name
         description:
           type: string
@@ -1783,6 +1791,35 @@ components:
                 required: true
                 type: string
       description: Response Body for Pipeline Inputs
+    ParentStageInfo:
+      title: ParentStageInfo
+      x-stoplight:
+        id: t0ci6ngiieo6c
+      type: object
+      description: 'Information about parent pipeline '
+      properties:
+        has_parent_pipeline:
+          type: boolean
+          description: boolean to describe whether or not this was executed through pipeline chaining
+        execution_id:
+          type: string
+          description: planExecutionId of parent pipeline execution
+        identifier:
+          type: string
+          description: pipeline identifier of parent pipeline
+        project_id:
+          type: string
+          description: project identifier
+        org_id:
+          type: string
+          description: org identifier
+        run_sequence:
+          type: integer
+          description: run sequence of parent pipeline execution
+          format: int32
+        stage_node_id:
+          type: string
+          description: node id of parent pipeline stage
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2057,6 +2094,14 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
+                      parent_stage_info:
+                        has_parent_pipeline: true
+                        execution_id: example_parent_execution_identifier
+                        identifier: example_parent_pipeline_id
+                        project_id: example_project_id
+                        org_id: example_org_id
+                        run_sequence: 12671687
+                        stage_node_id: example_stage_node_id
                   store_type: REMOTE
                   connector_ref: example_connector
                   valid: true
@@ -2097,6 +2142,14 @@ components:
                       started: 1234567890
                       ended: 1234567890
                       run_number: 5
+                      parent_stage_info:
+                        has_parent_pipeline: true
+                        execution_id: example_parent_execution_identifier
+                        identifier: example_parent_pipeline_id
+                        project_id: example_project_id
+                        org_id: example_org_id
+                        run_sequence: 12671687
+                        stage_node_id: example_stage_node_id
                   store_type: REMOTE
                   connector_ref: example_connector
                   valid: true

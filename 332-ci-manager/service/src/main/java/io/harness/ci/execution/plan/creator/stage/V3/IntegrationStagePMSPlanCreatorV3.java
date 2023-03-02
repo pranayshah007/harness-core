@@ -17,7 +17,6 @@ import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.ci.states.IntegrationStageStepPMS;
@@ -91,7 +90,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
                                                    .codeBase(codeBase)
                                                    .triggerPayload(ctx.getTriggerPayload())
                                                    .registry(registry)
-                                                   .cloneManually(IntegrationStageUtils.shouldCloneManually(codeBase))
+                                                   .cloneManually(ciPlanCreatorUtils.shouldCloneManually(ctx, codeBase))
                                                    .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -106,7 +105,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
                                 .build())
             .stepType(IntegrationStageStepPMS.STEP_TYPE)
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

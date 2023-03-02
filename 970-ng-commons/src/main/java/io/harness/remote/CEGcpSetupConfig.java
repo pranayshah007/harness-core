@@ -17,4 +17,5 @@ import lombok.Data;
 public class CEGcpSetupConfig {
   private String gcpProjectId;
   private boolean enableServiceAccountPermissionsCheck;
+  private String serviceAccountEmail;
 }

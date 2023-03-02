@@ -15,13 +15,15 @@ import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface PipelineRefreshService {
-  boolean refreshTemplateInputsInPipeline(String accountId, String orgId, String projectId, String pipelineIdentifier);
+  boolean refreshTemplateInputsInPipeline(
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache);
 
-  YamlDiffResponseDTO getYamlDiff(String accountId, String orgId, String projectId, String pipelineIdentifier);
+  YamlDiffResponseDTO getYamlDiff(
+      String accountId, String orgId, String projectId, String pipelineIdentifier, String loadFromCache);
 
   boolean recursivelyRefreshAllTemplateInputsInPipeline(String accountId, String orgId, String projectId,
-      String pipelineIdentifier, GitEntityUpdateInfoDTO gitEntityBasicInfo);
+      String pipelineIdentifier, GitEntityUpdateInfoDTO gitEntityBasicInfo, String loadFromCache);
 }

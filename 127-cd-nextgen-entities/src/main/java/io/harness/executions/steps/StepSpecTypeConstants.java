@@ -16,6 +16,7 @@ public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_SYNC = "GitOpsSync";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -90,6 +91,9 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
 
+  String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+  String AWS_LAMBDA = "AwsLambda";
+
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
   String CHAOS_STEP = "Chaos";
@@ -111,4 +115,12 @@ public interface StepSpecTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_ROLLBACK = "AwsSamRollback";
+
+  String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

@@ -46,12 +46,14 @@ public class TerraformCloudTaskParams
   String workspace;
   boolean discardPendingRuns;
   boolean exportJsonTfPlan;
+  boolean policyOverride;
   PlanType planType;
   String terraformVersion;
   @Expression(ALLOW_SECRETS) Map<String, String> variables;
   @Expression(DISALLOW_SECRETS) List<String> targets;
   String runId;
 
+  RollbackType rollbackType;
   String message;
 
   @Override

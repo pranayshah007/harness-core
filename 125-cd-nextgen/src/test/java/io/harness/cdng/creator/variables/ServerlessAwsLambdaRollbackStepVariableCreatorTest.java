@@ -56,6 +56,7 @@ public class ServerlessAwsLambdaRollbackStepVariableCreatorTest extends Category
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.description",
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.timeout",
             "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.spec.delegateSelectors",
-            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.name");
+            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.name",
+            "pipeline.stages.Serverless_Aws_Lambda.spec.execution.steps.serverless_aws_lambda_rollback_step.when");
   }
 }

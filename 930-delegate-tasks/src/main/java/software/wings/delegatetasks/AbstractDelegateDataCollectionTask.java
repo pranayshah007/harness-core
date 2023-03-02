@@ -22,11 +22,11 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ExceptionUtils;
 import io.harness.network.Http;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus;
 import software.wings.service.impl.analysis.LogDataCollectionInfo;
 import software.wings.service.impl.analysis.LogElement;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.collect.TreeBasedTable;

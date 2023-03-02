@@ -15,7 +15,7 @@ import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
@@ -64,7 +64,12 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.failurestrategy.NGFailureType;
+import io.harness.yaml.core.failurestrategy.OnFailureConfig;
+import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -75,6 +80,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +101,7 @@ public class CIStepGroupUtils {
   private static final String STRING_FALSE = "false";
   private static final String TEN_K_SECONDS = "10000s";
   private static final String ONE_HOUR = "1h";
+  private static final String IMPLICIT_CACHE_STEP = "implicit_restore_cache";
 
   public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(IntegrationStageNode stageNode,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
@@ -141,6 +148,18 @@ public class CIStepGroupUtils {
     }
 
     return mainEngineExecutionSections;
+  }
+
+  public static String getUniqueStepIdentifier(List<Level> levels, String stepIdentifier) {
+    StringBuilder identifier = new StringBuilder();
+    for (Level level : levels) {
+      if (level.getStepType().getType().equals("STEP_GROUP")) {
+        identifier.append(level.getIdentifier());
+        identifier.append("_");
+      }
+    }
+    identifier.append(stepIdentifier);
+    return identifier.toString();
   }
 
   private ExecutionWrapperConfig fetchInitializeStepExecutionWrapper(
@@ -266,7 +285,7 @@ public class CIStepGroupUtils {
       }
     }
 
-    if (depth != null && depth != 0) {
+    if (depth != null) {
       settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(depth.toString()));
     }
 
@@ -275,9 +294,9 @@ public class CIStepGroupUtils {
           JsonNodeFactory.instance.textNode(ciCodebase.getPrCloneStrategy().getValue().getYamlName()));
     }
 
-    Map<String, String> envVariables = new HashMap<>();
+    Map<String, ParameterField<String>> envVariables = new HashMap<>();
     if (ciCodebase.getSslVerify().getValue() != null && !ciCodebase.getSslVerify().getValue()) {
-      envVariables.put(GIT_SSL_NO_VERIFY, STRING_TRUE);
+      envVariables.put(GIT_SSL_NO_VERIFY, ParameterField.createValueField(STRING_TRUE));
     }
 
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
@@ -292,7 +311,7 @@ public class CIStepGroupUtils {
                               .image(ParameterField.createValueField(gitCloneImage))
                               .name(GIT_CLONE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
-                              .envVariables(envVariables)
+                              .envVariables(ParameterField.createValueField(envVariables))
                               .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .resources(ciCodebase.getResources())
@@ -320,23 +339,23 @@ public class CIStepGroupUtils {
 
   private ExecutionWrapperConfig getRestoreCacheStep(Caching caching, String accountId) {
     Map<String, JsonNode> settings = new HashMap<>();
-    Map<String, String> envVariables = new HashMap<>();
+    Map<String, ParameterField<String>> envVariables = new HashMap<>();
     String uuid = generateUuid();
     String restoreCacheImage = ciExecutionConfigService.getPluginVersionForK8(RESTORE_CACHE_GCS, accountId).getImage();
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
-    envVariables.put(PLUGIN_RESTORE, STRING_TRUE);
+    envVariables.put(PLUGIN_RESTORE, ParameterField.createValueField(STRING_TRUE));
 
-    envVariables.put(PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT, STRING_FALSE);
-    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, TEN_K_SECONDS);
+    envVariables.put(PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT, ParameterField.createValueField(STRING_FALSE));
+    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, ParameterField.createValueField(TEN_K_SECONDS));
 
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(RESTORE_CACHE_STEP_ID)
                               .image(ParameterField.createValueField(restoreCacheImage))
                               .name(RESTORE_CACHE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
-                              .envVariables(envVariables)
+                              .envVariables(ParameterField.createValueField(envVariables))
                               .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .build();
@@ -361,26 +380,31 @@ public class CIStepGroupUtils {
 
   private ExecutionWrapperConfig getSaveCacheStep(Caching caching, String accountId) {
     Map<String, JsonNode> settings = new HashMap<>();
-    Map<String, String> envVariables = new HashMap<>();
+    Map<String, ParameterField<String>> envVariables = new HashMap<>();
     String uuid = generateUuid();
     String saveCacheImage = ciExecutionConfigService.getPluginVersionForK8(SAVE_CACHE_GCS, accountId).getImage();
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
     // We will override cache for cache intel for now. Might need to surface it as an option
-    envVariables.put(PLUGIN_OVERRIDE, STRING_TRUE);
-    envVariables.put(PLUGIN_REBUILD, STRING_TRUE);
+    envVariables.put(PLUGIN_OVERRIDE, ParameterField.createValueField(STRING_TRUE));
+    envVariables.put(PLUGIN_REBUILD, ParameterField.createValueField(STRING_TRUE));
 
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(SAVE_CACHE_STEP_ID)
                               .image(ParameterField.createValueField(saveCacheImage))
                               .name(SAVE_CACHE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
-                              .envVariables(envVariables)
+                              .envVariables(ParameterField.createValueField(envVariables))
                               .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .build();
 
+    OnFailureConfig onFailureConfig = OnFailureConfig.builder()
+                                          .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                                          .action(IgnoreFailureActionConfig.builder().build())
+                                          .build();
+    FailureStrategyConfig failureStrategyConfig = FailureStrategyConfig.builder().onFailure(onFailureConfig).build();
     PluginStepNode pluginStepNode =
         PluginStepNode.builder()
             .identifier(SAVE_CACHE_STEP_ID)
@@ -389,6 +413,7 @@ public class CIStepGroupUtils {
             .uuid(generateUuid())
             .type(PluginStepNode.StepType.Plugin)
             .pluginStepInfo(step)
+            .failureStrategies(ParameterField.createValueField(Collections.singletonList(failureStrategyConfig)))
             .build();
     try {
       String jsonString = JsonPipelineUtils.writeJsonString(pluginStepNode);
@@ -399,19 +424,25 @@ public class CIStepGroupUtils {
     }
   }
 
-  private void setCacheEnvVariables(Map<String, String> envVariables, Caching caching, String accountId) {
+  private void setCacheEnvVariables(
+      Map<String, ParameterField<String>> envVariables, Caching caching, String accountId) {
     List<String> cacheDir = new ArrayList<>();
-    if (caching != null && caching.getPaths() != null) {
-      cacheDir = RunTimeInputHandler.resolveListParameter(
-          "paths", "implicit restore cache", "internal restore cache", caching.getPaths(), false);
+    if (caching != null) {
+      if (caching.getPaths() != null) {
+        cacheDir = RunTimeInputHandler.resolveListParameter(
+            "paths", IMPLICIT_CACHE_STEP, IMPLICIT_CACHE_STEP, caching.getPaths(), false);
+      }
+      if (caching.getKey() != null) {
+        String cacheKey = RunTimeInputHandler.resolveStringParameterV2(
+            "key", IMPLICIT_CACHE_STEP, IMPLICIT_CACHE_STEP, caching.getKey(), false);
+        envVariables.put(PLUGIN_CACHE_KEY, ParameterField.createValueField(cacheKey));
+      }
     }
-
-    envVariables.put(PLUGIN_AUTO_DETECT_CACHE, STRING_TRUE);
-    envVariables.put(PLUGIN_AUTO_CACHE_ACCOUNT_ID, accountId);
+    envVariables.put(PLUGIN_AUTO_DETECT_CACHE, ParameterField.createValueField(STRING_TRUE));
+    envVariables.put(PLUGIN_AUTO_CACHE_ACCOUNT_ID, ParameterField.createValueField(accountId));
     if (cacheDir != null && cacheDir.size() > 0) {
-      envVariables.put(PLUGIN_MOUNT, String.join(",", cacheDir));
+      envVariables.put(PLUGIN_MOUNT, ParameterField.createValueField(String.join(",", cacheDir)));
     }
-    envVariables.put(PLUGIN_EXIT_CODE, STRING_FALSE);
-    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, TEN_K_SECONDS);
+    envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, ParameterField.createValueField(TEN_K_SECONDS));
   }
 }
