@@ -65,6 +65,19 @@ public class ScmResponseStatusUtils {
     }
   }
 
+  public String formatErrorMessage(int statusCode) {
+    switch (statusCode) {
+      case 401:
+        return "Bad credentials";
+      case 403:
+        return "Request Forbidden";
+      case 500:
+        return "Internal server error, Try again later";
+      default:
+        return "Couldn't connect to SCM provider, Try again later";
+    }
+  }
+
   public boolean isSuccessResponse(int statusCode) {
     return statusCode == 200;
   }

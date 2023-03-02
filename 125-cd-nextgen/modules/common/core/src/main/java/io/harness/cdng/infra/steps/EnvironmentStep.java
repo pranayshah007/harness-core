@@ -25,6 +25,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -67,6 +68,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   @Inject private EnvironmentService environmentService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private FreezeEvaluateService freezeEvaluateService;
+  @Inject private FrozenExecutionService frozenExecutionService;
   @Inject NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject NgExpressionHelper ngExpressionHelper;
@@ -123,6 +125,9 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
                                           .manualFreezeConfigs(manualFreezeConfigs)
                                           .globalFreezeConfigs(globalFreezeConfigs)
                                           .build();
+
+        frozenExecutionService.createFrozenExecution(ambiance, manualFreezeConfigs, globalFreezeConfigs);
+
         executionSweepingOutputResolver.consume(ambiance, FREEZE_SWEEPING_OUTPUT, freezeOutcome, "");
         stepOutcomes.add(StepResponse.StepOutcome.builder()
                              .name(OutcomeExpressionConstants.FREEZE_OUTCOME)

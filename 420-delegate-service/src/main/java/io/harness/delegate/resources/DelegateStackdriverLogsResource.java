@@ -8,13 +8,21 @@
 package io.harness.delegate.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rest.RestResponse;
@@ -47,6 +55,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 public class DelegateStackdriverLogsResource {
   private final DelegateStackdriverLogService delegateStackdriverLogService;
+  private final AccessControlClient accessControlClient;
 
   @GET
   @Path("taskslog")
@@ -58,7 +67,11 @@ public class DelegateStackdriverLogsResource {
       @Parameter(description = "Task ids") @QueryParam("taskIds") @NotEmpty List<String> taskIds,
       @Parameter(description = "Start time") @QueryParam("startTime") long startTime,
       @Parameter(description = "End time") @QueryParam("endTime") long endTime, @BeanParam PageRequest pageRequest) {
-    return new RestResponse<PageResponse<DelegateStackDriverLog>>(
-        delegateStackdriverLogService.fetchPageLogs(taskIds, pageRequest, startTime, endTime));
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<PageResponse<DelegateStackDriverLog>>(
+          delegateStackdriverLogService.fetchPageLogs(accountId, taskIds, pageRequest, startTime, endTime));
+    }
   }
 }

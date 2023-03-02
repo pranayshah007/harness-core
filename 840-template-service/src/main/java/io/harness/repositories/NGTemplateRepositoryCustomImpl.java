@@ -442,6 +442,21 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    Optional<TemplateEntity> template = gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.identifier)
+                                                                        .is(templateIdentifier)
+                                                                        .and(TemplateEntityKeys.projectIdentifier)
+                                                                        .is(projectIdentifier)
+                                                                        .and(TemplateEntityKeys.orgIdentifier)
+                                                                        .is(orgIdentifier)
+                                                                        .and(TemplateEntityKeys.accountId)
+                                                                        .is(accountId),
+        projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    return template.isPresent();
+  }
+
+  @Override
   public TemplateEntity update(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update) {
     criteria = gitAwarePersistence.makeCriteriaGitAware(

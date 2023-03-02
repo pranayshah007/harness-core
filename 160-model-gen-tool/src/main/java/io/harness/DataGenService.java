@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.FileBucket.PLATFORMS;
 import static io.harness.generator.AccountGenerator.Accounts;
 import static io.harness.mongo.IndexManager.Mode.AUTO;
+import static io.harness.ng.DbAliases.DMS;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.shell.AccessType.KEY;
 
@@ -65,8 +66,10 @@ import io.harness.generator.SettingGenerator;
 import io.harness.generator.WorkflowGenerator;
 import io.harness.generator.WorkflowGenerator.Workflows;
 import io.harness.generator.artifactstream.ArtifactStreamManager;
+import io.harness.generator.constants.DelegateMigrationFlagGenerator;
 import io.harness.manage.GlobalContextManager;
 import io.harness.mongo.IndexManager;
+import io.harness.persistence.store.Store;
 import io.harness.scm.ScmSecret;
 import io.harness.scm.SecretName;
 
@@ -168,11 +171,13 @@ public class DataGenService {
   @Inject private SecretManager secretManager;
   @Inject private DelegateProfileGenerator delegateProfileGenerator;
   @Inject private DelegateRingGenerator delegateRingGenerator;
+  @Inject private DelegateMigrationFlagGenerator delegateMigrationFlagGenerator;
 
   public void populateData() {
     dropDBAndEnsureIndexes();
     templateGalleryService.loadHarnessGallery();
     templateGalleryService.copyHarnessTemplates();
+    delegateMigrationFlagGenerator.populateDelegateMigrationFlags();
 
     {
       Seed seed = new Seed(0);
@@ -218,6 +223,7 @@ public class DataGenService {
 
   protected void dropDBAndEnsureIndexes() {
     wingsPersistence.getDatastore(DEFAULT_STORE).getDB().dropDatabase();
+    wingsPersistence.getDatastore(Store.builder().name(DMS).build()).getDatabase().drop();
     indexManager.ensureIndexes(AUTO, primaryDatastore, morphia, null);
   }
 

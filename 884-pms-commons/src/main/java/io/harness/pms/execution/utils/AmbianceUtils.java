@@ -335,4 +335,11 @@ public class AmbianceUtils {
     }
     return metadata.getHarnessVersion();
   }
+
+  public String getPipelineIdentifier(Ambiance ambiance) {
+    if (ambiance.getMetadata() != null) {
+      return ambiance.getMetadata().getPipelineIdentifier();
+    }
+    return null;
+  }
 }

@@ -51,48 +51,25 @@ public class BusinessMappingHistoryDao {
   }
 
   public List<BusinessMappingHistory> getInRange(String accountId, Integer startYearMonth, Integer endYearMonth) {
-    List<BusinessMappingHistory> list = hPersistence.createQuery(BusinessMappingHistory.class)
-                                            .filter(BusinessMappingHistoryKeys.accountId, accountId)
-                                            .field(BusinessMappingHistoryKeys.startAt)
-                                            .lessThanOrEq(endYearMonth)
-                                            .field(BusinessMappingHistoryKeys.startAt)
-                                            .greaterThanOrEq(startYearMonth)
-                                            .asList();
-    BusinessMappingHistory beginning = hPersistence.createQuery(BusinessMappingHistory.class)
-                                           .filter(BusinessMappingHistoryKeys.accountId, accountId)
-                                           .field(BusinessMappingHistoryKeys.startAt)
-                                           .lessThan(startYearMonth)
-                                           .field(BusinessMappingHistoryKeys.endAt)
-                                           .greaterThan(startYearMonth)
-                                           .get();
-    if (beginning != null) {
-      list.add(beginning);
-    }
-    return list;
+    Query<BusinessMappingHistory> query =
+        hPersistence.createQuery(BusinessMappingHistory.class).filter(BusinessMappingHistoryKeys.accountId, accountId);
+    query.or(query.and(query.criteria(BusinessMappingHistoryKeys.startAt).lessThanOrEq(endYearMonth),
+                 query.criteria(BusinessMappingHistoryKeys.startAt).greaterThanOrEq(startYearMonth)),
+        query.and(query.criteria(BusinessMappingHistoryKeys.startAt).lessThan(startYearMonth),
+            query.criteria(BusinessMappingHistoryKeys.endAt).greaterThanOrEq(startYearMonth)));
+    return query.asList();
   }
 
   public List<BusinessMappingHistory> getInRange(
       String accountId, String businessMappingId, Integer startYearMonth, Integer endYearMonth) {
-    List<BusinessMappingHistory> list = hPersistence.createQuery(BusinessMappingHistory.class)
-                                            .filter(BusinessMappingHistoryKeys.accountId, accountId)
-                                            .filter(BusinessMappingHistoryKeys.businessMappingId, businessMappingId)
-                                            .field(BusinessMappingHistoryKeys.startAt)
-                                            .lessThanOrEq(endYearMonth)
-                                            .field(BusinessMappingHistoryKeys.startAt)
-                                            .greaterThanOrEq(startYearMonth)
-                                            .asList();
-    BusinessMappingHistory beginning = hPersistence.createQuery(BusinessMappingHistory.class)
-                                           .filter(BusinessMappingHistoryKeys.accountId, accountId)
-                                           .filter(BusinessMappingHistoryKeys.businessMappingId, businessMappingId)
-                                           .field(BusinessMappingHistoryKeys.startAt)
-                                           .lessThan(startYearMonth)
-                                           .field(BusinessMappingHistoryKeys.endAt)
-                                           .greaterThan(startYearMonth)
-                                           .get();
-    if (beginning != null) {
-      list.add(beginning);
-    }
-    return list;
+    Query<BusinessMappingHistory> query = hPersistence.createQuery(BusinessMappingHistory.class)
+                                              .filter(BusinessMappingHistoryKeys.accountId, accountId)
+                                              .filter(BusinessMappingHistoryKeys.businessMappingId, businessMappingId);
+    query.or(query.and(query.criteria(BusinessMappingHistoryKeys.startAt).lessThanOrEq(endYearMonth),
+                 query.criteria(BusinessMappingHistoryKeys.startAt).greaterThanOrEq(startYearMonth)),
+        query.and(query.criteria(BusinessMappingHistoryKeys.startAt).lessThan(startYearMonth),
+            query.criteria(BusinessMappingHistoryKeys.endAt).greaterThanOrEq(startYearMonth)));
+    return query.asList();
   }
 
   public BusinessMappingHistory update(BusinessMappingHistory businessMappingHistory) {

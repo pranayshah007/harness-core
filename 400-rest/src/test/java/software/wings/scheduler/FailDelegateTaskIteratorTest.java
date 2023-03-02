@@ -58,6 +58,7 @@ import software.wings.service.intfc.AssignDelegateService;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.vavr.collection.Stream;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -89,6 +90,7 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private HPersistence persistence;
   @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
+  @Inject private Clock clock;
 
   private static final String DELEGATE_TASK_UUID_NEW = "delegateTask-NEW";
 
@@ -717,6 +719,38 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
     persistence.save(delegateTask, true);
     failDelegateTaskIteratorOnDMS.handle(delegateTask);
     assertThat(persistence.createQuery(DelegateTask.class, true).get()).isNull();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testMarkNotAcquiredAfterMultipleBroadcastAsFailed() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    long now = clock.millis();
+    long nextInterval = now - TimeUnit.MINUTES.toMillis(2);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .status(QUEUED)
+            .waitId(generateUuid())
+            .expiry(System.currentTimeMillis() - 10)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .broadcastCount(3)
+            .nextBroadcast(nextInterval)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .data(TaskData.builder()
+                      .async(true)
+                      .taskType(TaskType.HTTP.name())
+                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                      .timeout(1)
+                      .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIteratorHelper.markNotAcquiredAfterMultipleBroadcastAsFailed(delegateTask, false);
+    assertThat(persistence.createQuery(DelegateTask.class).count()).isEqualTo(0);
   }
 
   @Test

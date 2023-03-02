@@ -193,7 +193,7 @@ public class InputSetValidationHelper {
         //      Fetch input set when pipeline and input set are in same repos
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
           optionalInputSetEntity = inputSetService.getWithoutValidations(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false);
+              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
         }
       } else {
         throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
@@ -201,7 +201,7 @@ public class InputSetValidationHelper {
     } else {
       //      Fetch input set when pipeline and input set are in different repos
       optionalInputSetEntity = inputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false);
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
     }
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(

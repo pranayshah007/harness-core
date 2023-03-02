@@ -35,6 +35,8 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
@@ -113,6 +115,19 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       if (lambdaException instanceof ResourceNotFoundException) {
         return Optional.empty();
       }
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public ListVersionsByFunctionResponse listVersionsByFunction(
+      AwsInternalConfig awsInternalConfig, ListVersionsByFunctionRequest listVersionsByFunctionRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .listVersionsByFunction(listVersionsByFunctionRequest);
+    } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());
     }

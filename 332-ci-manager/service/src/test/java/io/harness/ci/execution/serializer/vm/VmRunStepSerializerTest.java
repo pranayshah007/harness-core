@@ -24,6 +24,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.Map;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,17 +51,21 @@ public class VmRunStepSerializerTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testRunStepSerialize() {
-    RunStepInfo runStepInfo = RunStepInfo.builder()
-                                  .image(ParameterField.createValueField("image"))
-                                  .command(ParameterField.createValueField("echo hello"))
-                                  .privileged(ParameterField.createValueField(true))
-                                  .connectorRef(ParameterField.createValueField("connectorRef"))
-                                  .outputVariables(ParameterField.createValueField(Collections.emptyList()))
-                                  .reports(ParameterField.createValueField(null))
-                                  .build();
+    RunStepInfo runStepInfo =
+        RunStepInfo.builder()
+            .image(ParameterField.createValueField("image"))
+            .command(ParameterField.createValueField("echo hello"))
+            .privileged(ParameterField.createValueField(true))
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .outputVariables(ParameterField.createValueField(Collections.emptyList()))
+            .reports(ParameterField.createValueField(null))
+            .envVariables(ParameterField.createValueField(Map.of(
+                "key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2"))))
+            .build();
     VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null);
     assertThat(vmRunStep.isPrivileged()).isTrue();
     assertThat(vmRunStep.getImage()).isEqualTo("image");
     assertThat(vmRunStep.getCommand()).isEqualTo("set -xe; echo hello");
+    assertThat(vmRunStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));
   }
 }

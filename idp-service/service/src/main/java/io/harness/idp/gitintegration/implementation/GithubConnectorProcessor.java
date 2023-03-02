@@ -71,7 +71,7 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    if (!outcome.getType().toString().equals(GitIntegrationConstants.CONNECTOR_AUTH_TYPE)) {
+    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_TOKEN_AUTH_TYPE)) {
       throw new InvalidRequestException(String.format(
           " Authentication is not Username and Token for Github Connector with id - [%s] ", connectorIdentifier));
     }

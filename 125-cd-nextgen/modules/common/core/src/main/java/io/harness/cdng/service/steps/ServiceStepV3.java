@@ -50,6 +50,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
@@ -132,6 +133,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
+  @Inject private FrozenExecutionService frozenExecutionService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
@@ -791,6 +793,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       if (freezeOutcomeOptional.isFound()) {
         FreezeOutcome freezeOutcome = (FreezeOutcome) freezeOutcomeOptional.getOutput();
         if (freezeOutcome.isFrozen()) {
+          frozenExecutionService.createFrozenExecution(
+              ambiance, freezeOutcome.getManualFreezeConfigs(), freezeOutcome.getGlobalFreezeConfigs());
+
           stepOutcomes.add(StepResponse.StepOutcome.builder()
                                .name(OutcomeExpressionConstants.FREEZE_OUTCOME)
                                .outcome(freezeOutcome)

@@ -82,7 +82,7 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   private ParameterField<List<OutputNGVariable>> outputVariables;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  private ParameterField<Map<String, String>> envVariables;
+  private ParameterField<Map<String, ParameterField<String>>> envVariables;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
   private ParameterField<UnitTestReport> reports;
@@ -105,7 +105,7 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
       "image", "connectorRef", "resources", "privileged", "runAsUser", "shell", "imagePullPolicy"})
   public RunStepInfo(String identifier, String name, Integer retry, ParameterField<String> command,
       ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<UnitTestReport> reports,
-      ParameterField<Map<String, String>> envVariables, ParameterField<String> image,
+      ParameterField<Map<String, ParameterField<String>>> envVariables, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<CIShellType> shell,
       ParameterField<ImagePullPolicy> imagePullPolicy) {

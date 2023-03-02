@@ -5,13 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.http;
+package io.harness.plancreator.strategy.v1;
 
-import io.harness.http.beans.HttpInternalConfig;
-import io.harness.http.beans.HttpInternalResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.IOException;
-
-public interface HttpService {
-  HttpInternalResponse executeUrl(HttpInternalConfig internalConfig) throws IOException;
-}
+public enum StrategyTypeV1 { @JsonProperty("matrix") MATRIX, @JsonProperty("for") FOR, @JsonProperty("while") WHILE }

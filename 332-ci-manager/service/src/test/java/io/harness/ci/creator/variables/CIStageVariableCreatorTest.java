@@ -136,7 +136,6 @@ public class CIStageVariableCreatorTest {
             "pipeline.stages.gcpBuildPush.variables.GCP_SECRET_KEY",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.namespace",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.labels",
-            "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.tolerations",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.automountServiceAccountToken",
             "pipeline.stages.gcpBuildPush.delegateSelectors", "pipeline.stages.gcpBuildPush.spec.sharedPaths",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.hostNames",

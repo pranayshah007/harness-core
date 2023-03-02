@@ -207,9 +207,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testCreateTemplate() {
-    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "");
+    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "", false);
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
-        templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "");
+        templateResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "", false);
     assertThat(responseDTO.getData()).isNotNull();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),

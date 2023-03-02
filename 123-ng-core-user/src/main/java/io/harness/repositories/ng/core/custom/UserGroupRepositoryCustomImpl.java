@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.user.entities.UserGroup;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -57,7 +58,13 @@ public class UserGroupRepositoryCustomImpl implements UserGroupRepositoryCustom 
   }
 
   @Override
-  public List<UserGroup> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.remove(query, UserGroup.class);
+  }
+
+  @Override
+  public List<UserGroup> findAllAndDelete(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findAllAndRemove(query, UserGroup.class);
   }

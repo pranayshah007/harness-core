@@ -455,7 +455,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Criteria criteria =
           createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
-      List<UserGroup> deleteUserGroups = userGroupRepository.deleteAll(criteria);
+
+      List<UserGroup> deleteUserGroups = userGroupRepository.findAllAndDelete(criteria);
       if (isNotEmpty(deleteUserGroups)) {
         deleteUserGroups.forEach(userGroup
             -> outboxService.save(new UserGroupDeleteEvent(userGroup.getAccountIdentifier(), toDTO(userGroup))));

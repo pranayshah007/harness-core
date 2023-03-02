@@ -34,13 +34,13 @@ public class DelegateStackdriverLogServiceImpl implements DelegateStackdriverLog
 
   @Override
   public PageResponse<DelegateStackDriverLog> fetchPageLogs(
-      List<String> taskIds, PageRequest request, long start, long end) {
+      String accountId, List<String> taskIds, PageRequest request, long start, long end) {
     final Logging logging = StackdriverLoggerFactory.get(infraDownloadService.getStackdriverLoggingToken());
 
     Page<LogEntry> entries = logging.listLogEntries(Logging.EntryListOption.pageSize(request.getPageSize()),
         Logging.EntryListOption.pageToken(request.getPageToken()),
         Logging.EntryListOption.sortOrder(Logging.SortingField.TIMESTAMP, Logging.SortingOrder.DESCENDING),
-        Logging.EntryListOption.filter(QueryConstructor.getTasksLogQuery(taskIds, start, end)));
+        Logging.EntryListOption.filter(QueryConstructor.getTasksLogQuery(accountId, taskIds, start, end)));
 
     List<DelegateStackDriverLog> logLines = StreamSupport.stream(entries.iterateAll().spliterator(), false)
                                                 .map(logEntry -> LogEntryToDelegateStackDriverLogMapper.map(logEntry))

@@ -23,6 +23,7 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -54,8 +55,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
@@ -63,6 +66,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private FreezeEvaluateService freezeEvaluateService;
+  @Inject private FrozenExecutionService frozenExecutionService;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
@@ -119,6 +123,9 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
                                           .manualFreezeConfigs(manualFreezeConfigs)
                                           .globalFreezeConfigs(globalFreezeConfigs)
                                           .build();
+
+        frozenExecutionService.createFrozenExecution(ambiance, manualFreezeConfigs, globalFreezeConfigs);
+
         sweepingOutputService.consume(ambiance, ServiceStepConstants.FREEZE_SWEEPING_OUTPUT, freezeOutcome, "");
         stepOutcomes.add(StepResponse.StepOutcome.builder()
                              .name(OutcomeExpressionConstants.FREEZE_OUTCOME)

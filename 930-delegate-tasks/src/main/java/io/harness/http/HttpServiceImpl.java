@@ -24,9 +24,15 @@ import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
+import io.harness.logging.NoopExecutionCallback;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 import io.harness.security.PemReader;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
@@ -78,6 +84,11 @@ import org.apache.http.util.EntityUtils;
 public class HttpServiceImpl implements HttpService {
   @Override
   public HttpInternalResponse executeUrl(HttpInternalConfig config) throws IOException {
+    return executeUrl(config, new NoopExecutionCallback());
+  }
+  @Override
+  public HttpInternalResponse executeUrl(HttpInternalConfig config, LogCallback logCallback) throws IOException {
+    saveLogs(logCallback, "Executing Http request via delegate");
     HttpInternalResponse httpInternalResponse = new HttpInternalResponse();
 
     SSLContextBuilder builder = createSslContextBuilder(config);
@@ -141,45 +152,61 @@ public class HttpServiceImpl implements HttpService {
     ErrorHandlingGlobalContextData globalContextData =
         GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
     if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
-      return executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, true);
+      return executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, true, logCallback);
     } else {
       try {
-        executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, false);
+        executeHttpStep(httpclient, httpInternalResponse, httpUriRequest, config, false, logCallback);
       } catch (SocketTimeoutException | ConnectTimeoutException | HttpHostConnectException e) {
-        handleException(httpInternalResponse, e, true);
+        handleException(httpInternalResponse, e, true, logCallback);
       } catch (IOException e) {
-        handleException(httpInternalResponse, e, false);
+        handleException(httpInternalResponse, e, false, logCallback);
       }
 
+      saveLogs(logCallback, "Finished Http Execution on Delegate side");
       return httpInternalResponse;
+    }
+  }
+
+  private void saveLogs(LogCallback executionLogCallback, String message) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message, LogLevel.INFO, CommandExecutionStatus.RUNNING, false);
     }
   }
 
   @VisibleForTesting
   protected HttpInternalResponse executeHttpStep(CloseableHttpClient httpclient,
       HttpInternalResponse httpInternalResponse, HttpUriRequest httpUriRequest, HttpInternalConfig httpInternalConfig,
-      boolean isSupportingErrorFramework) throws IOException {
+      boolean isSupportingErrorFramework, LogCallback logCallback) throws IOException {
     HttpResponse httpResponse = httpclient.execute(httpUriRequest);
+    saveLogs(logCallback, "Delegate received response for HTTP request");
     if (isSupportingErrorFramework) {
       if (httpResponse.getStatusLine().getStatusCode() == 401) {
+        saveLogs(logCallback, LogHelper.color("Received response code: 401", LogColor.Red));
         throw new AuthenticationRuntimeException(httpUriRequest.getURI().toString());
       }
 
       if (httpResponse.getStatusLine().getStatusCode() == 403) {
+        saveLogs(logCallback, LogHelper.color("Received response code: 403", LogColor.Red));
         throw new AuthorizationRuntimeException(httpUriRequest.getURI().toString());
       }
     }
 
     httpInternalResponse.setHeader(httpInternalConfig.getHeader());
+    saveLogs(logCallback, "Received response code: " + httpResponse.getStatusLine().getStatusCode());
     httpInternalResponse.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
+    saveLogs(logCallback, "Processing response body");
     HttpEntity entity = httpResponse.getEntity();
     httpInternalResponse.setHttpResponseBody(
         entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : "");
 
+    saveLogs(logCallback, "Finished processing response body");
+
     return httpInternalResponse;
   }
 
-  private void handleException(HttpInternalResponse httpInternalResponse, IOException e, boolean timedOut) {
+  private void handleException(
+      HttpInternalResponse httpInternalResponse, IOException e, boolean timedOut, LogCallback logCallback) {
+    saveLogs(logCallback, LogHelper.color("Exception occurred during HTTP task execution", LogColor.Red));
     log.error("Exception occurred during HTTP task execution", e);
     httpInternalResponse.setHttpResponseCode(500);
     httpInternalResponse.setHttpResponseBody(getMessage(e));

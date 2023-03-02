@@ -46,7 +46,7 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
     GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GitlabHttpCredentialsOutcomeDTO outcome =
         (GitlabHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    if (!outcome.getType().toString().equals(GitIntegrationConstants.CONNECTOR_AUTH_TYPE)) {
+    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_TOKEN_AUTH_TYPE)) {
       throw new InvalidRequestException(String.format(
           " Authentication is not Username and Token for Gitlab Connector with id - [%s], accountId: [%s]",
           connectorIdentifier, accountIdentifier));

@@ -62,17 +62,16 @@ public class AwsLambdaRollbackTaskCommandHandler {
 
       if (awsLambdaRollbackRequest.isFirstDeployment()) {
         awsLambdaTaskHelper.deleteFunction(awsLambdaRollbackRequest.getAwsLambdaInfraConfig(),
-            awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
-            awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
+            awsLambdaRollbackRequest.getFunctionName(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
         return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
       } else {
         CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.rollbackFunction(
-            awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getAwsLambdaArtifactConfig(),
-            awsLambdaRollbackRequest.getAwsLambdaDeployManifestContent(), awsLambdaRollbackRequest.getQualifier(),
-            executionLogCallback);
+            awsLambdaRollbackRequest.getFunctionName(), awsLambdaRollbackRequest.getAwsLambdaInfraConfig(),
+            awsLambdaRollbackRequest.getFunctionCode(), awsLambdaRollbackRequest.getFunctionConfiguration(),
+            awsLambdaRollbackRequest.getQualifier(), executionLogCallback);
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
         return AwsLambdaRollbackResponse.builder()

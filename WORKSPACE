@@ -5628,10 +5628,8 @@ maven_install(
         ),
     ],
     repositories = [
-        "https://repo1.maven.org/maven2",
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
-        "https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core/4.3.4",
     ],
 )
 
