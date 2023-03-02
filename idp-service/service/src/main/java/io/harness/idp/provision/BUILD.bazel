@@ -14,8 +14,6 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
-        "//980-commons/src/main/java/io/harness/beans:module",
-        "//980-commons/src/main/java/software/wings/beans:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
         "//idp-service/service/src/main/java/io/harness/idp/namespace:module",
