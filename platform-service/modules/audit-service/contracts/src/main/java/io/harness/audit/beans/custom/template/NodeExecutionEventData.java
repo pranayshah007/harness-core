@@ -9,6 +9,7 @@ package io.harness.audit.beans.custom.template;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA;
+import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.TEMPLATE_AUDIT_EVENT_DATA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventData;
@@ -16,12 +17,16 @@ import io.harness.audit.beans.AuditEventData;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(NODE_EXECUTION_EVENT_DATA)
+@TypeAlias(NODE_EXECUTION_EVENT_DATA)
 public class NodeExecutionEventData extends AuditEventData {
   String accountIdentifier;
   String orgIdentifier;
@@ -32,12 +37,13 @@ public class NodeExecutionEventData extends AuditEventData {
 
   @Builder
   public NodeExecutionEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, String nodeExecutionId) {
+      String pipelineIdentifier, String planExecutionId, String nodeExecutionId, String type) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.nodeExecutionId = nodeExecutionId;
     this.planExecutionId = planExecutionId;
+    this.type = type;
   }
 }
