@@ -86,4 +86,4 @@ backstageSaCaCrt: ""
 backstageMasterUrl: ""
 
 provisionModuleConfig:
-  triggerPipelineUrl: "https://qa.harness.io/gateway/pipeline/api/webhook/custom/v2?accountIdentifier=Vp0XSI5MSgiF9p8lIIpThg&orgIdentifier=default&projectIdentifier=IDPdeploy&pipelineIdentifier=AccountIDPSetup&triggerIdentifier=accountidpsetup"
+  triggerPipelineUrl: ""
