@@ -115,7 +115,8 @@ public class SCMGitSyncHelper {
   }
 
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String filePath,
-      String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap) {
+      String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap,
+      boolean getOnlyFileContent) {
     log.info("Principal in getFileByBranch is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     contextMap =
         GitSyncLogContextHelper.setContextMap(scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
@@ -132,6 +133,7 @@ public class SCMGitSyncHelper {
               .setEntityType(EntityTypeMapper.getEntityType(entityType))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .setPrincipal(getPrincipal())
+              .setGetOnlyFileContent(getOnlyFileContent)
               .build();
       final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
           harnessToGitPushInfoServiceBlockingStub::getFile, getFileRequest);
@@ -301,6 +303,7 @@ public class SCMGitSyncHelper {
               .setEntityType(EntityTypeMapper.getEntityType(scmGetFileRequest.getEntityType()))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scmGetFileRequest.getScope()))
               .setPrincipal(getPrincipal())
+              .setGetOnlyFileContent(scmGetFileRequest.isGetOnlyFileContent())
               .build();
       sdkRequestMap.put(scmGetFileRequestEntry.getKey(), getFileRequest);
     }

@@ -85,6 +85,7 @@ import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.core.beans.GitFileFetchRunnableParams;
+import io.harness.gitsync.core.runnable.GitFileFetchRunnable;
 import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.beans.PageRequest;
@@ -336,9 +337,11 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmGetFileResponseDTO getFileByBranchV2(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
     Scope scope = scmGetFileByBranchRequestDTO.getScope();
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
-        scmGetFileByBranchRequestDTO.getRepoName());
+    ScmConnector scmConnector = scmGetFileByBranchRequestDTO.getScmConnector() != null
+        ? scmGetFileByBranchRequestDTO.getScmConnector()
+        : gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+            scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
+            scmGetFileByBranchRequestDTO.getRepoName());
 
     Optional<ScmGetFileResponseDTO> getFileResponseDTOOptional =
         getFileCacheResponseIfApplicable(scmGetFileByBranchRequestDTO, scmConnector);
@@ -356,9 +359,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .build()),
             scmConnector);
 
-    processGetFileOperationResponse(scope.getAccountIdentifier(), gitFileResponse, scmConnector,
+    processGetFileOperationResponse(scope, gitFileResponse, scmConnector,
         scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
-        scmGetFileByBranchRequestDTO.getFilePath(), scmGetFileByBranchRequestDTO.getBranchName());
+        scmGetFileByBranchRequestDTO.getFilePath(), scmGetFileByBranchRequestDTO.getBranchName(),
+        scmGetFileByBranchRequestDTO.isGetOnlyFileContent());
 
     return getScmGetFileResponseDTO(gitFileResponse);
   }
@@ -366,14 +370,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
       ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
-    scmGetBatchFilesByBranchRequestDTO.validate();
-    logBatchFileRequestIdentifiers(scmGetBatchFilesByBranchRequestDTO);
-    if (scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size()
-        > MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT) {
-      log.warn("Too many file requests {} in single batch file request, exceeding threshold of {}",
-          scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size(),
-          MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT);
-    }
+    doGetBatchFileValidations(scmGetBatchFilesByBranchRequestDTO);
 
     if (!isBatchGetFileTaskSupportedByDelegates(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier())) {
       return processGetBatchFileTaskUsingSingleGetFileAPI(scmGetBatchFilesByBranchRequestDTO);
@@ -858,14 +855,15 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return Optional.empty();
   }
 
-  private GitFileFetchRunnableParams getGitFileFetchRunnableParams(
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO) {
+  private GitFileFetchRunnableParams getGitFileFetchRunnableParams(Scope scope, String repoName, String branchName,
+      String filePath, String connectorRef, ScmConnector scmConnector) {
     return GitFileFetchRunnableParams.builder()
-        .filePath(scmGetFileByBranchRequestDTO.getFilePath())
-        .branchName(scmGetFileByBranchRequestDTO.getBranchName())
-        .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
-        .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-        .scope(scmGetFileByBranchRequestDTO.getScope())
+        .filePath(filePath)
+        .branchName(branchName)
+        .connectorRef(connectorRef)
+        .repoName(repoName)
+        .scope(scope)
+        .scmConnector(scmConnector)
         .scmFacilitatorService(this)
         .build();
   }
@@ -903,6 +901,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .repo(scmGetFileByBranchRequestDTO.getRepoName())
         .scmConnector(scmConnector)
         .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+        .getOnlyFileContent(scmGetFileByBranchRequestDTO.isGetOnlyFileContent())
         .build();
   }
 
@@ -933,6 +932,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaManager,
       Map<GetBatchFileRequestIdentifier, GitFileRequestV2> requestsViaDelegate) {
     Map<GetBatchFileRequestIdentifier, GitFileRequestV2> allFileRequestMap = new HashMap<>();
+
     GitFileBatchResponse gitFileBatchResponseForManager =
         processGitFileBatchRequest(accountIdentifier, requestsViaManager, true);
     GitFileBatchResponse gitFileBatchResponseForDelegate =
@@ -982,9 +982,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       ScmGetBatchFileRequestIdentifier identifier =
           ScmGetBatchFileRequestIdentifier.fromGetBatchFileRequestIdentifier(requestIdentifier);
       try {
-        processGetFileOperationResponse(accountIdentifier, gitFileResponse, gitFileRequest.getScmConnector(),
+        processGetFileOperationResponse(gitFileRequest.getScope(), gitFileResponse, gitFileRequest.getScmConnector(),
             gitFileRequest.getConnectorRef(), gitFileRequest.getRepo(), gitFileRequest.getFilepath(),
-            gitFileRequest.getBranch());
+            gitFileRequest.getBranch(), gitFileRequest.isGetOnlyFileContent());
         finalResponseMap.put(identifier, getScmGetFileResponseDTO(gitFileResponse).toScmGetFileResponseV2DTO());
       } catch (Exception exception) {
         finalResponseMap.put(identifier, prepareScmGetFileResponseV2FromException(exception));
@@ -994,8 +994,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmGetBatchFilesResponseDTO.builder().scmGetFileResponseV2DTOMap(finalResponseMap).build();
   }
 
-  private void processGetFileOperationResponse(String accountIdentifier, GitFileResponse gitFileResponse,
-      ScmConnector scmConnector, String connectorRef, String repoName, String filepath, String requestBranch) {
+  private void processGetFileOperationResponse(Scope scope, GitFileResponse gitFileResponse, ScmConnector scmConnector,
+      String connectorRef, String repoName, String filepath, String requestBranch, boolean getOnlyFileContent) {
     if (ScmApiErrorHandlingHelper.isFailureResponse(gitFileResponse.getStatusCode(), scmConnector.getConnectorType())) {
       try {
         ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
@@ -1008,28 +1008,35 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 .build());
       } catch (WingsException wingsException) {
         if (ScmExceptionUtils.isNestedScmBadRequestException(wingsException)) {
-          invalidateGitFileCache(accountIdentifier, filepath, scmConnector, repoName, gitFileResponse.getBranch());
+          invalidateGitFileCache(
+              scope.getAccountIdentifier(), filepath, scmConnector, repoName, gitFileResponse.getBranch());
         }
         throw wingsException;
       }
     }
 
-    try {
-      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
-                                          .accountIdentifier(accountIdentifier)
-                                          .completeFilePath(filepath)
-                                          .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
-                                          .repoName(repoName)
-                                          .ref(gitFileResponse.getBranch())
-                                          .isDefaultBranch(isEmpty(requestBranch))
-                                          .build(),
-          GitFileCacheObject.builder()
-              .fileContent(gitFileResponse.getContent())
-              .commitId(gitFileResponse.getCommitId())
-              .objectId(gitFileResponse.getObjectId())
-              .build());
-    } catch (Exception exception) {
-      handleUpsertCacheFailure(exception);
+    // We trigger get-file call in BG to update cache in case of get-only-file-content call
+    if (getOnlyFileContent) {
+      executor.execute(new GitFileFetchRunnable(getGitFileFetchRunnableParams(
+          scope, repoName, gitFileResponse.getBranch(), filepath, connectorRef, scmConnector)));
+    } else {
+      try {
+        gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                            .accountIdentifier(scope.getAccountIdentifier())
+                                            .completeFilePath(filepath)
+                                            .gitProvider(GitProviderUtils.getGitProvider(scmConnector))
+                                            .repoName(repoName)
+                                            .ref(gitFileResponse.getBranch())
+                                            .isDefaultBranch(isEmpty(requestBranch))
+                                            .build(),
+            GitFileCacheObject.builder()
+                .fileContent(gitFileResponse.getContent())
+                .commitId(gitFileResponse.getCommitId())
+                .objectId(gitFileResponse.getObjectId())
+                .build());
+      } catch (Exception exception) {
+        handleUpsertCacheFailure(exception);
+      }
     }
   }
 
@@ -1055,5 +1062,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private void handleUpsertCacheFailure(Exception exception) {
     log.error("Upsert Cache Failure, skipping Upsert cache operation", exception);
+  }
+
+  private void doGetBatchFileValidations(ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
+    scmGetBatchFilesByBranchRequestDTO.validate();
+    logBatchFileRequestIdentifiers(scmGetBatchFilesByBranchRequestDTO);
+    if (scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size()
+        > MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT) {
+      log.warn("Too many file requests {} in single batch file request, exceeding threshold of {}",
+          scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().size(),
+          MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT);
+    }
   }
 }
