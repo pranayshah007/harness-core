@@ -24,6 +24,8 @@ import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -42,6 +44,8 @@ import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRespon
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
@@ -155,6 +159,30 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
       logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
       return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
           .publishVersion(publishVersionRequest);
+    } catch (LambdaException lambdaException) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public CreateAliasResponse createAlias(AwsInternalConfig awsInternalConfig, CreateAliasRequest createAliasRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .createAlias(createAliasRequest);
+    } catch (LambdaException lambdaException) {
+      logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
+      throw new InvalidRequestException(lambdaException.getMessage());
+    }
+  }
+
+  @Override
+  public UpdateAliasResponse updateAlias(AwsInternalConfig awsInternalConfig, UpdateAliasRequest updateAliasRequest) {
+    try {
+      logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ((LambdaClient) getClient(awsInternalConfig, awsInternalConfig.getDefaultRegion()))
+          .updateAlias(updateAliasRequest);
     } catch (LambdaException lambdaException) {
       logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), lambdaException.getMessage());
       throw new InvalidRequestException(lambdaException.getMessage());

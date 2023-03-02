@@ -63,7 +63,8 @@ public class AwsLambdaDeployTaskHandler {
 
       CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.deployFunction(
           awsLambdaDeployRequest.getAwsLambdaInfraConfig(), awsLambdaDeployRequest.getAwsLambdaArtifactConfig(),
-          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(), executionLogCallback);
+          awsLambdaDeployRequest.getAwsLambdaDeployManifestContent(),
+          awsLambdaDeployRequest.getAwsLambdaAliasManifestContent(), executionLogCallback);
 
       executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 

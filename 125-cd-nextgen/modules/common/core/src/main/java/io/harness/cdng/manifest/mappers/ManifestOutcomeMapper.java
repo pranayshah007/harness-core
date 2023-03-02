@@ -41,6 +41,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
@@ -392,10 +393,10 @@ public class ManifestOutcomeMapper {
         .build();
   }
 
-  private AwsLambdaDefinitionManifestOutcome getAwsLambdaAliasDefinitionManifestOutcome(
+  private AwsLambdaAliasDefinitionManifestOutcome getAwsLambdaAliasDefinitionManifestOutcome(
       ManifestAttributes manifestAttributes) {
     AwsLambdaFunctionAliasDefinitionManifest attributes = (AwsLambdaFunctionAliasDefinitionManifest) manifestAttributes;
-    return AwsLambdaDefinitionManifestOutcome.builder()
+    return AwsLambdaAliasDefinitionManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();

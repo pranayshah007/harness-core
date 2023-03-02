@@ -18,6 +18,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -34,6 +35,7 @@ public class AwsLambdaPrepareRollbackOutcome implements Outcome, ExecutionSweepi
   @NonFinal @Expression(ALLOW_SECRETS) String functionName;
   @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> awsLambdaFunctionAliasDefinitionContents;
   boolean firstDeployment;
   String functionCode;
   String functionConfiguration;

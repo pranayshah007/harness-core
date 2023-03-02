@@ -70,10 +70,11 @@ public class AwsLambdaRollbackTaskCommandHandler {
         return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
       } else {
-        CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.rollbackFunction(
-            awsLambdaRollbackRequest.getFunctionName(), awsLambdaRollbackRequest.getAwsLambdaInfraConfig(),
-            awsLambdaRollbackRequest.getFunctionCode(), awsLambdaRollbackRequest.getFunctionConfiguration(),
-            awsLambdaRollbackRequest.getQualifier(), executionLogCallback);
+        CreateFunctionResponse createFunctionResponse =
+            awsLambdaTaskHelper.rollbackFunction(awsLambdaRollbackRequest.getFunctionName(),
+                awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getFunctionCode(),
+                awsLambdaRollbackRequest.getFunctionConfiguration(), awsLambdaRollbackRequest.getQualifier(),
+                executionLogCallback, awsLambdaRollbackRequest.getAwsLambdaFunctionAliasDefinitionContents());
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
         return AwsLambdaRollbackResponse.builder()
