@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
+import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 
 import com.google.inject.Inject;
@@ -27,7 +28,8 @@ public class AwsLambdaTaskHelperBase {
   @Inject private AwsLambdaTaskHelper awsLambdaCommandTaskHelper;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   private String latestVersionForAwsLambda = "$LATEST";
-  public List<ServerInstanceInfo> getAwsLambdaServerInstanceInfo(AwsLambdaDeploymentReleaseData deploymentReleaseData) {
+  public List<ServerInstanceInfo> getAwsLambdaServerInstanceInfo(AwsLambdaDeploymentReleaseData deploymentReleaseData)
+      throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
         (AwsLambdaFunctionsInfraConfig) deploymentReleaseData.getAwsLambdaInfraConfig();
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaFunctionsInfraConfig);

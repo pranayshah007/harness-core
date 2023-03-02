@@ -23,7 +23,9 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -75,9 +77,13 @@ public class AwsLambdaDeployTaskHandler {
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
     } catch (Exception exception) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
       executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidArgumentsException(String.valueOf(exception));
+      return AwsLambdaDeployResponse.builder()
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .build();
     }
   }
 }

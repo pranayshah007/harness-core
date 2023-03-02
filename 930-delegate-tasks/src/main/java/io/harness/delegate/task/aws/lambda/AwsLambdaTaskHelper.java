@@ -144,7 +144,8 @@ public class AwsLambdaTaskHelper {
   }
 
   public CreateFunctionResponse rollbackFunction(String functionName, AwsLambdaInfraConfig awsLambdaInfraConfig,
-      String functionCode, String functionConfiguration, String qualifier, LogCallback logCallback) {
+      String functionCode, String functionConfiguration, String qualifier, LogCallback logCallback)
+      throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     GetFunctionRequest getFunctionRequest =
@@ -154,9 +155,8 @@ public class AwsLambdaTaskHelper {
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
 
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
         logCallback.saveExecutionLog(
@@ -283,8 +283,8 @@ public class AwsLambdaTaskHelper {
     throw new InvalidRequestException("Not Support ArtifactConfig Type");
   }
 
-  public DeleteFunctionResponse deleteFunction(
-      AwsLambdaInfraConfig awsLambdaInfraConfig, String functionName, LogCallback logCallback) throws Exception {
+  public DeleteFunctionResponse deleteFunction(AwsLambdaInfraConfig awsLambdaInfraConfig, String functionName,
+      LogCallback logCallback) throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     GetFunctionRequest getFunctionRequest =
@@ -293,14 +293,13 @@ public class AwsLambdaTaskHelper {
     Optional<GetFunctionResponse> existingFunctionOptional =
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
 
+    logCallback.saveExecutionLog(format("Deleting Function: %s in region: %s %n", functionName,
+        awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
-        logCallback.saveExecutionLog(format("Deleting Function: %s in region: %s %n", functionName,
-            awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
         return awsLambdaClient.deleteFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                   awsLambdaFunctionsInfraConfig.getRegion()),
             (DeleteFunctionRequest) DeleteFunctionRequest.builder().functionName(functionName).build());
@@ -632,7 +631,7 @@ public class AwsLambdaTaskHelper {
   }
 
   public AwsLambdaFunctionWithActiveVersions getAwsLambdaFunctionWithActiveVersions(
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) throws AwsLambdaException {
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
 
@@ -647,9 +646,8 @@ public class AwsLambdaTaskHelper {
     }
 
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
         List<String> activeVersions = getActiveVersions(functionName, awsLambdaFunctionsInfraConfig);
