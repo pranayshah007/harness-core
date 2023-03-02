@@ -249,7 +249,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
               commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
       List<KubernetesResourceId> k8sWorkloads = Collections.emptyList();
       if (useK8sSteadyStateCheck) {
-        if (checkNewHelmInstall) {
+        if (checkNewHelmInstall
+            && (HelmVersion.V380.equals(commandRequest.getHelmVersion())
+                || HelmVersion.V3.equals(commandRequest.getHelmVersion()))) {
           String validateAndIsUpgrade = "--validate --is-upgrade";
           Map<HelmSubCommandType, String> valueMap = commandRequest.getHelmCommandFlag().getValueMap();
           valueMap.put(HelmSubCommandType.TEMPLATE, validateAndIsUpgrade);

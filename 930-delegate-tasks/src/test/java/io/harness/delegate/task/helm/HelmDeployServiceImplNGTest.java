@@ -123,7 +123,6 @@ import io.harness.shell.SshSessionConfig;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -133,6 +132,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
@@ -638,13 +638,13 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   public void testPrintHelmChartWithSubCharts() throws Exception {
     helmInstallCommandRequestNG.setNamespace("default");
     helmInstallCommandRequestNG.setValuesYamlList(Collections.emptyList());
+    Map<HelmSubCommandType, String> valueMap = new HashMap<>();
+    valueMap.put(HelmSubCommandType.TEMPLATE, "--dependency-update");
     HelmChartManifestDelegateConfig chartManifestConfig =
         HelmChartManifestDelegateConfig.builder()
             .chartName(HelmTestConstants.CHART_NAME_KEY)
             .chartVersion("V3")
-            .helmCommandFlag(HelmCommandFlag.builder()
-                                 .valueMap(ImmutableMap.of(HelmSubCommandType.TEMPLATE, "--dependency-update"))
-                                 .build())
+            .helmCommandFlag(HelmCommandFlag.builder().valueMap(valueMap).build())
             .storeDelegateConfig(httpHelmStoreDelegateConfig)
             .subChartName("child-1")
             .build();
