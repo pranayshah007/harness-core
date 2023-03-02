@@ -444,6 +444,9 @@ public class DelegateServiceGrpcClient {
   public PerpetualTaskId createPerpetualTask(AccountId accountId, String type, PerpetualTaskSchedule schedule,
       PerpetualTaskClientContextDetails context, boolean allowDuplicate, String taskDescription) {
     try {
+      log.info("Creating Perpetual Task for AccountId: [{}] with PerpetualTaskClientContextDetails [{}]", accountId,
+          context);
+
       CreatePerpetualTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
                                                  .createPerpetualTask(CreatePerpetualTaskRequest.newBuilder()
                                                                           .setAccountId(accountId)
@@ -494,6 +497,9 @@ public class DelegateServiceGrpcClient {
 
   public void resetPerpetualTask(
       AccountId accountId, PerpetualTaskId perpetualTaskId, PerpetualTaskExecutionBundle taskExecutionBundle) {
+    log.info("Updating Perpetual Task for AccountId: [{}] with Perpetual Task Id: [{}] and taskExecutionBundle [{}]",
+        accountId, perpetualTaskId, taskExecutionBundle);
+
     try {
       delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
           .resetPerpetualTask(ResetPerpetualTaskRequest.newBuilder()
