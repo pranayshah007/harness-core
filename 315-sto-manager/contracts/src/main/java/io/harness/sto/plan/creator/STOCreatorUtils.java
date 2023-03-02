@@ -12,11 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.sto.STOStepType;
 
 import com.google.common.collect.Sets;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -34,7 +32,7 @@ public class STOCreatorUtils {
     steps.add("Run");
     steps.add("Background");
 
-    steps.addAll(Arrays.stream(STOStepType.values()).map(e -> e.getName()).collect(Collectors.toSet()));
+    steps.addAll(STOStepType.getSupportedSteps());
 
     return Sets.newTreeSet(steps);
   }

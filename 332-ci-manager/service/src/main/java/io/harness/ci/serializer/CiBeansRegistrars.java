@@ -46,6 +46,7 @@ import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.YamlMorphiaRegistrar;
 import io.harness.ssca.SscaBeansRegistrar;
+import io.harness.sto.STOStepType;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -305,6 +306,7 @@ public class CiBeansRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(SecurityNode.class)
                    .build())
+          .addAll(STOStepType.createSecurityStepYamlDefinitions())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.GIT_CLONE)
                    .availableAtProjectLevel(true)
