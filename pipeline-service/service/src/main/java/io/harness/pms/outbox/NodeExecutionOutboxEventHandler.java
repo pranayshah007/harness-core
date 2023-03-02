@@ -18,7 +18,9 @@ import io.harness.audit.beans.custom.template.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEvents;
+import io.harness.engine.pms.audits.events.PipelineEndEvent;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
+import io.harness.engine.pms.audits.events.StageEndEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -45,7 +47,6 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
   }
 
   private boolean handlePipelineStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
-    GlobalContext globalContext = outboxEvent.getGlobalContext();
     PipelineStartEvent pipelineStartEvent =
         objectMapper.readValue(outboxEvent.getEventData(), PipelineStartEvent.class);
     NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
@@ -55,34 +56,24 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .pipelineIdentifier(pipelineStartEvent.getPipelineIdentifier())
                                                         .planExecutionId(pipelineStartEvent.getPlanExecutionId())
                                                         .build();
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.START)
-                                .module(ModuleType.PMS)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .auditEventData(nodeExecutionEventData)
-                                .insertId(outboxEvent.getId())
-                                .build();
 
-    return auditClientService.publishAudit(auditEntry, globalContext);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
   }
-  private boolean handlePipelineEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
-    GlobalContext globalContext = outboxEvent.getGlobalContext();
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.END)
-                                .module(ModuleType.PMS)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
 
-    return auditClientService.publishAudit(auditEntry, globalContext);
+  private boolean handlePipelineEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
+    PipelineEndEvent pipelineEndEvent = objectMapper.readValue(outboxEvent.getEventData(), PipelineEndEvent.class);
+    NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
+                                                        .accountIdentifier(pipelineEndEvent.getAccountIdentifier())
+                                                        .orgIdentifier(pipelineEndEvent.getOrgIdentifier())
+                                                        .projectIdentifier(pipelineEndEvent.getProjectIdentifier())
+                                                        .pipelineIdentifier(pipelineEndEvent.getPipelineIdentifier())
+                                                        .planExecutionId(pipelineEndEvent.getPlanExecutionId())
+                                                        .build();
+
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
   }
 
   private boolean handleStageStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
-    GlobalContext globalContext = outboxEvent.getGlobalContext();
     StageStartEvent stageStartEvent = objectMapper.readValue(outboxEvent.getEventData(), StageStartEvent.class);
     NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
                                                         .accountIdentifier(stageStartEvent.getAccountIdentifier())
@@ -92,26 +83,33 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .planExecutionId(stageStartEvent.getPlanExecutionId())
                                                         .nodeExecutionId(stageStartEvent.getNodeExecutionId())
                                                         .build();
+
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
+  }
+  private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
+    StageEndEvent stageEndEvent = objectMapper.readValue(outboxEvent.getEventData(), StageEndEvent.class);
+    NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
+                                                        .accountIdentifier(stageEndEvent.getAccountIdentifier())
+                                                        .orgIdentifier(stageEndEvent.getOrgIdentifier())
+                                                        .projectIdentifier(stageEndEvent.getProjectIdentifier())
+                                                        .pipelineIdentifier(stageEndEvent.getPipelineIdentifier())
+                                                        .planExecutionId(stageEndEvent.getPlanExecutionId())
+                                                        .nodeExecutionId(stageEndEvent.getNodeExecutionId())
+                                                        .build();
+
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
+  }
+
+  private boolean publishAuditEntry(
+      OutboxEvent outboxEvent, NodeExecutionEventData nodeExecutionEventData, Action action) {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
     AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.START)
+                                .action(action)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .auditEventData(nodeExecutionEventData)
-                                .insertId(outboxEvent.getId())
-                                .build();
-
-    return auditClientService.publishAudit(auditEntry, globalContext);
-  }
-  private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
-    GlobalContext globalContext = outboxEvent.getGlobalContext();
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.END)
-                                .module(ModuleType.PMS)
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
                                 .insertId(outboxEvent.getId())
                                 .build();
 
