@@ -12,6 +12,7 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability;
+import static io.harness.delegate.utils.DelegateServiceConstants.EMPTY_STR;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -170,7 +171,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
     createPerpetualTaskRecordAndAssign(delegate.getUuid());
     assertThat(perpetualTaskService.listAssignedTasks(delegate.getUuid(), ACCOUNT_ID)).hasSize(1);
     delegateDisconnectDetectorIterator.handle(delegate);
-    verify(delegateObserver).onDisconnected(ACCOUNT_ID, delegate.getUuid());
+    verify(delegateObserver).onDisconnected(ACCOUNT_ID, delegate.getUuid(), EMPTY_STR);
   }
 
   private DelegateTask createDelegateTask(Delegate delegate) throws ExecutionException {
