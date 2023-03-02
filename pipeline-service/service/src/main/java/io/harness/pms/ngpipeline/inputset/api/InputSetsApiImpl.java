@@ -28,6 +28,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
@@ -90,7 +91,8 @@ public class InputSetsApiImpl implements InputSetsApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branchGitX,
-      String parentEntityConnectorRef, String parentEntityRepoName, Boolean loadFromFallbackBranch) {
+      String parentEntityConnectorRef, String parentEntityRepoName, Boolean loadFromFallbackBranch,
+      String loadFromCache) {
     if (null == loadFromFallbackBranch) {
       loadFromFallbackBranch = false;
     }
@@ -103,8 +105,8 @@ public class InputSetsApiImpl implements InputSetsApi {
         inputSet, pipeline, project, org, account));
     Optional<InputSetEntity> optionalInputSetEntity = Optional.empty();
     try {
-      optionalInputSetEntity = pmsInputSetService.get(
-          account, org, project, pipeline, inputSet, false, null, null, true, loadFromFallbackBranch, false);
+      optionalInputSetEntity = pmsInputSetService.get(account, org, project, pipeline, inputSet, false, null, null,
+          true, loadFromFallbackBranch, GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (InvalidInputSetException e) {
       return Response.ok()
           .entity(inputSetsApiUtils.getInputSetResponseWithError(

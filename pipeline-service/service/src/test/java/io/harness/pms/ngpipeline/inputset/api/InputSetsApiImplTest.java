@@ -7,6 +7,7 @@
 package io.harness.pms.ngpipeline.inputset.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -159,7 +160,29 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
 
     Response response =
-        inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null, false);
+        inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null, false, "false");
+    InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
+    assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
+    assertEquals(responseBody.getName(), inputSetName);
+    assertEquals(responseBody.getIdentifier(), inputSet);
+    assertEquals(responseBody.getOrg(), org);
+    assertEquals(responseBody.getProject(), project);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetInputSetWithCaching() {
+    doReturn(Optional.of(inputSetEntity))
+        .when(pmsInputSetService)
+        .get(account, org, project, pipeline, inputSet, false, null, null, true, false, true);
+    doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
+    InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
+    inputSetCreateRequestBody.setIdentifier(inputSet);
+    inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
+
+    Response response =
+        inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null, false, "true");
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
