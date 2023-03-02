@@ -52,7 +52,8 @@ public class NextStepHandler implements AdviserResponseHandler {
     if (EmptyPredicate.isNotEmpty(nextNodeId)) {
       Node nextNode =
           Preconditions.checkNotNull(planService.fetchNode(prevNodeExecution.getAmbiance().getPlanId(), nextNodeId));
-      nextNode = createIdentityNodeIfRequired(nextNode, prevNodeExecution);
+      // todo: uncomment when resolved
+      // nextNode = createIdentityNodeIfRequired(nextNode, prevNodeExecution);
       String runtimeId = generateUuid();
       // Update NodeExecution nextId and endTs
       nodeExecutionService.updateV2(prevNodeExecution.getUuid(),
