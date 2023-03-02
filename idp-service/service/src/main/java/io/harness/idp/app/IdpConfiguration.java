@@ -13,6 +13,7 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
@@ -61,6 +62,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("backstageSaToken") private String backstageSaToken;
   @JsonProperty("backstageSaCaCrt") private String backstageSaCaCrt;
   @JsonProperty("backstageMasterUrl") private String backstageMasterUrl;
+  @JsonProperty("provisionModuleConfig") private ProvisionModuleConfig provisionModuleConfig;
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
 
