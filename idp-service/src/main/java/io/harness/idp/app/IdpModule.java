@@ -27,6 +27,10 @@ import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
+import io.harness.idp.provision.ProvisionModuleConfig;
+import io.harness.idp.provision.resource.ProvisionApiImpl;
+import io.harness.idp.provision.service.ProvisionService;
+import io.harness.idp.provision.service.ProvisionServiceImpl;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -55,6 +59,7 @@ import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
+import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.token.TokenClientModule;
@@ -191,6 +196,8 @@ public class IdpModule extends AbstractModule {
     bind(ConnectorProcessorFactory.class);
     bind(NamespaceApi.class).to(NamespaceApiImpl.class);
     bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
+    bind(ProvisionApi.class).to(ProvisionApiImpl.class);
+    bind(ProvisionService.class).to(ProvisionServiceImpl.class);
   }
 
   @Provides
@@ -222,5 +229,12 @@ public class IdpModule extends AbstractModule {
   @Named("backstageMasterUrl")
   public String backstageMasterUrl() {
     return this.appConfig.getBackstageMasterUrl();
+  }
+
+  @Provides
+  @Singleton
+  @Named("provisionModuleConfig")
+  public ProvisionModuleConfig provisionModuleConfig() {
+    return this.appConfig.getProvisionModuleConfig();
   }
 }
