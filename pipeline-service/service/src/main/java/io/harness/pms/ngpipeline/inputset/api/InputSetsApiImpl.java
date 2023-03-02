@@ -91,6 +91,9 @@ public class InputSetsApiImpl implements InputSetsApi {
   public Response getInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branchGitX,
       String parentEntityConnectorRef, String parentEntityRepoName, Boolean loadFromFallbackBranch) {
+    if (null == loadFromFallbackBranch) {
+      loadFromFallbackBranch = false;
+    }
     GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
                                                  .branch(branchGitX)
                                                  .parentEntityConnectorRef(parentEntityConnectorRef)
