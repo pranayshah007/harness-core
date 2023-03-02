@@ -95,13 +95,13 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
 
   @Override
   public Optional<RoleAssignment> delete(String identifier, String scopeIdentifier) {
-    return roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(r -> {
-          log.info("The role assignment is being deleted, {}", r);
-          return Optional.of(RoleAssignmentDBOMapper.fromDBO(r));
-        });
+    Optional<RoleAssignmentDBO> optionalRoleAssignmentDBO =
+        roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    if (optionalRoleAssignmentDBO.isPresent()) {
+      log.info("The role assignment is being deleted, {}", optionalRoleAssignmentDBO.get());
+      return Optional.of(RoleAssignmentDBOMapper.fromDBO(optionalRoleAssignmentDBO.get()));
+    }
+    return Optional.empty();
   }
 
   @Override

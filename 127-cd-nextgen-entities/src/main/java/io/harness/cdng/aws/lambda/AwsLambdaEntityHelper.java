@@ -90,6 +90,7 @@ public class AwsLambdaEntityHelper {
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
             .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
             .region(awsLambdaInfrastructureOutcome.getRegion())
+            .infraStructureKey(awsLambdaInfrastructureOutcome.getInfrastructureKey())
             .build();
       default:
         throw new UnsupportedOperationException(

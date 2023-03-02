@@ -79,4 +79,9 @@ public interface TerraformCloudRestClient {
   Call<TerraformCloudResponse<List<StateVersionOutputData>>> getStateVersionOutputs(
       @Header("Authorization") String authorization, @Path("stateVersionId") String stateVersionId,
       @Query("page[number]") int page);
+
+  @Headers({"Content-Type: application/vnd.api+json"})
+  @POST("api/v2/policy-checks/{policyChecksId}/actions/override")
+  Call<Void> overridePolicyChecks(
+      @Header("Authorization") String authorization, @Path("policyChecksId") String policyChecksId);
 }

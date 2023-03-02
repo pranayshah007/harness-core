@@ -10,6 +10,7 @@ package io.harness.delegate.task.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MOUNIK;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -28,8 +29,13 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
+import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -117,7 +123,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   public void before() {
     url = "http://localhost:" + wireMockRule.port();
     JiraInternalConfig jiraInternalConfig =
-        JiraInternalConfig.builder().jiraUrl(url).username("username").password("password").build();
+        JiraInternalConfig.builder().jiraUrl(url).authToken("dummyAccessToken").build();
     jiraClient = new JiraClient(jiraInternalConfig);
   }
 
@@ -169,16 +175,31 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     JiraProjectBasicNG jiraProjectBasicNG = new JiraProjectBasicNG(jsonNode);
     List<JiraProjectBasicNG> projects = new ArrayList<>();
     projects.add(jiraProjectBasicNG);
-    assertThat(jiraTaskNGHandler.getProjects(
-                   createJiraTaskParametersBuilder()
-                       .jiraConnectorDTO(
-                           JiraConnectorDTO.builder()
-                               .jiraUrl(url)
-                               .username("username")
-                               .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
-                               .build())
-                       .build()))
+    assertThat(jiraTaskNGHandler.getProjects(createJiraTaskParametersBuilder().build()))
         .isEqualTo(JiraTaskNGResponse.builder().projects(projects).build());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testgetprojectsWithPatAuth() throws Exception {
+    wireMockRule.stubFor(get(urlEqualTo("/rest/api/2/project"))
+                             .willReturn(aResponse().withStatus(200).withBody(
+                                 "[{\"id\": \"ID\", \"name\": \"NAME\", \"key\": \"KEY\"}]")));
+    JiraProjectBasicNG jiraProjectBasicNG = new JiraProjectBasicNG(jsonNode);
+    List<JiraProjectBasicNG> projects = new ArrayList<>();
+    projects.add(jiraProjectBasicNG);
+    JiraTaskNGParameters jiraTaskNGParameters = createPatAuthJiraTaskParametersBuilder().build();
+    assertThat(jiraTaskNGHandler.getProjects(jiraTaskNGParameters))
+        .isEqualTo(JiraTaskNGResponse.builder().projects(projects).build());
+    JiraInternalConfig jiraInternalConfig =
+        JiraRequestResponseMapper.toJiraInternalConfig(jiraTaskNGParameters.getJiraConnectorDTO());
+    assertThat(jiraInternalConfig.getJiraUrl()).isEqualTo(url.concat("/"));
+    assertThat(jiraInternalConfig.getAuthToken())
+        .isEqualTo("Bearer %s",
+            new String(((JiraPATDTO) jiraTaskNGParameters.getJiraConnectorDTO().getAuth().getCredentials())
+                           .getPatRef()
+                           .getDecryptedValue()));
   }
 
   @Test
@@ -203,18 +224,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     statuses.add(new JiraStatusNG(jsonstatusNode));
 
     assertThat(jiraTaskNGHandler.getStatuses(
-                   createJiraTaskParametersBuilder()
-                       .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                             .jiraUrl(url)
-                                             .username("username")
-                                             .passwordRef(SecretRefData.builder()
-                                                              .decryptedValue("password".toCharArray())
-
-                                                              .build())
-                                             .build())
-                       .projectKey("projectkey")
-                       .issueType("NAME")
-                       .build()))
+                   createJiraTaskParametersBuilder().projectKey("projectkey").issueType("NAME").build()))
         .isEqualTo(JiraTaskNGResponse.builder().statuses(statuses).build());
   }
 
@@ -239,19 +249,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     jiraIssueNG.getFields().put("url", "http://localhost:" + wireMockRule.port() + "/browse/key");
     JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
     assertThat(
-        jiraTaskNGHandler.getIssue(createJiraTaskParametersBuilder()
-                                       .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                             .jiraUrl(url)
-                                                             .username("username")
-                                                             .passwordRef(SecretRefData.builder()
-                                                                              .decryptedValue("password".toCharArray())
-
-                                                                              .build())
-                                                             .build())
-                                       .projectKey("projectkey")
-                                       .issueType("NAME")
-                                       .issueKey("issuekey")
-                                       .build()))
+        jiraTaskNGHandler.getIssue(
+            createJiraTaskParametersBuilder().projectKey("projectkey").issueType("NAME").issueKey("issuekey").build()))
         .isEqualTo(jiraTaskNGResponse);
   }
 
@@ -268,24 +267,15 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
             .willReturn(aResponse().withStatus(200).withBody(
                 "{\"maxResults\":50,\"startAt\":0,\"total\":2,\"isLast\":true,\"values\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10000\",\"id\":\"10000\",\"description\":\"Thesub-taskoftheissue\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/issuetypes/subtask_alternate.png\",\"name\":\"Sub-task\",\"subtask\":true},{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\"id\":\"10003\",\"description\":\"Ataskthatneedstobedone.\",\"iconUrl\":\"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\"name\":\"Task\",\"subtask\":false}]}")));
 
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(true)
-                                        .build())
-            .getIssueCreateMetadata();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(true)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(2);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
@@ -590,25 +580,16 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                 + "    ]\n"
                 + "}")));
 
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .issueType("Task")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(true)
-                                        .build())
-            .getIssueCreateMetadata();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .issueType("Task")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(true)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
@@ -940,25 +921,16 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                 + "        }\n"
                 + "    ]\n"
                 + "}")));
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .issueType("Task")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(false)
-                                        .build())
-            .getIssueCreateMetadata();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .issueType("Task")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(false)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getId()).isEqualTo("10101");
@@ -979,14 +951,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -1050,14 +1015,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -1123,14 +1082,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
     fields.put("Issue Type", "Change");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.UPDATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueKey("TJI-37792")
@@ -1194,14 +1147,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -1255,9 +1202,32 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   private JiraTaskNGParametersBuilder createJiraTaskParametersBuilder() {
     JiraConnectorDTO jiraConnectorDTO =
         JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .jiraUrl(url)
+            .auth(JiraAuthenticationDTO.builder()
+                      .authType(JiraAuthType.USER_PASSWORD)
+                      .credentials(
+                          JiraUserNamePasswordDTO.builder()
+                              .username("username")
+                              .passwordRef(
+                                  SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                              .build())
+                      .build())
+            .build();
+    return JiraTaskNGParameters.builder().jiraConnectorDTO(jiraConnectorDTO);
+  }
+
+  private JiraTaskNGParametersBuilder createPatAuthJiraTaskParametersBuilder() {
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl(url)
+            .auth(JiraAuthenticationDTO.builder()
+                      .authType(JiraAuthType.PAT)
+                      .credentials(
+                          JiraPATDTO.builder()
+                              .patRef(
+                                  SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                              .build())
+                      .build())
             .build();
     return JiraTaskNGParameters.builder().jiraConnectorDTO(jiraConnectorDTO);
   }

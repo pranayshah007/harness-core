@@ -9,14 +9,14 @@ package io.harness.k8s.client;
 
 import io.harness.k8s.model.KubernetesConfig;
 
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.List;
 import java.util.Map;
 
 public interface K8sClient {
-  boolean updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace)
-      throws Exception;
-  boolean updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace)
-      throws Exception;
-  void removeSecretData(String namespace, String backstageSecret, List<String> envNames) throws Exception;
+  V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace);
+  V1ConfigMap updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace);
+  void removeSecretData(String namespace, String backstageSecret, List<String> envNames);
   KubernetesConfig getKubernetesConfig(String namespace);
 }

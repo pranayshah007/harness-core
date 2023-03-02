@@ -104,8 +104,8 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
                 White, Bold));
 
         try {
-          gitFetchFilesResult =
-              fetchFilesFromRepo(gitFetchFilesConfig, executionLogCallback, gitFetchRequest.getAccountId());
+          gitFetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, executionLogCallback,
+              gitFetchRequest.getAccountId(), gitFetchRequest.isCloseLogStream());
         } catch (Exception ex) {
           String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
@@ -151,8 +151,8 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
     }
   }
 
-  private FetchFilesResult fetchFilesFromRepo(
-      GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback, String accountId) throws IOException {
+  private FetchFilesResult fetchFilesFromRepo(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback,
+      String accountId, boolean closeLogStream) throws IOException {
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH
@@ -165,7 +165,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
     if (EmptyPredicate.isNotEmpty(gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths())) {
       filePathsToFetch = gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths();
       executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, false);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, closeLogStream);
     }
 
     FetchFilesResult gitFetchFilesResult;

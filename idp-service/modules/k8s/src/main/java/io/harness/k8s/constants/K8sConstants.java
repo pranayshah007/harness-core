@@ -16,5 +16,4 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 public final class K8sConstants {
   public static final String BACKSTAGE_SECRET = "backstage-env";
-  public static final String DEFAULT_NAMESPACE = "default";
 }

@@ -23,6 +23,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.Map;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,15 +50,19 @@ public class VmPluginStepSerializerTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testPluginStepSerialize() {
-    PluginStepInfo pluginStepInfo = PluginStepInfo.builder()
-                                        .image(ParameterField.createValueField("image"))
-                                        .privileged(ParameterField.createValueField(true))
-                                        .connectorRef(ParameterField.createValueField("connectorRef"))
-                                        .reports(ParameterField.createValueField(null))
-                                        .build();
+    PluginStepInfo pluginStepInfo =
+        PluginStepInfo.builder()
+            .image(ParameterField.createValueField("image"))
+            .privileged(ParameterField.createValueField(true))
+            .connectorRef(ParameterField.createValueField("connectorRef"))
+            .reports(ParameterField.createValueField(null))
+            .envVariables(ParameterField.createValueField(Map.of(
+                "key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2"))))
+            .build();
     VmPluginStep vmPluginStep =
         (VmPluginStep) vmPluginStepSerializer.serialize(pluginStepInfo, null, "id", null, null, ambiance, null, null);
     assertThat(vmPluginStep.isPrivileged()).isTrue();
     assertThat(vmPluginStep.getImage()).isEqualTo("image");
+    assertThat(vmPluginStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));
   }
 }

@@ -469,7 +469,7 @@ public class ServiceStepV3Test extends CategoryTest {
         ParameterField.createValueField(environment2.getIdentifier()));
     doReturn(Arrays.asList(environment, environment2))
         .when(environmentService)
-        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(anyString(), anyString(), anyString(), anyList());
+        .fetchesNonDeletedEnvironmentFromListOfRefs(anyString(), anyString(), anyString(), anyList());
 
     ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -518,7 +518,7 @@ public class ServiceStepV3Test extends CategoryTest {
     List<ParameterField<String>> envRefs = Arrays.asList(ParameterField.createValueField(environment.getIdentifier()));
     doReturn(Arrays.asList(environment))
         .when(environmentService)
-        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(anyString(), anyString(), anyString(), anyList());
+        .fetchesNonDeletedEnvironmentFromListOfRefs(anyString(), anyString(), anyString(), anyList());
 
     Map<String, ParameterField<Map<String, Object>>> mergedEnvironmentInputs = new HashMap<>();
     mergedEnvironmentInputs.put("envId", ParameterField.createValueField(Map.of("h1", "k1")));

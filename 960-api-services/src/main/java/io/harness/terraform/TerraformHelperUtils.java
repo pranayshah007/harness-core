@@ -67,6 +67,29 @@ public class TerraformHelperUtils {
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
+  public void copytfCloudVarFilesToScriptDirectory(String sourceDir, String destinationDir) throws IOException {
+    File dest = new File(destinationDir);
+    File src = new File(sourceDir);
+
+    if (sourceDir.contains(destinationDir)) {
+      // this means inline var-files are located already in script-repository and has .auto.tfvars
+      return;
+    }
+
+    String newVarFileCloudExt;
+    if (!sourceDir.contains(".auto.tfvars")) {
+      newVarFileCloudExt = sourceDir.replace(".tfvars", ".auto.tfvars");
+    } else {
+      // remote var-files can have already auto.tfvars
+      newVarFileCloudExt = sourceDir;
+    }
+
+    File tfCloudVarFile = new File(newVarFileCloudExt);
+    FileUtils.copyFile(src, tfCloudVarFile);
+    FileUtils.copyFileToDirectory(tfCloudVarFile, dest);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+  }
+
   public void ensureLocalCleanup(String scriptDirectory) throws IOException {
     FileUtils.deleteQuietly(Paths.get(scriptDirectory, TERRAFORM_STATE_FILE_NAME).toFile());
     try {

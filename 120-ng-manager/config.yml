@@ -97,6 +97,7 @@ mongo:
   aliasDBName: ng-harness
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 2147483647
 
 accountConfig:
   deploymentClusterName: ""

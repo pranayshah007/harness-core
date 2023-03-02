@@ -30,12 +30,13 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -232,6 +233,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
   @Override
   public List<BudgetSummary> listAllEntities(String accountId) {
+    HashMap<String, List<BudgetSummary>> flattenedChildList = getFlattenedList(accountId);
     List<BudgetSummary> summaryList = new ArrayList<>();
     List<BudgetGroup> budgetGroups = list(accountId);
     budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
@@ -239,8 +241,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
 
     budgets.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
-    budgetGroups.forEach(
-        budgetGroup -> summaryList.add(BudgetGroupUtils.buildBudgetGroupSummary(budgetGroup, Collections.emptyList())));
+    budgetGroups.forEach(budgetGroup
+        -> summaryList.add(
+            BudgetGroupUtils.buildBudgetGroupSummary(budgetGroup, flattenedChildList.get(budgetGroup.getUuid()))));
 
     return summaryList;
   }
@@ -611,5 +614,28 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
     }
     return rootBudgetGroup;
+  }
+
+  private HashMap<String, List<BudgetSummary>> getFlattenedList(String accountId) {
+    List<BudgetSummary> nestedSummaryList = listBudgetsAndBudgetGroupsSummary(accountId, null);
+    nestedSummaryList =
+        nestedSummaryList.stream().filter(budgetSummary -> budgetSummary.isBudgetGroup()).collect(Collectors.toList());
+
+    HashMap<String, List<BudgetSummary>> flattenedChildList = new HashMap<>();
+    Queue<BudgetSummary> budgetSummaryStore = new LinkedList<>();
+    nestedSummaryList.forEach(summary -> budgetSummaryStore.add(summary));
+
+    while (budgetSummaryStore.size() > 0) {
+      BudgetSummary currentBudgetSummary = budgetSummaryStore.poll();
+      flattenedChildList.put(currentBudgetSummary.getId(), currentBudgetSummary.getChildEntities());
+      if (currentBudgetSummary.getChildEntities() != null) {
+        nestedSummaryList = currentBudgetSummary.getChildEntities()
+                                .stream()
+                                .filter(budgetSummary -> budgetSummary.isBudgetGroup())
+                                .collect(Collectors.toList());
+        nestedSummaryList.forEach(summary -> budgetSummaryStore.add(summary));
+      }
+    }
+    return flattenedChildList;
   }
 }

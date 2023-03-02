@@ -73,7 +73,6 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -297,6 +296,7 @@ public class TriggerExecutionHelper {
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+          log.info("Principal is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           TemplateMergeResponseDTO templateMergeResponseDTO =
               pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
                   pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -348,14 +348,8 @@ public class TriggerExecutionHelper {
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         switch (pipelineEntity.getHarnessVersion()) {
           case PipelineVersion.V0:
-            String yamlForValidatingSchema;
-            try {
-              yamlForValidatingSchema = YamlUtils.getYamlWithoutInputs(new YamlConfig(pipelineYaml));
-            } catch (Exception ex) {
-              log.error("Exception occurred while removing inputs from pipeline yaml", ex);
-              yamlForValidatingSchema =
-                  executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
-            }
+            String yamlForValidatingSchema =
+                executionHelper.getPipelineYamlWithUnResolvedTemplates(runtimeInputYaml, pipelineEntity);
             pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
                 pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
             break;

@@ -41,7 +41,6 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
@@ -285,8 +284,6 @@ public class PMSPipelineServiceHelper {
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
       throw ex;
-    } catch (NGTemplateResolveExceptionV2 ex) {
-      throw ex;
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
           YamlSchemaErrorWrapperDTO.builder()
@@ -320,8 +317,6 @@ public class PMSPipelineServiceHelper {
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
-      throw ex;
-    } catch (NGTemplateResolveExceptionV2 ex) {
       throw ex;
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =

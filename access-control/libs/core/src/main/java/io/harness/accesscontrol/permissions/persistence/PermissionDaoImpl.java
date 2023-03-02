@@ -106,8 +106,6 @@ public class PermissionDaoImpl implements PermissionDao {
   public Permission delete(String identifier) {
     return fromDBO(
         permissionRepository.deleteByIdentifier(identifier)
-            .stream()
-            .findFirst()
             .orElseThrow(
                 () -> new InvalidRequestException(String.format("Could not delete the permission %s", identifier))));
   }

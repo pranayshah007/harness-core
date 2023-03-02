@@ -23,6 +23,7 @@ import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
@@ -98,5 +99,6 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     // TODO: Replace with step category
     addGroupAlias(YAMLFieldNameConstants.STAGE, StepOutcomeGroup.STAGE.name());
     addGroupAlias(YAMLFieldNameConstants.STEP, StepOutcomeGroup.STEP.name());
+    addGroupAlias(YAMLFieldNameConstants.STEP_GROUP, StepCategory.STEP_GROUP.name());
   }
 }

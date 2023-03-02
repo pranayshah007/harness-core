@@ -63,8 +63,8 @@ public class BackgroundStepInfoV1 extends CIAbstractStepInfo implements WithConn
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> run;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> envs;
-  public ParameterField<Map<String, String>> getEnvs() {
+  ParameterField<Map<String, ParameterField<String>>> envs;
+  public ParameterField<Map<String, ParameterField<String>>> getEnvs() {
     if (ParameterField.isNull(this.envs)) {
       this.envs.setValue(Collections.emptyMap());
     }
@@ -91,11 +91,11 @@ public class BackgroundStepInfoV1 extends CIAbstractStepInfo implements WithConn
   @Builder
   @ConstructorProperties({"uuid", "run", "envs", "entrypoint", "args", "ports", "network", "image", "resources",
       "privileged", "user", "shell", "pull", "volumes"})
-  public BackgroundStepInfoV1(String uuid, ParameterField<String> run, ParameterField<Map<String, String>> envs,
-      ParameterField<String> entrypoint, ParameterField<List<String>> args, ParameterField<List<String>> ports,
-      ParameterField<String> network, ParameterField<String> image, ContainerResource resources,
-      ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell, PullPolicy pull,
-      ParameterField<List<Volume>> volumes) {
+  public BackgroundStepInfoV1(String uuid, ParameterField<String> run,
+      ParameterField<Map<String, ParameterField<String>>> envs, ParameterField<String> entrypoint,
+      ParameterField<List<String>> args, ParameterField<List<String>> ports, ParameterField<String> network,
+      ParameterField<String> image, ContainerResource resources, ParameterField<Boolean> privileged,
+      ParameterField<Integer> user, Shell shell, PullPolicy pull, ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.envs = envs;

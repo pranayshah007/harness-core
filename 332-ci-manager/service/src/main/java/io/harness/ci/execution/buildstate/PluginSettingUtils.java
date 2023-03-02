@@ -16,6 +16,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
+import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
@@ -25,6 +26,8 @@ import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
@@ -87,6 +90,8 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -181,6 +186,9 @@ public class PluginSettingUtils {
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
+            (SscaOrchestrationStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
@@ -449,7 +457,12 @@ public class PluginSettingUtils {
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, baseImageConnectors.get(0));
       if (connectorDetails != null && connectorDetails.getConnectorType() == ConnectorType.DOCKER) {
         String dockerConnectorUrl = ((DockerConnectorDTO) connectorDetails.getConnectorConfig()).getDockerRegistryUrl();
-        setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+        if (isNotEmpty(dockerConnectorUrl)) {
+          if (DOCKER_REGISTRY_V2.equals(dockerConnectorUrl)) {
+            dockerConnectorUrl = DOCKER_REGISTRY_V1;
+          }
+          setMandatoryEnvironmentVariable(map, PLUGIN_DOCKER_REGISTRY, dockerConnectorUrl);
+        }
       }
     }
 

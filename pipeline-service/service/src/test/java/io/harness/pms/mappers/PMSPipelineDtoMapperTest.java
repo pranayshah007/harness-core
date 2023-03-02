@@ -16,8 +16,6 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static java.time.LocalDate.now;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -649,22 +647,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .build();
     PMSPipelineResponseDTO pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(remote);
     assertThat(pipelineResponseDTO.getCacheResponse().getCacheState()).isEqualTo(CacheState.VALID_CACHE);
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testParseLoadFromCacheHeaderParam() {
-    //    when null is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(null));
-    //    when empty is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(""));
-    //    when true is passed for string loadFromCache
-    assertTrue(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("true"));
-    //    when false is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("false"));
-    //    when junk value is passed for string loadFromCache
-    assertFalse(PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
   }
 
   @Test

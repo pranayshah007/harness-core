@@ -101,7 +101,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     Optional<InputSetEntity> optionalInputSetEntity = Optional.empty();
     try {
       optionalInputSetEntity = pmsInputSetService.get(
-          account, org, project, pipeline, inputSet, false, null, null, true, loadFromFallbackBranch);
+          account, org, project, pipeline, inputSet, false, null, null, true, loadFromFallbackBranch, false);
     } catch (InvalidInputSetException e) {
       return Response.ok()
           .entity(inputSetsApiUtils.getInputSetResponseWithError(

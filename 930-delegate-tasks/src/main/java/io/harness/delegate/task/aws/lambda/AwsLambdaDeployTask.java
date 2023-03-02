@@ -9,7 +9,7 @@ package io.harness.delegate.task.aws.lambda;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.aws.lambda.AwsLambdaCommandTaskHandler;
+import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -24,7 +24,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +32,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
-  @Inject private Map<String, AwsLambdaCommandTaskHandler> commandTaskTypeToTaskHandlerMap;
-
+  @Inject private AwsLambdaDeployTaskHandler awsLambdaDeployTaskHandler;
   @Inject private AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;
 
   public AwsLambdaDeployTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
@@ -58,11 +56,9 @@ public class AwsLambdaDeployTask extends AbstractDelegateRunnableTask {
     log.info("Starting task execution for command: {}", awsLambdaCommandRequest.getAwsLambdaCommandType().name());
     awsLambdaInfraConfigHelper.decryptInfraConfig(awsLambdaCommandRequest.getAwsLambdaInfraConfig());
 
-    AwsLambdaCommandTaskHandler commandTaskHandler =
-        commandTaskTypeToTaskHandlerMap.get(awsLambdaCommandRequest.getAwsLambdaCommandType().name());
     try {
-      AwsLambdaCommandResponse awsLambdaCommandResponse =
-          commandTaskHandler.executeTask(awsLambdaCommandRequest, getLogStreamingTaskClient(), commandUnitsProgress);
+      AwsLambdaCommandResponse awsLambdaCommandResponse = awsLambdaDeployTaskHandler.executeTaskInternal(
+          awsLambdaCommandRequest, getLogStreamingTaskClient(), commandUnitsProgress);
       awsLambdaCommandResponse.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return awsLambdaCommandResponse;
     } catch (Exception e) {

@@ -9,9 +9,6 @@ package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.ROLLBACK;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.RUN_PLAN_AND_APPLY;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.RUN_PLAN_AND_DESTROY;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -22,7 +19,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.beans.terraformcloud.PlanType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -35,6 +31,7 @@ import io.harness.terraformcloud.model.ApplyData;
 import io.harness.terraformcloud.model.Data;
 import io.harness.terraformcloud.model.OrganizationData;
 import io.harness.terraformcloud.model.PlanData;
+import io.harness.terraformcloud.model.PolicyCheckData;
 import io.harness.terraformcloud.model.RunActionRequest;
 import io.harness.terraformcloud.model.RunData;
 import io.harness.terraformcloud.model.RunRequest;
@@ -56,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,9 +71,6 @@ public class TerraformCloudTaskHelper {
   // toDo Exception handling
 
   private static final int CHUNK_SIZE = 100000;
-  private static final String TFC_PLAN_FILE_OUTPUT_NAME = "tfcplan.json";
-  private static final String TFC_DESTROY_PLAN_FILE_OUTPUT_NAME = "tfcdestroyplan.json";
-
   @Inject TerraformCloudClient terraformCloudClient;
   @Inject DelegateFileManagerBase delegateFileManager;
 
@@ -176,32 +171,22 @@ public class TerraformCloudTaskHelper {
 
   RunData createRun(String url, String token, RunRequest runRequest, boolean forceExecute,
       TerraformCloudTaskType terraformCloudTaskType, LogCallback logCallback) throws IOException {
-    logCallback.saveExecutionLog("Creating execution run ...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     RunData runData = terraformCloudClient.createRun(url, token, runRequest).getData();
     String runId = runData.getId();
-    logCallback.saveExecutionLog(format("Run created: %s", runId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
-
     if (forceExecute && getRunStatus(url, token, runId) == RunStatus.PENDING) {
-      logCallback.saveExecutionLog(format("Force execute: %s", runId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       terraformCloudClient.forceExecuteRun(url, token, runId);
     }
 
     String planId = getRelationshipId(runData, "plan");
     PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
     // stream plan logs
-    logCallback.saveExecutionLog("Plan execution...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
     streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
+    logCallback.saveExecutionLog("Plan finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
-    runData = getRun(url, token, runId);
-    if (terraformCloudTaskType == RUN_PLAN_AND_APPLY || terraformCloudTaskType == RUN_PLAN_AND_DESTROY
-        || terraformCloudTaskType == ROLLBACK) {
-      streamApplyLogs(url, token, runData, logCallback);
-    }
-
-    return runData;
+    return getRun(url, token, runId);
   }
 
-  private void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) throws IOException {
+  public void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) throws IOException {
     // stream apply logs
     String applyId = getRelationshipId(runData, "apply");
     ApplyData apply = terraformCloudClient.getApply(url, token, applyId).getData();
@@ -209,20 +194,24 @@ public class TerraformCloudTaskHelper {
       logCallback.saveExecutionLog(
           format("Apply %s execution...", runData.getId()), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       streamLogs(logCallback, apply.getAttributes().getLogReadUrl());
+    } else {
+      logCallback.saveExecutionLog(format("Apply for run id: %s is unreachable", runData.getId()), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
+      return;
     }
+    logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
-  public String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, PlanType planType,
-      String content) throws IOException {
-    final DelegateFile delegateFile =
-        aDelegateFile()
-            .withAccountId(accountId)
-            .withDelegateId(delegateId)
-            .withTaskId(taskId)
-            .withEntityId(entityId)
-            .withBucket(FileBucket.TERRAFORM_PLAN_JSON)
-            .withFileName(planType == PlanType.APPLY ? TFC_PLAN_FILE_OUTPUT_NAME : TFC_DESTROY_PLAN_FILE_OUTPUT_NAME)
-            .build();
+  public String uploadJsonFile(String accountId, String delegateId, String taskId, String entityId, String fileName,
+      String content, FileBucket fileBucket) throws IOException {
+    final DelegateFile delegateFile = aDelegateFile()
+                                          .withAccountId(accountId)
+                                          .withDelegateId(delegateId)
+                                          .withTaskId(taskId)
+                                          .withEntityId(entityId)
+                                          .withBucket(fileBucket)
+                                          .withFileName(fileName)
+                                          .build();
 
     File file = Files.createTempFile("compressedTfPlan", ".gz").toFile();
     try (FileOutputStream output = new FileOutputStream(file);
@@ -299,5 +288,52 @@ public class TerraformCloudTaskHelper {
 
   public RunData getRun(String url, String token, String runId) throws IOException {
     return terraformCloudClient.getRun(url, token, runId).getData();
+  }
+
+  public void streamSentinelPolicies(
+      String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback) throws IOException {
+    if (policyCheckData.isEmpty()) {
+      logCallback.saveExecutionLog("No policy available", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } else {
+      boolean failed = false;
+      logCallback.saveExecutionLog("Policy checks...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
+      for (PolicyCheckData policyCheck : policyCheckData) {
+        String status = policyCheck.getAttributes().getStatus();
+        if (status.equals("hard_failed") || status.equals("soft_failed") || status.equals("advisory_failed")) {
+          failed = true;
+        }
+        String policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
+        Arrays.stream(policyCheckOutput.split("\n"))
+            .forEach(raw -> logCallback.saveExecutionLog(raw, LogLevel.INFO, CommandExecutionStatus.RUNNING));
+      }
+      logCallback.saveExecutionLog("Policy check finished", LogLevel.INFO,
+          failed ? CommandExecutionStatus.FAILURE : CommandExecutionStatus.SUCCESS);
+    }
+  }
+
+  public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) throws IOException {
+    int pageNumber = 1;
+    TerraformCloudResponse<List<PolicyCheckData>> response;
+    List<PolicyCheckData> policyCheckData = new ArrayList<>();
+    do {
+      response = terraformCloudClient.listPolicyChecks(url, token, runId, pageNumber);
+      policyCheckData.addAll(response.getData());
+      pageNumber++;
+    } while (response.getLinks().hasNonNull("next"));
+    return policyCheckData;
+  }
+
+  public void overridePolicy(String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback)
+      throws IOException {
+    for (PolicyCheckData policyCheck : policyCheckData) {
+      if (policyCheck.getAttributes().getActions().isOverridable()) {
+        String policyCheckId = policyCheck.getId();
+        logCallback.saveExecutionLog(
+            format("Overriding policy check: %s", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+        terraformCloudClient.overridePolicyChecks(url, token, policyCheckId);
+        logCallback.saveExecutionLog(
+            format("Policy check: %s is overridden", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+      }
+    }
   }
 }

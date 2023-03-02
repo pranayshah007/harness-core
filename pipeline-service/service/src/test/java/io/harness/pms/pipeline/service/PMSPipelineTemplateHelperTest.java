@@ -7,7 +7,6 @@
 
 package io.harness.pms.pipeline.service;
 
-import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
@@ -33,7 +32,6 @@ import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
@@ -120,12 +118,11 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
-        .thenThrow(new NGTemplateResolveExceptionV2(
-            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
+        .thenThrow(new InvalidRequestException("Exception in resolving template refs in given yaml."));
     assertThatThrownBy(()
                            -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(
                                ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE))
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
+        .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }
 

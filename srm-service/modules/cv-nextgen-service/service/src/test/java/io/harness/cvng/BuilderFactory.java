@@ -1406,7 +1406,6 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(ServiceLevelIndicatorType.LATENCY)
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(ServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
@@ -1423,7 +1422,6 @@ public class BuilderFactory {
 
   public RatioServiceLevelIndicatorBuilder ratioServiceLevelIndicatorBuilder() {
     return RatioServiceLevelIndicator.builder()
-        .type(ServiceLevelIndicatorType.LATENCY)
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
@@ -1436,7 +1434,6 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getThresholdServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(ServiceLevelIndicatorType.LATENCY)
         .healthSourceRef("healthSourceIdentifier")
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(ServiceLevelIndicatorSpec.builder()
@@ -1451,7 +1448,6 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getRatioServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
-        .type(ServiceLevelIndicatorType.LATENCY)
         .healthSourceRef("healthSourceIdentifier")
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(ServiceLevelIndicatorSpec.builder()

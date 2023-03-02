@@ -105,4 +105,6 @@ public class YAMLFieldNameConstants {
   public final String VALUES_PATHS = "valuesPaths";
   public final String PARAMS_PATHS = "paramsPaths";
   public final String PATCHES_PATHS = "patchesPaths";
+
+  public final String SERVICE_CONFIG = "serviceConfig";
 }

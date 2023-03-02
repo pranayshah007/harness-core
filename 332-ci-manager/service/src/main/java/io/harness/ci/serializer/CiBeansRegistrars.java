@@ -45,6 +45,7 @@ import io.harness.serializer.morphia.CIBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.YamlMorphiaRegistrar;
+import io.harness.ssca.SscaBeansRegistrar;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -108,6 +109,7 @@ public class CiBeansRegistrars {
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
       ImmutableList.<YamlSchemaRootClass>builder()
+          .addAll(SscaBeansRegistrar.yamlSchemaRegistrars)
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.INTEGRATION_STAGE)
                    .availableAtProjectLevel(true)

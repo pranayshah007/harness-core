@@ -32,6 +32,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -42,6 +43,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -487,6 +489,67 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(criteria);
   }
 
+  @Override
+  public List<Environment> fetchesNonDeletedEnvironmentFromListOfRefs(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefsList) {
+    List<Environment> entities = new ArrayList<>();
+    List<String> projectLevelIdentifiers = new ArrayList<>();
+    List<String> orgLevelIdentifiers = new ArrayList<>();
+    List<String> accountLevelIdentifiers = new ArrayList<>();
+
+    for (String envRef : envRefsList) {
+      if (isNotEmpty(envRef)) {
+        IdentifierRef identifierRef =
+            IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgIdentifier, projectIdentifier);
+
+        if (Scope.PROJECT.equals(identifierRef.getScope())) {
+          projectLevelIdentifiers.add(identifierRef.getIdentifier());
+        } else if (Scope.ORG.equals(identifierRef.getScope())) {
+          orgLevelIdentifiers.add(identifierRef.getIdentifier());
+        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
+          accountLevelIdentifiers.add(identifierRef.getIdentifier());
+        }
+      }
+    }
+
+    if (isNotEmpty(projectLevelIdentifiers)) {
+      Criteria projectCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                     .is(accountId)
+                                     .and(EnvironmentKeys.orgIdentifier)
+                                     .is(orgIdentifier)
+                                     .and(EnvironmentKeys.projectIdentifier)
+                                     .is(projectIdentifier)
+                                     .and(EnvironmentKeys.identifier)
+                                     .in(projectLevelIdentifiers);
+      entities.addAll(environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(projectCriteria));
+    }
+
+    if (isNotEmpty(orgLevelIdentifiers)) {
+      Criteria orgCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                 .is(accountId)
+                                 .and(EnvironmentKeys.orgIdentifier)
+                                 .is(orgIdentifier)
+                                 .and(EnvironmentKeys.projectIdentifier)
+                                 .is(null)
+                                 .and(EnvironmentKeys.identifier)
+                                 .in(orgLevelIdentifiers);
+      entities.addAll(environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(orgCriteria));
+    }
+
+    if (isNotEmpty(accountLevelIdentifiers)) {
+      Criteria accountCriteria = Criteria.where(EnvironmentKeys.accountId)
+                                     .is(accountId)
+                                     .and(EnvironmentKeys.orgIdentifier)
+                                     .is(null)
+                                     .and(EnvironmentKeys.projectIdentifier)
+                                     .is(null)
+                                     .and(EnvironmentKeys.identifier)
+                                     .in(accountLevelIdentifiers);
+      entities.addAll(environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountCriteria));
+    }
+    return entities;
+  }
+
   public String getScopedErrorMessageForInvalidEnvironments(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
     String errorMessage;
@@ -697,7 +760,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     for (String env : envRefs) {
       // org level entities need to have compatible ids. Eg. Stage level template will call with only org.Service type
       // refs
-      if (isNotEmpty(env)) {
+      if (isNotEmpty(env) && !EngineExpressionEvaluator.hasExpressions(env)) {
         IdentifierRef envIdentifierRef =
             IdentifierRefHelper.getIdentifierRef(env, accountId, orgIdentifier, projectIdentifier);
         Optional<Environment> environment =
@@ -710,7 +773,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                   envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier());
           List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
           for (String serviceRef : serviceRefs) {
-            if (isNotEmpty(serviceRef)) {
+            if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
               IdentifierRef serviceIdentifierRef =
                   IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
 

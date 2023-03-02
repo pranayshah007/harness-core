@@ -8,6 +8,7 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
@@ -98,9 +99,7 @@ public class VmPluginStepSerializer {
         envVars.put(key, SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
-    if (!isEmpty(pluginStepInfo.getEnvVariables())) {
-      envVars.putAll(pluginStepInfo.getEnvVariables());
-    }
+    envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);

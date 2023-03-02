@@ -95,6 +95,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
+  @Inject private boolean allowDifferentReposForPipelineAndInputSets;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -114,7 +115,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
       InputSetValidationHelper.checkForPipelineStoreType(pipelineEntityMetadata);
-      validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      if (allowDifferentReposForPipelineAndInputSets) {
+        validateInputSetSetting(inputSetEntity, pipelineEntityMetadata);
+      }
     }
 
     try {
@@ -141,9 +144,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
-      boolean hasNewYamlStructure, boolean loadFromFallbackBranch) {
-    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted, loadFromFallbackBranch);
+      boolean hasNewYamlStructure, boolean loadFromFallbackBranch, boolean loadFromCache) {
+    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, identifier, deleted, loadFromFallbackBranch, loadFromCache);
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
@@ -167,7 +170,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted,
-      boolean loadFromFallbackBranch) {
+      boolean loadFromFallbackBranch, boolean loadFromCache) {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
@@ -175,7 +178,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted);
       } else {
         optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, identifier, !deleted, false, loadFromFallbackBranch);
+            pipelineIdentifier, identifier, !deleted, false, loadFromFallbackBranch, loadFromCache);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
@@ -195,7 +198,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       optionalInputSetEntity = inputSetRepository.find(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          identifier, !deleted, getMetadata, loadFromFallbackBranch);
+          identifier, !deleted, getMetadata, loadFromFallbackBranch, false);
 
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
@@ -238,7 +241,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     }
     Optional<InputSetEntity> optionalOriginalEntity = getWithoutValidations(inputSetEntity.getAccountId(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-        inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, false);
+        inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false, false, false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
@@ -274,7 +277,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String inputSetId = StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier());
     Optional<InputSetEntity> optionalInputSetEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
-      optionalInputSetEntity = getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId, false, false);
+      optionalInputSetEntity =
+          getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId, false, false, false);
     }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -314,7 +318,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public boolean markGitSyncedInputSetInvalid(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, String invalidYaml) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, false);
     if (!optionalInputSetEntity.isPresent()) {
       log.warn(String.format(
           "Marking input set [%s] as invalid failed as it does not exist or has been deleted", identifier));
@@ -372,7 +376,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   private boolean deleteForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, Long version) {
     Optional<InputSetEntity> optionalOriginalEntity = getWithoutValidations(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.", identifier,
@@ -501,8 +505,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
-    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
-        projectIdentifier, inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false, false);
+    Optional<InputSetEntity> optionalInputSetEntity =
+        getWithoutValidations(accountIdentifier, orgIdentifier, projectIdentifier,
+            inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false, false, false);
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));

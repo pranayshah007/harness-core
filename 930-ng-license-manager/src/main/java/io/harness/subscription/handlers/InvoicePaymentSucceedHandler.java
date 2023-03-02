@@ -31,7 +31,6 @@ import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentIntent;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +46,6 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private static final String MAU_SUPPORT_TYPE = "MAU_SUPPORT";
   private static final String DEVELOPERS_SUPPORT_TYPE = "DEVELOPERS_SUPPORT";
   private static final String STRIPE_QUANTITY_KEY = "max";
-  private static final String STRIPE_MODULE_TYPE_KEY = "module";
 
   @Inject
   public InvoicePaymentSucceedHandler(LicenseService licenseService,
@@ -69,45 +67,27 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
     String id = invoice.getSubscription();
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(id);
     String accountIdentifier = subscriptionDetail.getAccountIdentifier();
+    ModuleType moduleType = subscriptionDetail.getModuleType();
+    log.info(
+        "synchronizing invoice {} under subscription {}, going to update license under account {} and moduleType {}",
+        invoice.getId(), id, accountIdentifier, moduleType.name());
 
-    List<ModuleType> moduleTypes = getModuleTypes(invoice);
+    ModuleLicense existingLicense =
+        licenseService.getCurrentLicense(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getModuleType());
 
-    moduleTypes.forEach((ModuleType moduleType) -> {
-      log.info(
-          "synchronizing invoice {} under subscription {}, going to update license under account {} and moduleType {}",
-          invoice.getId(), id, accountIdentifier, moduleType);
-
-      ModuleLicense existingLicense =
-          licenseService.getCurrentLicense(subscriptionDetail.getAccountIdentifier(), moduleType);
-
-      if (existingLicense == null) {
-        ModuleLicense newLicense = generateLicense(invoice, moduleType, accountIdentifier);
-        licenseService.createModuleLicense(newLicense);
-      } else {
-        log.info("Updating existing license {} via strip sync", existingLicense.getId());
-        ModuleLicense updateLicense = generateLicense(invoice, moduleType, accountIdentifier);
-        updateLicense.setId(existingLicense.getId());
-        licenseService.updateModuleLicense(updateLicense);
-      }
-    });
-
+    if (existingLicense == null) {
+      // new subscription, create license
+      ModuleLicense newLicense = generateLicense(invoice, moduleType, accountIdentifier);
+      licenseService.createModuleLicense(newLicense);
+    } else {
+      log.info("Updating existing license {} via strip sync", existingLicense.getId());
+      // existing subscription, update license
+      ModuleLicense updateLicense = generateLicense(invoice, moduleType, accountIdentifier);
+      updateLicense.setId(existingLicense.getId());
+      licenseService.updateModuleLicense(updateLicense);
+    }
     subscriptionDetail.setStatus(SubscriptionStatus.ACTIVE.toString());
     subscriptionDetailRepository.save(subscriptionDetail);
-  }
-
-  private String getModuleType(InvoiceLineItem invoiceLineItem) {
-    return invoiceLineItem.getPrice().getMetadata().get(STRIPE_MODULE_TYPE_KEY);
-  }
-
-  private List<ModuleType> getModuleTypes(Invoice invoice) {
-    List<ModuleType> moduleTypes = new ArrayList<>();
-    invoice.getLines().getData().stream().forEach((InvoiceLineItem invoiceLineItem) -> {
-      String moduleType = getModuleType(invoiceLineItem);
-      if (moduleType != null && moduleTypes.stream().noneMatch(m -> m.name().equals(moduleType))) {
-        moduleTypes.add(ModuleType.fromString(moduleType));
-      }
-    });
-    return moduleTypes;
   }
 
   private void updatePaymentIntentForFirstPayment(Invoice invoice) {

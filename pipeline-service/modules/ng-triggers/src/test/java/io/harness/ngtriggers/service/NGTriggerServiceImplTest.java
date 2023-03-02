@@ -630,11 +630,9 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     JsonNode inputYaml = innerMap.get("inputYaml");
     JsonNode pipelineNode = YamlUtils.readTree(inputYaml.asText()).getNode().getCurrJsonNode();
     String triggerPipelineYaml = YamlUtils.write(pipelineNode).replace("---\n", "");
-    when(pmsFeatureFlagService.isEnabled(ACCOUNT_ID, FeatureName.SPG_VALIDATE_PIPELINE_RUNTIME_INPUT_FOR_TRIGGER))
-        .thenReturn(true);
 
     assertThat(ngTriggerServiceImpl.getInvalidFQNsInTrigger(templateYaml, triggerPipelineYaml, ACCOUNT_ID).size())
-        .isEqualTo(3);
+        .isEqualTo(0);
 
     String triggerExtraInputFileName = "ng-trigger-extra-input.yaml";
     node = YamlUtils

@@ -27,7 +27,6 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
-import com.google.common.collect.Lists;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,7 +124,7 @@ public class UserGroupDaoImplTest extends AccessControlCoreTestBase {
     String scopeIdentifier = randomAlphabetic(10);
     UserGroupDBO userGroupDBO = UserGroupDBO.builder().build();
     when(userGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-        .thenReturn(Lists.newArrayList(userGroupDBO));
+        .thenReturn(Optional.of(userGroupDBO));
     assertEquals(Optional.of(UserGroup.builder().build()), userGroupDao.delete(identifier, scopeIdentifier));
     verify(userGroupRepository, times(1)).deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
   }

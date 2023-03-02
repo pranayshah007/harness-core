@@ -229,6 +229,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .cacheGCSConfig(StepImageConfig.builder().image("cachegcs:1.2.3").build())
             .cacheS3Config(StepImageConfig.builder().image("caches3:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
+            .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 

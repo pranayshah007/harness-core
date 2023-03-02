@@ -69,6 +69,8 @@ public class GitEntityInfo {
         .rootFolder(folderPath)
         .filePath(filePath)
         .repoName(repoName)
+        .parentEntityConnectorRef(parentEntityConnectorRef)
+        .parentEntityRepoName(parentEntityRepoName)
         .build();
   }
 }

@@ -51,6 +51,7 @@ import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
@@ -644,7 +645,8 @@ public class EnvironmentResourceV2 {
     if (isNotEmpty(environmentYamlMetadata.getEnvIdentifiers())) {
       envIdentifiers.addAll(environmentYamlMetadata.getEnvIdentifiers());
     }
-    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())) {
+    if (isNotEmpty(environmentYamlMetadata.getEnvGroupIdentifier())
+        && !EngineExpressionEvaluator.hasExpressions(environmentYamlMetadata.getEnvGroupIdentifier())) {
       Optional<EnvironmentGroupEntity> environmentGroupEntity = environmentGroupService.get(
           accountId, orgIdentifier, projectIdentifier, environmentYamlMetadata.getEnvGroupIdentifier(), false);
       environmentGroupEntity.ifPresent(groupEntity -> envIdentifiers.addAll(groupEntity.getEnvIdentifiers()));

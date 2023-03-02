@@ -32,6 +32,7 @@ import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDa
 import io.harness.batch.processing.billing.writer.support.BillingDataGenerationValidator;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.CEClusterDao;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
@@ -52,6 +53,7 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.ff.FeatureFlagService;
 
@@ -100,6 +102,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private ClusterRecordService eventsClusterRecordService;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private CEClusterDao ceClusterDao;
 
   private static final String CLAIM_REF_SEPARATOR = "/";
   private int batchSize;
@@ -172,6 +175,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     List<ClusterRecord> clusterRecords = cloudToHarnessMappingService.listCeEnabledClusters(accountId);
     List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
         eventsClusterRecordService.getByAccountId(accountId);
+    List<CECluster> ceClusterList = ceClusterDao.getCECluster(accountId);
     Set<String> clusterIds = new HashSet<>();
 
     for (ClusterRecord clusterRecord : clusterRecords) {
@@ -186,6 +190,13 @@ public class InstanceBillingDataTasklet implements Tasklet {
         clusterIds.add(eventsClusterRecord.getUuid());
       }
     }
+
+    for (CECluster ceCluster : ceClusterList) {
+      if (billingDataGenerationValidator.shouldGenerateBillingData(accountId, ceCluster.getUuid(), startTime)) {
+        clusterIds.add(ceCluster.getUuid());
+      }
+    }
+
     log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
     return clusterIds;
   }

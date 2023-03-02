@@ -259,7 +259,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    ruleSetManagement.updateRule(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
+    ruleSetManagement.updateRuleSet(ACCOUNT_ID, CreateRuleSetDTO.builder().ruleSet(ruleSet).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetUpdateEventArgumentCaptor.capture());
     RuleSetUpdateEvent rulesSetUpdateEvent = rulesSetUpdateEventArgumentCaptor.getValue();

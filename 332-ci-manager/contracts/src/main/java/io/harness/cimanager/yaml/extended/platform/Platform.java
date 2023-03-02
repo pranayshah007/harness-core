@@ -39,4 +39,5 @@ public class Platform {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.ArchType")
   private ParameterField<ArchType> arch;
+  @ApiModelProperty(hidden = true) String uuid;
 }
