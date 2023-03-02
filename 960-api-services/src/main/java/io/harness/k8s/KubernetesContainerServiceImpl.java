@@ -182,6 +182,7 @@ import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.Watch;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -2356,7 +2357,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private Retry buildRetryAndRegisterListeners() {
     final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
         new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketException.class});
+            StreamResetException.class, SocketException.class, EOFException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

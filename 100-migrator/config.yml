@@ -700,6 +700,20 @@ cg:
     topic: "delegate-service"
     enableQueueAndDequeue: false
 
+redisDelegateConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+
+
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090
 

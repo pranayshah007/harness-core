@@ -83,8 +83,6 @@ java_library(
         "//960-api-services/src/main/java/io/harness/googlefunctions:module",
         "//960-api-services/src/main/java/io/harness/googlefunctions/command:module",
         "//960-api-services/src/main/java/io/harness/helm:module",
-        "//960-api-services/src/main/java/io/harness/http:module",
-        "//960-api-services/src/main/java/io/harness/http/beans:module",
         "//960-api-services/src/main/java/io/harness/jira:module",
         "//960-api-services/src/main/java/io/harness/k8s:module",
         "//960-api-services/src/main/java/io/harness/k8s/apiclient:module",

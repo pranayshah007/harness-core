@@ -122,6 +122,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
+import io.harness.tasks.FailureResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -219,11 +220,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     AsyncExecutableResponse.Builder responseBuilder =
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
@@ -231,6 +228,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    } else {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
 
     return responseBuilder.build();
@@ -312,22 +315,28 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
     responseData = serializedResponseDataHelper.deserialize(responseData);
-
-    if (responseData instanceof ErrorNotifyResponseData) {
-      String errorMsg = "";
-      if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
-          == Infrastructure.Type.KUBERNETES_DIRECT) {
-        errorMsg = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-            new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+    if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
+      String message;
+      if (responseData instanceof ErrorNotifyResponseData) {
+        if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
+            == Infrastructure.Type.KUBERNETES_DIRECT) {
+          message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+              new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        } else {
+          message = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+        }
+      } else if (responseData instanceof FailureResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
       } else {
-        errorMsg = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+        throw new CIStageExecutionException("Unexpected response received while process CI execution");
       }
 
       FailureData failureData = FailureData.newBuilder()
                                     .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                     .setLevel(Level.ERROR.name())
                                     .setCode(GENERAL_ERROR.name())
-                                    .setMessage(errorMsg)
+                                    .setMessage(message)
                                     .build();
 
       return StepResponse.builder()

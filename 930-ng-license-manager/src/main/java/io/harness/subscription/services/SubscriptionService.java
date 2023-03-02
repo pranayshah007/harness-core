@@ -20,6 +20,7 @@ import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
+import java.util.List;
 
 public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
@@ -30,10 +31,11 @@ public interface SubscriptionService {
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
-  void cancelSubscription(String accountIdentifier, String subscriptionId, ModuleType moduleType);
+  void cancelSubscription(String accountIdentifier, String subscriptionId);
   void cancelAllSubscriptions(String accountIdentifier);
-  SubscriptionDetailDTO getSubscription(String accountIdentifier);
+  SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
   boolean checkSubscriptionExists(String subscriptionId);
+  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);

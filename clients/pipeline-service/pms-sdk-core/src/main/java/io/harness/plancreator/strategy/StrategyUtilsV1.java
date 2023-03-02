@@ -31,17 +31,12 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class StrategyUtilsV1 {
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
-    YamlField strategyField =
-        yamlField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
   }
 
   public String getSwappedPlanNodeId(PlanCreationContext ctx, String originalPlanNodeId) {
-    YamlField strategyField = ctx.getCurrentField()
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.SPEC)
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.STRATEGY);
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
     // we are swapping the uuid of stage and strategy node.
     String planNodeId = originalPlanNodeId;
@@ -52,11 +47,7 @@ public class StrategyUtilsV1 {
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, String originalIdentifier) {
-    YamlField strategyField = ctx.getCurrentField()
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.SPEC)
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.STRATEGY);
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
     // we are appending an expression that will be resolved during execution
     String identifier = originalIdentifier;
@@ -69,11 +60,7 @@ public class StrategyUtilsV1 {
   public Map<String, GraphLayoutNode> modifyStageLayoutNodeGraph(YamlField yamlField, String nextNodeUuid) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     EdgeLayoutList edgeLayoutList;
-    YamlNode strategyNode = yamlField.getNode()
-                                .getField(YAMLFieldNameConstants.SPEC)
-                                .getNode()
-                                .getField(YAMLFieldNameConstants.STRATEGY)
-                                .getNode();
+    YamlNode strategyNode = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode();
     String planNodeId = strategyNode.getProperty(YamlNode.UUID_FIELD_NAME);
     if (nextNodeUuid == null) {
       edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
@@ -118,11 +105,7 @@ public class StrategyUtilsV1 {
   public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
       String fieldUuid, Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap,
       List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
-    YamlField strategyField = ctx.getCurrentField()
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.SPEC)
-                                  .getNode()
-                                  .getField(YAMLFieldNameConstants.STRATEGY);
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
 
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);

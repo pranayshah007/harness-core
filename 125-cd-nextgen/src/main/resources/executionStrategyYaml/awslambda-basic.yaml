@@ -13,3 +13,10 @@ spec:
           type: AwsLambdaDeploy
           timeout: 10m
           spec: {}
+    rollbackSteps:
+      - step:
+          name: Aws Lambda rollback
+          identifier: awslambdarollback
+          type: AwsLambdaRollback
+          timeout: 10m
+          spec: {}

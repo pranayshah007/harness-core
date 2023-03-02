@@ -12,6 +12,7 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -89,10 +90,13 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     TerraformApplyStepParameters stepParametersSpec = (TerraformApplyStepParameters) stepParameters.getSpec();
 
-    if (stepParametersSpec.getConfiguration().getType() == TerraformStepConfigurationType.INLINE) {
-      // Config Files connector
-      String connectorRef =
-          stepParametersSpec.configuration.spec.configFiles.store.getSpec().getConnectorReference().getValue();
+    if (stepParametersSpec.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
+      String connectorRef = stepParametersSpec.getConfiguration()
+                                .getSpec()
+                                .configFiles.store.getSpec()
+                                .getConnectorReference()
+                                .getValue();
       IdentifierRef identifierRef =
           IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
       EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
@@ -120,30 +124,42 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     TerraformApplyStepParameters stepParameters = (TerraformApplyStepParameters) stepElementParameters.getSpec();
     log.info("Starting execution Obtain Task after Rbac for the Apply Step");
     helper.validateApplyStepParamsInline(stepParameters);
-    TerraformStepConfigurationType configurationType = stepParameters.getConfiguration().getType();
-    switch (configurationType) {
-      case INLINE:
-        return obtainInlineTask(ambiance, stepParameters, stepElementParameters);
-      case INHERIT_FROM_PLAN:
-        return obtainInheritedTask(ambiance, stepParameters, stepElementParameters);
-      default:
-        throw new InvalidRequestException(
-            String.format("Unknown configuration Type: [%s]", configurationType.getDisplayName()));
+
+    if (stepParameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
+      return obtainInlineTask(ambiance, stepParameters, stepElementParameters);
+    } else if (stepParameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
+      return obtainInheritedTask(ambiance, stepParameters, stepElementParameters);
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Unknown configuration Type: [%s]", stepParameters.getConfiguration().getType().getDisplayName()));
     }
   }
 
   private TaskRequest obtainInlineTask(
       Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepElementParameters stepElementParameters) {
     log.info("Obtaining Inline Task for the Apply Step");
+    boolean isTerraformCloudCli = stepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
+
+    if (isTerraformCloudCli) {
+      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
+      helper.checkIfDelegateSupportsCloudCli(ambiance);
+    }
+
     helper.validateApplyStepConfigFilesInline(stepParameters);
-    TerraformStepConfigurationParameters configuration = stepParameters.getConfiguration();
-    TerraformExecutionDataParameters spec = configuration.getSpec();
+    TerraformExecutionDataParameters spec = stepParameters.getConfiguration().getSpec();
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     builder.accountId(accountId);
     String provisionerIdentifier =
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    if (!isTerraformCloudCli) {
+      builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.currentStateFileId(helper.getLatestFileId(entityId))
             .taskType(TFTaskType.APPLY)
@@ -151,8 +167,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .terraformCommandUnit(TerraformCommandUnit.Apply)
             .entityId(entityId)
             .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-                configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
-            .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
+                stepParameters.getConfiguration().getSpec().getConfigFiles(), stepElementParameters.getType()))
             .configFile(helper.getGitFetchFilesConfig(
                 spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
@@ -169,6 +184,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 
     TaskData taskData =
@@ -243,15 +259,16 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
       throws Exception {
     log.info("Handling Task Result With Security Context for the Apply Step");
     TerraformApplyStepParameters stepParameters = (TerraformApplyStepParameters) stepElementParameters.getSpec();
-    TerraformStepConfigurationType configurationType = stepParameters.getConfiguration().getType();
-    switch (configurationType) {
-      case INLINE:
-        return handleTaskResultInline(ambiance, stepParameters, responseSupplier);
-      case INHERIT_FROM_PLAN:
-        return handleTaskResultInherited(ambiance, stepParameters, responseSupplier);
-      default:
-        throw new InvalidRequestException(
-            String.format("Unknown configuration Type: [%s]", configurationType.getDisplayName()));
+
+    if (stepParameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
+      return handleTaskResultInline(ambiance, stepParameters, responseSupplier);
+    } else if (stepParameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
+      return handleTaskResultInherited(ambiance, stepParameters, responseSupplier);
+    } else {
+      throw new InvalidRequestException(String.format(
+          "Unknown configuration Type: [%s]", stepParameters.getConfiguration().getType().getDisplayName()));
     }
   }
 

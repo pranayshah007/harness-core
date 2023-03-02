@@ -21,9 +21,24 @@ import lombok.NonNull;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters")
-public class TerraformStepConfigurationParameters {
+public class TerraformStepConfigurationParameters implements TerraformStepConfigurationInterface {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 
   @NonNull TerraformStepConfigurationType type;
   TerraformExecutionDataParameters spec;
+
+  @Override
+  public TerraformStepConfigurationEnumInterface getType() {
+    return type;
+  }
+
+  @Override
+  public void setType(TerraformStepConfigurationEnumInterface terraformStepConfigurationType) {
+    this.type = (TerraformStepConfigurationType) terraformStepConfigurationType;
+  }
+
+  @Override
+  public TerraformExecutionDataParameters getSpec() {
+    return spec;
+  }
 }

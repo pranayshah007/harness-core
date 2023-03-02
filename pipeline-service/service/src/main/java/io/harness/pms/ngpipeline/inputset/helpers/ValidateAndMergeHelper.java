@@ -129,9 +129,9 @@ public class ValidateAndMergeHelper {
   }
 
   public InputSetTemplateResponseDTOPMS getInputSetTemplateResponseDTO(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, List<String> stageIdentifiers) {
+      String projectIdentifier, String pipelineIdentifier, List<String> stageIdentifiers, boolean loadFromCache) {
     Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false, loadFromCache);
     if (optionalPipelineEntity.isPresent()) {
       String template;
       List<String> replacedExpressions = null;
@@ -233,6 +233,7 @@ public class ValidateAndMergeHelper {
     Set<String> inputSetVersions = new HashSet<>();
     GitSyncBranchContext branchContext = setupGitContext(accountId, orgIdentifier, projectIdentifier, pipelineBranch);
     PipelineEntity pipelineEntity;
+    PipelineGitXHelper.setupGitParentEntityDetails(accountId, orgIdentifier, projectIdentifier, null, null);
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
       pipelineEntity = getPipelineEntity(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
@@ -259,7 +260,7 @@ public class ValidateAndMergeHelper {
     if (inputSetReferences != null) {
       inputSetReferences.forEach(identifier -> {
         Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false);
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false, false, false);
         if (entity.isEmpty()) {
           return;
         }
@@ -272,7 +273,7 @@ public class ValidateAndMergeHelper {
           List<String> overlayReferences = inputSet.getInputSetReferences();
           overlayReferences.forEach(id -> {
             Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
-                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false);
+                accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false, false, false);
             entity2.ifPresent(inputSetEntity -> {
               checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
               inputSetYamlList.add(inputSetEntity.getYaml());

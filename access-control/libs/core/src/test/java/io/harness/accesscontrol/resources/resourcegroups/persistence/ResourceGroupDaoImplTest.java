@@ -13,7 +13,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rule.OwnerRule.KARAN;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -252,7 +251,7 @@ public class ResourceGroupDaoImplTest {
     managedFilters.forEach(managedFilter -> {
       when(resourceGroupRepository.deleteByIdentifierAndScopeIdentifier(
                resourceGroup.getIdentifier(), resourceGroup.getScopeIdentifier()))
-          .thenReturn(singletonList(resourceGroupDBO));
+          .thenReturn(Optional.of(resourceGroupDBO));
       Optional<ResourceGroup> resourceGroupOptional =
           resourceGroupDao.delete(resourceGroup.getIdentifier(), resourceGroup.getScopeIdentifier());
       assertTrue(resourceGroupOptional.isPresent());
@@ -269,7 +268,7 @@ public class ResourceGroupDaoImplTest {
     List<Boolean> managedFilters = Lists.newArrayList(false, true);
     managedFilters.forEach(managedFilter -> {
       when(resourceGroupRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-          .thenReturn(emptyList());
+          .thenReturn(Optional.empty());
       Optional<ResourceGroup> resourceGroupOptional = resourceGroupDao.delete(identifier, scopeIdentifier);
       assertFalse(resourceGroupOptional.isPresent());
     });

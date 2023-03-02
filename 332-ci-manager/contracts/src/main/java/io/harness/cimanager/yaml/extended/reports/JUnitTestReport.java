@@ -33,4 +33,5 @@ public class JUnitTestReport implements UnitTestReportSpec {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   ParameterField<List<String>> paths;
+  @ApiModelProperty(hidden = true) String uuid;
 }

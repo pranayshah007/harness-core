@@ -18,7 +18,6 @@ function get_PR_Modules(){
   PR_MODULES=()
   PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
   check_cmd_status "$?" "Failed to get modules from commits."
-
   echo "List of targets modules for your PR."
   echo "${PR_MODULES[@]}"
 }
@@ -60,7 +59,15 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  get_PR_Modules
+  if [[ "${BULD_PURPOSE}" == "PR_CHECKS" ]];then
+    get_PR_Modules
+  else
+    GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
+    PR_MODULES=()
+    PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+    echo "By default target branch is develop but if your target branch is something different then you can change the target branch in line no 65 and 90 to run it in local"
+  fi
+
   TARGETS=()
   for module in "${PR_MODULES[@]}"
   do
@@ -77,7 +84,14 @@ if [ "${RUN_CHECKS}" == "true" ]; then
 fi
 
 if [ "${RUN_PMDS}" == "true" ]; then
-  get_PR_Modules
+   if [[ ""${BULD_PURPOSE}"" == "PR_CHECKS" ]];then
+      get_PR_Modules
+    else
+      GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
+      PR_MODULES=()
+      PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+      echo "By default target branch is develop but if your target branch is something different then you can change the target branch in line no 65 and 90 to run it in local"
+    fi
   TARGETS=()
   for module in "${PR_MODULES[@]}"
   do

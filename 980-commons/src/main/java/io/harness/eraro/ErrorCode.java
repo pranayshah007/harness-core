@@ -12,7 +12,6 @@ import static io.harness.eraro.Status.CONFLICT;
 import static io.harness.eraro.Status.EXPECTATION_FAILED;
 import static io.harness.eraro.Status.FORBIDDEN;
 import static io.harness.eraro.Status.GATEWAY_TIMEOUT;
-import static io.harness.eraro.Status.INTERNAL_SERVER_ERROR;
 import static io.harness.eraro.Status.MOVED_PERMANENTLY;
 import static io.harness.eraro.Status.NOT_FOUND;
 import static io.harness.eraro.Status.SERVICE_UNAVAILABLE;
@@ -131,7 +130,7 @@ public enum ErrorCode {
 
   UNEXPECTED,
 
-  UNKNOWN_ERROR(INTERNAL_SERVER_ERROR),
+  UNKNOWN_ERROR(Status.INTERNAL_SERVER_ERROR),
 
   UNKNOWN_EXECUTOR_TYPE_ERROR,
 
@@ -624,7 +623,7 @@ public enum ErrorCode {
   AWS_TAG_ERROR,
   AWS_ASG_ERROR,
   AWS_LOAD_BALANCER_ERROR,
-  SCM_INTERNAL_SERVER_ERROR_V2(INTERNAL_SERVER_ERROR),
+  SCM_INTERNAL_SERVER_ERROR_V2(Status.INTERNAL_SERVER_ERROR),
 
   SCM_UNAUTHORIZED_ERROR_V2,
   TOO_MANY_REQUESTS,
@@ -663,7 +662,8 @@ public enum ErrorCode {
   ADFS_ERROR,
   TERRAFORM_CLOUD_ERROR,
   CLUSTER_CREDENTIALS_NOT_FOUND,
-  SCM_API_ERROR;
+  SCM_API_ERROR,
+  INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR);
 
   private Status status = BAD_REQUEST;
   private String description;

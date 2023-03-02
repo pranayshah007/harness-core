@@ -33,4 +33,6 @@ public interface GitCommitRepository extends CrudRepository<GitCommit, String> {
       String accountIdentifier, String repoURL, String branchName, String gitSyncDirection);
 
   List<GitCommit> findAllByAccountIdentifier(String accountIdentifier);
+
+  long deleteAllByAccountIdentifier(String accountIdentifier);
 }

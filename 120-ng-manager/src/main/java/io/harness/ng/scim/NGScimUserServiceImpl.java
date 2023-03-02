@@ -28,7 +28,6 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -274,8 +273,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       String updatedEmail = getPrimaryEmail(scimUser);
 
-      if (CGRestUtils.getResponse(
-              accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
+      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
           && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
@@ -348,8 +346,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
     }
 
-    if (CGRestUtils.getResponse(
-            accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
+    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
         && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !userMetadataDTO.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       String updatedEmail = patchOperation.getValue(String.class).toLowerCase();

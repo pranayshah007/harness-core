@@ -9,12 +9,16 @@ package io.harness.idp.gitintegration.factory;
 
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
+import io.harness.idp.gitintegration.implementation.BitbucketConnectorProcessor;
 import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.implementation.GitlabConnectorProcessor;
 
 import javax.inject.Inject;
 
 public class ConnectorProcessorFactory {
   @Inject GithubConnectorProcessor githubConnectorProcessor;
+  @Inject GitlabConnectorProcessor gitlabConnectorProcessor;
+  @Inject BitbucketConnectorProcessor bitbucketConnectorProcessor;
 
   public ConnectorProcessor getConnectorProcessor(ConnectorType connectorType) {
     if (connectorType == null) {
@@ -24,6 +28,10 @@ public class ConnectorProcessorFactory {
     switch (connectorType) {
       case GITHUB:
         return githubConnectorProcessor;
+      case GITLAB:
+        return gitlabConnectorProcessor;
+      case BITBUCKET:
+        return bitbucketConnectorProcessor;
       default:
         throw new UnsupportedOperationException("Invalid Connector type for git integrations");
     }

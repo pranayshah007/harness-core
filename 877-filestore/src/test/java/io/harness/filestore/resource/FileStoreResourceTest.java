@@ -180,7 +180,7 @@ public class FileStoreResourceTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testCreateFileWith128CharsIdentifier() {
-    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    String identifier = RandomStringUtils.random(128, true, false);
     final FileDTO createRequest = FileDTO.builder()
                                       .parentIdentifier("Root")
                                       .identifier(identifier)

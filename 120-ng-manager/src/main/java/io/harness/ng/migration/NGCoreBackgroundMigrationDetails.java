@@ -11,6 +11,7 @@ import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.CopyTemplatesPermissionRoleUpdate;
+import io.harness.ng.core.migration.CreateDefaultGcpKmsSMInNGMigration;
 import io.harness.ng.core.migration.NGWebhookMendateSettingsCategoryUpdateMigration;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
@@ -47,6 +48,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(7, DeleteSoftDeletedConnectorsMigration.class))
         .add(Pair.of(8, PopulateYamlAuthFieldInNGJiraConnectorMigration.class))
         .add(Pair.of(9, UserMetadataTwoFactorAuthenticationMigration.class))
+        .add(Pair.of(10, CreateDefaultGcpKmsSMInNGMigration.class))
         .build();
   }
 }

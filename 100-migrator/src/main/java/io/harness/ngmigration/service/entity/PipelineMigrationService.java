@@ -352,7 +352,8 @@ public class PipelineMigrationService extends NgMigrationService {
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
-    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId));
+    templateLinkConfig.setTemplateInputs(
+        migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());

@@ -14,7 +14,6 @@ import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -24,7 +23,7 @@ import software.wings.sm.states.pcf.PcfRollbackState;
 
 import java.util.Map;
 
-public class PcfRollbackStepMapperImpl extends StepMapper {
+public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;

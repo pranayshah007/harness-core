@@ -9,6 +9,7 @@ package io.harness.idp.secret.resources;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.secret.mappers.EnvironmentSecretMapper;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
@@ -38,7 +39,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       secret = environmentSecretService.saveAndSyncK8sSecret(body.getSecret(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not create environment secret", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
     secretResponse.setSecret(secret);
@@ -54,7 +57,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       responseSecrets = environmentSecretService.saveAndSyncK8sSecrets(requestSecrets, harnessAccount);
     } catch (Exception e) {
       log.error("Could not create all environment secrets", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     return Response.status(Response.Status.CREATED)
         .entity(EnvironmentSecretMapper.toResponseList(responseSecrets))
@@ -67,7 +72,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       environmentSecretService.delete(secretIdentifier, harnessAccount);
     } catch (Exception e) {
       log.error("Could not delete environment secret for id {}", secretIdentifier, e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -78,7 +85,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       environmentSecretService.deleteMulti(environmentSecrets, accountIdentifier);
     } catch (Exception e) {
       log.error("Could not delete all environment secrets [{}]", environmentSecrets, e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -111,7 +120,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       secret = environmentSecretService.updateAndSyncK8sSecret(body.getSecret(), harnessAccount);
     } catch (Exception e) {
       log.error("Could not update environment secret for id {}", secretIdentifier, e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     EnvironmentSecretResponse secretResponse = new EnvironmentSecretResponse();
     secretResponse.setSecret(secret);
@@ -127,7 +138,9 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
       responseSecrets = environmentSecretService.updateAndSyncK8sSecrets(requestSecrets, accountIdentifier);
     } catch (Exception e) {
       log.error("Could not create all environment secrets", e);
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
     return Response.status(Response.Status.CREATED)
         .entity(EnvironmentSecretMapper.toResponseList(responseSecrets))

@@ -29,7 +29,7 @@ import io.harness.ccm.CENGGraphQLModule;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.bigQuery.BigQueryService;
-import io.harness.ccm.billing.bigquery.BigQueryServiceImpl;
+import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
 import io.harness.ccm.clickHouse.ClickHouseService;

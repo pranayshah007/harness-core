@@ -9,7 +9,9 @@ package io.harness.delegate.http;
 
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.http.HttpStepResponse;
@@ -18,6 +20,7 @@ import io.harness.http.HttpHeaderConfig;
 import io.harness.http.HttpService;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
+import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -29,6 +32,7 @@ import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 public class HttpTaskNG extends AbstractDelegateRunnableTask {
+  public static final String COMMAND_UNIT = "Execute";
   @Inject private HttpService httpService;
 
   public HttpTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
@@ -45,6 +49,12 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
   public HttpStepResponse run(TaskParameters parameters) throws IOException {
     HttpTaskParametersNg httpTaskParametersNg = (HttpTaskParametersNg) parameters;
     // Todo: Need to look into useProxy and isCertValidationRequired Field.
+
+    final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    // log stream opened already
+    final LogCallback executionLogCallback =
+        new NGDelegateLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, false, commandUnitsProgress);
+
     HttpInternalResponse httpInternalResponse =
         httpService.executeUrl(HttpInternalConfig.builder()
                                    .method(httpTaskParametersNg.getMethod())
@@ -59,7 +69,8 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
                                    .useProxy(true)
                                    .isCertValidationRequired(false)
                                    .throwErrorIfNoProxySetWithDelegateProxy(false)
-                                   .build());
+                                   .build(),
+            executionLogCallback);
     return HttpStepResponse.builder()
         .commandExecutionStatus(httpInternalResponse.getCommandExecutionStatus())
         .errorMessage(httpInternalResponse.getErrorMessage())
