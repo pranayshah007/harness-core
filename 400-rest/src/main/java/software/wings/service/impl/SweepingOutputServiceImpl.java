@@ -74,7 +74,10 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
           sweepingOutputInstance.getPhaseExecutionId(), sweepingOutputInstance.getWorkflowExecutionIds().toString(),
           sweepingOutputInstance.getPipelineExecutionId(), sweepingOutputInstance.getStateExecutionId());
       throw new InvalidRequestException(
-          format("Output with name %s, already saved in the context", sweepingOutputInstance.getName()), exception);
+          format(
+              "Output with name %s, already saved in the context. Please ensure that there are no duplicate output variable names within the workflow/pipeline scope.",
+              sweepingOutputInstance.getName()),
+          exception);
     }
   }
 
