@@ -19,6 +19,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -334,6 +335,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testToGitOpsOutcomeForServiceOverrides() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
@@ -356,6 +358,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testToGitOpsOutcomeForEnvrionmentOveride() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
@@ -377,6 +380,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.MEENA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testMultipleEnvsToOneCluster() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal env1 = GitopsClustersStep.IndividualClusterInternal.builder()
