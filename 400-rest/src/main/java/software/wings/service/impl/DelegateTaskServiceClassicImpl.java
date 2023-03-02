@@ -2008,7 +2008,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (delegate.isImmutable() && reasonOfDisconnection.equals("RESTARTED")) {
       errorSubMsg = "restarted while executing the task";
     }
-    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] "+ errorSubMsg;
+    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] " + errorSubMsg;
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)
