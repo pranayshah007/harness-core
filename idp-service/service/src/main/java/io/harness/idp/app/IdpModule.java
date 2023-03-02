@@ -15,8 +15,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.events.EventsFrameworkModule;
-import io.harness.http.HttpService;
-import io.harness.http.HttpServiceImpl;
 import io.harness.idp.config.resource.ConfigManagerResource;
 import io.harness.idp.config.resources.ConfigManagerResourceImpl;
 import io.harness.idp.config.service.AppConfigService;
@@ -33,7 +31,6 @@ import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
-import io.harness.idp.secret.eventlisteners.SecretCrudListener;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -197,7 +194,6 @@ public class IdpModule extends AbstractModule {
     bind(NamespaceApi.class).to(NamespaceApiImpl.class);
     bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
     bind(ProvisionApi.class).to(ProvisionApiImpl.class);
-    bind(HttpService.class).to(HttpServiceImpl.class);
     bind(ProvisionService.class).to(ProvisionServiceImpl.class);
   }
 

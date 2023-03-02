@@ -7,26 +7,23 @@
 package io.harness.idp.provision.service;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.http.HttpService;
-import io.harness.http.beans.HttpInternalConfig;
-import io.harness.http.beans.HttpInternalResponse;
 import io.harness.idp.provision.ProvisionModuleConfig;
-import io.harness.serializer.JsonUtils;
-
-import software.wings.beans.HttpMethod;
 
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import javax.inject.Inject;
+import net.sf.json.JSONObject;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class ProvisionServiceImpl implements ProvisionService {
   @Inject @Named("provisionModuleConfig") ProvisionModuleConfig provisionModuleConfig;
-  @Inject private HttpService httpService;
   private static final String ACCOUNT_ID = "account_id";
   private static final String NAMESPACE = "namespace";
+  private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   @Override
   public void triggerPipeline(String accountIdentifier, String namespace) throws IOException {
@@ -34,22 +31,23 @@ public class ProvisionServiceImpl implements ProvisionService {
   }
 
   private void makeTriggerApi(String accountIdentifier, String namespace) throws IOException {
-    String url = provisionModuleConfig.getTriggerPipelineUrl();
-
-    Map<String, String> body = new HashMap<>();
-    body.put(ACCOUNT_ID, accountIdentifier);
-    body.put(NAMESPACE, namespace);
-
-    HttpInternalResponse httpResponse = httpService.executeUrl(HttpInternalConfig.builder()
-                                                                   .method(HttpMethod.POST.name())
-                                                                   .socketTimeoutMillis(10000)
-                                                                   .body(JsonUtils.asJson(body))
-                                                                   .url(url)
-                                                                   .build());
-
-    if (Objects.isNull(httpResponse) || httpResponse.getHttpResponseCode() < 200
-        || httpResponse.getHttpResponseCode() >= 300) {
+    Request request = createHttpRequest(accountIdentifier, namespace);
+    OkHttpClient client = new OkHttpClient();
+    Response response = client.newCall(request).execute();
+    if (response.code() < 200 || response.code() >= 300) {
       throw new InvalidRequestException("Pipeline Trigger http call failed");
     }
+  }
+
+  private Request createHttpRequest(String accountIdentifier, String namespace) {
+    String url = provisionModuleConfig.getTriggerPipelineUrl();
+
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put(ACCOUNT_ID, accountIdentifier);
+    jsonObject.put(NAMESPACE, namespace);
+
+    RequestBody requestBody = RequestBody.create(jsonObject.toString(), APPLICATION_JSON);
+
+    return new Request.Builder().url(url).post(requestBody).build();
   }
 }
