@@ -7,6 +7,8 @@
 
 package io.harness.freeze.notifications;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeEvent;
 import io.harness.freeze.beans.FreezeNotificationChannelWrapper;
@@ -61,8 +63,8 @@ public class NotificationHelper {
               && !pipelineRejectedNotification) {
             continue;
           }
-          Map<String, String> notificationContent = constructTemplateData(
-              freezeEvent.getType(), freezeInfoConfig, ambiance, accountId, executionUrl, baseUrl, globalFreeze);
+          Map<String, String> notificationContent = constructTemplateData(freezeEvent.getType(), freezeInfoConfig,
+              ambiance, accountId, executionUrl, baseUrl, globalFreeze, freezeNotifications);
           NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(accountId,
               freezeInfoConfig.getOrgIdentifier(), freezeInfoConfig.getProjectIdentifier(), templateId,
               notificationContent, Ambiance.newBuilder().setExpressionFunctorToken(0).build());
@@ -77,7 +79,8 @@ public class NotificationHelper {
   }
 
   public Map<String, String> constructTemplateData(FreezeEventType freezeEventType, FreezeInfoConfig freezeInfoConfig,
-      Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze) {
+      Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze,
+      FreezeNotifications freezeNotifications) {
     Map<String, String> data = new ArrayMap<>();
     if (globalFreeze) {
       data.put("BLACKOUT_WINDOW_URL", getGlobalFreezeUrl(baseUrl, freezeInfoConfig, accountId));
@@ -114,9 +117,16 @@ public class NotificationHelper {
       data.put("WORKFLOW_NAME", ambiance.getMetadata().getPipelineIdentifier());
       data.put("WORKFLOW_URL", executionUrl);
     }
+    data.put("CUSTOMIZED_MESSAGE", getCustomizeMessage(freezeNotifications));
     return data;
   }
 
+  private String getCustomizeMessage(FreezeNotifications freezeNotifications) {
+    if (isNotEmpty(freezeNotifications.getCustomizedMessage())) {
+      return " " + freezeNotifications.getCustomizedMessage();
+    }
+    return "";
+  }
   private String getNotificationTemplate(String channelType, FreezeEvent freezeEvent) {
     if (freezeEvent.getType().equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE)) {
       return String.format("pipeline_rejected_%s_alert", channelType.toLowerCase());
