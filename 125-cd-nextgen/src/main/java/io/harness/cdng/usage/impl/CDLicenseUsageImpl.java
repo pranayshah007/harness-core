@@ -26,11 +26,12 @@ import io.harness.aggregates.AggregateNgServiceInstanceStats;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.mapper.ActiveServiceMapper;
 import io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper;
 import io.harness.cdng.usage.pojos.ActiveService;
@@ -151,23 +152,32 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     return listActiveServiceDTOs(activeServiceFetchData, pageRequest, currentTsInMs);
   }
 
-  public ServiceInstancesDateUsageDTO getServiceInstancesDateUsage(
-      String accountIdentifier, ServiceInstancesDateUsageParams serviceInstancesDateUsageParams) {
+  public LicenseDateUsageDTO getLicenseDateUsage(
+      String accountIdentifier, LicenseDateUsageParams licenseDateUsageParams, CDLicenseType licenseType) {
     if (isEmpty(accountIdentifier)) {
       throw new InvalidArgumentsException(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG);
     }
+    if (licenseType == null) {
+      throw new InvalidArgumentsException("CD license type cannot be null");
+    }
+
     ServiceInstancesDateUsageFetchData instanceUsageFetchData =
         ServiceInstancesDateUsageMapper.buildServiceInstancesDateUsageFetchData(
-            accountIdentifier, serviceInstancesDateUsageParams);
-
+            accountIdentifier, licenseDateUsageParams);
     log.info(
         "Start fetching service instances date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}",
         accountIdentifier, instanceUsageFetchData.getFromDate(), instanceUsageFetchData.getToDate(),
         instanceUsageFetchData.getReportType());
     Map<String, Integer> instancesUsage = licenseUsageDAL.fetchServiceInstancesDateUsage(instanceUsageFetchData);
-    return ServiceInstancesDateUsageDTO.builder()
-        .serviceInstancesUsage(instancesUsage)
+
+    if (SERVICES.equals(licenseType)) {
+      instancesUsage.replaceAll((key, value) -> Math.toIntExact(computeLicenseConsumed(value)));
+    }
+
+    return LicenseDateUsageDTO.builder()
+        .licenseUsage(instancesUsage)
         .reportType(instanceUsageFetchData.getReportType())
+        .licenseType(licenseType)
         .build();
   }
 

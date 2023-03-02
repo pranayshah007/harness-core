@@ -86,6 +86,7 @@ public class NGCommonEntityConstants {
   public static final String EXPIRY_TIME = "expiryTime";
   public static final String SORT = "sort";
   public static final String FILE_PATH_KEY = "path";
+  public static final String LICENSE_TYPE_KEY = "licenseType";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -139,6 +140,7 @@ public class NGCommonEntityConstants {
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";
+  public static final String LICENSE_TYPE_PARAM_MESSAGE = "CD License type";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";

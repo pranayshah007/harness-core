@@ -10,7 +10,7 @@ package io.harness.cdng.usage.pojos;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateReportType;
 
 import java.time.LocalDate;
 import javax.validation.constraints.NotBlank;
@@ -31,5 +31,5 @@ public class ServiceInstancesDateUsageFetchData {
   @NotBlank String accountIdentifier;
   @NotBlank private LocalDate fromDate;
   @NotBlank private LocalDate toDate;
-  private ServiceInstanceReportType reportType = ServiceInstanceReportType.DAILY;
+  private LicenseDateReportType reportType = LicenseDateReportType.DAILY;
 }

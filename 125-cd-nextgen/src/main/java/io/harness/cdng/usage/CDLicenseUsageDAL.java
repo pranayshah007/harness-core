@@ -37,7 +37,7 @@ import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
 import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateReportType;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -532,6 +532,6 @@ public class CDLicenseUsageDAL {
   }
 
   private boolean isMonthlyServiceInstanceUsageReportType(ServiceInstancesDateUsageFetchData fetchData) {
-    return ServiceInstanceReportType.MONTHLY == fetchData.getReportType();
+    return LicenseDateReportType.MONTHLY == fetchData.getReportType();
   }
 }
