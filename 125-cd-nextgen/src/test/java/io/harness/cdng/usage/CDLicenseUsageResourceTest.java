@@ -24,7 +24,7 @@ import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
 import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.exception.InvalidRequestException;
-import io.harness.licensing.usage.params.filter.LicenseDateReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -135,16 +135,16 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
     when(cdLicenseUsageService.getLicenseDateUsage(any(), any(), any()))
         .thenReturn(LicenseDateUsageDTO.builder()
                         .licenseUsage(serviceInstancesUsage)
-                        .reportType(LicenseDateReportType.MONTHLY)
+                        .reportType(LicenseDateUsageReportType.MONTHLY)
                         .build());
 
     LicenseDateUsageDTO serviceInstancesDateUsage =
         cdLicenseUsageResource
-            .getLicenceDateUsage(ACCOUNT_IDENTIFIER, CDLicenseType.SERVICE_INSTANCES,
+            .getLicenseDateUsage(ACCOUNT_IDENTIFIER, CDLicenseType.SERVICE_INSTANCES,
                 LicenseDateUsageParams.builder()
                     .fromDate("2022-01-01")
                     .toDate("2023-01-01")
-                    .reportType(LicenseDateReportType.MONTHLY)
+                    .reportType(LicenseDateUsageReportType.MONTHLY)
                     .build())
             .getData();
 
@@ -165,7 +165,7 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
         .thenThrow(new InvalidRequestException(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER)));
 
     assertThatThrownBy(()
-                           -> cdLicenseUsageResource.getLicenceDateUsage(ACCOUNT_IDENTIFIER,
+                           -> cdLicenseUsageResource.getLicenseDateUsage(ACCOUNT_IDENTIFIER,
                                CDLicenseType.SERVICE_INSTANCES, LicenseDateUsageParams.builder().build()))
         .hasMessage(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class);

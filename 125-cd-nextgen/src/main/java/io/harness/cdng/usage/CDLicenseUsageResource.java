@@ -125,14 +125,14 @@ public class CDLicenseUsageResource {
 
   @POST
   @Path("date")
-  @ApiOperation(value = "Get licence date usage in CD Module", nickname = "getLicenceDateUsage")
+  @ApiOperation(value = "Get license date usage in CD Module", nickname = "getLicenseDateUsage")
   @Hidden
-  @Operation(operationId = "getLicenceDateUsage", summary = "Get licence usage by dates in requested date range",
+  @Operation(operationId = "getLicenseDateUsage", summary = "Get license usage by dates in requested date range",
       responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns licence usage per dates") })
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns license usage per dates") })
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
   public ResponseDTO<LicenseDateUsageDTO>
-  getLicenceDateUsage(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+  getLicenseDateUsage(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                           ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = LICENSE_TYPE_PARAM_MESSAGE) @NotNull @QueryParam(
           LICENSE_TYPE_KEY) CDLicenseType licenseType,

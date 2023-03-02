@@ -9,7 +9,7 @@ package io.harness.cdng.usage.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.usage.params.filter.LicenseDateReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,5 +34,5 @@ import lombok.NoArgsConstructor;
 public class LicenseDateUsageParams {
   private String fromDate;
   private String toDate;
-  private LicenseDateReportType reportType;
+  private LicenseDateUsageReportType reportType;
 }

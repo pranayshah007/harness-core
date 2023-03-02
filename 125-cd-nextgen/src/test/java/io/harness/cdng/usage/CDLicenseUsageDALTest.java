@@ -28,7 +28,7 @@ import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.licensing.usage.params.filter.LicenseDateReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -401,7 +401,7 @@ public class CDLicenseUsageDALTest extends CategoryTest {
     when(resultSet.next()).thenReturn(false);
 
     cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
-                                                         .reportType(LicenseDateReportType.DAILY)
+                                                         .reportType(LicenseDateUsageReportType.DAILY)
                                                          .accountIdentifier(accountIdentifier)
                                                          .fromDate(LocalDate.of(2023, 1, 1))
                                                          .toDate(LocalDate.of(2023, 2, 1))
@@ -422,7 +422,7 @@ public class CDLicenseUsageDALTest extends CategoryTest {
     assertThatThrownBy(
         ()
             -> cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
-                                                                    .reportType(LicenseDateReportType.DAILY)
+                                                                    .reportType(LicenseDateUsageReportType.DAILY)
                                                                     .accountIdentifier(null)
                                                                     .fromDate(LocalDate.of(2023, 1, 1))
                                                                     .toDate(LocalDate.of(2023, 2, 1))

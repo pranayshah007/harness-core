@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.CDLicenseType;
-import io.harness.licensing.usage.params.filter.LicenseDateReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,6 +36,6 @@ import lombok.experimental.SuperBuilder;
     description = "Usage of the Service Instances and Services licenses on monthly or daily basis.")
 public class LicenseDateUsageDTO {
   private Map<String, Integer> licenseUsage;
-  private LicenseDateReportType reportType;
+  private LicenseDateUsageReportType reportType;
   private CDLicenseType licenseType;
 }

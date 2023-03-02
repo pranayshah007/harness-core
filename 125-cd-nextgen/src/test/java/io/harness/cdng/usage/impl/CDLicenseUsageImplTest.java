@@ -42,7 +42,7 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
-import io.harness.licensing.usage.params.filter.LicenseDateReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -789,7 +789,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
                                LicenseDateUsageParams.builder()
                                    .fromDate("2022-14-01")
                                    .toDate("2022-01-08")
-                                   .reportType(LicenseDateReportType.DAILY)
+                                   .reportType(LicenseDateUsageReportType.DAILY)
                                    .build(),
                                CDLicenseType.SERVICE_INSTANCES))
         .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-01")
@@ -805,7 +805,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
                                LicenseDateUsageParams.builder()
                                    .fromDate("2022-01-01")
                                    .toDate("2022-14-08")
-                                   .reportType(LicenseDateReportType.DAILY)
+                                   .reportType(LicenseDateUsageReportType.DAILY)
                                    .build(),
                                CDLicenseType.SERVICE_INSTANCES))
         .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-08")
@@ -822,7 +822,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
         LicenseDateUsageParams.builder()
             .fromDate("2022-01-01")
             .toDate("2022-01-08")
-            .reportType(LicenseDateReportType.DAILY)
+            .reportType(LicenseDateUsageReportType.DAILY)
             .build(),
         CDLicenseType.SERVICE_INSTANCES);
 
@@ -845,7 +845,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
         LicenseDateUsageParams.builder()
             .fromDate("2022-01-01")
             .toDate("2022-01-08")
-            .reportType(LicenseDateReportType.DAILY)
+            .reportType(LicenseDateUsageReportType.DAILY)
             .build(),
         CDLicenseType.SERVICES);
 
