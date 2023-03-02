@@ -36,11 +36,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.SshHelperUtils;
-
-import software.wings.beans.WinRmCommandParameter;
 
 import io.cloudsoft.winrm4j.client.WinRmClient;
 import java.io.Writer;

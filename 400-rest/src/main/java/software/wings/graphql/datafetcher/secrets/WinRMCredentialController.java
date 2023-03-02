@@ -22,9 +22,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.WinRmCommandParameter;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.graphql.schema.type.secrets.QLAuthScheme;
 import software.wings.graphql.schema.type.secrets.QLSecretType;

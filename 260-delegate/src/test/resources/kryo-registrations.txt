@@ -414,7 +414,7 @@
 5253:io.harness.shell.ScriptType
 5254:software.wings.beans.ConnectionType
 5255:software.wings.beans.WinRmConnectionAttributes
-5256:software.wings.beans.WinRmCommandParameter
+5256:io.harness.ng.core.dto.secrets.WinRmCommandParameter
 5259:software.wings.helpers.ext.helm.request.HelmInstallCommandRequest
 5260:software.wings.helpers.ext.helm.HelmCommandExecutionResponse
 5261:io.harness.delegate.task.helm.HelmCommandResponse

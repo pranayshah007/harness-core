@@ -512,7 +512,7 @@
 5253:io.harness.shell.ScriptType
 5254:software.wings.beans.ConnectionType
 5255:software.wings.beans.WinRmConnectionAttributes
-5256:software.wings.beans.WinRmCommandParameter
+5256:io.harness.ng.core.dto.secrets.WinRmCommandParameter
 5257:software.wings.api.BarrierStepExecutionSummary
 5258:software.wings.api.BarrierExecutionData
 5259:software.wings.helpers.ext.helm.request.HelmInstallCommandRequest
