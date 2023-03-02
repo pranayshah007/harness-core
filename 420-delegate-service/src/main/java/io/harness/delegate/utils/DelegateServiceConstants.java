@@ -28,5 +28,4 @@ public interface DelegateServiceConstants {
   String REASON_OF_DISCONNECTION = "RESTARTED";
 
   String EMPTY_STR = "";
-
 }
