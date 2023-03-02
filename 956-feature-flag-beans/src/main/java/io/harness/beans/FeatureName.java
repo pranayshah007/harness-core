@@ -638,7 +638,8 @@ public enum FeatureName {
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
-  CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC);
+  CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC),
+  FF_ALLOW_OPTIONAL_VARIABLE("Allow option value for a runtime variable", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
