@@ -16,8 +16,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.status.beans.StatusInfoEntity;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
+import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class StatusInfoRepositoryCustomImplTest {
   StatusInfoEntity initializeStatusInfoEntity() {
     return StatusInfoEntity.builder()
         .type(StatusType.ONBOARDING)
-        .status(Status.COMPLETED)
+        .status(StatusInfo.CurrentStatusEnum.COMPLETED)
         .reason("completed successfully")
         .lastModifiedAt(System.currentTimeMillis())
         .build();

@@ -10,7 +10,6 @@ package io.harness.idp.status.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.status.beans.StatusInfoEntity;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
@@ -21,7 +20,7 @@ import lombok.experimental.UtilityClass;
 public class StatusInfoMapper {
   public StatusInfo toDTO(StatusInfoEntity statusInfoEntity) {
     StatusInfo statusInfo = new StatusInfo();
-    statusInfo.setCurrentStatus(statusInfoEntity.getStatus().toString());
+    statusInfo.setCurrentStatus(statusInfoEntity.getStatus());
     statusInfo.setReason(statusInfoEntity.getReason());
     statusInfo.setUpdatedAt(statusInfoEntity.getLastModifiedAt());
     return statusInfo;
@@ -31,7 +30,7 @@ public class StatusInfoMapper {
     return StatusInfoEntity.builder()
         .accountIdentifier(accountIdentifier)
         .type(StatusType.valueOf(type.toUpperCase()))
-        .status(Status.valueOf(statusInfo.getCurrentStatus().toUpperCase()))
+        .status(statusInfo.getCurrentStatus())
         .reason(statusInfo.getReason())
         .build();
   }

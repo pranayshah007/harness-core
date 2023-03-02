@@ -7,6 +7,7 @@
 
 package io.harness.idp.status.service;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -15,7 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.status.beans.StatusInfoEntity;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.idp.status.repositories.StatusInfoRepository;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
@@ -49,7 +49,7 @@ public class StatusInfoServiceImplTest {
     when(statusInfoRepository.findByAccountIdentifierAndType(ACCOUNT_ID, type))
         .thenReturn(Optional.of(statusInfoEntity));
     Optional<StatusInfo> statusInfo = statusInfoServiceImpl.findByAccountIdentifierAndType(ACCOUNT_ID, type);
-    assertTrue(statusInfo.get().getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
+    assertEquals(statusInfo.get().getCurrentStatus(), StatusInfo.CurrentStatusEnum.COMPLETED);
   }
 
   @Test
@@ -59,16 +59,16 @@ public class StatusInfoServiceImplTest {
     StatusInfoEntity statusInfoEntity = initializeStatusInfoEntity();
     when(statusInfoRepository.saveOrUpdate(any())).thenReturn(statusInfoEntity);
     StatusInfo statusInfo = new StatusInfo();
-    statusInfo.setCurrentStatus(statusInfoEntity.getStatus().toString());
+    statusInfo.setCurrentStatus(statusInfoEntity.getStatus());
     statusInfo.setReason(statusInfoEntity.getReason());
     statusInfo.setUpdatedAt(statusInfoEntity.getLastModifiedAt());
     StatusInfo statusInfo1 = statusInfoServiceImpl.save(statusInfo, ACCOUNT_ID, type);
-    assertTrue(statusInfo1.getCurrentStatus().equalsIgnoreCase(Status.COMPLETED.toString()));
+    assertEquals(statusInfo1.getCurrentStatus(), StatusInfo.CurrentStatusEnum.COMPLETED);
   }
 
   StatusInfoEntity initializeStatusInfoEntity() {
     return StatusInfoEntity.builder()
-        .status(Status.COMPLETED)
+        .status(StatusInfo.CurrentStatusEnum.COMPLETED)
         .reason("completed successfully")
         .lastModifiedAt(System.currentTimeMillis())
         .build();

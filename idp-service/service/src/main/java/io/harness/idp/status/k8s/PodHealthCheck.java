@@ -7,9 +7,7 @@
 
 package io.harness.idp.status.k8s;
 
-import io.harness.exception.InvalidRequestException;
 import io.harness.idp.namespace.service.NamespaceService;
-import io.harness.idp.status.enums.Status;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.client.K8sClient;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
@@ -48,17 +46,17 @@ public class PodHealthCheck implements HealthCheck {
       V1PodList podList =
           api.listNamespacedPod(namespace, null, null, null, null, LABEL_SELECTOR, null, null, null, null, false);
       if (CollectionUtils.isEmpty(podList.getItems())) {
-        statusInfo.setCurrentStatus(Status.NOT_FOUND.toString());
+        statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.NOT_FOUND);
         statusInfo.setReason("No pod exists for namespace: " + namespace);
       } else if (podList.getItems().size() == 1) {
         V1Pod pod = podList.getItems().get(0);
         if (!isPodInPendingPhase(pod) && !isPodInWaitingState(pod)) {
-          statusInfo.setCurrentStatus(Status.RUNNING.toString());
+          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.RUNNING);
         } else if (isPodInPendingPhase(pod)) {
-          statusInfo.setCurrentStatus(Status.PENDING.toString());
+          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.PENDING);
           statusInfo.setReason(getPodMessage(pod));
         } else {
-          statusInfo.setCurrentStatus(Status.FAILED.toString());
+          statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.FAILED);
           statusInfo.setReason(getPodMessage(pod));
         }
       }
@@ -76,7 +74,7 @@ public class PodHealthCheck implements HealthCheck {
   }
 
   private boolean isPodInPendingPhase(V1Pod pod) {
-    return Status.PENDING.toString().equalsIgnoreCase(pod.getStatus().getPhase());
+    return StatusInfo.CurrentStatusEnum.PENDING.toString().equalsIgnoreCase(pod.getStatus().getPhase());
   }
 
   private boolean isPodInWaitingState(V1Pod pod) {

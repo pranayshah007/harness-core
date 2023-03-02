@@ -10,12 +10,12 @@ package io.harness.idp.status.beans;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -40,7 +40,7 @@ public class StatusInfoEntity implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id private String id;
   private String accountIdentifier;
   private StatusType type;
-  private Status status;
+  private StatusInfo.CurrentStatusEnum status;
   private String reason;
   @LastModifiedDate Long lastModifiedAt;
   private boolean isDeleted;

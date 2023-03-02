@@ -10,7 +10,6 @@ package io.harness.idp.status.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.status.beans.StatusInfoEntity;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.idp.status.k8s.HealthCheck;
 import io.harness.idp.status.mappers.StatusInfoMapper;
@@ -37,7 +36,8 @@ public class StatusInfoServiceImpl implements StatusInfoService {
     Optional<StatusInfoEntity> statusEntity =
         statusInfoRepository.findByAccountIdentifierAndType(accountIdentifier, type.toUpperCase());
     if (statusEntity.isEmpty()) {
-      statusEntity = Optional.ofNullable(StatusInfoEntity.builder().status(Status.NOT_FOUND).build());
+      statusEntity =
+          Optional.ofNullable(StatusInfoEntity.builder().status(StatusInfo.CurrentStatusEnum.NOT_FOUND).build());
     }
     return statusEntity.map(StatusInfoMapper::toDTO);
   }

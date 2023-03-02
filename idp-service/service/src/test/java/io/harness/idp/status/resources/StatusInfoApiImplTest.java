@@ -14,7 +14,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.idp.status.enums.Status;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
@@ -73,7 +72,7 @@ public class StatusInfoApiImplTest {
 
   StatusInfo initializeStatusInfo() {
     StatusInfo statusInfo = new StatusInfo();
-    statusInfo.setCurrentStatus(Status.COMPLETED.toString());
+    statusInfo.setCurrentStatus(StatusInfo.CurrentStatusEnum.COMPLETED);
     statusInfo.setReason("completed successfully");
     statusInfo.setUpdatedAt(System.currentTimeMillis());
     return statusInfo;
