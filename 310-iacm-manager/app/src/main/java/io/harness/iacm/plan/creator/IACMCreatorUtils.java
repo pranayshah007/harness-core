@@ -22,15 +22,15 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IACM)
 public class IACMCreatorUtils {
+  Set<String> supportedSteps = Sets.newHashSet("Plugin", "Run", "IACMTerraformPlan", "IACMTemplate", "liteEngineTask");
   public Set<String> getSupportedSteps() {
-    return Sets.newHashSet("Plugin", "IACMTerraformPlan", "IACMTemplate", "liteEngineTask");
+    return supportedSteps;
   }
 
   public Set<String> getSupportedStepsV2() {
     SortedSet<String> steps = new TreeSet<>();
-    steps.add("Plugin");
-
-    steps.addAll(Arrays.stream(IACMStepType.values()).map(e -> e.getName()).collect(Collectors.toSet()));
+    steps.addAll(supportedSteps);
+    steps.addAll(Arrays.stream(IACMStepType.values()).map(IACMStepType::getName).collect(Collectors.toSet()));
 
     return Sets.newTreeSet(steps);
   }
