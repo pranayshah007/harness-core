@@ -13,6 +13,7 @@ import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.TEMPLATE
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventData;
+import io.harness.audit.beans.custom.AuditEventDataTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -37,13 +38,13 @@ public class NodeExecutionEventData extends AuditEventData {
 
   @Builder
   public NodeExecutionEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, String nodeExecutionId, String type) {
+      String pipelineIdentifier, String planExecutionId, String nodeExecutionId) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.nodeExecutionId = nodeExecutionId;
     this.planExecutionId = planExecutionId;
-    this.type = type;
+    this.type = NODE_EXECUTION_EVENT_DATA;
   }
 }

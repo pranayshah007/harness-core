@@ -59,7 +59,6 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .projectIdentifier(pipelineStartEvent.getProjectIdentifier())
                                                         .pipelineIdentifier(pipelineStartEvent.getPipelineIdentifier())
                                                         .planExecutionId(pipelineStartEvent.getPlanExecutionId())
-                                                        .type(AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
                                                         .build();
 
     return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
@@ -73,7 +72,6 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .projectIdentifier(pipelineEndEvent.getProjectIdentifier())
                                                         .pipelineIdentifier(pipelineEndEvent.getPipelineIdentifier())
                                                         .planExecutionId(pipelineEndEvent.getPlanExecutionId())
-                                                        .type(AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
                                                         .build();
 
     return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
@@ -88,7 +86,6 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .pipelineIdentifier(stageStartEvent.getPipelineIdentifier())
                                                         .planExecutionId(stageStartEvent.getPlanExecutionId())
                                                         .nodeExecutionId(stageStartEvent.getNodeExecutionId())
-                                                        .type(AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
                                                         .build();
 
     return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
@@ -102,7 +99,6 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .pipelineIdentifier(stageEndEvent.getPipelineIdentifier())
                                                         .planExecutionId(stageEndEvent.getPlanExecutionId())
                                                         .nodeExecutionId(stageEndEvent.getNodeExecutionId())
-                                                        .type(AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
                                                         .build();
 
     return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
