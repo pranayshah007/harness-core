@@ -591,7 +591,7 @@ public class DelegateServiceTest extends WingsBaseTest {
       } else if (group.getGroupName().equals("test2")) {
         assertThat(group.getDelegates()).hasSize(1);
         assertThat(group.getDelegates().get(0).getUuid()).isEqualTo(delegateWithScalingGroup2.getUuid());
-        assertThat(group.getAutoUpgrade()).isEqualTo(AutoUpgrade.SYNCHRONIZING);
+        assertThat(group.getAutoUpgrade()).isEqualTo(AutoUpgrade.DETECTING);
       }
     }
   }
