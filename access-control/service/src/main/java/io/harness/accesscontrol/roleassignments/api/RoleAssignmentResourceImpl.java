@@ -188,13 +188,16 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   @Override
   public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
       PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
-    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
-    if (!hasAccessToUserRoleAssignments) {
+    Optional<RoleAssignmentFilterV2> roleAssignmentFilterV2WithPermittedFiltersOptional =
+        sanitizeRoleAssignmentFilterV2ForPermitted(harnessScopeParams, roleAssignmentFilterV2);
+    if (roleAssignmentFilterV2WithPermittedFiltersOptional.isEmpty()) {
       throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
           USER_NOT_AUTHORIZED, WingsException.USER);
     }
+    RoleAssignmentFilterV2 roleAssignmentFilterV2WithPermittedFilters =
+        roleAssignmentFilterV2WithPermittedFiltersOptional.get();
     Set<ScopeSelector> scopeFilter = new HashSet<>();
-    if (isEmpty(roleAssignmentFilterV2.getScopeFilters())) {
+    if (isEmpty(roleAssignmentFilterV2WithPermittedFilters.getScopeFilters())) {
       scopeFilter.add(ScopeSelector.builder()
                           .accountIdentifier(harnessScopeParams.getAccountIdentifier())
                           .orgIdentifier(harnessScopeParams.getOrgIdentifier())
@@ -202,18 +205,23 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
                           .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
                           .build());
     } else {
-      scopeFilter.addAll(roleAssignmentFilterV2.getScopeFilters());
+      scopeFilter.addAll(roleAssignmentFilterV2WithPermittedFilters.getScopeFilters());
     }
-    roleAssignmentFilterV2.setScopeFilters(scopeFilter);
+    roleAssignmentFilterV2WithPermittedFilters.setScopeFilters(scopeFilter);
 
-    PrincipalDTO principalFilter = roleAssignmentFilterV2.getPrincipalFilter();
+    PrincipalDTO principalFilter = roleAssignmentFilterV2WithPermittedFilters.getPrincipalFilter();
     RoleAssignmentFilter filter = null;
     List<UserGroup> userGroups = new ArrayList<>();
-    if (principalFilter != null && USER.equals(principalFilter.getType())) {
-      userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
-      filter = roleAssignmentDTOMapper.fromDTO(principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2);
+    if (principalFilter != null) {
+      if (USER.equals(principalFilter.getType())) {
+        userGroups.addAll(userGroupService.list(principalFilter.getIdentifier()));
+        filter = roleAssignmentDTOMapper.fromDTO(
+            principalFilter.getIdentifier(), userGroups, roleAssignmentFilterV2WithPermittedFilters);
+      } else {
+        filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2WithPermittedFilters);
+      }
     } else {
-      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2);
+      filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2WithPermittedFilters);
     }
 
     PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
@@ -239,6 +247,57 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
     });
 
     return ResponseDTO.newResponse(roleAssignmentAggregateWithScope);
+  }
+
+  private Optional<RoleAssignmentFilterV2> sanitizeRoleAssignmentFilterV2ForPermitted(
+      HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilter) {
+    boolean hasAccessToUserRoleAssignments = roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER);
+    boolean hasAccessToUserGroupRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, USER_GROUP);
+    boolean hasAccessToServiceAccountRoleAssignments =
+        roleAssignmentApiUtils.checkViewPermission(harnessScopeParams, SERVICE_ACCOUNT);
+
+    if (roleAssignmentFilter.getPrincipalFilter() != null) {
+      if ((roleAssignmentFilter.getPrincipalFilter().getType().equals(USER) && !hasAccessToUserRoleAssignments)
+          || (roleAssignmentFilter.getPrincipalFilter().getType().equals(USER_GROUP)
+              && !hasAccessToUserGroupRoleAssignments)
+          || (roleAssignmentFilter.getPrincipalFilter().getType().equals(SERVICE_ACCOUNT)
+              && !hasAccessToServiceAccountRoleAssignments)) {
+        return Optional.empty();
+      }
+    } else if (isNotEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+      if (!hasAccessToUserRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER);
+      }
+      if (!hasAccessToUserGroupRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(USER_GROUP);
+      }
+      if (!hasAccessToServiceAccountRoleAssignments) {
+        roleAssignmentFilter.getPrincipalTypeFilter().remove(SERVICE_ACCOUNT);
+      }
+      if (isEmpty(roleAssignmentFilter.getPrincipalTypeFilter())) {
+        return Optional.empty();
+      }
+    } else {
+      Set<PrincipalType> principalTypes = Sets.newHashSet();
+      if (hasAccessToUserRoleAssignments) {
+        principalTypes.add(USER);
+      }
+
+      if (hasAccessToUserGroupRoleAssignments) {
+        principalTypes.add(USER_GROUP);
+      }
+
+      if (hasAccessToServiceAccountRoleAssignments) {
+        principalTypes.add(SERVICE_ACCOUNT);
+      }
+      if (principalTypes.isEmpty()) {
+        return Optional.empty();
+      } else {
+        roleAssignmentFilter.setPrincipalTypeFilter(principalTypes);
+      }
+    }
+    return Optional.of(roleAssignmentFilter);
   }
 
   @Override

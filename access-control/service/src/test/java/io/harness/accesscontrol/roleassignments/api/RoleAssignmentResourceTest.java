@@ -12,10 +12,13 @@ import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.buildFromSet;
+import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
+import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.REETIKA;
 
@@ -385,7 +388,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     if (isUserPrincipal) {
       verify(userGroupService, times(1)).list(roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
     }
-    verify(accessControlClient, times(1)).hasAccess(any(ResourceScope.class), any(), any());
+    verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
   }
 
@@ -830,5 +833,137 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
       verify(actionValidator, times(1)).canDelete(any());
       verify(transactionTemplate, times(0)).execute(any());
     }
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listFilterV2_WithMissingViewPermission_OnPrincipalTypes_ThrowsUnauthorizedException() {
+    Set<PrincipalType> principalTypes = Sets.newHashSet(USER, USER_GROUP, SERVICE_ACCOUNT);
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 =
+        RoleAssignmentFilterV2.builder().principalTypeFilter(principalTypes).build();
+    preViewPrincipalPermissions(false, false, false);
+    try {
+      roleAssignmentResource.getList(pageRequest, harnessScopeParams, roleAssignmentFilterV2);
+      fail();
+    } catch (UnauthorizedException unauthorizedException) {
+      verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
+      verify(roleAssignmentService, times(0)).list(any(), any());
+    }
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listV2With_AllPermitted_PrincipalTypeFilters_CallsService_With_AllPrincipalTypes() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<PrincipalType> principalTypes = Sets.newHashSet(USER, USER_GROUP, SERVICE_ACCOUNT);
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 = RoleAssignmentFilterV2.builder()
+                                                        .resourceGroupFilter(resourceGroupFilter)
+                                                        .roleFilter(roleFilter)
+                                                        .principalTypeFilter(principalTypes)
+                                                        .disabledFilter(false)
+                                                        .harnessManagedFilter(false)
+                                                        .build();
+    preViewPrincipalPermissions(true, true, true);
+    testListFilterV2(roleAssignmentFilterV2);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listV2With_User_PrincipalTypeFilters_CallsService_With_OnlyUserPrincipalType() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<PrincipalType> principalTypes = Sets.newHashSet(USER, USER_GROUP, SERVICE_ACCOUNT);
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 = RoleAssignmentFilterV2.builder()
+                                                        .resourceGroupFilter(resourceGroupFilter)
+                                                        .roleFilter(roleFilter)
+                                                        .principalTypeFilter(principalTypes)
+                                                        .disabledFilter(false)
+                                                        .harnessManagedFilter(false)
+                                                        .build();
+    preViewPrincipalPermissions(true, false, false);
+    testListFilterV2(roleAssignmentFilterV2);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listV2With_UserGroup_PrincipalTypeFilters_CallsService_With_OnlyUserGroupPrincipalType() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<PrincipalType> principalTypes = Sets.newHashSet(USER, USER_GROUP, SERVICE_ACCOUNT);
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 = RoleAssignmentFilterV2.builder()
+                                                        .resourceGroupFilter(resourceGroupFilter)
+                                                        .roleFilter(roleFilter)
+                                                        .principalTypeFilter(principalTypes)
+                                                        .disabledFilter(false)
+                                                        .harnessManagedFilter(false)
+                                                        .build();
+    preViewPrincipalPermissions(false, true, false);
+    testListFilterV2(roleAssignmentFilterV2);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void listV2With_ServiceAccount_PrincipalTypeFilters_CallsService_With_OnlyServiceAccountPrincipalType() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<PrincipalType> principalTypes = Sets.newHashSet(USER, USER_GROUP, SERVICE_ACCOUNT);
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 = RoleAssignmentFilterV2.builder()
+                                                        .resourceGroupFilter(resourceGroupFilter)
+                                                        .roleFilter(roleFilter)
+                                                        .principalTypeFilter(principalTypes)
+                                                        .build();
+    preViewPrincipalPermissions(false, false, true);
+    testListFilterV2(roleAssignmentFilterV2);
+  }
+
+  private void testListFilterV2(RoleAssignmentFilterV2 roleAssignmentFilterV2) {
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    boolean isUserPrincipal = roleAssignmentFilterV2.getPrincipalFilter() != null
+        && USER.equals(roleAssignmentFilterV2.getPrincipalFilter().getType());
+    if (isUserPrincipal) {
+      when(userGroupService.list(roleAssignmentFilterV2.getPrincipalFilter().getIdentifier()))
+          .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
+    }
+    ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentFilter.class);
+    PageRequest maxPageRequest = PageRequest.builder().pageSize(1000).build();
+    when(roleAssignmentService.list(eq(maxPageRequest), any())).thenReturn(getEmptyPageResponse(maxPageRequest));
+    RoleFilter roleFilter = RoleFilter.builder()
+                                .identifierFilter(new HashSet<>())
+                                .scopeIdentifier(scope.toString())
+                                .managedFilter(NO_FILTER)
+                                .build();
+    when(roleService.list(maxPageRequest, roleFilter, true)).thenReturn(getEmptyPageResponse(maxPageRequest));
+    when(resourceGroupService.list(new ArrayList<>(), scope.toString(), NO_FILTER)).thenReturn(new ArrayList<>());
+
+    ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
+        roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2);
+    if (isUserPrincipal) {
+      verify(userGroupService, times(1)).list(roleAssignmentFilterV2.getPrincipalFilter().getIdentifier());
+    }
+    verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
+    verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
+    RoleAssignmentFilter roleAssignmentFilter = roleAssignmentFilterArgumentCaptor.getValue();
+    assertFilterV2(roleAssignmentFilterV2, roleAssignmentFilter);
+  }
+
+  private void assertFilterV2(
+      RoleAssignmentFilterV2 roleAssignmentFilterV2, RoleAssignmentFilter roleAssignmentFilter) {
+    assertEquals(roleAssignmentFilterV2.getPrincipalTypeFilter(), roleAssignmentFilter.getPrincipalTypeFilter());
+    assertEquals(Objects.isNull(roleAssignmentFilterV2.getDisabledFilter())
+            ? new HashSet<>()
+            : Sets.newHashSet(roleAssignmentFilterV2.getDisabledFilter()),
+        roleAssignmentFilter.getDisabledFilter());
+    ManagedFilter managedFilter = Objects.isNull(roleAssignmentFilterV2.getHarnessManagedFilter())
+        ? ManagedFilter.NO_FILTER
+        : roleAssignmentFilterV2.getHarnessManagedFilter() == Boolean.TRUE ? ManagedFilter.ONLY_MANAGED
+                                                                           : ManagedFilter.ONLY_CUSTOM;
+    assertEquals(managedFilter, roleAssignmentFilter.getManagedFilter());
   }
 }

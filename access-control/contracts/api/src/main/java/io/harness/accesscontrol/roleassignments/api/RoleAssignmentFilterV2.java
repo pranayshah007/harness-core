@@ -10,6 +10,7 @@ package io.harness.accesscontrol.roleassignments.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -31,4 +32,8 @@ public class RoleAssignmentFilterV2 {
   @Schema(description = "Filter role assignments based on scope filters")
   Set<ScopeSelector> scopeFilters = new HashSet<>();
   @Schema(description = "Filter role assignments based on principal") PrincipalDTO principalFilter;
+  @Schema(description = "Filter role assignments based on role assignments being harness managed")
+  Boolean harnessManagedFilter;
+  @Schema(description = "Filter role assignments based on whether they are enabled or disabled") Boolean disabledFilter;
+  @Schema(description = "Filter role assignments based on principal type") Set<PrincipalType> principalTypeFilter;
 }
