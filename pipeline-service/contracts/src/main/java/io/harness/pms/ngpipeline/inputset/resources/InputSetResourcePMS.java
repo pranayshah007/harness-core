@@ -409,7 +409,8 @@ public interface InputSetResourcePMS {
           "pipelineBranch") String pipelineBranch,
       @Parameter(description = "Github Repo identifier of the Pipeline to which the Input Sets belong")
       @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("merge-for-rerun")
