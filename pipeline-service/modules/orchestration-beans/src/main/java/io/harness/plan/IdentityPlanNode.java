@@ -88,12 +88,17 @@ public class IdentityPlanNode implements Node {
 
   public static IdentityPlanNode mapPlanNodeToIdentityNode(
       Node node, StepType stepType, String originalNodeExecutionUuid) {
+    return mapPlanNodeToIdentityNode(node, stepType, originalNodeExecutionUuid, false);
+  }
+
+  public static IdentityPlanNode mapPlanNodeToIdentityNode(
+      Node node, StepType stepType, String originalNodeExecutionUuid, boolean alwaysSkipGraph) {
     return IdentityPlanNode.builder()
         .uuid(node.getUuid())
         .name(node.getName())
         .identifier(node.getIdentifier())
         .group(node.getGroup())
-        .skipGraphType(node.getSkipGraphType())
+        .skipGraphType(alwaysSkipGraph ? SkipType.SKIP_NODE : node.getSkipGraphType())
         .stepType(stepType)
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
@@ -102,6 +107,7 @@ public class IdentityPlanNode implements Node {
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
   }
+
   public static IdentityPlanNode mapPlanNodeToIdentityNode(String newUuid, Node node, String nodeIdentifier,
       String nodeName, StepType stepType, String originalNodeExecutionUuid) {
     return IdentityPlanNode.builder()

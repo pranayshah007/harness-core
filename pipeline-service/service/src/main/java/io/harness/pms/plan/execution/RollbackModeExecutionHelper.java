@@ -96,7 +96,7 @@ public class RollbackModeExecutionHelper {
         continue;
       }
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid());
+          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
       planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), identityPlanNode);
     }
     for (Node planNode : plan.getPlanNodes()) {
