@@ -28,7 +28,6 @@ public class RatioServiceLevelIndicatorTransformer
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
         .sliMissingDataType(serviceLevelIndicatorDTO.getSliMissingDataType())
         .name(serviceLevelIndicatorDTO.getName())
-        .type(serviceLevelIndicatorDTO.getType())
         .metric1(ratioSLIMetricSpec.getMetric1())
         .metric2(ratioSLIMetricSpec.getMetric2())
         .eventType(ratioSLIMetricSpec.getEventType())

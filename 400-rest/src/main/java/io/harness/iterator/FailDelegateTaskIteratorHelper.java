@@ -71,6 +71,7 @@ public class FailDelegateTaskIteratorHelper {
   @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
+  private static int MAX_BROADCAST_ROUND = 3;
 
   @VisibleForTesting
   public void markTimedOutTasksAsFailed(DelegateTask delegateTask, boolean isDelegateTaskMigrationEnabled) {
@@ -85,6 +86,17 @@ public class FailDelegateTaskIteratorHelper {
     if (asList(QUEUED, PARKED, ABORTED).contains(delegateTask.getStatus())
         && (delegateTask.getExpiry() < currentTimeMillis())) {
       log.info("Marking following long queued tasks as failed [{}]", delegateTask.getUuid());
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
+    }
+  }
+
+  @VisibleForTesting
+  public void markNotAcquiredAfterMultipleBroadcastAsFailed(
+      DelegateTask delegateTask, boolean isDelegateTaskMigrationEnabled) {
+    long now = clock.millis();
+    if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getBroadcastRound() <= MAX_BROADCAST_ROUND
+        && delegateTask.getNextBroadcast() < (now + TimeUnit.MINUTES.toMillis(1))) {
+      log.info("Marking non acquired task after multiple broadcast attempts, as failed [{}]", delegateTask.getUuid());
       endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
     }
   }

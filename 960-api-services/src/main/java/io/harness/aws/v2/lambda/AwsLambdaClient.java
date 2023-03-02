@@ -23,6 +23,10 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import software.amazon.awssdk.services.lambda.model.ListAliasesRequest;
+import software.amazon.awssdk.services.lambda.model.ListAliasesResponse;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
@@ -50,4 +54,9 @@ public interface AwsLambdaClient {
 
   PublishVersionResponse publishVersion(
       AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest);
+
+  ListVersionsByFunctionResponse listVersionsByFunction(
+      AwsInternalConfig awsInternalConfig, ListVersionsByFunctionRequest listVersionsByFunctionRequest);
+
+  ListAliasesResponse listAliases(AwsInternalConfig awsInternalConfig, ListAliasesRequest listAliasesRequest);
 }

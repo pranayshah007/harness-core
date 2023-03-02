@@ -65,6 +65,7 @@ public final class PersistenceIteratorFactory {
     private String name;
     private int poolSize;
     private int batchSize;
+    private int lockTimeout;
     private Duration interval;
   }
 
@@ -164,6 +165,7 @@ public final class PersistenceIteratorFactory {
             .iteratorName(options.name)
             .threadPoolIntervalInSeconds(options.interval)
             .redisModeBatchSize(options.getBatchSize())
+            .redisLockTimeout(options.getLockTimeout())
             .persistentLocker(injector.getInstance(Key.get(PersistentLocker.class)))
             .build();
     injector.injectMembers(iterator);

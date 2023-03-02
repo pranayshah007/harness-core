@@ -27,7 +27,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.io.IOException;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -201,7 +202,16 @@ public class GovernanceRuleExecutionResource {
         // Other ways to return this file is by using a signed url concept. We can see this when adoption grows
         // https://cloud.google.com/storage/docs/access-control/signed-urls
         log.info("Fetching files from GCS");
-        ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        GoogleCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        if (credentials == null) {
+          try {
+            log.info("WI: Using Google ADC");
+            credentials = GoogleCredentials.getApplicationDefault();
+          } catch (IOException e) {
+            log.error("Exception in using Google ADC", e);
+          }
+        }
+
         log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
         Storage storage = StorageOptions.newBuilder()
                               .setProjectId(configuration.getGcpConfig().getGcpProjectId())

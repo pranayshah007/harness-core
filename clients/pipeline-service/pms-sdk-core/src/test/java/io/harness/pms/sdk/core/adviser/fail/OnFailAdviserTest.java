@@ -155,6 +155,6 @@ public class OnFailAdviserTest extends PmsSdkCoreTestBase {
                                            .build()));
 
     boolean canAdvise = onFailAdviser.canAdvise(advisingEventBuilder.build());
-    assertThat(canAdvise).isTrue();
+    assertThat(canAdvise).isFalse();
   }
 }

@@ -27,6 +27,8 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/helpers:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp/taskhandlers:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/tasklogging:module",
+        "//930-delegate-tasks/src/main/java/io/harness/http:module",
+        "//930-delegate-tasks/src/main/java/io/harness/http/beans:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
         "//930-delegate-tasks/src/main/java/software/wings/beans/configfile:module",
         "//930-delegate-tasks/src/main/java/software/wings/core/executors/bash:module",

@@ -35,7 +35,7 @@ type Config struct {
 		CertPath   string `envconfig:"HSQS_REDIS_SSL_CA_CERT_PATH"`
 	}
 
-	Secret string `envconfig:"JWT_SECRET" default:"vhtftr5486786764563452fhtfthffuygiogyuyryr543432453"`
+	Secret string `envconfig:"JWT_SECRET" default:"ThisIsMyUniqueJwtQueueServiceSecret"`
 
 	PendingTimeout int `envconfig:"REDIS_PENDING_TIMEOUT" default:"10000"`
 	ClaimTimeout   int `envconfig:"REDIS_CLAIM_TIMEOUT" default:"10000"`

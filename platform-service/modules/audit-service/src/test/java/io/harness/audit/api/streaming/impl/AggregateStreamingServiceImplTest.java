@@ -25,7 +25,6 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import io.harness.CategoryTest;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
-import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
@@ -40,6 +39,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
@@ -159,7 +159,7 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
   public void testAggregatedList() throws IOException {
     long now = System.currentTimeMillis();
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    StreamingDestinationStatus statusEnum = StreamingDestinationStatus.ACTIVE;
+    StreamingDestinationStatus statusEnum = ACTIVE;
     int page = 0;
     int limit = 10;
     Pageable pageable = PageUtils.getPageRequest(new PageRequest(page, limit,
@@ -174,21 +174,57 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
     when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(call);
     when(streamingDestinationMapper.toDTO(any()))
         .thenReturn(new StreamingDestinationDTO().identifier("sd1").connectorRef(connectorRef));
-    when(streamingService.list(StreamingDestinationKeys.accountIdentifier, pageable, filterProperties))
-        .thenReturn(new PageImpl<StreamingDestination>(
-            List.of(AwsS3StreamingDestination.builder()
-                        .accountIdentifier(StreamingDestinationKeys.accountIdentifier)
-                        .identifier("sd1")
-                        .connectorRef(connectorRef)
-                        .build())));
+    when(streamingService.list(ACCOUNT_IDENTIFIER, pageable, filterProperties))
+        .thenReturn(new PageImpl<>(List.of(AwsS3StreamingDestination.builder()
+                                               .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                               .identifier("sd1")
+                                               .connectorRef(connectorRef)
+                                               .build())));
     when(streamingBatchRepository.findOne(any(), any()))
         .thenReturn(StreamingBatchDTO.builder().accountIdentifier(ACCOUNT_IDENTIFIER).lastStreamedAt(now).build());
-    Page<StreamingDestinationAggregateDTO> streamingDestinationsPage = aggregateStreamingService.getAggregatedList(
-        StreamingDestinationKeys.accountIdentifier, pageable, filterProperties);
+    Page<StreamingDestinationAggregateDTO> streamingDestinationsPage =
+        aggregateStreamingService.getAggregatedList(ACCOUNT_IDENTIFIER, pageable, filterProperties);
 
     verify(streamingBatchRepository, times(1)).findOne(criteriaArgumentCaptor.capture(), sortArgumentCaptor.capture());
 
-    verify(connectorResourceClient, times(1)).get(connectorId, StreamingDestinationKeys.accountIdentifier, null, null);
+    verify(connectorResourceClient, times(1)).get(connectorId, ACCOUNT_IDENTIFIER, null, null);
+    assertThat(streamingDestinationsPage).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testAggregatedListWhenConnectorNotFound() {
+    Pageable pageable = PageUtils.getPageRequest(new PageRequest(
+        0, 10, List.of(aSortOrder().withField(StreamingDestinationKeys.lastModifiedDate, OrderType.DESC).build())));
+    StreamingDestinationFilterProperties filterProperties =
+        StreamingDestinationFilterProperties.builder()
+            .searchTerm(randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10))
+            .status(ACTIVE)
+            .build();
+
+    when(connectorResourceClient.get(any(), any(), any(), any()))
+        .thenThrow(new InvalidRequestException(
+            String.format("Connector with identifier [%s] in project [null], org [null] not found", connectorId)));
+    when(streamingDestinationMapper.toDTO(any()))
+        .thenReturn(new StreamingDestinationDTO().identifier("sd1").connectorRef(connectorRef));
+    when(streamingService.list(ACCOUNT_IDENTIFIER, pageable, filterProperties))
+        .thenReturn(new PageImpl<>(List.of(AwsS3StreamingDestination.builder()
+                                               .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                               .identifier("sd1")
+                                               .connectorRef(connectorRef)
+                                               .build())));
+    when(streamingBatchRepository.findOne(any(), any()))
+        .thenReturn(StreamingBatchDTO.builder()
+                        .accountIdentifier(ACCOUNT_IDENTIFIER)
+                        .lastStreamedAt(System.currentTimeMillis())
+                        .build());
+    Page<StreamingDestinationAggregateDTO> streamingDestinationsPage =
+        aggregateStreamingService.getAggregatedList(ACCOUNT_IDENTIFIER, pageable, filterProperties);
+
+    verify(streamingBatchRepository, times(1)).findOne(any(), any());
+    verify(connectorResourceClient, times(1)).get(connectorId, ACCOUNT_IDENTIFIER, null, null);
+    assertThat(streamingDestinationsPage.stream().findFirst().get().getConnectorInfo()).isNull();
     assertThat(streamingDestinationsPage).isNotEmpty();
   }
 }

@@ -63,7 +63,9 @@ public enum ResourceType {
   CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT),
   TARGET_GROUP(ResourceTypeConstants.TARGET_GROUP),
   FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG),
-  NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS);
+  NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS),
+  BUDGET_GROUP(ResourceTypeConstants.BUDGET_GROUP),
+  NODE_EXECUTION(ResourceTypeConstants.NODE_EXECUTION);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

@@ -4750,12 +4750,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "UsernamePassword"
+            "UsernamePassword",
+            "PersonalAccessToken"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PersonalAccessToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JiraPATDTO"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -4806,6 +4823,25 @@
               "type": "string"
             },
             "usernameRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JiraPATDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JiraAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "patRef"
+          ],
+          "properties": {
+            "patRef": {
               "type": "string"
             }
           }

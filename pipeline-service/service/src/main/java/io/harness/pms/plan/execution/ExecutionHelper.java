@@ -247,14 +247,7 @@ public class ExecutionHelper {
      */
       // We don't have schema validation for V1 yaml as of now.
       if (PipelineVersion.V0.equals(version)) {
-        String yamlForValidatingSchema;
-        try {
-          yamlForValidatingSchema =
-              YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
-        } catch (Exception ex) {
-          log.error("Exception occurred while removing inputs from pipeline yaml", ex);
-          yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
-        }
+        String yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
         pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
             pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
       }
@@ -309,7 +302,7 @@ public class ExecutionHelper {
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
             .setIsDebug(isDebug);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }

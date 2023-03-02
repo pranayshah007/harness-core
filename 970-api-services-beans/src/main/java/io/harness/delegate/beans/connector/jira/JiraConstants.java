@@ -15,4 +15,5 @@ import io.harness.annotations.dev.OwnedBy;
 public class JiraConstants {
   // auth types
   public static final String USERNAME_PASSWORD = "UsernamePassword";
+  public static final String PAT = "PersonalAccessToken";
 }

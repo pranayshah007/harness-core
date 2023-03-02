@@ -68,6 +68,7 @@ public class EcsDeploymentHelper {
 
     EcsRollingDeployResult ecsRollingDeployResult =
         EcsRollingDeployResult.builder()
+            .serviceName(createServiceRequest.serviceName())
             .region(ecsInfraConfig.getRegion())
             .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
                 ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
@@ -102,7 +103,9 @@ public class EcsDeploymentHelper {
         ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback, timeoutInMillis);
 
     EcsCanaryDeployResult ecsCanaryDeployResult =
-        EcsCanaryDeployResult.builder()
+        EcsCanaryDeployResult
+            .builder()
+
             .region(ecsInfraConfig.getRegion())
             .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
                 ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))

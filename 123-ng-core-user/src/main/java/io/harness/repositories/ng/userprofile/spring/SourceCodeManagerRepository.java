@@ -23,5 +23,5 @@ import org.springframework.transaction.annotation.Transactional;
 public interface SourceCodeManagerRepository extends PagingAndSortingRepository<SourceCodeManager, String> {
   List<SourceCodeManager> findByUserIdentifierAndAccountIdentifier(String userIdentifier, String accountIdentifier);
   long deleteByUserIdentifierAndNameAndAccountIdentifier(String userIdentifier, String name, String accountIdentifier);
-  List<SourceCodeManager> findAllByAccountIdentifier(String accountIdentifier);
+  long deleteAllByAccountIdentifier(String accountIdentifier);
 }

@@ -28,7 +28,7 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
@@ -39,6 +39,7 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -661,7 +662,19 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   public BigQuery getBigQueryService() {
-    ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-    return BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials = null;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: In getBigQueryService. using older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: In getBigQueryService. using Google ADC");
+      try {
+        sourceCredentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
+    }
+    return BigQueryOptions.newBuilder().setCredentials(sourceCredentials).build().getService();
   }
 }

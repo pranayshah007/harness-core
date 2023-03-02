@@ -62,6 +62,7 @@ import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
 import io.harness.plancreator.steps.v1.StepsPlanCreatorV1;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
+import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
@@ -160,6 +161,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ServiceNowUpdateStepPlanCreator());
     planCreators.add(new ServiceNowImportSetStepPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new CustomStagePlanCreator());
     planCreators.add(new CustomStagePlanCreatorV1());
     planCreators.add(new CustomApprovalStepPlanCreator());

@@ -51,18 +51,27 @@ public class ServiceElementMapper {
   }
 
   public ServiceResponseDTO writeDTO(ServiceEntity serviceEntity) {
-    return ServiceResponseDTO.builder()
-        .accountId(serviceEntity.getAccountId())
-        .orgIdentifier(serviceEntity.getOrgIdentifier())
-        .projectIdentifier(serviceEntity.getProjectIdentifier())
-        .identifier(serviceEntity.getIdentifier())
-        .name(serviceEntity.getName())
-        .description(serviceEntity.getDescription())
-        .deleted(serviceEntity.getDeleted())
-        .tags(convertToMap(serviceEntity.getTags()))
-        .version(serviceEntity.getVersion())
-        .yaml(serviceEntity.getYaml())
-        .build();
+    return writeDTO(serviceEntity, false);
+  }
+
+  public ServiceResponseDTO writeDTO(ServiceEntity serviceEntity, boolean includeVersionInfo) {
+    ServiceResponseDTO serviceResponseDTO = ServiceResponseDTO.builder()
+                                                .accountId(serviceEntity.getAccountId())
+                                                .orgIdentifier(serviceEntity.getOrgIdentifier())
+                                                .projectIdentifier(serviceEntity.getProjectIdentifier())
+                                                .identifier(serviceEntity.getIdentifier())
+                                                .name(serviceEntity.getName())
+                                                .description(serviceEntity.getDescription())
+                                                .deleted(serviceEntity.getDeleted())
+                                                .tags(convertToMap(serviceEntity.getTags()))
+                                                .version(serviceEntity.getVersion())
+                                                .yaml(serviceEntity.getYaml())
+                                                .build();
+
+    if (includeVersionInfo && serviceEntity.getType() != null) {
+      serviceResponseDTO.setV2Service(true);
+    }
+    return serviceResponseDTO;
   }
 
   public ServiceResponseDTO writeAccessListDTO(ServiceEntity serviceEntity) {
@@ -82,6 +91,14 @@ public class ServiceElementMapper {
   public ServiceResponse toResponseWrapper(ServiceEntity serviceEntity) {
     return ServiceResponse.builder()
         .service(writeDTO(serviceEntity))
+        .createdAt(serviceEntity.getCreatedAt())
+        .lastModifiedAt(serviceEntity.getLastModifiedAt())
+        .build();
+  }
+
+  public ServiceResponse toResponseWrapper(ServiceEntity serviceEntity, boolean includeVersionInfo) {
+    return ServiceResponse.builder()
+        .service(writeDTO(serviceEntity, includeVersionInfo))
         .createdAt(serviceEntity.getCreatedAt())
         .lastModifiedAt(serviceEntity.getLastModifiedAt())
         .build();

@@ -178,7 +178,7 @@ public class TerraformCloudStepHelper {
   }
 
   public void saveTerraformPlanExecutionDetails(
-      Ambiance ambiance, TerraformCloudRunTaskResponse response, String provisionerIdentifier) {
+      Ambiance ambiance, String planFileJsonId, String policyCheckFileJsonId, String provisionerIdentifier) {
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -193,8 +193,10 @@ public class TerraformCloudStepHelper {
             .pipelineExecutionId(planExecutionId)
             .stageExecutionId(stageExecutionId)
             .provisionerId(provisionerIdentifier)
-            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
+            .tfPlanJsonFieldId(planFileJsonId)
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfcPolicyChecksFileId(policyCheckFileJsonId)
+            .tfcPolicyChecksFileBucket(FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS.name())
             .build();
 
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);

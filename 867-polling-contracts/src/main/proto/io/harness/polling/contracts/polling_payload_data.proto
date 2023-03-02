@@ -154,6 +154,7 @@ message GitPollingPayload {
   string eventType = 1;
   string webhookId = 2;
   int32 pollInterval = 3;
+  string repository = 4;
 }
 
 message CustomPayload {

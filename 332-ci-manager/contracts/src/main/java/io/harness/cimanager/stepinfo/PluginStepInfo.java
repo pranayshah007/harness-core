@@ -87,7 +87,7 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
   private ParameterField<List<String>> entrypoint;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private Map<String, String> envVariables;
+  private ParameterField<Map<String, ParameterField<String>>> envVariables;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private boolean harnessManagedImage;
@@ -109,8 +109,9 @@ public class PluginStepInfo implements CIStepInfo, WithConnectorRef {
   public PluginStepInfo(String identifier, String name, Integer retry, ParameterField<Map<String, JsonNode>> settings,
       ParameterField<String> image, ParameterField<String> connectorRef, ParameterField<String> uses,
       ContainerResource resources, ParameterField<UnitTestReport> reports, ParameterField<List<String>> entrypoint,
-      Map<String, String> envVariables, boolean harnessManagedImage, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<Map<String, ParameterField<String>>> envVariables, boolean harnessManagedImage,
+      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
+      ParameterField<ImagePullPolicy> imagePullPolicy) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);

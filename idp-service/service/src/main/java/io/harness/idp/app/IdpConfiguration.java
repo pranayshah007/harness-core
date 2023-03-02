@@ -9,6 +9,7 @@ package io.harness.idp.app;
 
 import static java.util.Collections.singletonList;
 
+import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -49,6 +50,9 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("accessControlClient")
+  @ConfigSecret
+  private AccessControlClientConfiguration accessControlClientConfiguration;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("idpServiceSecret") private String idpServiceSecret;

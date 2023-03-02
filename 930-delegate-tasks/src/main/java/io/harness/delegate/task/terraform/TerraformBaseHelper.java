@@ -73,8 +73,8 @@ public interface TerraformBaseHelper {
       LogCallback logCallback, GitBaseRequest gitBaseRequestForConfigFile, String baseDir, String workingDir);
 
   List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo, String scriptDir,
-      LogCallback logCallback, String accountId, String tfVarDirectory, Map<String, String> commitIdToFetchedFilesMap)
-      throws IOException;
+      LogCallback logCallback, String accountId, String tfVarDirectory, Map<String, String> commitIdToFetchedFilesMap,
+      boolean isTerraformCloudCli) throws IOException;
 
   String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo bcFileInfo,
       String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,

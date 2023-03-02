@@ -201,3 +201,17 @@ func ValidateAckRequest(request *AckRequest) error {
 	return nil
 
 }
+
+// ValidateAckRequest helper method to Validate Enqueue Request
+func ValidateUnAckRequest(request *UnAckRequest) error {
+	if len(request.Topic) == 0 {
+		return fmt.Errorf("UnAckRequest Topic is missing")
+	}
+
+	if len(request.SubTopic) == 0 {
+		return fmt.Errorf("UnAckRequest SubTopic is missing")
+	}
+
+	return nil
+
+}

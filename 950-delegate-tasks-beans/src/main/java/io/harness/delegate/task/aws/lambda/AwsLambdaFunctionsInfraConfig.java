@@ -27,4 +27,5 @@ public class AwsLambdaFunctionsInfraConfig implements AwsLambdaInfraConfig {
   AwsConnectorDTO awsConnectorDTO;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   List<EncryptedDataDetail> encryptionDataDetails;
+  String infraStructureKey;
 }

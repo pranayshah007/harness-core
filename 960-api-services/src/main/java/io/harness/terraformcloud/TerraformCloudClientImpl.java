@@ -159,6 +159,12 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
     return executeHttpCall(new HttpGet(url));
   }
 
+  @Override
+  public void overridePolicyChecks(String url, String token, String policyChecksId) throws IOException {
+    Call<Void> call = getRestClient(url).overridePolicyChecks(getAuthorization(token), policyChecksId);
+    executeRestCall(call);
+  }
+
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()

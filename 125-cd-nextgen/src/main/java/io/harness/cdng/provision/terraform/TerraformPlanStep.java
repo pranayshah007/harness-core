@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -85,11 +86,19 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    List<EntityDetail> entityDetailList = new ArrayList<>();
+    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepParameters.getSpec();
+    boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
+    if (isTerraformCloudCli) {
+      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
+      helper.checkIfDelegateSupportsCloudCli(ambiance);
+    }
+
+    List<EntityDetail> entityDetailList = new ArrayList<>();
 
     TerraformPlanStepParameters stepParametersSpec = (TerraformPlanStepParameters) stepParameters.getSpec();
 
@@ -114,10 +123,13 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     bcFileEntityDetails.ifPresent(entityDetailList::add);
 
     // Secret Manager Connector
-    String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
-    identifierRef = IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
-    entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
-    entityDetailList.add(entityDetail);
+    if (!stepParametersSpec.getConfiguration().getIsTerraformCloudCli().getValue()) {
+      String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
+      identifierRef =
+          IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
+      entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
+      entityDetailList.add(entityDetail);
+    }
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetailList, true);
   }
@@ -134,9 +146,22 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
-    ParameterField<Boolean> exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
-    ParameterField<Boolean> exportTfHumanReadablePlanField =
-        planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
+
+    ParameterField<Boolean> exportTfPlanJsonField;
+    ParameterField<Boolean> exportTfHumanReadablePlanField;
+
+    boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
+
+    if (!isTerraformCloudCli) {
+      exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
+      exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
+      builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
+      builder.saveTerraformHumanReadablePlan(
+          !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
+      builder.encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters));
+      builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)
             .terraformCommandUnit(TerraformCommandUnit.Plan)
@@ -144,7 +169,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
                 configuration.getConfigFiles(), stepElementParameters.getType()))
             .currentStateFileId(helper.getLatestFileId(entityId))
-            .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
             .configFile(helper.getGitFetchFilesConfig(
                 configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
@@ -153,13 +177,9 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
             .backendConfigFileInfo(helper.toTerraformBackendFileInfo(configuration.getBackendConfig(), ambiance))
             .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
-            .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
-            .saveTerraformHumanReadablePlan(
-                !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue())
             .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
                     ? new HashMap<>()
                     : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
-            .encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters))
             .terraformCommand(TerraformPlanCommand.APPLY == planStepParameters.getConfiguration().getCommand()
                     ? TerraformCommand.APPLY
                     : TerraformCommand.DESTROY)
@@ -168,6 +188,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 
     TaskData taskData =
@@ -218,48 +239,51 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       TerraformPlanOutcomeBuilder tfPlanOutcomeBuilder = TerraformPlanOutcome.builder();
-      String provisionerIdentifier =
-          ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier());
-      helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance);
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
       tfPlanOutcomeBuilder.detailedExitCode(terraformTaskNGResponse.getDetailedExitCode());
 
-      ParameterField<Boolean> exportTfPlanJsonField =
-          planStepParameters.getConfiguration().getExportTerraformPlanJson();
-      boolean exportTfPlanJson = !ParameterField.isNull(exportTfPlanJsonField)
-          && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
+      if (!planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue()) {
+        String provisionerIdentifier =
+            ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier());
+        helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance);
 
-      ParameterField<Boolean> exportTfHumanReadablePlanField =
-          planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
-      boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
-          && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
+        ParameterField<Boolean> exportTfPlanJsonField =
+            planStepParameters.getConfiguration().getExportTerraformPlanJson();
+        boolean exportTfPlanJson = !ParameterField.isNull(exportTfPlanJsonField)
+            && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
 
-      if (exportHumanReadablePlan || exportTfPlanJson) {
-        // First we save the terraform plan execution detail
+        ParameterField<Boolean> exportTfHumanReadablePlanField =
+            planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
+        boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
+            && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
 
-        helper.saveTerraformPlanExecutionDetails(
-            ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
+        if (exportHumanReadablePlan || exportTfPlanJson) {
+          // First we save the terraform plan execution detail
 
-        if (exportHumanReadablePlan) {
-          String humanReadableOutputName =
-              helper.saveTerraformPlanHumanReadableOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+          helper.saveTerraformPlanExecutionDetails(
+              ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
-          if (humanReadableOutputName != null) {
-            tfPlanOutcomeBuilder.humanReadableFilePath(TerraformHumanReadablePlanFunctor.getExpression(
-                planStepParameters.getStepFqn(), humanReadableOutputName));
+          if (exportHumanReadablePlan) {
+            String humanReadableOutputName =
+                helper.saveTerraformPlanHumanReadableOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+            if (humanReadableOutputName != null) {
+              tfPlanOutcomeBuilder.humanReadableFilePath(TerraformHumanReadablePlanFunctor.getExpression(
+                  planStepParameters.getStepFqn(), humanReadableOutputName));
+            }
           }
-        }
 
-        if (exportTfPlanJson) {
-          String planJsonOutputName =
-              helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+          if (exportTfPlanJson) {
+            String planJsonOutputName =
+                helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
 
-          if (planJsonOutputName != null) {
-            tfPlanOutcomeBuilder.jsonFilePath(
-                TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+            if (planJsonOutputName != null) {
+              tfPlanOutcomeBuilder.jsonFilePath(
+                  TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+            }
           }
         }
       }
