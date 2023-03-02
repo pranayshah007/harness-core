@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.steps.IACMStepInfo;
+import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.iacm.IACMStepType;
@@ -74,6 +75,17 @@ public class IACMBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(PluginStepNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ACTION_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.IACM))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(ActionStepNode.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.IACM_STEPS)
