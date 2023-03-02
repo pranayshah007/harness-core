@@ -130,8 +130,8 @@ public class ValidateAndMergeHelper {
 
   public InputSetTemplateResponseDTOPMS getInputSetTemplateResponseDTO(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> stageIdentifiers) {
-    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (optionalPipelineEntity.isPresent()) {
       String template;
       List<String> replacedExpressions = null;
