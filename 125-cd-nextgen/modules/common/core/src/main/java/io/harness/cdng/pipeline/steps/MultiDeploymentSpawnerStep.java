@@ -47,15 +47,18 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
@@ -88,6 +91,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, MultiDeploymentStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for MultiDeploymentSpawner Step [{}]", stepParameters);
+    // Mark the status as Skipped if all children are skipped.
+    if (StatusUtils.checkIfAllChildrenSkipped(responseDataMap.values()
+                                                  .stream()
+                                                  .filter(o -> o instanceof StepResponseNotifyData)
+                                                  .map(o -> ((StepResponseNotifyData) o).getStatus())
+                                                  .collect(Collectors.toList()))) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
     return createStepResponseFromChildResponse(responseDataMap);
   }
 

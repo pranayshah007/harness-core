@@ -88,6 +88,22 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .handleChildrenResponseInternal(prepareAmbience(), null, Maps.newHashMap("a", stepResponseNotifyData))
             .getStatus())
         .isEqualTo(Status.SUCCEEDED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    StepResponseNotifyData stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.SKIPPED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.SKIPPED);
+
+    stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SUCCEEDED).build();
+    stepResponseNotifyData1 = StepResponseNotifyData.builder().status(Status.FAILED).build();
+    assertThat(multiDeploymentSpawnerStep
+                   .handleChildrenResponseInternal(
+                       prepareAmbience(), null, Map.of("a", stepResponseNotifyData, "b", stepResponseNotifyData1))
+                   .getStatus())
+        .isEqualTo(Status.FAILED);
   }
 
   @Test
