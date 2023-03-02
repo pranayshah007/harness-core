@@ -10,8 +10,10 @@ package io.harness.debezium;
 import io.harness.redis.RedisConfig;
 import io.harness.serializer.JsonUtils;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -47,6 +49,7 @@ public class DebeziumConfiguration {
   public static final String FIELD_EXCLUDE_LIST = "field.exclude.list";
   public static final String HEARTBEAT_INTERVAL_MS = "heartbeat.interval.ms";
   public static final String MONGODB_CONNECTION_STRING = "mongodb.connection.string";
+  public static final String SIGNAL_DATA_COLLECTION = "signal.data.collection";
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
@@ -55,6 +58,9 @@ public class DebeziumConfiguration {
     } else {
       props.setProperty(SNAPSHOT_MODE, "initial");
     }
+    Optional.ofNullable(debeziumConfig.getSignalDataCollection())
+        .filter(x -> !x.isEmpty())
+        .ifPresent(x -> props.setProperty(SIGNAL_DATA_COLLECTION, x));
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     props.setProperty(OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisLockConfig));
@@ -84,7 +90,13 @@ public class DebeziumConfiguration {
     /* begin connector properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);
     props.setProperty(MONGODB_NAME, debeziumConfig.getMongodbName());
-    props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
+    if (!debeziumConfig.getSignalDataCollection().isEmpty()) {
+      String database =
+          Arrays.stream(debeziumConfig.getSignalDataCollection().split("\\.")).collect(Collectors.toList()).get(0);
+      props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList() + "," + database);
+    } else {
+      props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
+    }
     props.setProperty(TRANSFORMS, "unwrap");
     props.setProperty(TRANSFORMS_UNWRAP_TYPE, DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);
     props.setProperty(TRANSFORMS_UNWRAP_DROP_TOMBSTONES, "false");
@@ -100,7 +112,12 @@ public class DebeziumConfiguration {
     Properties debeziumProperties = getDebeziumProperties(debeziumConfig, redisLockConfig);
     debeziumProperties.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-" + monitoredCollection);
-    debeziumProperties.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, monitoredCollection);
+    if (!debeziumConfig.getSignalDataCollection().isEmpty()) {
+      debeziumProperties.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST,
+          monitoredCollection + "," + debeziumConfig.getSignalDataCollection());
+    } else {
+      debeziumProperties.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, monitoredCollection);
+    }
     return debeziumProperties;
   }
 }
