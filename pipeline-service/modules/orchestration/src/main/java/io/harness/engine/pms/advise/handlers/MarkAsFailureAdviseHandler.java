@@ -23,7 +23,7 @@ public class MarkAsFailureAdviseHandler extends NextStepHandler {
   @Inject NodeExecutionServiceImpl nodeExecutionService;
   @Override
   public void handleAdvise(NodeExecution prevNodeExecution, AdviserResponse adviserResponse) {
-    if (!prevNodeExecution.getStatus().equals(Status.FAILED)) {
+    if (!Status.FAILED.equals(prevNodeExecution.getStatus())) {
       nodeExecutionService.updateStatusWithOps(
           prevNodeExecution.getUuid(), Status.FAILED, null, StatusUtils.brokeStatuses());
     }
