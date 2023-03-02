@@ -6,7 +6,10 @@
  */
 package io.harness.licensing.migrations.licenses;
 
+import static io.harness.annotations.dev.HarnessTeam.PLG;
+
 import io.harness.ModuleType;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.CDLicenseType;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
@@ -18,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
-public class LocalDevAdminAccountCDLicenseMigration implements NGMigration {
+@OwnedBy(PLG)
+public class LocalAdminCDLicenseMigration implements NGMigration {
   @Inject MongoTemplate mongoTemplate;
   private final String ADMIN_ACCOUNT_IDENTIFIER = "kmpySmUISimoRrJL6NL73w";
   private final int FREE_WORKLOADS = 5;
@@ -34,8 +38,8 @@ public class LocalDevAdminAccountCDLicenseMigration implements NGMigration {
     cdModuleLicense.setStartTime(System.currentTimeMillis());
     cdModuleLicense.setExpiryTime(Long.MAX_VALUE);
     cdModuleLicense.setWorkloads(FREE_WORKLOADS);
-    cdModuleLicense.setCdLicenseType(CDLicenseType.SERVICES);
     cdModuleLicense.setSelfService(true);
+    cdModuleLicense.setCdLicenseType(CDLicenseType.SERVICES);
 
     mongoTemplate.save(cdModuleLicense);
     log.info("Finish create local Admin Account CD module license");
