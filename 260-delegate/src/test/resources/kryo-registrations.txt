@@ -2616,6 +2616,7 @@
 9800011:io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig
 9800012:io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
+9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO

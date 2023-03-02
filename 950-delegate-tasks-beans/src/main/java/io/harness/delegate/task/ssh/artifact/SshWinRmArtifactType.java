@@ -21,5 +21,6 @@ public enum SshWinRmArtifactType {
   AZURE,
   ECR,
   ACR,
-  GCR
+  GCR,
+  DOCKER
 }

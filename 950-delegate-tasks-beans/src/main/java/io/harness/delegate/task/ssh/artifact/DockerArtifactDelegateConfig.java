@@ -19,12 +19,10 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class AcrArtifactDelegateConfig implements SkipCopyArtifactDelegateConfig, NestedAnnotationResolver {
+public class DockerArtifactDelegateConfig implements SkipCopyArtifactDelegateConfig, NestedAnnotationResolver {
   String identifier;
   boolean primaryArtifact;
-  String subscription;
-  String registry;
-  String image;
+  String imagePath;
   String tag;
 
   @Override
@@ -34,11 +32,11 @@ public class AcrArtifactDelegateConfig implements SkipCopyArtifactDelegateConfig
 
   @Override
   public SshWinRmArtifactType getArtifactType() {
-    return SshWinRmArtifactType.ACR;
+    return SshWinRmArtifactType.DOCKER;
   }
 
   @Override
   public String getArtifactPath() {
-    return format("%s/%s:%s", registry, image, tag);
+    return format("%s:%s", imagePath, tag);
   }
 }
