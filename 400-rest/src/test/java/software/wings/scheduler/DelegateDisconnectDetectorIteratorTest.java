@@ -136,7 +136,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
     createAndAssignDelegateTasks(delegate);
     assertThat(getAlreadyStartedDelegateTask(ACCOUNT_ID, delegate.getUuid())).hasSize(3);
     delegateDisconnectDetectorIterator.handle(delegate);
-    delegateTaskServiceClassic.markAllTasksFailedForDelegate(ACCOUNT_ID, delegate.getUuid());
+    delegateTaskServiceClassic.markAllTasksFailedForDelegate(ACCOUNT_ID, delegate.getUuid(), "delegate disconnected");
     assertThat(getAlreadyStartedDelegateTask(ACCOUNT_ID, delegate.getUuid())).hasSize(0);
   }
 

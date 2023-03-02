@@ -1991,7 +1991,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
-  public void markAllTasksFailedForDelegate(String accountId, String delegateId) {
+  public void markAllTasksFailedForDelegate(String accountId, String delegateId, String reasonOfDisconnection) {
     List<DelegateTask> delegateTasks = getDelegateTasksForFailing(accountId, delegateId, false);
 
     if (delegateTaskMigrationHelper.isDelegateTaskMigrationEnabled()) {
@@ -2004,7 +2004,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     Delegate delegate = delegateCache.get(accountId, delegateId, false);
-    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] disconnected while executing the task";
+    String errorSubMsg = "disconnected while executing the task";
+    if(delegate.isImmutable() && reasonOfDisconnection == "RESTARTED"){
+      errorSubMsg = "restarted while executing the task";
+    }
+    final String errorMessage = "Delegate [" + delegate.getDelegateName() + "] "+errorSubMsg;
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)
@@ -2124,8 +2128,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
-  public void onDisconnected(String accountId, String delegateId) {
-    markAllTasksFailedForDelegate(accountId, delegateId);
+  public void onDisconnected(String accountId, String delegateId, String reasonOfDisconnection) {
+    markAllTasksFailedForDelegate(accountId, delegateId, reasonOfDisconnection);
   }
 
   @Override

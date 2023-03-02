@@ -11,7 +11,7 @@ import io.harness.delegate.beans.Delegate;
 
 public interface DelegateObserver {
   void onAdded(Delegate delegate);
-  void onDisconnected(String accountId, String delegateId);
+  void onDisconnected(String accountId, String delegateId, String reasonOfDisconnection);
   void onReconnected(Delegate delegate);
 
   void onDelegateTagsUpdated(String accountId);

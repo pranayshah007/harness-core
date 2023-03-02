@@ -398,7 +398,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
-  public void onDisconnected(String accountId, String delegateId) {
+  public void onDisconnected(String accountId, String delegateId, String reasonOfDisconnection) {
     perpetualTaskRecordDao.markAllTasksOnDelegateForReassignment(accountId, delegateId);
   }
 

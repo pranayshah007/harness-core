@@ -84,7 +84,7 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   boolean checkDelegateConnected(String accountId, String delegateId);
 
-  void markAllTasksFailedForDelegate(String accountId, String delegateId);
+  void markAllTasksFailedForDelegate(String accountId, String delegateId, String reasonOfDisconnection);
 
   void addToTaskActivityLog(DelegateTask task, String message);
 

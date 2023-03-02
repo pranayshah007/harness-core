@@ -55,7 +55,7 @@ public class KubernetesClusterHandler implements DelegateObserver {
   }
 
   @Override
-  public void onDisconnected(String accountId, String delegateId) {
+  public void onDisconnected(String accountId, String delegateId, String reasonOfDisconnection) {
     // do nothing
   }
 

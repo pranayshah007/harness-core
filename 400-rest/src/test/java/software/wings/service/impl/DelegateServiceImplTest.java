@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.delegate.utils.DelegateServiceConstants.EMPTY_STR;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
@@ -689,8 +690,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     delegateService.getSubject().register(delegateObserver);
     String delegateId = generateUuid();
     String accountId = generateUuid();
-    delegateService.onDelegateDisconnected(accountId, delegateId);
-    verify(delegateObserver).onDisconnected(accountId, delegateId);
+    delegateService.onDelegateDisconnected(accountId, delegateId, EMPTY_STR);
+    verify(delegateObserver).onDisconnected(accountId, delegateId, EMPTY_STR);
   }
 
   @Test

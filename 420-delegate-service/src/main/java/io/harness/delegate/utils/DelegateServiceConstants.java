@@ -24,4 +24,9 @@ public interface DelegateServiceConstants {
   Duration HEARTBEAT_EXPIRY_TIME_FIVE_MINS = ofMinutes(5);
 
   String ACCOUNT_ID = "ACCOUNT_ID";
+
+  String REASON_OF_DISCONNECTION = "RESTARTED";
+
+  String EMPTY_STR = "";
+
 }

@@ -7,6 +7,7 @@
 
 package io.harness.iterator;
 
+import static io.harness.delegate.utils.DelegateServiceConstants.EMPTY_STR;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
@@ -112,7 +113,7 @@ public class DelegateDisconnectDetectorIterator
     try (AutoLogContext ignore1 = new DelegateLogContext(delegate.getUuid(), OVERRIDE_ERROR);
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {
       // trigger disconnect event which marks started delegate task as expired and PT's as unassigned
-      delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
+      delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid(), EMPTY_STR);
       // mark delegate as disconnected
       delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       delegateService.updateLastExpiredEventHeartbeatTime(

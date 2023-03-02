@@ -186,7 +186,7 @@ public interface DelegateService extends OwnedByAccount {
 
   void delegateDisconnected(String accountId, String delegateId, String delegateConnectionId);
 
-  void onDelegateDisconnected(String accountId, String delegateId);
+  void onDelegateDisconnected(String accountId, String delegateId, String reasonOfDisconnection);
 
   void deleteAllDelegatesExceptOne(String accountId, long shutdownInterval);
 
