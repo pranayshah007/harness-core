@@ -91,6 +91,9 @@ public class InputSetsApiImpl implements InputSetsApi {
   public Response getInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branchGitX,
       String parentEntityConnectorRef, String parentEntityRepoName, Boolean loadFromFallbackBranch) {
+    if (null == loadFromFallbackBranch) {
+      loadFromFallbackBranch = false;
+    }
     GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
                                                  .branch(branchGitX)
                                                  .parentEntityConnectorRef(parentEntityConnectorRef)
@@ -101,7 +104,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     Optional<InputSetEntity> optionalInputSetEntity = Optional.empty();
     try {
       optionalInputSetEntity = pmsInputSetService.get(
-          account, org, project, pipeline, inputSet, false, null, null, true, loadFromFallbackBranch);
+          account, org, project, pipeline, inputSet, false, null, null, true, loadFromFallbackBranch, false);
     } catch (InvalidInputSetException e) {
       return Response.ok()
           .entity(inputSetsApiUtils.getInputSetResponseWithError(

@@ -18,11 +18,8 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
-import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
-import io.harness.beans.response.GitFileContentBatchResponse;
-import io.harness.beans.response.GitFileContentResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -251,15 +248,5 @@ public class SCMServiceGitClientImpl implements ScmClient {
   @Override
   public GitFileBatchResponse getBatchFile(GitFileBatchRequest gitFileBatchRequest) {
     return scmServiceClient.getBatchFile(gitFileBatchRequest, scmBlockingStub);
-  }
-
-  @Override
-  public GitFileContentResponse getFileContent(GitFileRequestV2 gitFileRequestV2) {
-    return scmServiceClient.getFileContent(gitFileRequestV2, scmBlockingStub);
-  }
-
-  @Override
-  public GitFileContentBatchResponse getBatchFileContent(GitFileBatchRequest gitFileBatchRequest) {
-    return scmServiceClient.getBatchFileContent(gitFileBatchRequest, scmBlockingStub);
   }
 }

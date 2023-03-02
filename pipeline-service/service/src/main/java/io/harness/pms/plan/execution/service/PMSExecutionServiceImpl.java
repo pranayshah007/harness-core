@@ -625,7 +625,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       List<String> stageIdentifiers) {
     String pipelineYaml = validateAndMergeHelper
                               .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-                                  pipelineBranch, pipelineRepoID, false)
+                                  pipelineBranch, pipelineRepoID, false, false)
                               .getYaml();
     String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
         ? createTemplateFromPipeline(pipelineYaml)

@@ -857,7 +857,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         errorMessage = "Delegate task timed out. Delegate: "
             + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
       } else {
-        errorMessage = "Delegate task was never assigned and timed out.";
+        errorMessage = "Delegate task was never assigned or/and task timed out.";
       }
     } catch (Exception e) {
       log.error("Execution exception", e);

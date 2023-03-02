@@ -66,9 +66,8 @@ public class UserDaoImpl implements UserDao {
 
   @Override
   public Optional<User> delete(String identifier, String scopeIdentifier) {
-    return userRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(u -> Optional.of(fromDBO(u)));
+    Optional<UserDBO> optionalUserDBO =
+        userRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    return optionalUserDBO.map(UserDBOMapper::fromDBO);
   }
 }

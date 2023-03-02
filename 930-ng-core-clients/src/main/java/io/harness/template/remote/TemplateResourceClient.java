@@ -30,6 +30,7 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DefaultValue;
 import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
@@ -54,6 +55,15 @@ public interface TemplateResourceClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Query(NGCommonEntityConstants.DELETED_KEY) boolean deleted);
+
+  @GET(TEMPLATE_ENDPOINT + "{templateIdentifier}")
+  Call<ResponseDTO<TemplateResponseDTO>> get(@Path("templateIdentifier") String templateIdentifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Query(NGCommonEntityConstants.DELETED_KEY) boolean deleted,
+      @Header("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST(TEMPLATE_ENDPOINT + "list")
   Call<ResponseDTO<PageResponse<TemplateSummaryResponseDTO>>> listTemplates(

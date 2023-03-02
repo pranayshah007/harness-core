@@ -67,14 +67,14 @@ public class CEGcpServiceAccountServiceImpl implements CEGcpServiceAccountServic
   }
 
   @Override
-  public CEGcpServiceAccount provisionAndRetrieveServiceAccount(String accountId, String ccmProjectId)
-      throws IOException {
+  public CEGcpServiceAccount provisionAndRetrieveServiceAccount(
+      String accountId, String ccmProjectId, String serviceAccountEmailSource) throws IOException {
     CEGcpServiceAccount gcpServiceAccount = gcpServiceAccountDao.getUnassignedServiceAccountByAccountId(accountId);
     if (gcpServiceAccount == null) {
       log.info("Creating gcpServiceAccount");
       CEGcpServiceAccount ceGcpServiceAccount = create(accountId, ccmProjectId);
       log.info("Created gcpServiceAccount.");
-      gcpServiceAccountService.setIamPolicies(ceGcpServiceAccount.getEmail());
+      gcpServiceAccountService.setIamPolicies(ceGcpServiceAccount.getEmail(), serviceAccountEmailSource);
       // https://cloud.google.com/pubsub/docs/access-control
       String[] roles = {"roles/bigquery.admin", "roles/pubsub.admin"};
       gcpServiceAccountService.addRolesToServiceAccount(ceGcpServiceAccount.getEmail(), roles, ccmProjectId);

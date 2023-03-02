@@ -59,7 +59,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -98,29 +97,28 @@ public class GitopsClustersStepTest extends CategoryTest {
 
   private void mockClusterService() {
     doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id"));
 
     doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(
             0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id", "env2Id", "env3"));
 
-    doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build())))
+    doReturn(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build()))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env2Id"));
   }

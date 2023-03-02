@@ -110,9 +110,11 @@ import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
 import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
 import io.harness.freeze.service.impl.FreezeSchemaServiceImpl;
+import io.harness.freeze.service.impl.FrozenExecutionServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.gitsync.GitSyncConfigClientModule;
@@ -133,6 +135,8 @@ import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.manage.ManagedScheduledExecutorService;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.module.AgentMtlsModule;
 import io.harness.modules.ModulesClientModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -664,7 +668,6 @@ public class NextGenModule extends AbstractModule {
     install(new DefaultOrganizationModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
-    install(new io.harness.module.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
@@ -718,6 +721,8 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
+    bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton

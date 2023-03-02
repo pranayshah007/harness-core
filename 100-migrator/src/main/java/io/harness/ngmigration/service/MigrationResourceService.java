@@ -7,14 +7,10 @@
 
 package io.harness.ngmigration.service;
 
-import static software.wings.ngmigration.NGMigrationEntityType.PIPELINE;
-import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
+import static io.harness.ngmigration.utils.MigratorUtility.getMigrationInput;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ngmigration.beans.BaseProvidedInput;
-import io.harness.ngmigration.beans.InputDefaults;
-import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ConnectorFilter;
 import io.harness.ngmigration.dto.Filter;
@@ -26,6 +22,7 @@ import io.harness.ngmigration.dto.SecretManagerFilter;
 import io.harness.ngmigration.dto.ServiceFilter;
 import io.harness.ngmigration.dto.SimilarWorkflowDetail;
 import io.harness.ngmigration.dto.TemplateFilter;
+import io.harness.ngmigration.dto.TriggerFilter;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
@@ -34,19 +31,17 @@ import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
 import io.harness.ngmigration.service.importer.TemplateImportService;
+import io.harness.ngmigration.service.importer.TriggerImportService;
 import io.harness.ngmigration.service.importer.WorkflowImportService;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
-import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
-import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowService;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +66,7 @@ public class MigrationResourceService {
   @Inject private TemplateImportService templateImportService;
   @Inject private WorkflowImportService workflowImportService;
   @Inject private PipelineImportService pipelineImportService;
+  @Inject private TriggerImportService triggerImportService;
   @Inject private WorkflowService workflowService;
   @Inject HPersistence hPersistence;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
@@ -103,6 +99,9 @@ public class MigrationResourceService {
     if (filter instanceof PipelineFilter) {
       return pipelineImportService.discover(authToken, importDTO);
     }
+    if (filter instanceof TriggerFilter) {
+      return triggerImportService.discover(authToken, importDTO);
+    }
     return DiscoveryResult.builder().build();
   }
 
@@ -111,43 +110,24 @@ public class MigrationResourceService {
     if (discoveryResult == null) {
       return SaveSummaryDTO.builder().build();
     }
-    return discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
+    SaveSummaryDTO saveSummaryDTO =
+        discoveryService.migrateEntity(authToken, getMigrationInput(importDTO), discoveryResult);
+    postMigrationHandler(authToken, importDTO, discoveryResult, saveSummaryDTO);
+    return saveSummaryDTO;
+  }
+
+  private void postMigrationHandler(
+      String authToken, ImportDTO importDTO, DiscoveryResult discoveryResult, SaveSummaryDTO summaryDTO) {
+    if (importDTO.getFilter() instanceof WorkflowFilter) {
+      workflowImportService.postMigrationSteps(authToken, importDTO, discoveryResult, summaryDTO);
+    }
+    if (importDTO.getFilter() instanceof TriggerFilter) {
+      triggerImportService.postMigrationSteps(authToken, importDTO, discoveryResult, summaryDTO);
+    }
   }
 
   public StreamingOutput exportYaml(String authToken, ImportDTO importDTO) {
     return discoveryService.exportYamlFilesAsZip(getMigrationInput(importDTO), discover(authToken, importDTO));
-  }
-
-  private static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
-    Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
-    Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
-    Map<String, Object> expressions = new HashMap<>();
-    if (importDTO.getInputs() != null) {
-      overrides = importDTO.getInputs().getOverrides();
-      defaults = importDTO.getInputs().getDefaults();
-      expressions = importDTO.getInputs().getExpressions();
-    }
-
-    // We do not want to auto migrate WFs/Pipelines. We want customers to migrate WFs/Pipelines by choice.
-    if (!Sets.newHashSet(WORKFLOW, PIPELINE).contains(importDTO.getEntityType())) {
-      InputDefaults wfDefaults = defaults.getOrDefault(WORKFLOW, new InputDefaults());
-      wfDefaults.setSkipMigration(true);
-      defaults.put(WORKFLOW, wfDefaults);
-
-      InputDefaults pipelineDefaults = defaults.getOrDefault(PIPELINE, new InputDefaults());
-      pipelineDefaults.setSkipMigration(true);
-      defaults.put(PIPELINE, pipelineDefaults);
-    }
-
-    return MigrationInputDTO.builder()
-        .accountIdentifier(importDTO.getAccountIdentifier())
-        .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
-        .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
-        .migrateReferencedEntities(importDTO.isMigrateReferencedEntities())
-        .overrides(overrides)
-        .defaults(defaults)
-        .customExpressions(expressions)
-        .build();
   }
 
   public List<Set<SimilarWorkflowDetail>> listSimilarWorkflow(String accountId) {

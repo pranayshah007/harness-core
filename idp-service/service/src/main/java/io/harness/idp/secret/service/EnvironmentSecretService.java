@@ -25,6 +25,6 @@ public interface EnvironmentSecretService {
   List<EnvironmentSecret> updateAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String accountIdentifier)
       throws Exception;
   void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) throws Exception;
-  void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) throws Exception;
+  void processSecretUpdate(EntityChangeDTO entityChangeDTO);
   void delete(String secretIdentifier, String harnessAccount) throws Exception;
 }

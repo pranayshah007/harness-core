@@ -17,6 +17,6 @@ import java.io.IOException;
 @OwnedBy(CE)
 public interface GcpServiceAccountService {
   ServiceAccount create(String serviceAccountId, String displayName, String ccmProjectId) throws IOException;
-  void setIamPolicies(String serviceAccountEmail) throws IOException;
+  void setIamPolicies(String serviceAccountEmail, String serviceAccountEmailSource) throws IOException;
   void addRolesToServiceAccount(String serviceAccountEmail, String[] roles, String ccmProjectId);
 }

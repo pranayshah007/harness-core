@@ -133,7 +133,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public void processSecretUpdate(EntityChangeDTO entityChangeDTO, String action) {
+  public void processSecretUpdate(EntityChangeDTO entityChangeDTO) {
     String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     Optional<EnvironmentSecretEntity> envSecretOpt =

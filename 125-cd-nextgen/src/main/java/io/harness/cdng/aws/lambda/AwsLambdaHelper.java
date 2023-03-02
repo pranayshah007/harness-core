@@ -34,12 +34,15 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsLambdaToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaDeployRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
@@ -87,6 +90,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -207,6 +211,8 @@ public class AwsLambdaHelper extends CDStepHelper {
             .functionName(awsLambdaPrepareRollbackResponse.getFunctionName())
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .functionCode(awsLambdaPrepareRollbackResponse.getFunctionCode())
+            .functionConfiguration(awsLambdaPrepareRollbackResponse.getFunctionConfiguration())
             .build();
 
     executionSweepingOutputService.consume(ambiance,
@@ -519,5 +525,16 @@ public class AwsLambdaHelper extends CDStepHelper {
                          .addFailureData(failureData)
                          .build())
         .build();
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfo(AwsLambdaCommandResponse awsLambdaCommandResponse,
+      AwsLambdaInfraConfig awsLambdaInfraConfig, String infrastructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+    AwsLambda awsLambdaFunction = awsLambdaCommandResponse.getAwsLambda();
+    if (awsLambdaFunction != null) {
+      serverInstanceInfoList.add(AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfo(
+          awsLambdaFunction, ((AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig).getRegion(), infrastructureKey));
+    }
+    return serverInstanceInfoList;
   }
 }

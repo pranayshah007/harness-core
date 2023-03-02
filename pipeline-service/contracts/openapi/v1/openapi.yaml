@@ -375,6 +375,7 @@ paths:
           description: Repository name for Parent Entity (Pipeline).
         - schema:
             type: boolean
+            default: 'false'
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch

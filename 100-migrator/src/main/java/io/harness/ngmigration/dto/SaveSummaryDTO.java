@@ -11,15 +11,18 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.ngmigration.beans.NGSkipDetail;
+import io.harness.ngmigration.beans.NGYamlFile;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.codecs.pojo.annotations.BsonIgnore;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
@@ -32,4 +35,5 @@ public class SaveSummaryDTO extends MigrationTrackRespPayload {
   private List<MigratedDetails> alreadyMigratedDetails;
   private List<MigratedDetails> successfullyMigratedDetails;
   private List<NGSkipDetail> skipDetails;
+  @BsonIgnore @JsonIgnore private transient List<NGYamlFile> ngYamlFiles;
 }

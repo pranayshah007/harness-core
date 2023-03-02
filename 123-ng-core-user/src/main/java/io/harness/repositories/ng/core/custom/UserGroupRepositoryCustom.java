@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.user.entities.UserGroup;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -28,5 +29,7 @@ public interface UserGroupRepositoryCustom {
 
   UserGroup delete(Criteria criteria);
 
-  List<UserGroup> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
+
+  List<UserGroup> findAllAndDelete(Criteria criteria);
 }

@@ -9,7 +9,10 @@ package io.harness.delegate.task.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -57,7 +60,12 @@ public class JiraTaskNGHelper {
   }
 
   private void decryptRequestDTOs(JiraTaskNGParameters jiraTaskNGParameters) {
-    secretDecryptionService.decrypt(
-        jiraTaskNGParameters.getJiraConnectorDTO(), jiraTaskNGParameters.getEncryptionDetails());
+    JiraConnectorDTO jiraConnectorDTO = jiraTaskNGParameters.getJiraConnectorDTO();
+    if (!isNull(jiraConnectorDTO.getAuth()) && !isNull(jiraConnectorDTO.getAuth().getCredentials())) {
+      secretDecryptionService.decrypt(
+          jiraConnectorDTO.getAuth().getCredentials(), jiraTaskNGParameters.getEncryptionDetails());
+    } else {
+      secretDecryptionService.decrypt(jiraConnectorDTO, jiraTaskNGParameters.getEncryptionDetails());
+    }
   }
 }

@@ -362,7 +362,9 @@ io.harness.cdng.environment.steps.EnvironmentStepParameters
 io.harness.plancreator.strategy.AxisConfig
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
+io.harness.plancreator.strategy.v1.MatrixConfigV1
 io.harness.plancreator.strategy.StrategyConfig
+io.harness.plancreator.strategy.v1.StrategyConfigV1
 io.harness.plancreator.strategy.HarnessForConfig
 io.harness.cdng.configfile.ConfigFileWrapper
 io.harness.cdng.configfile.ConfigFile
@@ -800,6 +802,7 @@ io.harness.cdng.manifest.yaml.kinds.AwsLambdaFunctionAliasDefinitionManifest
 io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome
 io.harness.cdng.aws.asg.AsgBlueGreenRollbackOutcome
 io.harness.cdng.aws.asg.AsgRollingRollbackOutcome
+io.harness.cdng.ecs.beans.EcsRollingDeployOutcome
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepParameters
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo
 io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode

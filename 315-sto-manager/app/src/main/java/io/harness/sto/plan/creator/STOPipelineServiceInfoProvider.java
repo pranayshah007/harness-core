@@ -35,6 +35,7 @@ import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
+import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -87,6 +88,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     planCreators.add(new PluginStepPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new InitializeStepPlanCreator());
 

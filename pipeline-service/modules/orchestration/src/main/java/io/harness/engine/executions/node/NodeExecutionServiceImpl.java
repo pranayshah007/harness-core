@@ -770,6 +770,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.parentId)
         .include(NodeExecutionKeys.oldRetry)
         .include(NodeExecutionKeys.ambiance)
+        .include(NodeExecutionKeys.resolvedParams)
         .include(NodeExecutionKeys.executableResponses);
 
     query.with(by(NodeExecutionKeys.createdAt));

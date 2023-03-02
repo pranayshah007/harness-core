@@ -318,12 +318,14 @@ public class GovernanceRuleResource {
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
     }
+    governanceRuleService.update(rule, accountId);
+    Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO(), oldRule.toDTO()));
-      return governanceRuleService.update(rule, accountId);
+      outboxService.save(new RuleUpdateEvent(accountId, updatedRule.toDTO(), oldRule.toDTO()));
+      return updatedRule;
     })));
   }
 

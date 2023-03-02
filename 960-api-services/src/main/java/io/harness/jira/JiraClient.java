@@ -500,20 +500,23 @@ public class JiraClient {
 
   private JiraRestClient createRestClient() {
     String url = config.getJiraUrl() + "rest/api/2/";
-    OkHttpClient okHttpClient =
-        getOkHttpClientBuilder()
-            .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-            .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-            .addInterceptor(chain -> {
-              Request newRequest =
-                  chain.request()
-                      .newBuilder()
-                      .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
-                      .build();
-              return chain.proceed(newRequest);
-            })
-            .build();
+    OkHttpClient okHttpClient = getOkHttpClientBuilder()
+                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
+                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
+                                    .addInterceptor(chain -> {
+                                      Request newRequest =
+                                          chain.request()
+                                              .newBuilder()
+                                              // if auth token not present , use older deprecated fields
+                                              .addHeader("Authorization",
+                                                  StringUtils.isBlank(config.getAuthToken())
+                                                      ? Credentials.basic(config.getUsername(), config.getPassword())
+                                                      : config.getAuthToken())
+                                              .build();
+                                      return chain.proceed(newRequest);
+                                    })
+                                    .build();
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
                             .baseUrl(url)

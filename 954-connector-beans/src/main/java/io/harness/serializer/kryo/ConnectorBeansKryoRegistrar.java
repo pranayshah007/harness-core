@@ -123,6 +123,7 @@ import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
 import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
@@ -491,5 +492,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JiraAuthType.class, 10000451);
     kryo.register(JiraAuthCredentialsDTO.class, 10000452);
     kryo.register(JiraUserNamePasswordDTO.class, 10000453);
+    kryo.register(JiraPATDTO.class, 10000454);
   }
 }

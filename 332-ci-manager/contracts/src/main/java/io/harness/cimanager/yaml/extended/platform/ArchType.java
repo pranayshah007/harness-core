@@ -12,6 +12,7 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("archType")
@@ -20,7 +21,7 @@ public enum ArchType {
   @JsonProperty("Amd64") Amd64("Amd64"),
   @JsonProperty("Arm64") Arm64("Arm64");
   private final String yamlName;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ArchType getArchType(@JsonProperty("archType") String yamlName) {
     for (ArchType archType : ArchType.values()) {

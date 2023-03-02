@@ -452,6 +452,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
               .filepath(request.getFilepath())
               .commitId(request.getCommitId())
               .branch(request.getBranch())
+              .getOnlyFileContent(request.isGetOnlyFileContent())
               .build());
     });
 

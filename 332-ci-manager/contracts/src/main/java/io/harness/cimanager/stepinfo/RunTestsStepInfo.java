@@ -113,7 +113,7 @@ public class RunTestsStepInfo implements CIStepInfo {
   private ParameterField<List<OutputNGVariable>> outputVariables;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  private ParameterField<Map<String, String>> envVariables;
+  private ParameterField<Map<String, ParameterField<String>>> envVariables;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> preCommand;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> postCommand;
   @YamlSchemaTypes({runtime})
@@ -143,11 +143,12 @@ public class RunTestsStepInfo implements CIStepInfo {
       ParameterField<String> testAnnotations, ParameterField<String> packages, ParameterField<String> namespaces,
       ParameterField<Boolean> runOnlySelectedTests, ParameterField<String> preCommand,
       ParameterField<String> postCommand, ParameterField<List<OutputNGVariable>> outputVariables,
-      ParameterField<Map<String, String>> envVariables, ParameterField<TIDotNetBuildEnvName> buildEnvironment,
-      ParameterField<TIDotNetVersion> frameworkVersion, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<CIShellType> shell, ParameterField<TISplitStrategy> testSplitStrategy,
-      ParameterField<Boolean> enableTestSplitting, ParameterField<String> testGlobs) {
+      ParameterField<Map<String, ParameterField<String>>> envVariables,
+      ParameterField<TIDotNetBuildEnvName> buildEnvironment, ParameterField<TIDotNetVersion> frameworkVersion,
+      ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
+      ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<CIShellType> shell,
+      ParameterField<TISplitStrategy> testSplitStrategy, ParameterField<Boolean> enableTestSplitting,
+      ParameterField<String> testGlobs) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);

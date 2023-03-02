@@ -31,6 +31,7 @@ import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.utils.CryptoUtils;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
@@ -134,6 +135,14 @@ public class RoleAssignmentDTOMapper {
             .roleFilter(object.getRoleFilter() == null ? new HashSet<>() : object.getRoleFilter())
             .resourceGroupFilter(
                 object.getResourceGroupFilter() == null ? new HashSet<>() : object.getResourceGroupFilter())
+            .disabledFilter(
+                object.getDisabledFilter() == null ? new HashSet<>() : Sets.newHashSet(object.getDisabledFilter()))
+            .managedFilter(Objects.isNull(object.getHarnessManagedFilter())
+                    ? ManagedFilter.NO_FILTER
+                    : (object.getHarnessManagedFilter() == Boolean.TRUE ? ManagedFilter.ONLY_MANAGED
+                                                                        : ManagedFilter.ONLY_CUSTOM))
+            .principalTypeFilter(
+                object.getPrincipalTypeFilter() == null ? new HashSet<>() : object.getPrincipalTypeFilter())
             .build();
     if (object.getPrincipalFilter() != null) {
       roleAssignmentFilter.setPrincipalFilter(

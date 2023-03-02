@@ -14,5 +14,6 @@ import io.harness.ng.beans.PageResponse;
 import java.util.List;
 
 public interface DelegateStackdriverLogService {
-  PageResponse<DelegateStackDriverLog> fetchPageLogs(List<String> taskIds, PageRequest request, long start, long end);
+  PageResponse<DelegateStackDriverLog> fetchPageLogs(
+      String accountId, List<String> taskIds, PageRequest request, long start, long end);
 }

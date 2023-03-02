@@ -214,7 +214,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.7-rootless
+      image: harness/drone-git:1.2.8-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -278,7 +278,7 @@ ciExecutionServiceConfig:
         - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.7
+      gitClone: harness/drone-git:1.2.8
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0

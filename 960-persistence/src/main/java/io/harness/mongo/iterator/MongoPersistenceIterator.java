@@ -65,7 +65,6 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private static final int SIMPLE_MOVING_AVG_MULTIPLIER = 15; // The multiplier to be used for SMA
   private static final int SIMPLE_MOVING_AVG_DIVISOR = 16; // The divisor to be used for SMA
   private static final String SEMAPHORE_ACQUIRE_ERROR = "Working on entity was interrupted";
-  private static final int LOCK_TIMEOUT_SECONDS = 5; // The lockTimeout is the duration a lock is held
   private static final int LOCK_WAIT_TIMEOUT_SECONDS =
       5; // The lockWaitTimeout is the duration to wait to acquire a lock
   private static final int BATCH_SIZE_MULTIPLY_FACTOR = 2; // The factor by how much the batchSize should be increased
@@ -88,6 +87,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration threadPoolIntervalInSeconds;
   private Duration throttleInterval;
   private int redisModeBatchSize;
+  private int redisLockTimeout;
   private Handler<T> handler;
   @Getter private ExecutorService executorService;
   @Getter private ScheduledThreadPoolExecutor workerThreadPoolExecutor;
@@ -456,7 +456,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     while (true) {
       // Hardcoding the lockTimeout and waitTimeout for the lock to 5 secs.
       try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLock(MongoPersistenceIterator.class, iteratorName,
-               ofSeconds(LOCK_TIMEOUT_SECONDS), ofSeconds(LOCK_WAIT_TIMEOUT_SECONDS))) {
+               ofSeconds(redisLockTimeout), ofSeconds(LOCK_WAIT_TIMEOUT_SECONDS))) {
         if (acquiredLock != null) {
           // Got the lock, proceed further.
           return acquiredLock;
@@ -478,9 +478,11 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     try {
       acquiredLock.release();
     } catch (RedisException ex) {
-      log.error(" Received an exception while release lock {} ", ex.getStackTrace());
+      log.debug(" Redis Batch Iterator Mode - Received a RedisException while releasing the lock {}, stack trace {} ",
+          ex, ex.getStackTrace());
     } catch (RuntimeException ex) {
-      log.error(" Received an exception while release lock {} ", ex.getStackTrace());
+      log.debug(" Redis Batch Iterator Mode - Received a RuntimeException while releasing the lock {}, stack trace {} ",
+          ex, ex.getStackTrace());
     }
   }
 
