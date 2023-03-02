@@ -450,6 +450,7 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters
+io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStepDetailsInfo
 io.harness.cdng.provision.azure.AzureCreateBPStepNode
 io.harness.cdng.provision.azure.AzureCreateBPStepInfo
 io.harness.cdng.provision.azure.AzureCreateBPStepConfiguration

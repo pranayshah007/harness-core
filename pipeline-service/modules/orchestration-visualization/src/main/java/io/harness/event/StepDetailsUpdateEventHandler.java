@@ -39,7 +39,8 @@ public class StepDetailsUpdateEventHandler {
       orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
       Level currentLevel = AmbianceUtils.obtainCurrentLevel(
           orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
-      if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)) {
+      if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)
+          || Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STRATEGY)) {
         String stageUuid = currentLevel.getSetupId();
         summaryEntityUpdate.set(
             PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".stepDetails",

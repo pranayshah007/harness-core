@@ -56,6 +56,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
@@ -83,9 +84,12 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Inject private NGServiceEntityHelper serviceEntityHelper;
   @Inject private AccessControlClient accessControlClient;
   @Inject private EnvironmentGroupService environmentGroupService;
+  @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
+
+  public static final String SVC_ENV_COUNT = "svcEnvCount";
 
   @Override
   public StepResponse handleChildrenResponseInternal(
@@ -167,7 +171,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         && (environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironments())
             || environmentInfraFilterHelper.isServiceTagsExpressionPresent(stepParameters.getEnvironmentGroup()))) {
       return getChildrenExecutableResponse(
-          stepParameters, children, accountIdentifier, orgIdentifier, projectIdentifier, childNodeId);
+          ambiance, stepParameters, children, accountIdentifier, orgIdentifier, projectIdentifier, childNodeId);
     }
 
     environmentInfraFilterHelper.processEnvInfraFiltering(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -180,6 +184,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
     if (servicesMap.isEmpty()) {
       // This case is when the deployment is of type single service multiple environment/infras
+      publishSvcEnvCount(ambiance, 1, environmentsMapList.size());
       return getChildrenExecutionResponseForMultiEnvironment(
           stepParameters, children, environmentsMapList, childNodeId);
     }
@@ -209,8 +214,11 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
             MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT));
         currentIteration++;
       }
+      publishSvcEnvCount(ambiance, servicesMap.size(), 1);
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
+
+    publishSvcEnvCount(ambiance, servicesMap.size(), environmentsMapList.size());
 
     boolean isServiceParallel = stepParameters.getServices() != null
         && shouldDeployInParallel(stepParameters.getServices().getServicesMetadata());
@@ -300,9 +308,9 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         && !stepParameters.getEnvironmentGroup().getEnvironmentGroupMetadata().getParallel();
   }
 
-  private ChildrenExecutableResponse getChildrenExecutableResponse(MultiDeploymentStepParameters stepParameters,
-      List<ChildrenExecutableResponse.Child> children, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String childNodeId) {
+  private ChildrenExecutableResponse getChildrenExecutableResponse(Ambiance ambiance,
+      MultiDeploymentStepParameters stepParameters, List<ChildrenExecutableResponse.Child> children,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String childNodeId) {
     Map<String, Map<String, String>> serviceToMatrixMetadataMap =
         getServiceToMatrixMetadataMap(stepParameters.getServices());
     // Find service tags
@@ -332,6 +340,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       }
       serviceEnvMatrixMap.put(serviceRef, environmentMapList);
     }
+    // publish Service count for Stage Graph, Product Spec needed for displaying Env count
+    publishSvcEnvCount(ambiance, serviceEnvMatrixMap.size(), 1);
 
     int maxConcurrency = 0;
     // If Both service and env are non-parallel
@@ -580,5 +590,13 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       environmentsMap.add(MultiDeploymentSpawnerUtils.getMapFromServiceYaml(service));
     }
     return environmentsMap;
+  }
+
+  private void publishSvcEnvCount(Ambiance ambiance, int svcCount, int envCount) {
+    // publish Service and Env count for Stage Graph
+    MultiDeploymentSpawnerStepDetailsInfo multiDeploymentSpawnerStepDetailsInfo =
+        MultiDeploymentSpawnerStepDetailsInfo.builder().svcCount(svcCount).envCount(envCount).build();
+    sdkGraphVisualizationDataService.publishStepDetailInformation(
+        ambiance, multiDeploymentSpawnerStepDetailsInfo, SVC_ENV_COUNT, StepCategory.STRATEGY);
   }
 }
