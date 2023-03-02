@@ -15,7 +15,6 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.freeze.FreezeOutcome;
@@ -176,19 +175,17 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
     Ambiance ambiance = event.getAmbiance();
     CDPipelineModuleInfoBuilder cdPipelineModuleInfoBuilder = CDPipelineModuleInfo.builder();
-    if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(ambiance);
-      freezeOutcome.ifPresent(outcome -> {
-        List<String> freezeIdentifiers = new LinkedList<>();
-        outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
-            -> freezeIdentifiers.add(
-                NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
-        outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
-            -> freezeIdentifiers.add(
-                NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
-        cdPipelineModuleInfoBuilder.freezeIdentifiers(freezeIdentifiers);
-      });
-    }
+    Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(ambiance);
+    freezeOutcome.ifPresent(outcome -> {
+      List<String> freezeIdentifiers = new LinkedList<>();
+      outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
+          -> freezeIdentifiers.add(
+              NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
+      outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
+          -> freezeIdentifiers.add(
+              NGFreezeDtoMapper.getFreezeRef(freezeConfig.getFreezeScope(), freezeConfig.getIdentifier())));
+      cdPipelineModuleInfoBuilder.freezeIdentifiers(freezeIdentifiers);
+    });
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(ambiance);
       serviceOutcome.ifPresent(outcome
@@ -250,33 +247,30 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   public StageModuleInfo getStageLevelModuleInfo(OrchestrationEvent event) {
     CDStageModuleInfoBuilder cdStageModuleInfoBuilder = CDStageModuleInfo.builder();
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(event.getAmbiance());
-      freezeOutcome.ifPresent(outcome -> {
-        List<FreezeExecutionInfo> executionInfos = new LinkedList<>();
-        outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
-            -> executionInfos.add(FreezeExecutionInfo.builder()
-                                      .freezeType(freezeConfig.getType().name())
-                                      .identifier(freezeConfig.getIdentifier())
-                                      .projectIdentifier(freezeConfig.getProjectIdentifier())
-                                      .orgIdentifier(freezeConfig.getOrgIdentifier())
-                                      .name(freezeConfig.getName())
-                                      .yaml(freezeConfig.getYaml())
-                                      .build()));
-        outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
-            -> executionInfos.add(FreezeExecutionInfo.builder()
-                                      .freezeType(freezeConfig.getType().name())
-                                      .identifier(freezeConfig.getIdentifier())
-                                      .projectIdentifier(freezeConfig.getProjectIdentifier())
-                                      .orgIdentifier(freezeConfig.getOrgIdentifier())
-                                      .name(freezeConfig.getName())
-                                      .yaml(freezeConfig.getYaml())
-                                      .build()));
-        cdStageModuleInfoBuilder.freezeExecutionSummary(
-            FreezeExecutionSummary.builder().freezeExecutionInfoList(executionInfos).build());
-      });
-    }
+    Optional<FreezeOutcome> freezeOutcome = getFreezeOutcome(event.getAmbiance());
+    freezeOutcome.ifPresent(outcome -> {
+      List<FreezeExecutionInfo> executionInfos = new LinkedList<>();
+      outcome.getGlobalFreezeConfigs().stream().forEach(freezeConfig
+          -> executionInfos.add(FreezeExecutionInfo.builder()
+                                    .freezeType(freezeConfig.getType().name())
+                                    .identifier(freezeConfig.getIdentifier())
+                                    .projectIdentifier(freezeConfig.getProjectIdentifier())
+                                    .orgIdentifier(freezeConfig.getOrgIdentifier())
+                                    .name(freezeConfig.getName())
+                                    .yaml(freezeConfig.getYaml())
+                                    .build()));
+      outcome.getManualFreezeConfigs().stream().forEach(freezeConfig
+          -> executionInfos.add(FreezeExecutionInfo.builder()
+                                    .freezeType(freezeConfig.getType().name())
+                                    .identifier(freezeConfig.getIdentifier())
+                                    .projectIdentifier(freezeConfig.getProjectIdentifier())
+                                    .orgIdentifier(freezeConfig.getOrgIdentifier())
+                                    .name(freezeConfig.getName())
+                                    .yaml(freezeConfig.getYaml())
+                                    .build()));
+      cdStageModuleInfoBuilder.freezeExecutionSummary(
+          FreezeExecutionSummary.builder().freezeExecutionInfoList(executionInfos).build());
+    });
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(event.getAmbiance());
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(event);

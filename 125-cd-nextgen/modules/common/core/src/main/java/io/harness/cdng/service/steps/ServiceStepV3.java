@@ -19,7 +19,6 @@ import static java.lang.String.format;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
@@ -744,40 +743,38 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @VisibleForTesting
   protected ChildrenExecutableResponse executeFreezePart(
       Ambiance ambiance, Map<FreezeEntityType, List<String>> entityMap) {
-    if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(ngFeatureFlagHelperService, accountId, orgId, projectId,
-              accessControlClient, CDNGRbacUtility.constructPrincipalFromAmbiance(ambiance))) {
-        return null;
-      }
-      List<FreezeSummaryResponseDTO> globalFreezeConfigs;
-      List<FreezeSummaryResponseDTO> manualFreezeConfigs;
-      globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
-      manualFreezeConfigs = freezeEvaluateService.getActiveManualFreezeEntities(accountId, orgId, projectId, entityMap);
-      if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
-        log.info("Deployment Freeze is Active for the given service.");
-        sweepingOutputService.consume(ambiance, ServiceStepV3Constants.FREEZE_SWEEPING_OUTPUT,
-            FreezeOutcome.builder()
-                .frozen(true)
-                .manualFreezeConfigs(manualFreezeConfigs)
-                .globalFreezeConfigs(globalFreezeConfigs)
-                .build(),
-            "");
-        log.info("Adding Children as empty.");
-        String executionUrl =
-            engineExpressionService.renderExpression(ambiance, ServiceStepV3Constants.PIPELINE_EXECUTION_EXPRESSION,
-                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
-        notificationHelper.sendNotificationForFreezeConfigs(
-            manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
-        return ChildrenExecutableResponse.newBuilder()
-            .addAllLogKeys(emptyIfNull(
-                StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
-            .addAllChildren(Collections.emptyList())
-            .build();
-      }
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(ngFeatureFlagHelperService, accountId, orgId, projectId,
+            accessControlClient, CDNGRbacUtility.constructPrincipalFromAmbiance(ambiance))) {
+      return null;
+    }
+    List<FreezeSummaryResponseDTO> globalFreezeConfigs;
+    List<FreezeSummaryResponseDTO> manualFreezeConfigs;
+    globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
+    manualFreezeConfigs = freezeEvaluateService.getActiveManualFreezeEntities(accountId, orgId, projectId, entityMap);
+    if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
+      log.info("Deployment Freeze is Active for the given service.");
+      sweepingOutputService.consume(ambiance, ServiceStepV3Constants.FREEZE_SWEEPING_OUTPUT,
+          FreezeOutcome.builder()
+              .frozen(true)
+              .manualFreezeConfigs(manualFreezeConfigs)
+              .globalFreezeConfigs(globalFreezeConfigs)
+              .build(),
+          "");
+      log.info("Adding Children as empty.");
+      String executionUrl =
+          engineExpressionService.renderExpression(ambiance, ServiceStepV3Constants.PIPELINE_EXECUTION_EXPRESSION,
+              ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
+      notificationHelper.sendNotificationForFreezeConfigs(
+          manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllLogKeys(emptyIfNull(
+              StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+          .addAllChildren(Collections.emptyList())
+          .build();
     }
     return null;
   }
@@ -786,44 +783,42 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   protected StepResponse handleFreezeResponse(
       Ambiance ambiance, NGServiceV2InfoConfig ngServiceV2InfoConfig, ServiceStepV3Parameters serviceStepParameters) {
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
-    if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-      final OptionalSweepingOutput freezeOutcomeOptional = sweepingOutputService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.FREEZE_SWEEPING_OUTPUT));
+    final OptionalSweepingOutput freezeOutcomeOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.FREEZE_SWEEPING_OUTPUT));
 
-      if (freezeOutcomeOptional.isFound()) {
-        FreezeOutcome freezeOutcome = (FreezeOutcome) freezeOutcomeOptional.getOutput();
-        if (freezeOutcome.isFrozen()) {
-          frozenExecutionService.createFrozenExecution(
-              ambiance, freezeOutcome.getManualFreezeConfigs(), freezeOutcome.getGlobalFreezeConfigs());
+    if (freezeOutcomeOptional.isFound()) {
+      FreezeOutcome freezeOutcome = (FreezeOutcome) freezeOutcomeOptional.getOutput();
+      if (freezeOutcome.isFrozen()) {
+        frozenExecutionService.createFrozenExecution(
+            ambiance, freezeOutcome.getManualFreezeConfigs(), freezeOutcome.getGlobalFreezeConfigs());
 
-          stepOutcomes.add(StepResponse.StepOutcome.builder()
-                               .name(OutcomeExpressionConstants.FREEZE_OUTCOME)
-                               .outcome(freezeOutcome)
-                               .group(StepCategory.STAGE.name())
-                               .build());
-          stepOutcomes.add(
-              StepResponse.StepOutcome.builder()
-                  .name(OutcomeExpressionConstants.SERVICE)
-                  .outcome(ServiceStepOutcome.fromServiceStepV2(serviceStepParameters.getServiceRef().getValue().trim(),
-                      ngServiceV2InfoConfig.getName(),
-                      ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
-                      ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
-                      ngServiceV2InfoConfig.getGitOpsEnabled()))
-                  .group(StepCategory.STAGE.name())
-                  .build());
-          return StepResponse.builder()
-              .stepOutcomes(stepOutcomes)
-              .failureInfo(FailureInfo.newBuilder()
-                               .addFailureData(FailureData.newBuilder()
-                                                   .addFailureTypes(FailureType.FREEZE_ACTIVE_FAILURE)
-                                                   .setLevel(Level.ERROR.name())
-                                                   .setCode(FREEZE_EXCEPTION.name())
-                                                   .setMessage("Pipeline Aborted due to freeze")
-                                                   .build())
-                               .build())
-              .status(Status.FREEZE_FAILED)
-              .build();
-        }
+        stepOutcomes.add(StepResponse.StepOutcome.builder()
+                             .name(OutcomeExpressionConstants.FREEZE_OUTCOME)
+                             .outcome(freezeOutcome)
+                             .group(StepCategory.STAGE.name())
+                             .build());
+        stepOutcomes.add(
+            StepResponse.StepOutcome.builder()
+                .name(OutcomeExpressionConstants.SERVICE)
+                .outcome(ServiceStepOutcome.fromServiceStepV2(serviceStepParameters.getServiceRef().getValue().trim(),
+                    ngServiceV2InfoConfig.getName(),
+                    ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
+                    ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
+                    ngServiceV2InfoConfig.getGitOpsEnabled()))
+                .group(StepCategory.STAGE.name())
+                .build());
+        return StepResponse.builder()
+            .stepOutcomes(stepOutcomes)
+            .failureInfo(FailureInfo.newBuilder()
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.FREEZE_ACTIVE_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(FREEZE_EXCEPTION.name())
+                                                 .setMessage("Pipeline Aborted due to freeze")
+                                                 .build())
+                             .build())
+            .status(Status.FREEZE_FAILED)
+            .build();
       }
     }
     return null;

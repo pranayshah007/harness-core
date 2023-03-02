@@ -726,17 +726,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
-      if (!EmptyPredicate.isEmpty(ctx.getAccountIdentifier())
-          && featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-        String accountId = ctx.getAccountIdentifier();
-        String orgId = ctx.getOrgIdentifier();
-        String projectId = ctx.getProjectIdentifier();
-        if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
-                featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
-          return;
-        }
-        projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
+      String accountId = ctx.getAccountIdentifier();
+      String orgId = ctx.getOrgIdentifier();
+      String projectId = ctx.getProjectIdentifier();
+      if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+              featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
+        return;
       }
+      projectFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId);
     } catch (Exception e) {
       log.error(
           "NG Freeze: Failure occurred when evaluating execution should fail due to freeze at the time of plan creation");

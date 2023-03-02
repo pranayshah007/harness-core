@@ -21,6 +21,7 @@ import io.harness.cdng.artifact.GcrArtifactSummary;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.Metadata;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -35,6 +36,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -49,6 +51,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,6 +71,9 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(OptionalOutcome.builder().found(true).build())
+        .when(outcomeService)
+        .resolveOptional(any(Ambiance.class), any(RefObject.class));
   }
 
   @Test
@@ -183,7 +189,6 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                                           .setType(ExecutionNodeType.GITOPS_CLUSTERS.getName())
                                           .setStepCategory(StepCategory.STEP)
                                           .build());
-
     doReturn(OptionalOutcome.builder()
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())
