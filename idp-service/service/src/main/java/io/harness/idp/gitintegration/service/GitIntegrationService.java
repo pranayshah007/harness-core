@@ -7,8 +7,11 @@
 package io.harness.idp.gitintegration.service;
 
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 
 public interface GitIntegrationService {
   public void createConnectorsSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) throws Exception;
+  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws Exception;
 }

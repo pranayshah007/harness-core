@@ -41,11 +41,11 @@ public class EntityCrudStreamConsumer extends RedisTraceConsumer implements IdpR
   private final AtomicBoolean shouldStop;
   @Inject
   public EntityCrudStreamConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
-      @Named(SECRET_ENTITY + ENTITY_CRUD) MessageListener secretCrudListener, QueueController queueController) {
+      @Named(ENTITY_CRUD) MessageListener crudListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
-    this.messageListenersList.add(secretCrudListener);
+    this.messageListenersList.add(crudListener);
     this.shouldStop = new AtomicBoolean(false);
   }
 
