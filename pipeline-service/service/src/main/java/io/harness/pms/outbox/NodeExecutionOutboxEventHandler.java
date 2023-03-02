@@ -16,7 +16,6 @@ import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
-import io.harness.audit.beans.custom.AuditEventDataTypeConstants;
 import io.harness.audit.beans.custom.template.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;

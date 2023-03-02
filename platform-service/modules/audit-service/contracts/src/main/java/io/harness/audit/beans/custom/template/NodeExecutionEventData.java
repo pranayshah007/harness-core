@@ -9,11 +9,9 @@ package io.harness.audit.beans.custom.template;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA;
-import static io.harness.audit.beans.custom.AuditEventDataTypeConstants.TEMPLATE_AUDIT_EVENT_DATA;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventData;
-import io.harness.audit.beans.custom.AuditEventDataTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
