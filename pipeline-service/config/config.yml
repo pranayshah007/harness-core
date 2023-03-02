@@ -207,8 +207,8 @@ pipelineServiceClientConfig:
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
-  connectTimeOutSeconds: 30
-  readTimeOutSeconds: 30
+  connectTimeOutSeconds: 120
+  readTimeOutSeconds: 120
 
 queueServiceClientConfig:
   httpClientConfig:
