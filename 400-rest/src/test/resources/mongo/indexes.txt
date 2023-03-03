@@ -402,6 +402,7 @@ infrastructureProvisioner {"name": "createdAt_1", "background": true} {"createdA
 infrastructureProvisioner {"name": "infrastructureProvisionerType_1", "background": true} {"infrastructureProvisionerType": 1}
 instance {"name": "accountId_computeProviderId_instanceInfoNamespace_instanceInfoPodName_createdAt", "background": true} {"accountId": 1, "computeProviderId": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": -1}
 instance {"name": "accountId_createdAt_appId", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1}
+instance {"name": "accountId_deletedAt_createdAt", "background": true} {"accountId": 1, "deletedAt": 1, "createdAt": 1}
 instance {"name": "appId_1", "background": true} {"appId": 1}
 instance {"name": "appid_inframapping_isdeleted_createdatdesc", "background": true} {"appId": 1, "infraMappingId": 1, "isDeleted": 1, "createdAt": -1}
 instance {"name": "createdAt_1", "background": true} {"createdAt": 1}
