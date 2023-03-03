@@ -1,0 +1,57 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_binary")
+
+filegroup(
+    name = "resource",
+    srcs = [],
+    visibility = ["//idp-service:__subpackages__"],
+)
+
+java_binary(
+    name = "module",
+    srcs = glob([
+        "*.java",
+    ]),
+    data = [":resource"],
+    main_class = "io.harness.idp.app.IdpApplication",
+    resources = [
+        "//idp-service/src/main/resources:resource",
+    ],
+    visibility = ["//idp-service:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "//950-log-client:module",
+        "//953-events-api:module",
+        "//959-ng-persistence:module",
+        "//960-persistence:module",
+        "//965-api-key-filter:module",
+        "//980-commons/src/main/java/io/harness/health:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/maintenance:module",
+        "//999-annotations:module",
+        "//clients/access-control/sdk:module",
+        "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
+        "//idp-service/src/main/java/io/harness/idp/config:module",
+        "//idp-service/src/main/java/io/harness/idp/events:module",
+        "//idp-service/src/main/java/io/harness/idp/gitintegration:module",
+        "//idp-service/src/main/java/io/harness/idp/namespace:module",
+        "//idp-service/src/main/java/io/harness/idp/secret:module",
+        "//idp-service/src/main/java/io/harness/idp/serializer:module",
+        "//idp-service/src/main/java/io/harness/idp/status:module",
+        "@maven//:ch_qos_logback_logback_access",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:ch_qos_logback_logback_core",
+        "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_to_slf4j",
+    ],
+)
+
+exports_files([
+    "config.yml",
+])
