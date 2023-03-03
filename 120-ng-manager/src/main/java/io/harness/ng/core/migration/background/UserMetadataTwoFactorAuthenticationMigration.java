@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.NGMigration;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.entities.UserMetadata;
+import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.user.remote.UserClient;
 
@@ -22,7 +23,9 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
@@ -30,7 +33,7 @@ import org.springframework.data.util.CloseableIterator;
 public class UserMetadataTwoFactorAuthenticationMigration implements NGMigration {
   private final MongoTemplate mongoTemplate;
   private final UserClient userClient;
-  public static final int BATCH_SIZE = 100;
+  public static final int BATCH_SIZE = 500;
 
   @Inject
   public UserMetadataTwoFactorAuthenticationMigration(
@@ -53,7 +56,7 @@ public class UserMetadataTwoFactorAuthenticationMigration implements NGMigration
         log.info(String.format(
             "UserMetadataTwoFactorAuthenticationMigration: Migration completed for batch. Count so far- %d", count));
         try {
-          Thread.sleep(TimeUnit.MINUTES.toMillis(2));
+          Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         } catch (Exception ex) {
           log.error(String.format(
               "UserMetadataTwoFactorAuthenticationMigration: Error while waking up. Failed to add Two Factor Authentication field in UserMetadata collection"));
@@ -63,8 +66,11 @@ public class UserMetadataTwoFactorAuthenticationMigration implements NGMigration
       UserMetadata userMetadata = iterator.next();
       String userId = userMetadata.getUserId();
       try {
-        userMetadata.setTwoFactorAuthenticationEnabled(get2FAStatus(userId));
-        mongoTemplate.save(userMetadata);
+        Criteria criteria = Criteria.where(UserMetadataKeys.userId).is(userMetadata.getUserId());
+        Update update = new Update();
+        update.set(UserMetadataKeys.twoFactorAuthenticationEnabled, get2FAStatus(userId));
+        mongoTemplate.updateFirst(new Query(criteria), update, UserMetadata.class);
+        log.info("UserMetadataTwoFactorAuthenticationMigration: Migrated user {} successfully", userId);
         count++;
       } catch (Exception ex) {
         log.error(
