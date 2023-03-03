@@ -84,6 +84,11 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
                  .field(ApplicationKeys.accountId)
                  .descSortField(ApplicationKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("rbacCoverIndex")
+                 .field(ApplicationKeys.accountId)
+                 .field(ApplicationKeys.uuid)
+                 .build())
         .build();
   }
 
