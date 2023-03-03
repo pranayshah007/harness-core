@@ -36,6 +36,10 @@ import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
+/***
+ * Handler Methods in this class handle events for OutboxDb for NodeExecutionEvents during a pipeline execution
+ * NodeExecution can be of type Stage/Step/Pipeline etc.
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton

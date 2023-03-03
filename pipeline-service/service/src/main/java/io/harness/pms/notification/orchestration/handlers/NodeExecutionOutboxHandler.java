@@ -35,11 +35,8 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
 
   @Override
   public void onNodeStart(NodeStartInfo nodeStartInfo) {
-    if (nodeStartInfo == null || nodeStartInfo.getNodeExecution() == null
-        || nodeStartInfo.getNodeExecution().getGroup() == null) {
-      log.info(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
+    if (validatePresenceOfNodeGroup(nodeStartInfo))
       return;
-    }
 
     String nodeGroup = null;
     try (AutoLogContext ignore =
@@ -58,6 +55,15 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     } catch (Exception ex) {
       log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
     }
+  }
+
+  private boolean validatePresenceOfNodeGroup(NodeStartInfo nodeStartInfo) {
+    if (nodeStartInfo == null || nodeStartInfo.getNodeExecution() == null
+        || nodeStartInfo.getNodeExecution().getGroup() == null) {
+      log.info(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
+      return true;
+    }
+    return false;
   }
 
   private void sendStageExecutionEventForAudit(NodeStartInfo nodeStartInfo) {
