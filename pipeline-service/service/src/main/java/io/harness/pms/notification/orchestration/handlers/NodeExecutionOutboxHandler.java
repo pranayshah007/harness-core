@@ -42,25 +42,27 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     try (AutoLogContext ignore =
              new NodeExecutionLogContext(nodeStartInfo.getNodeExecution().getUuid(), OVERRIDE_NESTS)) {
       nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
-      switch (nodeGroup) {
-        case PIPELINE:
-          sendPipelineExecutionEventForAudit(nodeStartInfo);
-          break;
-        case STAGES:
-          sendStageExecutionEventForAudit(nodeStartInfo);
-          break;
-        default:
-          log.info(String.format("Current type of NodeGroup is not supported for Audits!"));
+      try {
+        switch (nodeGroup) {
+          case PIPELINE:
+            sendPipelineExecutionEventForAudit(nodeStartInfo);
+            break;
+          case STAGES:
+            sendStageExecutionEventForAudit(nodeStartInfo);
+            break;
+          default:
+            log.info(String.format("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup));
+        }
+      } catch (Exception ex) {
+        log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
       }
-    } catch (Exception ex) {
-      log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
     }
   }
 
   private boolean validatePresenceOfNodeGroup(NodeStartInfo nodeStartInfo) {
     if (nodeStartInfo == null || nodeStartInfo.getNodeExecution() == null
         || nodeStartInfo.getNodeExecution().getGroup() == null) {
-      log.info(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
+      log.error(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
       return true;
     }
     return false;
