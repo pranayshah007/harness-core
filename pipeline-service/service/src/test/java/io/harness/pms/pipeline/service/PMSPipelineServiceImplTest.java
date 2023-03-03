@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -67,6 +68,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -341,6 +343,37 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testValidateStoreYaml() {
+    String invalidYaml = "---\n"
+        + "name: \"parent pipeline\"\n"
+        + "identifier: \"rc-" + generateUuid() + "\"\n"
+        + "timeout: \"1w\"\n"
+        + "type: \"Pipeline\"\n"
+        + "type: \"Pipeline\"\n"
+        + "spec:\n"
+        + "  pipeline: \"childPipeline\"\n"
+        + "  org: \"org\"\n"
+        + "  project: \"project\"\n";
+    PipelineEntity entity = PipelineEntity.builder().yaml(invalidYaml).build();
+    assertThatThrownBy(() -> pmsPipelineService.validateStoredYaml(entity)).isInstanceOf(InvalidYamlException.class);
+
+    String validYaml = "---\n"
+        + "name: \"parent pipeline\"\n"
+        + "identifier: \"rc-" + generateUuid() + "\"\n"
+        + "timeout: \"1w\"\n"
+        + "type: \"Pipeline\"\n"
+        + "spec:\n"
+        + "  pipeline: \"childPipeline\"\n"
+        + "  org: \"org\"\n"
+        + "  project: \"project\"\n";
+
+    entity.setYaml(validYaml);
+    assertThatCode(() -> pmsPipelineService.validateStoredYaml(entity)).doesNotThrowAnyException();
   }
 
   @Test
