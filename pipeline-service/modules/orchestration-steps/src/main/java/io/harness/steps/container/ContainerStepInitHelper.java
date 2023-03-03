@@ -130,7 +130,8 @@ public class ContainerStepInitHelper {
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
-    Map<String, String> buildLabels = k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier());
+    Map<String, String> buildLabels =
+        k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier().replace("_", ""));
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
         "annotations", "ContainerStep", "stepSetup", k8sDirectInfraYaml.getSpec().getAnnotations(), false);
     Map<String, String> labels = ExpressionResolverUtils.resolveMapParameter(
@@ -381,9 +382,9 @@ public class ContainerStepInitHelper {
     if (runStepInfo.getConnectorRef() == null) {
       throw new ContainerStepExecutionException("connector ref can't be empty in k8s infrastructure");
     }
-    String identifier = runStepInfo.getIdentifier();
+    String identifier = runStepInfo.getIdentifier().replace("_", "");
     Integer port = portFinder.getNextPort();
-    String containerName = format("%s%s", STEP_PREFIX, runStepInfo.getIdentifier().toLowerCase());
+    String containerName = format("%s%s", STEP_PREFIX, identifier);
 
     Map<String, String> stepEnvVars = new HashMap<>();
     Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameter(
