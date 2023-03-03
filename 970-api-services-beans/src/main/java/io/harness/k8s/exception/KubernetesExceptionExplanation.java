@@ -62,6 +62,8 @@ public class KubernetesExceptionExplanation {
   public final String K8S_CHARACTER_ERROR = "The following resource(s) are breaching the naming constraints:\n%s";
   public final String FAILED_COMMAND_WITH_EXITCODE_AND_OUTPUT =
       "Command executed: [%s] %nExit Code: [%s] %nOutput: [%s] %nkubectl binary path: [%s]";
+  public final String FAILED_COMMAND_RESOURCES_NOT_APPLIED = "Resources not applied: [%s]";
+  public final String FAILED_COMMAND_KUBECTL_VERSION = "kubernetes version: [%s]";
   public final String FAILED_COMMAND_WITH_EXITCODE =
       "Command executed: [%s] %nExit Code: [%s] %nkubectl binary path: [%s]";
   public final String VALIDATION_FAILED_UNKNOWN_FIELD = "The manifest contains the following unknown fields: \n%s";
