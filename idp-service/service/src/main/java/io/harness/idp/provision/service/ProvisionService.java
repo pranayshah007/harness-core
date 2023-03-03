@@ -7,8 +7,6 @@
 
 package io.harness.idp.provision.service;
 
-import java.io.IOException;
-
 public interface ProvisionService {
-  void triggerPipeline(String accountIdentifier, String namespace) throws IOException;
+  void triggerPipeline(String accountIdentifier, String namespace);
 }
