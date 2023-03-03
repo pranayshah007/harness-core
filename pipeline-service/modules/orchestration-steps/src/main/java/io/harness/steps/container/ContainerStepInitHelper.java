@@ -46,8 +46,6 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
@@ -121,20 +119,11 @@ public class ContainerStepInitHelper {
     String connectorRef = infrastructure.getSpec().getConnectorRef().getValue();
 
     ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
-    verifyK8sConnectorAsIam(k8sConnector);
     return CIK8InitializeTaskParams.builder()
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix))
         .podMaxWaitUntilReadySecs(k8sPodInitUtils.getPodWaitUntilReadTimeout(infrastructure))
         .build();
-  }
-
-  private void verifyK8sConnectorAsIam(ConnectorDetails k8sConnector) {
-    KubernetesClusterConfigDTO connectorConfig = (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
-    if (connectorConfig.getCredential().getKubernetesCredentialType()
-        != KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
-      throw new ContainerStepExecutionException("We only support k8s connector with inherit from delegate as of now");
-    }
   }
 
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepInfo containerStepInfo,
@@ -174,6 +163,7 @@ public class ContainerStepInitHelper {
         .priorityClassName(k8sDirectInfraYaml.getSpec().getPriorityClassName().getValue())
         .containerParamsList(podContainers.getRight())
         .initContainerParamsList(singletonList(podContainers.getLeft()))
+        .tolerations(k8sPodInitUtils.getPodTolerations(k8sDirectInfraYaml.getSpec().getTolerations()))
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();

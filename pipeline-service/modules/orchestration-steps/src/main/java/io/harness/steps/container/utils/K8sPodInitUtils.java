@@ -296,10 +296,17 @@ public class K8sPodInitUtils {
         .build();
   }
 
+  private List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
+    if (tolerations == null || tolerations.isExpression() || tolerations.getValue() == null) {
+      return null;
+    } else {
+      return tolerations.getValue();
+    }
+  }
+
   public List<PodToleration> getPodTolerations(ParameterField<List<Toleration>> parameterizedTolerations) {
     List<PodToleration> podTolerations = new ArrayList<>();
-    List<Toleration> tolerations = null;
-    //                    Con.resolveTolerations(parameterizedTolerations);
+    List<Toleration> tolerations = resolveTolerations(parameterizedTolerations);
     if (tolerations == null) {
       return podTolerations;
     }
