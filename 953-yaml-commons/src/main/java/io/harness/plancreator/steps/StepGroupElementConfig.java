@@ -70,7 +70,7 @@ public class StepGroupElementConfig {
   ParameterField<String> skipCondition;
   @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
   @VariableExpression
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StepWhenCondition> when;
 
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
