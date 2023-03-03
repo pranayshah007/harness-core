@@ -32,14 +32,12 @@ import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.DataCollectionProgressLog;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
