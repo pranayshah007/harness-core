@@ -640,7 +640,9 @@ public enum FeatureName {
   CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
   CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC),
   PL_MIGRATE_SECRETS_FROM_LOCAL_TO_GCP_KMS_PROD3(
-      "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL);
+      "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
+  CHAOS_SRM_EVENT(
+      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS);
 
   @Deprecated
   FeatureName() {
