@@ -7,7 +7,14 @@
 
 package io.harness.ng.scim;
 
+import static io.harness.NGConstants.CREATED;
+import static io.harness.NGConstants.DISPLAY_NAME;
+import static io.harness.NGConstants.LAST_MODIFIED;
+import static io.harness.NGConstants.LOCATION;
+import static io.harness.NGConstants.RESOURCE_TYPE;
+import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -33,14 +40,20 @@ import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.service.ScimGroupService;
+import io.harness.serializer.JsonUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,16 +69,17 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NGScimGroupServiceImpl implements ScimGroupService {
   @Inject private UserGroupService userGroupService;
   @Inject private NgUserService ngUserService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private static final String EXC_MSG_GROUP_DOESNT_EXIST = "Group does not exist";
   private static final Integer MAX_RESULT_COUNT = 20;
-  private static final String DISPLAY_NAME = "displayName";
   private static final String REPLACE_OKTA = "replace";
   private static final String REPLACE = "Replace";
   private static final String ADD = "Add";
   private static final String ADD_OKTA = "add";
   private static final String REMOVE = "Remove";
   private static final String REMOVE_OKTA = "remove";
+  private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
   @Override
   public ScimListResponse<ScimGroup> searchGroup(String filter, String accountId, Integer count, Integer startIndex) {
@@ -127,13 +141,13 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     }
     if (isNotEmpty(userGroupList)) {
       for (UserGroup userGroup : userGroupList) {
-        scimGroupList.add(buildGroupResponse(userGroup));
+        scimGroupList.add(buildGroupResponse(userGroup, accountId));
       }
     }
     return scimGroupList;
   }
 
-  private ScimGroup buildGroupResponse(UserGroup userGroup) {
+  private ScimGroup buildGroupResponse(UserGroup userGroup, String accountId) {
     ScimGroup scimGroup = new ScimGroup();
     if (userGroup != null) {
       scimGroup.setId(userGroup.getIdentifier());
@@ -156,6 +170,19 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
           memberTemp.setRef(URI.create(""));
           memberList.add(memberTemp);
         });
+      }
+
+      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+        Map<String, String> metaMap = new HashMap<String, String>() {
+          {
+            put(RESOURCE_TYPE, "Group");
+            put(CREATED, simpleDateFormat.format(new Date(userGroup.getCreatedAt())));
+            put(LAST_MODIFIED, simpleDateFormat.format(new Date(userGroup.getLastModifiedAt())));
+            put(VERSION, "");
+            put(LOCATION, "");
+          }
+        };
+        scimGroup.setMeta(JsonUtils.asTree(metaMap));
       }
       scimGroup.setMembers(memberList);
     }
@@ -376,7 +403,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
       log.info("NGSCIM: UserGroup with id {} is not found in account {}", groupId, accountId);
       throw new UnauthorizedException(EXC_MSG_GROUP_DOESNT_EXIST, GROUP);
     }
-    ScimGroup scimGroup = buildGroupResponse(userGroupList.get(0));
+    ScimGroup scimGroup = buildGroupResponse(userGroupList.get(0), accountId);
     log.info("NGSCIM: Response for accountId {} to get group {} with call: {}", accountId, groupId, scimGroup);
     return scimGroup;
   }
@@ -418,7 +445,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
       userGroupCreated = userGroupService.create(userGroupDTOBuilder.build());
     }
 
-    ScimGroup scimGroup = buildGroupResponse(userGroupCreated);
+    ScimGroup scimGroup = buildGroupResponse(userGroupCreated, accountId);
     log.info("NGSCIM: Response for accountId {} to create group {} with call: {}", accountId,
         scimGroup.getDisplayName(), scimGroup);
     return scimGroup;

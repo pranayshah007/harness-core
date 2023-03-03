@@ -61,4 +61,17 @@ public class NGConstants {
   public static final String DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER = "_organization_all_users";
   public static final String DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER = "_project_all_users";
   public static final String X_API_KEY = "X-Api-Key";
+
+  /* SCIM related Constants*/
+  public static final String GIVEN_NAME = "givenName";
+  public static final String FAMILY_NAME = "familyName";
+  public static final String DISPLAY_NAME = "displayName";
+  public static final String FORMATTED_NAME = "formatted";
+  public static final String RESOURCE_TYPE = "resourceType";
+  public static final String CREATED = "created";
+  public static final String LAST_MODIFIED = "lastModified";
+  public static final String VERSION = "version";
+  public static final String LOCATION = "location";
+  public static final String VALUE = "value";
+  public static final String PRIMARY = "primary";
 }

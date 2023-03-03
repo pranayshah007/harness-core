@@ -6,8 +6,13 @@
  */
 
 package io.harness.ng.scim;
-
+import static io.harness.NGConstants.CREATED;
+import static io.harness.NGConstants.LAST_MODIFIED;
+import static io.harness.NGConstants.LOCATION;
+import static io.harness.NGConstants.RESOURCE_TYPE;
+import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
@@ -16,6 +21,7 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -32,6 +38,7 @@ import io.harness.rule.Owner;
 import io.harness.scim.Member;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
 import org.junit.Before;
@@ -46,13 +53,15 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
   private NgUserService ngUserService;
 
   private NGScimGroupServiceImpl scimGroupService;
+  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() throws IllegalAccessException {
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
-    scimGroupService = new NGScimGroupServiceImpl(userGroupService, ngUserService);
+    scimGroupService = new NGScimGroupServiceImpl(userGroupService, ngUserService, ngFeatureFlagHelperService);
   }
 
   @Test
@@ -75,6 +84,59 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     assertThat(userGroupCreated.getDisplayName()).isNotNull();
     assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
     assertThat(userGroupCreated.getId()).isEqualTo(scimGroup.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateGroup_shouldReturnMeta_ifFFTurnedOn() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("displayname");
+    scimGroup.setId("id");
+
+    UserGroup userGroup = UserGroup.builder()
+                              .name(scimGroup.getDisplayName())
+                              .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
+                              .build();
+    when(userGroupService.create(any())).thenReturn(userGroup);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNotNull();
+    assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
+    assertThat(userGroupCreated.getId()).isEqualTo(scimGroup.getDisplayName());
+    assertNotNull(userGroupCreated.getMeta());
+    assertNotNull(userGroupCreated.getMeta().get(RESOURCE_TYPE));
+    assertNotNull(userGroupCreated.getMeta().get(CREATED));
+    assertNotNull(userGroupCreated.getMeta().get(LAST_MODIFIED));
+    assertNotNull(userGroupCreated.getMeta().get(LOCATION));
+    assertNotNull(userGroupCreated.getMeta().get(VERSION));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateGroup_shouldNotReturnMeta_ifFFTurnedOff() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("displayname");
+    scimGroup.setId("id");
+
+    UserGroup userGroup = UserGroup.builder()
+                              .name(scimGroup.getDisplayName())
+                              .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
+                              .build();
+    when(userGroupService.create(any())).thenReturn(userGroup);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNotNull();
+    assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
+    assertThat(userGroupCreated.getId()).isEqualTo(scimGroup.getDisplayName());
+    assertNull(userGroupCreated.getMeta());
   }
 
   @Test

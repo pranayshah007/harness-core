@@ -7,6 +7,16 @@
 
 package io.harness.ng.scim;
 
+import static io.harness.NGConstants.CREATED;
+import static io.harness.NGConstants.FAMILY_NAME;
+import static io.harness.NGConstants.FORMATTED_NAME;
+import static io.harness.NGConstants.GIVEN_NAME;
+import static io.harness.NGConstants.LAST_MODIFIED;
+import static io.harness.NGConstants.LOCATION;
+import static io.harness.NGConstants.PRIMARY;
+import static io.harness.NGConstants.RESOURCE_TYPE;
+import static io.harness.NGConstants.VALUE;
+import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -40,8 +50,10 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,17 +69,13 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @OwnedBy(PL)
 public class NGScimUserServiceImpl implements ScimUserService {
-  private static final String GIVEN_NAME = "givenName";
-  private static final String FAMILY_NAME = "familyName";
-  private static final String FORMATTED_NAME = "formatted";
-  private static final String VALUE = "value";
-  private static final String PRIMARY = "primary";
   private final NgUserService ngUserService;
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
   private final AccountClient accountClient;
 
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -408,11 +416,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
     userResource.setUserName(user.getEmail());
     userResource.setDisplayName(user.getName());
 
+    boolean isJpmcFfOn = ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS);
+
     // @Todo - Check with Ujjawal on this if we need GIVEN_NAME & FAMILY_NAME
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
         put("displayName", user.getName());
-        if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+        if (isJpmcFfOn) {
           final String givenNm = user.getGivenName() == null ? user.getName() : user.getGivenName();
           final String familyNm = user.getFamilyName() == null ? user.getName() : user.getFamilyName();
 
@@ -437,6 +447,19 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
     userResource.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
     userResource.setName(JsonUtils.asTree(nameMap));
+
+    if (isJpmcFfOn) {
+      Map<String, String> metaMap = new HashMap<String, String>() {
+        {
+          put(RESOURCE_TYPE, "User");
+          put(CREATED, simpleDateFormat.format(new Date(user.getCreatedAt())));
+          put(LAST_MODIFIED, simpleDateFormat.format(new Date(user.getLastUpdatedAt())));
+          put(VERSION, "");
+          put(LOCATION, "");
+        }
+      };
+      userResource.setMeta(JsonUtils.asTree(metaMap));
+    }
     return userResource;
   }
 

@@ -48,6 +48,8 @@ public class UserInfo {
   boolean externallyManaged;
   String givenName;
   String familyName;
+  long createdAt;
+  long lastUpdatedAt;
 
   public boolean isLocked() {
     return this.locked;
