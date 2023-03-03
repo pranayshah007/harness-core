@@ -344,19 +344,21 @@ public class HelmClientImpl implements HelmClient {
                          .replace("${NAMESPACE}", namespace)
                          .replace("${OVERRIDE_VALUES}", keyValueOverrides);
 
+    Boolean isHelmCmdFlagsNull = helmCommandData.isHelmCmdFlagsNull();
     Map<HelmSubCommandType, String> currentValueMap = helmCommandData.getValueMap();
     Map<HelmSubCommandType, String> valueMap = new HashMap<>();
     if (currentValueMap != null) {
-      valueMap = currentValueMap;
+      valueMap.putAll(currentValueMap);
     }
 
     if (((HelmVersion.V380.equals(helmCommandData.getHelmVersion())
             || HelmVersion.V3.equals(helmCommandData.getHelmVersion())))) {
+      isHelmCmdFlagsNull = false;
       String validate = "--validate --is-upgrade";
       if (currentValueMap != null) {
         String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
         if (currentValueForTemplate != null) {
-          validate = validate + currentValueForTemplate;
+          validate = validate + " " + currentValueForTemplate;
         }
       }
       valueMap.put(HelmSubCommandType.TEMPLATE, validate);
@@ -366,8 +368,8 @@ public class HelmClientImpl implements HelmClient {
       }
     }
 
-    command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
-        helmCommandData.isHelmCmdFlagsNull(), valueMap, helmCommandData.getHelmVersion());
+    command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(), isHelmCmdFlagsNull, valueMap,
+        helmCommandData.getHelmVersion());
     logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
     command = applyKubeConfigToCommand(command, kubeConfigLocation);
     String errorMessagePrefix = "Failed to render helm chart. ";

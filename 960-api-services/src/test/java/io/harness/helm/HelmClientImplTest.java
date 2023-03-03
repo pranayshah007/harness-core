@@ -364,11 +364,14 @@ public class HelmClientImplTest extends CategoryTest {
     assertThat(getCommandWithCommandFlags(HelmVersion.V2, command, helmInstallCommandData))
         .isEqualTo("helm template chartLocation --debug --tls --name crazy-helm --namespace namespace ");
     assertThat(getCommandWithNoKubeConfig(HelmVersion.V3, command, helmInstallCommandData))
-        .isEqualTo("/client-tools/v3.1/helm template crazy-helm chartLocation  --namespace namespace");
+        .isEqualTo(
+            "/client-tools/v3.1/helm template crazy-helm chartLocation --validate --is-upgrade --namespace namespace");
     assertThat(getCommandWithNoValueOverride(HelmVersion.V3, command, helmInstallCommandData))
-        .isEqualTo("/client-tools/v3.1/helm template crazy-helm chartLocation  --namespace namespace");
+        .isEqualTo(
+            "/client-tools/v3.1/helm template crazy-helm chartLocation --validate --is-upgrade --namespace namespace");
     assertThat(getCommandWithCommandFlags(HelmVersion.V3, command, helmInstallCommandData))
-        .isEqualTo("/client-tools/v3.1/helm template crazy-helm chartLocation --debug --tls --namespace namespace ");
+        .isEqualTo(
+            "/client-tools/v3.1/helm template crazy-helm chartLocation --validate --is-upgrade --namespace namespace ");
   }
 
   private String getCommandWithCommandFlags(

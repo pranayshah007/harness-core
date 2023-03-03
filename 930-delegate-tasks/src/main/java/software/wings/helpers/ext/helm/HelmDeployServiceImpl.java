@@ -225,21 +225,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       if (useK8sSteadyStateCheck) {
         if (HelmVersion.V380.equals(commandRequest.getHelmVersion())
             || HelmVersion.V3.equals(commandRequest.getHelmVersion())) {
-          Map<HelmSubCommandType, String> valueMap = new HashMap<>();
-          String validate = "--validate --is-upgrade";
-          if (commandRequest.getHelmCommandFlag() != null) {
-            Map<HelmSubCommandType, String> currentValueMap = commandRequest.getHelmCommandFlag().getValueMap();
-            if (currentValueMap != null) {
-              valueMap = currentValueMap;
-              String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
-              if (currentValueForTemplate != null) {
-                validate = validate + currentValueForTemplate;
-              }
-            }
-          }
-          valueMap.put(HelmSubCommandType.TEMPLATE, validate);
-          HelmCommandFlag updatedHelmCommandFlag = HelmCommandFlag.builder().valueMap(valueMap).build();
-          commandRequest.setHelmCommandFlag(updatedHelmCommandFlag);
+          addValidateFlagToHelmCommandRequest(commandRequest);
         }
         k8sWorkloads = readKubernetesResourcesIds(commandRequest, commandRequest.getVariableOverridesYamlFiles(),
             executionLogCallback, commandRequest.getTimeoutInMillis());
@@ -298,6 +284,24 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         deleteDirectoryAndItsContentIfExists(Paths.get(commandRequest.getGcpKeyPath()).getParent().toString());
       }
     }
+  }
+
+  private void addValidateFlagToHelmCommandRequest(HelmInstallCommandRequest commandRequest) {
+    Map<HelmSubCommandType, String> valueMap = new HashMap<>();
+    String validate = "--validate --is-upgrade";
+    if (commandRequest.getHelmCommandFlag() != null) {
+      Map<HelmSubCommandType, String> currentValueMap = commandRequest.getHelmCommandFlag().getValueMap();
+      if (currentValueMap != null) {
+        valueMap.putAll(currentValueMap);
+        String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
+        if (currentValueForTemplate != null) {
+          validate = validate + " " + currentValueForTemplate;
+        }
+      }
+    }
+    valueMap.put(HelmSubCommandType.TEMPLATE, validate);
+    HelmCommandFlag updatedHelmCommandFlag = HelmCommandFlag.builder().valueMap(valueMap).build();
+    commandRequest.setHelmCommandFlag(updatedHelmCommandFlag);
   }
 
   private List<ContainerInfo> getContainerInfos(HelmCommandRequest commandRequest, List<KubernetesResourceId> workloads,

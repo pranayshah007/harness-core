@@ -20,6 +20,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -192,6 +193,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   private GitFileConfig gitFileConfig;
   ExecutionLogCallback executionLogCallback;
 
+  private final HelmCommandFlag commandFlagWithValidate =
+      HelmCommandFlag.builder().valueMap(ImmutableMap.of(TEMPLATE, "--validate --is-upgrade")).build();
+
   @Before
   public void setUp() throws Exception {
     helmInstallCommandRequest = createHelmInstallCommandRequest();
@@ -352,6 +356,29 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     HelmCommandResponse helmCommandResponse = helmDeployService.deploy(helmInstallCommandRequest);
     assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(helmClient).upgrade(argumentCaptor.capture(), eq(false));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateFlagAddedForHelmV3AndSteadyStateCheckEnabled() throws Exception {
+    helmCliReleaseHistoryResponse.setCommandExecutionStatus(SUCCESS);
+    helmCliListReleasesResponse.setOutput(HelmTestConstants.LIST_RELEASE_V2);
+    helmCliListReleasesResponse.setCommandExecutionStatus(SUCCESS);
+    helmCliResponse.setCommandExecutionStatus(SUCCESS);
+    helmInstallCommandRequest.setHelmVersion(V3);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+
+    when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
+    when(helmClient.upgrade(any(), eq(false))).thenReturn(helmCliResponse);
+    when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
+
+    ArgumentCaptor<HelmCommandFlag> commandFlagCaptor1 = ArgumentCaptor.forClass(HelmCommandFlag.class);
+    helmDeployService.deploy(helmInstallCommandRequest);
+    verify(k8sTaskHelperBase, times(1))
+        .renderTemplateForHelm(eq(null), anyString(), eq(null), anyString(), anyString(), any(), any(), anyLong(),
+            commandFlagCaptor1.capture(), anyString());
+    assertThat(commandFlagCaptor1.getValue()).isEqualTo(commandFlagWithValidate);
   }
 
   @Test
