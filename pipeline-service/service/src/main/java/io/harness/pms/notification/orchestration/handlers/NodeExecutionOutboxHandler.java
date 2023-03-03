@@ -7,14 +7,18 @@
 
 package io.harness.pms.notification.orchestration.handlers;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
+import io.harness.logging.AutoLogContext;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.outbox.autoLog.NodeExecutionLogContext;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +41,8 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     }
 
     String nodeGroup = null;
-    try {
+    try (AutoLogContext ignore =
+             new NodeExecutionLogContext(nodeStartInfo.getNodeExecution().getUuid(), OVERRIDE_NESTS)) {
       nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
       switch (nodeGroup) {
         case PIPELINE:
