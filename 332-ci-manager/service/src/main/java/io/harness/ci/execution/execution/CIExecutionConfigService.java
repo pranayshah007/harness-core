@@ -278,6 +278,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .build();
   }
 
@@ -326,6 +327,7 @@ public class CIExecutionConfigService {
         .cacheGCSTag(vmImageConfig.getCacheGCS())
         .cacheS3Tag(vmImageConfig.getCacheS3())
         .securityTag(vmImageConfig.getSecurity())
+        .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .build();
   }
 
@@ -625,6 +627,11 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getIacmTerraform();
         }
         break;
+      case SSCA_ORCHESTRATION:
+        if (Strings.isNotBlank(vmImageConfig.getSscaOrchestration())) {
+          image = vmImageConfig.getSscaOrchestration();
+        }
+        break;
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }
@@ -661,6 +668,8 @@ public class CIExecutionConfigService {
         return vmImageConfig.getGitClone();
       case IACM_TERRAFORM_PLAN:
         return vmImageConfig.getIacmTerraform();
+      case SSCA_ORCHESTRATION:
+        return vmImageConfig.getSscaOrchestration();
       default:
         throw new BadRequestException("Unexpected value: " + stepInfoType);
     }

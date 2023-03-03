@@ -289,6 +289,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.7
       cacheS3: plugins/cache:1.4.7
+      sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
