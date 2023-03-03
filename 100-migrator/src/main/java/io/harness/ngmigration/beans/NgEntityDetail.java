@@ -10,6 +10,8 @@ package io.harness.ngmigration.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.ngmigration.NGMigrationEntityType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NgEntityDetail {
+  private NGMigrationEntityType entityType;
   private String identifier;
   private String orgIdentifier;
   private String projectIdentifier;

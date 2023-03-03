@@ -37,8 +37,7 @@ public class JiraClientTest extends CategoryTest {
   @Before
   public void setup() {
     String url = "http://localhost:";
-    JiraInternalConfig jiraInternalConfig =
-        JiraInternalConfig.builder().jiraUrl(url).username("username").password("password").build();
+    JiraInternalConfig jiraInternalConfig = JiraInternalConfig.builder().jiraUrl(url).authToken("authToken").build();
     jiraClient = new JiraClient(jiraInternalConfig);
   }
 

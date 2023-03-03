@@ -185,7 +185,8 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     executionLogCallback.saveExecutionLog("\nQuerying current replicas");
-    Integer currentReplicas = k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams);
+    Integer currentReplicas =
+        k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams, executionLogCallback);
     executionLogCallback.saveExecutionLog("Current replica count is " + currentReplicas);
 
     if (request.getInstanceUnitType() == null) {

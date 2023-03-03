@@ -320,6 +320,7 @@ public class DiscoveryService {
         summaryDTO.getErrors().add(ImportError.builder().message(e.getMessage()).entity(file.getCgBasicInfo()).build());
       }
     }
+    summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
   }
 

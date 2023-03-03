@@ -358,7 +358,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .serviceIdentifier(monitoredService.getServiceRef())
           .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
           .healthSourceName(getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
-          .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getType())
+          .type(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType())
           .build();
     } else {
       CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) serviceLevelObjective;

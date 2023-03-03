@@ -31,6 +31,7 @@ import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
+import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -177,10 +178,11 @@ public class EcsRollingDeployStepTest extends CategoryTest {
         EcsExecutionPassThroughData.builder()
             .infrastructure(EcsInfrastructureOutcome.builder().infrastructureKey("infraKey").build())
             .build();
+    EcsTask ecsTask = EcsTask.builder().serviceName("ecs-service").build();
     ResponseData responseData =
         EcsRollingDeployResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .ecsRollingDeployResult(EcsRollingDeployResult.builder().build())
+            .ecsRollingDeployResult(EcsRollingDeployResult.builder().ecsTasks(Arrays.asList(ecsTask)).build())
             .unitProgressData(
                 UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build())
             .errorMessage("error")

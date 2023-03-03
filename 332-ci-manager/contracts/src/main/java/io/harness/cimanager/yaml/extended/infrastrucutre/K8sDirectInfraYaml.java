@@ -24,6 +24,7 @@ import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -84,6 +85,7 @@ public class K8sDirectInfraYaml implements Infrastructure {
     @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
     private ParameterField<List<String>> hostNames;
     @YamlSchemaTypes(value = {runtime})
+    @VariableExpression(skipVariableExpression = true)
     @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;")
     private ParameterField<List<Toleration>> tolerations;
     @YamlSchemaTypes(value = {runtime})

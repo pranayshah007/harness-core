@@ -26,9 +26,16 @@ public class BigQueryServiceImpl implements BigQueryService {
 
   @Override
   public BigQuery get() {
-    ServiceAccountCredentials credentials = getCredentials(GCP_CREDENTIALS_PATH);
-    BigQueryOptions.Builder bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setCredentials(credentials);
-
+    BigQueryOptions.Builder bigQueryOptionsBuilder = null;
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    if (!usingWorkloadIdentity) {
+      ServiceAccountCredentials credentials = getCredentials(GCP_CREDENTIALS_PATH);
+      log.info("WI: Initializing BQ with JSON Key file");
+      bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setCredentials(credentials);
+    } else {
+      log.info("WI: Initializing BQ with Google ADC");
+      bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setProjectId(System.getenv("GCP_PROJECT_ID"));
+    }
     return bigQueryOptionsBuilder.build().getService();
   }
 

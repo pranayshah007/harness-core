@@ -2,5 +2,5 @@
     "text" : "Pipeline Execution Rejected\n
     *Pipeline*: *<${WORKFLOW_URL}|${WORKFLOW_NAME}>*\n
     *Account*: *${ACCOUNT_ID}*\n
-    The Pipeline Execution triggered by *${USER_NAME}* was rejected because of active Deployment Freeze Window *<${BLACKOUT_WINDOW_URL}|${BLACKOUT_WINDOW_NAME}>*. The deployment freeze ends at ${END_TIME}.",
+    The Pipeline Execution triggered by *${USER_NAME}* was rejected because of active Deployment Freeze Window *<${BLACKOUT_WINDOW_URL}|${BLACKOUT_WINDOW_NAME}>*. The deployment freeze ends at ${END_TIME}. ${CUSTOMIZED_MESSAGE}",
 }

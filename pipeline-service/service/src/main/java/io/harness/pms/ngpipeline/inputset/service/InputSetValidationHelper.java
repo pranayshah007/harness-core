@@ -88,12 +88,12 @@ public class InputSetValidationHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getPipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
       }
     } else {
-      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      optionalPipelineEntity =
+          pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     }
     if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
@@ -122,8 +122,8 @@ public class InputSetValidationHelper {
 
   String getPipelineYamlForOldGitSyncFlowInternal(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (pipelineEntity.isPresent()) {
       return pipelineEntity.get().getYaml();
     } else {
@@ -193,7 +193,7 @@ public class InputSetValidationHelper {
         //      Fetch input set when pipeline and input set are in same repos
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
           optionalInputSetEntity = inputSetService.getWithoutValidations(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false);
+              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
         }
       } else {
         throw new InvalidRequestException(ERROR_PIPELINE_BRANCH_NOT_PROVIDED);
@@ -201,7 +201,7 @@ public class InputSetValidationHelper {
     } else {
       //      Fetch input set when pipeline and input set are in different repos
       optionalInputSetEntity = inputSetService.getWithoutValidations(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false);
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
     }
     if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(

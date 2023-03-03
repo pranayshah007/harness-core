@@ -12,8 +12,10 @@ import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType
 import static io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus.SUCCESS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.impl.ScmResponseStatusUtils.convertScmStatusCodeToErrorCode;
+import static io.harness.impl.ScmResponseStatusUtils.formatErrorMessage;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.stripEnd;
 import static org.apache.commons.lang3.StringUtils.stripStart;
 
@@ -141,8 +143,15 @@ public class GitCommandTaskHandler {
       throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.UNEXPECTED).cause(e).build();
     }
     if (reposResponse != null && reposResponse.getStatus() > 300) {
+      String errorMessage = reposResponse.getError();
+      if (isBlank(errorMessage)) {
+        errorMessage = formatErrorMessage(reposResponse.getStatus());
+      }
+      log.error(
+          String.format("Received status %s from scm provider, error: %s", reposResponse.getStatus(), errorMessage));
+
       ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());
-      throw SCMRuntimeException.builder().errorCode(errorCode).message(reposResponse.getError()).build();
+      throw SCMRuntimeException.builder().errorCode(errorCode).message(errorMessage).build();
     }
 
     // AzureRepo returns an error with code 203

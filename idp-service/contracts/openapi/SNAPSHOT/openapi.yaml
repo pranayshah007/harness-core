@@ -151,6 +151,8 @@ paths:
       tags:
         - EnvironmentSecret
   '/v1/status-info/{type}':
+    parameters:
+      - $ref: '#/components/parameters/StatusType'
     get:
       summary: Gets Status Info by type
       tags:
@@ -165,12 +167,6 @@ paths:
         '200':
           $ref: '#/components/responses/StatusInfoResponse'
       x-internal: true
-    parameters:
-      - schema:
-          type: string
-        name: type
-        in: path
-        required: true
     post:
       summary: Saves Status Info by type
       tags:
@@ -280,6 +276,12 @@ components:
       properties:
         currentStatus:
           type: string
+          enum:
+            - COMPLETED
+            - RUNNING
+            - PENDING
+            - FAILED
+            - NOT_FOUND
         reason:
           type: string
         updatedAt:
@@ -351,6 +353,15 @@ components:
       schema:
         type: string
       description: Identifier field of the environment secret the resource is scoped to
+    StatusType:
+      name: type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - infra
+          - onboarding
   requestBodies:
     EnvironmentSecretRequest:
       content:

@@ -20,7 +20,7 @@ import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.AlreadyExistsException;
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
 import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
@@ -60,7 +60,15 @@ public class BigQueryUpdateTopicSubscriber {
     String fullSubscriptionName =
         MessageFormatter.format(FULL_SUBSCRIPTION_FORMAT, gcpProjectId, gcpSubscriptionName).getMessage();
 
-    ServiceAccountCredentials credentials = bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH);
+    GoogleCredentials credentials = bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH);
+    if (credentials == null) {
+      try {
+        log.info("WI: Using Google ADC");
+        credentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
+    }
     FixedCredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
     SubscriptionAdminSettings subscriptionAdminSettings =
         SubscriptionAdminSettings.newBuilder().setCredentialsProvider(credentialsProvider).build();

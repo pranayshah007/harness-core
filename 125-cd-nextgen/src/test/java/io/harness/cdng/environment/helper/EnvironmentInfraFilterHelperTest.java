@@ -95,7 +95,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .assertThatThrownBy(()
                                 -> environmentInfraFilterHelper.processEnvInfraFiltering(
                                     ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES))
-        .hasMessageContaining("No environments exists in the project");
+        .hasMessageContaining("No environments found at Project/Org/Account Levels");
   }
 
   @Test
@@ -407,7 +407,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .assertThatThrownBy(()
                                 -> environmentInfraFilterHelper.filterEnvsAndClusters(
                                     environmentsYaml, Collections.emptyList(), ACC_ID, ORG_ID, PROJ_ID))
-        .hasMessageContaining("No environments exists in the project");
+        .hasMessageContaining("No environments found at Project/Org/Account Levels");
   }
 
   @Test
@@ -442,7 +442,12 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public void shouldFilterEnvsAndClustersForEnvFilterWithNoClustersFoundInEnv() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = Environment.builder()
+                           .accountId(ACC_ID)
+                           .orgIdentifier(ORG_ID)
+                           .projectIdentifier(PROJ_ID)
+                           .identifier("env1")
+                           .build();
     FilterYaml clusterFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
@@ -452,7 +457,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(new PageImpl<>(Collections.emptyList()))
+    doReturn(Collections.emptyList())
         .when(clusterService)
         .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
 
@@ -471,13 +476,13 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
-    Cluster c1 = Cluster.builder().clusterRef("c1").build();
+    Environment env1 = getEnv("env1");
+    Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(new PageImpl<>(Arrays.asList(c1)))
+    doReturn(Arrays.asList(c1))
         .when(clusterService)
         .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
     Call call = mock(Call.class);
@@ -505,13 +510,13 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder()
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
             .build();
-    Environment env1 = Environment.builder().identifier("env1").type(EnvironmentType.Production).build();
-    Cluster c1 = Cluster.builder().clusterRef("c1").envRef("env1").build();
+    Environment env1 = getEnv("env1");
+    Cluster c1 = getCluster("c1", "env1");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
-    doReturn(new PageImpl<>(Arrays.asList(c1)))
+    doReturn(Arrays.asList(c1))
         .when(clusterService)
         .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("env1"));
     Call call = mock(Call.class);
@@ -541,18 +546,18 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         EnvironmentsYaml.builder()
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
             .build();
-    Environment env1 = Environment.builder().identifier("env1").type(EnvironmentType.Production).build();
-    Environment env2 = Environment.builder().identifier("env2").type(EnvironmentType.Production).build();
-    Cluster c1 = Cluster.builder().clusterRef("c1").envRef("env1").build();
-    Cluster c2 = Cluster.builder().clusterRef("c2").envRef("env1").build();
-    Cluster c3 = Cluster.builder().clusterRef("c3").envRef("env2").build();
+    Environment env1 = getEnv("env1");
+    Environment env2 = getEnv("env2");
+    Cluster c1 = getCluster("c1", "env1");
+    Cluster c2 = getCluster("c2", "env1");
+    Cluster c3 = getCluster("c3", "env2");
     io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
     io.harness.gitops.models.Cluster gitopsCluster2 = new io.harness.gitops.models.Cluster("c2", "c2");
     io.harness.gitops.models.Cluster gitopsCluster3 = new io.harness.gitops.models.Cluster("c3", "c3");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
-    doReturn(new PageImpl<>(Arrays.asList(c1, c2, c3)))
+    doReturn(Arrays.asList(c1, c2, c3))
         .when(clusterService)
         .listAcrossEnv(anyInt(), anyInt(), any(), any(), any(), any());
     Call call = mock(Call.class);
@@ -575,6 +580,26 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     assertThat(filteredEnv2.getEnvRef()).isEqualTo("env2");
     assertThat(filteredEnv2.getClusterRefs()).hasSize(1);
     assertThat(filteredEnv2.getClusterRefs()).contains("c3");
+  }
+
+  private Cluster getCluster(String clusterRef, String envRef) {
+    return Cluster.builder()
+        .accountId(ACC_ID)
+        .orgIdentifier(ORG_ID)
+        .projectIdentifier(PROJ_ID)
+        .clusterRef(clusterRef)
+        .envRef(envRef)
+        .build();
+  }
+
+  private Environment getEnv(String id) {
+    return Environment.builder()
+        .accountId(ACC_ID)
+        .orgIdentifier(ORG_ID)
+        .projectIdentifier(PROJ_ID)
+        .identifier(id)
+        .type(EnvironmentType.Production)
+        .build();
   }
 
   @Test

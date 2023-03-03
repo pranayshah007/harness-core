@@ -154,7 +154,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
+  public TemplateEntity create(
+      TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
 
@@ -175,6 +176,15 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getAccountId(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+
+    if (isNewTemplate
+        && validateIsNewTemplateIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier(), templateEntity.getIdentifier())) {
+      throw new InvalidRequestException(String.format(
+          "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
+          templateEntity.getIdentifier(), templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getVersionLabel()));
     }
 
     if (!isRemoteTemplateAndGitEntity(templateEntity)) {
@@ -796,6 +806,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String templateIdentifier, String versionLabel) {
     return !templateRepository.existsByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
+  }
+
+  @Override
+  public boolean validateIsNewTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    return templateRepository.existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
   }
 
   @Override

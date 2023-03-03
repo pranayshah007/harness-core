@@ -8,7 +8,7 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -97,7 +97,7 @@ public class VmRunTestStepSerializer {
     boolean runOnlySelectedTests = resolveBooleanParameter(runTestsStepInfo.getRunOnlySelectedTests(), true);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
     Map<String, String> envVars =
-        resolveMapParameter("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;

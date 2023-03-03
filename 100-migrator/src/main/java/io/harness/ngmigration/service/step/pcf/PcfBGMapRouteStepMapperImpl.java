@@ -15,7 +15,6 @@ import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -25,7 +24,7 @@ import software.wings.sm.states.pcf.PcfSwitchBlueGreenRoutes;
 
 import java.util.Map;
 
-public class PcfBGMapRouteStepMapperImpl extends StepMapper {
+public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;

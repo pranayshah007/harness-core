@@ -23,6 +23,7 @@ io.harness.beans.sweepingoutputs.StepLogKeyDetails
 io.harness.pms.sdk.core.data.StringOutcome
 io.harness.beans.steps.outcome.CIStepOutcome
 io.harness.plancreator.strategy.MatrixConfig
+io.harness.plancreator.strategy.v1.MatrixConfigV1
 io.harness.ci.beans.entities.CIExecutionConfig
 io.harness.app.beans.entities.ExecutionQueueLimit
 io.harness.beans.dependencies.CIDependencyType
@@ -279,6 +280,7 @@ io.harness.beans.environment.pod.container.ContainerImageDetails
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.steps.section.chain.SectionChainPassThroughData
 io.harness.plancreator.strategy.StrategyConfig
+io.harness.plancreator.strategy.v1.StrategyConfigV1
 io.harness.ci.stdvars.BuildStandardVariables
 io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration
 io.harness.beans.steps.stepinfo.ACRStepInfo

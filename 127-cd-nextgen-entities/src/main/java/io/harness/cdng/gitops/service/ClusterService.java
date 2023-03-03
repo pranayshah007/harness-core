@@ -31,7 +31,7 @@ public interface ClusterService {
    * @param clusterRef identifier of the actual gitops cluster that exists in harness gitops
    * @return requested Cluster
    */
-  Optional<Cluster> get(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
+  Optional<Cluster> get(@NotEmpty String accountId, String orgIdentifier, String projectIdentifier,
       String envIdentifier, @NotEmpty String clusterRef);
 
   /**
@@ -62,7 +62,7 @@ public interface ClusterService {
    * @param scopeLevel
    * @return boolean to indicate if deletion was successful
    */
-  boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
+  boolean delete(@NotEmpty String accountId, String orgIdentifier, String projectIdentifier,
       @NotEmpty String envIdentifier, @NotEmpty String clusterRef, ScopeLevel scopeLevel);
 
   /**
@@ -133,20 +133,18 @@ public interface ClusterService {
    * @return Page of clusters
    */
   @NotNull
-  Page<Cluster> list(int page, int size, @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String envRef, String searchTerm, Collection<String> clusterRefs,
+  Page<Cluster> list(int page, int size, @NotEmpty String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotEmpty String envRef, String searchTerm, Collection<String> clusterRefs,
       List<String> sort);
 
   /**
-   *
-   * @param page page index starting from 0
-   * @param size  number of items to fetch in 1 page
-   * @param orgIdentifier the organization identifier
+   * @param page              page index starting from 0
+   * @param size              number of items to fetch in 1 page
+   * @param orgIdentifier     the organization identifier
    * @param projectIdentifier the project identifier
-   * @param envRefs identifiers of the environments for which to fetch clusters
-   * @return Page of clusters
+   * @param envRefs           identifiers of the environments for which to fetch clusters
+   * @return List of clusters
    */
-  @NotNull
-  Page<Cluster> listAcrossEnv(int page, int size, @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, Collection<String> envRefs);
+  List<Cluster> listAcrossEnv(int page, int size, @NotEmpty String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Collection<String> envRefs);
 }

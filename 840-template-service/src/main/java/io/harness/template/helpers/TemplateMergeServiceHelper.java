@@ -97,19 +97,20 @@ public class TemplateMergeServiceHelper {
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(String accountId, String orgId, String projectId,
       JsonNode yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+    TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
     long start = System.currentTimeMillis();
     try (AutoLogContext ignore1 =
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS)) {
-      log.info("[TemplateService] Fetching Template from project {}, org {}, account {}", projectId, orgId, accountId);
-      TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
-
+      log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {}",
+          templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId);
       TemplateEntity template = getLinkedTemplateEntityHelper(accountId, orgId, projectId,
           templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getVersionLabel(),
           templateCacheMap, templateUniqueIdentifier.getVersionMaker(), loadFromCache);
       return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
     } finally {
-      log.info("[TemplateService] Fetching Template from project {}, org {}, account {} took {}ms ", projectId, orgId,
-          accountId, System.currentTimeMillis() - start);
+      log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {} took {}ms ",
+          templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId,
+          System.currentTimeMillis() - start);
     }
   }
 

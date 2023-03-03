@@ -30,6 +30,8 @@ public class AwsLambdaPrepareRollbackResponse implements AwsLambdaCommandRespons
   boolean firstDeployment;
   String functionName;
   AwsLambda awsLambda;
+  String functionCode;
+  String functionConfiguration;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

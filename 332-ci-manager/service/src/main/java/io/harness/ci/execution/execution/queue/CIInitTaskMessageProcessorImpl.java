@@ -12,12 +12,15 @@ import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
 import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.tasks.FailureResponseData;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -31,6 +34,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
   @Inject CIBuildEnforcer buildEnforcer;
   @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
   @Inject AsyncWaitEngine asyncWaitEngine;
+  @Inject WaitNotifyEngine waitNotifyEngine;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
@@ -48,15 +52,27 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
         return builder.success(false).build();
       }
       initTaskExecutor.submit(() -> {
-        asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
-        String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
-        InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-            InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
-        sdkGraphVisualizationDataService.publishStepDetailInformation(
-            ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
-        CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
-            CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
-        asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);
+        try {
+          asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());
+          String taskId = initializeTaskStepV2.executeBuild(ambiance, ciInitTaskArgs.getStepElementParameters());
+          InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+              InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+          sdkGraphVisualizationDataService.publishStepDetailInformation(
+              ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
+          CIInitDelegateTaskStatusNotifier ciInitDelegateTaskStatusNotifier =
+              CIInitDelegateTaskStatusNotifier.builder().waitId(ciInitTaskArgs.getCallbackId()).build();
+          asyncWaitEngine.waitForAllOn(ciInitDelegateTaskStatusNotifier, null, Arrays.asList(taskId), 0);
+        } catch (CIStageExecutionException e) {
+          log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), e);
+          FailureResponseData error = FailureResponseData.builder().errorMessage(e.getMessage()).build();
+          waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
+        } catch (Exception ex) {
+          log.info("failed to process execution: {}", ciInitTaskArgs.getAmbiance().getStageExecutionId(), ex);
+          FailureResponseData error = FailureResponseData.builder()
+                                          .errorMessage(ex.getMessage() != null ? ex.getMessage() : ex.toString())
+                                          .build();
+          waitNotifyEngine.doneWith(ciInitTaskArgs.getCallbackId(), error);
+        }
       });
       return builder.success(true).build();
     } catch (Exception ex) {

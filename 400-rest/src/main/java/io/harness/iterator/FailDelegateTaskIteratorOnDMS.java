@@ -86,6 +86,7 @@ public class FailDelegateTaskIteratorOnDMS
   public void handle(DelegateTask delegateTask) {
     if (configurationController.isPrimary()) {
       failDelegateTaskIteratorHelper.markTimedOutTasksAsFailed(delegateTask, true);
+      failDelegateTaskIteratorHelper.markNotAcquiredAfterMultipleBroadcastAsFailed(delegateTask, true);
       failDelegateTaskIteratorHelper.markLongQueuedTasksAsFailed(delegateTask, true);
       failDelegateTaskIteratorHelper.failValidationCompletedQueuedTask(delegateTask, true);
     }

@@ -18,7 +18,6 @@ import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -73,7 +72,6 @@ public abstract class ServiceLevelIndicator
   private long createdAt;
   private String healthSourceIdentifier;
   private String monitoredServiceIdentifier;
-  private ServiceLevelIndicatorType type;
   private boolean enabled;
   private SLIMetricType sliMetricType;
   private SLIMissingDataType sliMissingDataType;
@@ -123,8 +121,7 @@ public abstract class ServiceLevelIndicator
                                                                         extends ServiceLevelIndicator>
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
-      updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
-          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
+      updateOperations.set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
     }
   }
   @FdIndex Long createNextTaskIteration;

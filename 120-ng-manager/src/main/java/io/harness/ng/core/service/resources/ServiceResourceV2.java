@@ -412,7 +412,9 @@ public class ServiceResourceV2 {
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel,
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
-          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
+      @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
+          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
@@ -439,7 +441,8 @@ public class ServiceResourceV2 {
         serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     });
-    return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
+    return ResponseDTO.newResponse(getNGPageResponse(
+        serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
   }
 
   @GET

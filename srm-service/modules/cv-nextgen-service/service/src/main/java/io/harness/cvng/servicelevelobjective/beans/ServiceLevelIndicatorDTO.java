@@ -18,7 +18,6 @@ import lombok.Data;
 public class ServiceLevelIndicatorDTO {
   String name;
   String identifier;
-  @Deprecated ServiceLevelIndicatorType type;
   @NotNull ServiceLevelIndicatorSpec spec;
   @Deprecated SLIMissingDataType sliMissingDataType;
   @JsonIgnore

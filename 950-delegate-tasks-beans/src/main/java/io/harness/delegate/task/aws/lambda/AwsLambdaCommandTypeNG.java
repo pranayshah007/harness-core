@@ -10,5 +10,6 @@ package io.harness.delegate.task.aws.lambda;
 public enum AwsLambdaCommandTypeNG {
   AWS_LAMBDA_DEPLOY,
   AWS_LAMBDA_PREPARE_ROLLBACK,
-  AWS_LAMBDA_ROLLBACK;
+  AWS_LAMBDA_ROLLBACK,
+  AWS_INSTANCE_SYNC;
 }

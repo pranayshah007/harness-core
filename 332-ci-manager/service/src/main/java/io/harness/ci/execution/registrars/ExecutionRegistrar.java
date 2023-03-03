@@ -40,6 +40,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.sto.STOStepType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,6 +58,7 @@ public class ExecutionRegistrar {
     engineSteps.put(PluginStep.STEP_TYPE, PluginStep.class);
     engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
+    engineSteps.putAll(STOStepType.addSTOEngineSteps(SecurityStep.class));
     engineSteps.put(ECRStep.STEP_TYPE, ECRStep.class);
     engineSteps.put(GCRStep.STEP_TYPE, GCRStep.class);
     engineSteps.put(ACRStep.STEP_TYPE, ACRStep.class);

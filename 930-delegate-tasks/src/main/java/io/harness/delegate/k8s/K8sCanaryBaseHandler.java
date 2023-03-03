@@ -164,7 +164,7 @@ public class K8sCanaryBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback logCallback) throws Exception {
     KubernetesResource canaryWorkload = canaryHandlerConfig.getCanaryWorkload();
     Integer currentInstances = k8sTaskHelperBase.getCurrentReplicas(
-        canaryHandlerConfig.getClient(), canaryWorkload.getResourceId(), k8sDelegateTaskParams);
+        canaryHandlerConfig.getClient(), canaryWorkload.getResourceId(), k8sDelegateTaskParams, logCallback);
     if (currentInstances != null) {
       logCallback.saveExecutionLog("\nCurrent replica count is " + currentInstances);
     }

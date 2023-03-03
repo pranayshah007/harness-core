@@ -9,17 +9,16 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper.BOOLEAN_TRUE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -30,8 +29,6 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
@@ -124,25 +121,16 @@ public class PMSPipelineTemplateHelper {
                   .build(),
               appendInputSetValidator));
         }
-      } catch (InvalidRequestException e) {
-        if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
-          throw new NGTemplateResolveException(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata(), yaml);
-        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
-          throw new NGTemplateResolveExceptionV2(
-              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata(), yaml);
-        } else {
-          throw new NGTemplateException(e.getMessage(), e);
-        }
-      } catch (NGTemplateResolveException e) {
-        throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO(), null);
-      } catch (NGTemplateResolveExceptionV2 e) {
-        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO(), null);
+      }
+      // TODO: use nested exceptions to add explanations and hints to the error messages
+      catch (InvalidRequestException e) {
+        throw e;
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);
-        throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
+        throw new InternalServerErrorException(
+            TEMPLATE_RESOLVE_EXCEPTION_MSG + ": Error while connecting to Template Service", e);
       } catch (Exception e) {
-        log.error("Unknown un-exception in resolving templates", e);
+        log.error("Unknown exception in resolving templates", e);
         throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);
       } finally {
         log.info("[PMS_Template] template resolution took {}ms for projectId {}, orgId {}, accountId {}",

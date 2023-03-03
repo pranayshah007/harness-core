@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 
 import java.util.Optional;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -23,8 +25,14 @@ import software.amazon.awssdk.services.lambda.model.GetFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.GetFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import software.amazon.awssdk.services.lambda.model.ListAliasesRequest;
+import software.amazon.awssdk.services.lambda.model.ListAliasesResponse;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRequest;
+import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
@@ -50,4 +58,12 @@ public interface AwsLambdaClient {
 
   PublishVersionResponse publishVersion(
       AwsInternalConfig awsInternalConfig, PublishVersionRequest publishVersionRequest);
+
+  CreateAliasResponse createAlias(AwsInternalConfig awsInternalConfig, CreateAliasRequest createAliasRequest);
+
+  UpdateAliasResponse updateAlias(AwsInternalConfig awsInternalConfig, UpdateAliasRequest updateAliasRequest);
+  ListVersionsByFunctionResponse listVersionsByFunction(
+      AwsInternalConfig awsInternalConfig, ListVersionsByFunctionRequest listVersionsByFunctionRequest);
+
+  ListAliasesResponse listAliases(AwsInternalConfig awsInternalConfig, ListAliasesRequest listAliasesRequest);
 }
