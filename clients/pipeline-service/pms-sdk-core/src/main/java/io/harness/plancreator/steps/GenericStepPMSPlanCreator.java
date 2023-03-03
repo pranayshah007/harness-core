@@ -34,6 +34,7 @@ import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -121,7 +122,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    boolean isRollbackMode = planCreationContextValue.getMetadata().getIsRollbackMode();
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())
@@ -138,7 +139,7 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback
-                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), isRollbackMode)
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
                     : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()

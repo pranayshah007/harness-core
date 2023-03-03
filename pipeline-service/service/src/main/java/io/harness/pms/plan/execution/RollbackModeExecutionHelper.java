@@ -18,6 +18,7 @@ import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.helpers.PrincipalInfoHelper;
@@ -55,7 +56,7 @@ public class RollbackModeExecutionHelper {
         .setRunSequence(pipelineMetadataService.incrementExecutionCounter(
             accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
         .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-        .setIsRollbackMode(true)
+        .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
         .build();
   }
 

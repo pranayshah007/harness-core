@@ -19,6 +19,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -64,7 +65,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    boolean isRollbackMode = planCreationContextValue.getMetadata().getIsRollbackMode();
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
@@ -81,7 +82,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback
-                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), isRollbackMode)
+                    ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen(), executionMode)
                     : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()

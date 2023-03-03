@@ -21,6 +21,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -103,7 +104,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       isStepGroupInsideRollback = true;
     }
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    boolean isRollbackMode = planCreationContextValue.getMetadata().getIsRollbackMode();
+    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
     return PlanNode.builder()
         .name(config.getName())
         .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
@@ -113,7 +114,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
         .skipCondition(SkipInfoUtils.getSkipCondition(config.getSkipCondition()))
         // We Should add default when condition as StageFailure if stepGroup is inside rollback
         .whenCondition(isStepGroupInsideRollback
-                ? RunInfoUtils.getRunConditionForRollback(config.getWhen(), isRollbackMode)
+                ? RunInfoUtils.getRunConditionForRollback(config.getWhen(), executionMode)
                 : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .stepParameters(stepParameters)
         .facilitatorObtainment(

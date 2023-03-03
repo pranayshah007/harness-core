@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -78,9 +79,9 @@ public class RunInfoUtils {
   }
 
   public String getRunConditionForRollback(
-      ParameterField<StepWhenCondition> stepWhenCondition, boolean isRollbackMode) {
+      ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return getStatusExpression(isRollbackMode ? ALWAYS : STAGE_FAILURE);
+      return getStatusExpression(isRollbackMode(executionMode) ? ALWAYS : STAGE_FAILURE);
     }
     if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
@@ -88,6 +89,10 @@ public class RunInfoUtils {
 
     return combineExpressions(getStatusExpression(stepWhenCondition.getValue().getStageStatus(), false),
         getGivenRunCondition(stepWhenCondition.getValue().getCondition()));
+  }
+
+  boolean isRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 
   private String getGivenRunCondition(ParameterField<String> condition) {
