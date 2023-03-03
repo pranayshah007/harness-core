@@ -17,19 +17,18 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
 import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.entity.Cluster.ClusterKeys;
 import io.harness.cdng.gitops.service.ClusterService;
-import io.harness.encryption.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.gitops.spring.ClusterRepository;
-import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.PageUtils;
+import io.harness.utils.ScopeWiseIds;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -193,27 +192,12 @@ public class ClusterServiceImpl implements ClusterService {
   public List<Cluster> listAcrossEnv(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Collection<String> envRefs) {
     List<Cluster> entities = new ArrayList<>();
-    List<String> projectEnvIds = new ArrayList<>();
-    List<String> orgEnvIds = new ArrayList<>();
-    List<String> accountEnvIds = new ArrayList<>();
-
-    for (String envRef : envRefs) {
-      if (isNotEmpty(envRef)) {
-        IdentifierRef identifierRef =
-            IdentifierRefHelper.getIdentifierRef(envRef, accountIdentifier, orgIdentifier, projectIdentifier);
-
-        if (Scope.PROJECT.equals(identifierRef.getScope())) {
-          projectEnvIds.add(identifierRef.getIdentifier());
-        } else if (Scope.ORG.equals(identifierRef.getScope())) {
-          orgEnvIds.add(identifierRef.getIdentifier());
-        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
-          accountEnvIds.add(identifierRef.getIdentifier());
-        }
-      }
-    }
-    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, projectIdentifier, projectEnvIds));
-    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, orgEnvIds));
-    entities.addAll(getAllClusters(page, size, accountIdentifier, null, null, accountEnvIds));
+    ScopeWiseIds scopeWiseIds =
+        FullyQualifiedIdentifierHelper.getScopeWiseIds(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
+    entities.addAll(
+        getAllClusters(page, size, accountIdentifier, orgIdentifier, projectIdentifier, scopeWiseIds.getProjectIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, scopeWiseIds.getOrgIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, null, null, scopeWiseIds.getAccountIds()));
 
     return entities;
   }
