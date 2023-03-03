@@ -16,6 +16,7 @@ import io.harness.springdata.HMongoTemplate;
 import com.google.inject.Injector;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -67,7 +68,7 @@ public class AuditEventStreamingPersistenceConfig extends AbstractMongoClientCon
 
   @Override
   protected String getDatabaseName() {
-    return "ng-audits";
+    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
   }
 
   @Bean(name = "primary")
