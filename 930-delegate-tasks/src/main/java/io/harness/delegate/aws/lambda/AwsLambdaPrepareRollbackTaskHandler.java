@@ -24,8 +24,9 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -160,9 +161,13 @@ public class AwsLambdaPrepareRollbackTaskHandler {
             .build();
       }
     } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       executionLogCallback.saveExecutionLog(color(format("%n Prepare Rollback Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(e.getMessage());
+      return AwsLambdaPrepareRollbackResponse.builder()
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .build();
     }
   }
 

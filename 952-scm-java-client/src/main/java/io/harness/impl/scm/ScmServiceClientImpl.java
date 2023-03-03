@@ -28,11 +28,8 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
-import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
-import io.harness.beans.response.GitFileContentBatchResponse;
-import io.harness.beans.response.GitFileContentResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.constants.Constants;
@@ -1010,7 +1007,69 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public GitFileResponse getFile(
       ScmConnector scmConnector, GitFileRequest gitFileRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    return getFile(scmConnector, gitFileRequest, false, scmBlockingStub);
+    String commitId = gitFileRequest.getCommitId();
+    String branch = gitFileRequest.getBranch();
+    try {
+      // give higher precedence to commit id if not empty
+      if (isNotEmpty(commitId)) {
+        branch = null;
+      } else if (isEmpty(branch)) {
+        GetUserRepoResponse getUserRepoResponse = getRepoDetails(scmConnector, scmBlockingStub);
+        if (isFailureResponse(getUserRepoResponse.getStatus())) {
+          return GitFileResponse.builder()
+              .error(getUserRepoResponse.getError())
+              .statusCode(getUserRepoResponse.getStatus())
+              .build();
+        }
+        branch = getUserRepoResponse.getRepo().getBranch();
+      }
+
+      FileContent fileContent = getFileContent(scmConnector,
+          GitFilePathDetails.builder()
+              .filePath(gitFileRequest.getFilepath())
+              .ref(gitFileRequest.getCommitId())
+              .branch(branch)
+              .build(),
+          scmBlockingStub);
+      if (isFailureResponse(fileContent.getStatus())) {
+        return GitFileResponse.builder()
+            .error(fileContent.getError())
+            .statusCode(fileContent.getStatus())
+            .branch(branch)
+            .build();
+      }
+
+      if (!gitFileRequest.isGetOnlyFileContent() && isEmpty(commitId)) {
+        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+            getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileRequest.getFilepath());
+        if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+          return GitFileResponse.builder()
+              .error(getLatestCommitOnFileResponse.getError())
+              .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+              .branch(branch)
+              .build();
+        }
+        commitId = getLatestCommitOnFileResponse.getCommitId();
+      }
+
+      return GitFileResponse.builder()
+          .commitId(commitId)
+          .filepath(gitFileRequest.getFilepath())
+          .content(fileContent.getContent())
+          .objectId(fileContent.getBlobId())
+          .branch(branch)
+          .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
+          .build();
+    } catch (Exception exception) {
+      checkAndRethrowExceptionIfApplicable(exception);
+      log.error("Faced exception in getFile operation: ", exception);
+      return GitFileResponse.builder()
+          .error(exception.getMessage())
+          .statusCode(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+          .branch(branch)
+          .commitId(commitId)
+          .build();
+    }
   }
 
   @Override
@@ -1024,6 +1083,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
               .commitId(request.getCommitId())
               .filepath(request.getFilepath())
               .branch(request.getBranch())
+              .getOnlyFileContent(request.isGetOnlyFileContent())
               .build(),
           scmBlockingStub);
       getBatchFileRequestIdentifierGitFileResponseMap.put(identifier, gitFileResponse);
@@ -1031,41 +1091,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return GitFileBatchResponse.builder()
         .getBatchFileRequestIdentifierGitFileResponseMap(getBatchFileRequestIdentifierGitFileResponseMap)
         .build();
-  }
-
-  @SneakyThrows
-  @Override
-  public GitFileContentResponse getFileContent(
-      GitFileRequestV2 gitFileRequestV2, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    GitFileResponse gitFileResponse = getFile(gitFileRequestV2.getScmConnector(),
-        GitFileRequest.builder()
-            .commitId(gitFileRequestV2.getCommitId())
-            .filepath(gitFileRequestV2.getFilepath())
-            .branch(gitFileRequestV2.getBranch())
-            .build(),
-        true, scmBlockingStub);
-    return GitFileContentResponse.builder()
-        .content(gitFileResponse.getContent())
-        .error(gitFileResponse.getError())
-        .statusCode(gitFileResponse.getStatusCode())
-        .branch(gitFileResponse.getBranch())
-        .build();
-  }
-
-  @Override
-  public GitFileContentBatchResponse getBatchFileContent(
-      GitFileBatchRequest gitFileBatchRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    Map<GetBatchFileRequestIdentifier, GitFileContentResponse> gitFileContentResponseMap = new HashMap<>();
-    gitFileBatchRequest.getGetBatchFileRequestIdentifierGitFileRequestV2Map().forEach((identifier, request) -> {
-      GitFileContentResponse response = getFileContent(GitFileRequestV2.builder()
-                                                           .commitId(request.getCommitId())
-                                                           .filepath(request.getFilepath())
-                                                           .branch(request.getBranch())
-                                                           .build(),
-          scmBlockingStub);
-      gitFileContentResponseMap.put(identifier, response);
-    });
-    return GitFileContentBatchResponse.builder().gitFileContentResponseMap(gitFileContentResponseMap).build();
   }
 
   private FileContentBatchResponse processListFilesByFilePaths(ScmConnector connector, List<String> filePaths,
@@ -1208,73 +1233,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   private void checkAndRethrowExceptionIfApplicable(Exception exception) throws Exception {
     if (exception instanceof ConnectException || exception instanceof GeneralException) {
       throw exception;
-    }
-  }
-
-  private GitFileResponse getFile(ScmConnector scmConnector, GitFileRequest gitFileRequest, boolean getOnlyFileContent,
-      SCMGrpc.SCMBlockingStub scmBlockingStub) throws Exception {
-    String commitId = gitFileRequest.getCommitId();
-    String branch = gitFileRequest.getBranch();
-    try {
-      // give higher precedence to commit id if not empty
-      if (isNotEmpty(commitId)) {
-        branch = null;
-      } else if (isEmpty(branch)) {
-        GetUserRepoResponse getUserRepoResponse = getRepoDetails(scmConnector, scmBlockingStub);
-        if (isFailureResponse(getUserRepoResponse.getStatus())) {
-          return GitFileResponse.builder()
-              .error(getUserRepoResponse.getError())
-              .statusCode(getUserRepoResponse.getStatus())
-              .build();
-        }
-        branch = getUserRepoResponse.getRepo().getBranch();
-      }
-
-      FileContent fileContent = getFileContent(scmConnector,
-          GitFilePathDetails.builder()
-              .filePath(gitFileRequest.getFilepath())
-              .ref(gitFileRequest.getCommitId())
-              .branch(branch)
-              .build(),
-          scmBlockingStub);
-      if (isFailureResponse(fileContent.getStatus())) {
-        return GitFileResponse.builder()
-            .error(fileContent.getError())
-            .statusCode(fileContent.getStatus())
-            .branch(branch)
-            .build();
-      }
-
-      if (!getOnlyFileContent && isEmpty(commitId)) {
-        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
-            getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileRequest.getFilepath());
-        if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
-          return GitFileResponse.builder()
-              .error(getLatestCommitOnFileResponse.getError())
-              .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
-              .branch(branch)
-              .build();
-        }
-        commitId = getLatestCommitOnFileResponse.getCommitId();
-      }
-
-      return GitFileResponse.builder()
-          .commitId(commitId)
-          .filepath(gitFileRequest.getFilepath())
-          .content(fileContent.getContent())
-          .objectId(fileContent.getBlobId())
-          .branch(branch)
-          .statusCode(Constants.HTTP_SUCCESS_STATUS_CODE)
-          .build();
-    } catch (Exception exception) {
-      checkAndRethrowExceptionIfApplicable(exception);
-      log.error("Faced exception in getFile operation: ", exception);
-      return GitFileResponse.builder()
-          .error(exception.getMessage())
-          .statusCode(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
-          .branch(branch)
-          .commitId(commitId)
-          .build();
     }
   }
 }

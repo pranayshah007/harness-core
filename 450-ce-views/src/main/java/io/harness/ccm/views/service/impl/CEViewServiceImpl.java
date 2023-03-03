@@ -368,6 +368,11 @@ public class CEViewServiceImpl implements CEViewService {
     return getQLCEViewsFromCEViews(accountId, viewList, folderList);
   }
 
+  @Override
+  public List<CEView> getAllViews(String accountId) {
+    return ceViewDao.list(accountId);
+  }
+
   private List<QLCEView> getQLCEViewsFromCEViews(
       String accountId, List<CEView> viewList, List<CEViewFolder> folderList) {
     List<QLCEView> graphQLViewObjList = new ArrayList<>();

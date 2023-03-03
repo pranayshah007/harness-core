@@ -7,12 +7,14 @@
 
 package io.harness.iacm.registars;
 
+import io.harness.ci.states.ActionStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.IACMStep;
 import io.harness.ci.states.InitializeTaskStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.states.PluginStep;
+import io.harness.ci.states.RunStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
@@ -45,7 +47,9 @@ public class IACMExecutionRegistrar {
     engineSteps.put(PluginStep.STEP_TYPE, PluginStep.class);
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
+    engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
     engineSteps.putAll(addIACMEngineSteps());
+    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

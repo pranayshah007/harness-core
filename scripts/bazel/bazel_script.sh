@@ -122,6 +122,7 @@ BAZEL_MODULES="\
   //400-rest:module \
   //400-rest:supporter-test \
   //410-cg-rest:module \
+  //419-delegate-service-app/src/main/java/io/harness/dms/app:module \
   //420-delegate-agent:module \
   //420-delegate-service:module \
   //425-verification-commons:module \
@@ -353,6 +354,7 @@ build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
 build_bazel_module 420-delegate-agent
+build_bazel_module 419-delegate-service-app/src/main/java/io/harness/dms/app
 build_bazel_module 420-delegate-service
 build_bazel_module 425-verification-commons
 build_bazel_module 440-connector-nextgen

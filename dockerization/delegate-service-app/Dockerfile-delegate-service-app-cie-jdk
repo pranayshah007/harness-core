@@ -9,15 +9,13 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 delegate-service-capsule.jar /opt/harness/
-COPY --chown=65534:65534 keystore.jks /opt/harness/
-COPY --chown=65534:65534 delegate-service-config.yml /opt/harness/
+COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
 CMD [ "./run.sh" ]
-
 
 ############################ON PREM#########################
 FROM base as onprem

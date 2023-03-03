@@ -14,6 +14,7 @@ import static io.harness.configuration.KubernetesCliCommandType.DRY_RUN;
 import static io.harness.configuration.KubernetesCliCommandType.SCALE;
 import static io.harness.configuration.KubernetesCliCommandType.STEADY_STATE_CHECK;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,13 +76,70 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   public void handleInvalidTypeInDryRunException() {
     KubernetesCliTaskRuntimeException exception =
         new KubernetesCliTaskRuntimeException(createProcessResponse(CliErrorMessages.INVALID_TYPE_VALUE), DRY_RUN);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
     WingsException handledException = exceptionHandler.handleException(exception);
     assertThat(handledException).isInstanceOf(HintException.class);
     assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.VALIDATION_FAILED_INVALID_TYPE);
     assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
     assertThat(handledException.getCause().getMessage()).contains("Invalid type value for [Deployment.spec.replicas]");
     assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getCause().getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    assertThat(handledException.getCause().getCause().getCause().getCause().getCause())
+        .isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleInvalidTypeInDryRunExceptionKubectlVersionAndResourcesNull() {
+    KubernetesCliTaskRuntimeException exception =
+        new KubernetesCliTaskRuntimeException(createProcessResponse(CliErrorMessages.INVALID_TYPE_VALUE), DRY_RUN);
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.VALIDATION_FAILED_INVALID_TYPE);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getMessage()).contains("Invalid type value for [Deployment.spec.replicas]");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getCause().getCause().getCause())
+        .isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleInvalidTypeInDryRunExceptionKubectlVersionAndResourcesNonNull() {
+    KubernetesCliTaskRuntimeException exception =
+        new KubernetesCliTaskRuntimeException(createProcessResponse(CliErrorMessages.INVALID_TYPE_VALUE), DRY_RUN);
+    exception.setKubectlVersion(
+        "{\"clientVersion\":{\"gitVersion\":\"v1.19.2\"},\"serverVersion\":{\"gitVersion\":\"v1.23.14-gke.1800\"}}");
+    exception.setResourcesNotApplied("deployment/test-svc");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.VALIDATION_FAILED_INVALID_TYPE);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getMessage()).contains("Invalid type value for [Deployment.spec.replicas]");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getMessage()).contains("kubectl binary path");
+    assertThat(handledException.getCause().getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getCause().getMessage()).contains("deployment/test-svc");
+    assertThat(handledException.getCause().getCause().getCause().getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getCause().getCause().getCause().getCause().getMessage())
+        .contains("clientVersion: [v1.19.2]");
+    assertThat(handledException.getCause().getCause().getCause().getCause().getCause())
+        .isInstanceOf(KubernetesTaskException.class);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void handleInvalidTypeInDryRunExceptionKubectlVersionEmptyVersion() {
+    KubernetesCliTaskRuntimeException exception =
+        new KubernetesCliTaskRuntimeException(createProcessResponse(CliErrorMessages.INVALID_TYPE_VALUE), DRY_RUN);
+    exception.setKubectlVersion("Wrong output");
+    exception.setResourcesNotApplied("deployment/test-svc");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException.getCause().getCause().getCause().getCause().getMessage()).contains("");
   }
 
   @Test

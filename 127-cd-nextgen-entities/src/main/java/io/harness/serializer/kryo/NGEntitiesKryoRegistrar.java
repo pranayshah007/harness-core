@@ -90,6 +90,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
@@ -386,6 +387,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(BambooArtifactConfig.class, 150070);
     kryo.register(AwsLambdaDefinitionManifest.class, 140071);
     kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
+    kryo.register(AwsLambdaAliasDefinitionManifestOutcome.class, 140073);
 
     // AWS SAM
     kryo.register(AwsSamInfrastructureOutcome.class, 1510001);

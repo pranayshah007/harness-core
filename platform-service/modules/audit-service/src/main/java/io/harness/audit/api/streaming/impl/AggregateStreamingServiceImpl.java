@@ -36,11 +36,13 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.log4j.Log4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@Log4j
 public class AggregateStreamingServiceImpl implements AggregateStreamingService {
   private final StreamingDestinationRepository streamingDestinationRepository;
   private final StreamingBatchRepository streamingBatchRepository;
@@ -115,8 +117,15 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
   }
 
   private Optional<ConnectorDTO> getConnectorDTO(String connectorId, String accountIdentifier) {
-    return NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountIdentifier, null, null),
-        "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
+    Optional<ConnectorDTO> connectorDTOOptional = Optional.empty();
+    try {
+      connectorDTOOptional =
+          NGRestUtils.getResponse(connectorResourceClient.get(connectorId, accountIdentifier, null, null),
+              "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
+    } catch (Exception exception) {
+      log.warn(String.format("Exception while fetching connector [%s]", connectorId), exception);
+    }
+    return connectorDTOOptional;
   }
 
   @Override

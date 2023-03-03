@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.ssh.artifact;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -17,15 +19,13 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class AcrArtifactDelegateConfig
-    implements SshWinRmArtifactDelegateConfig, NestedAnnotationResolver, SkipCopyArtifactDelegateConfig {
+public class AcrArtifactDelegateConfig implements SkipCopyArtifactDelegateConfig, NestedAnnotationResolver {
   String identifier;
   boolean primaryArtifact;
   String subscription;
   String registry;
   String image;
   String tag;
-  String tagRegex;
 
   @Override
   public String getIdentifier() {
@@ -39,6 +39,6 @@ public class AcrArtifactDelegateConfig
 
   @Override
   public String getArtifactPath() {
-    return String.format("%s/%s:%s", registry, image, tag);
+    return format("%s/%s:%s", registry, image, tag);
   }
 }

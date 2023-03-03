@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.node.NodeExecutionServiceImpl;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.PlanNode;
@@ -51,6 +52,7 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
   @Mock private OrchestrationEngine engine;
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PlanService planService;
+  @Mock private NodeExecutionServiceImpl nodeExecutionServiceImpl;
   @InjectMocks private MarkAsFailureAdviseHandler markAsFailureAdviseHandler;
 
   @Before
@@ -65,7 +67,22 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
     AdviserResponse adviserResponse =
         AdviserResponse.newBuilder().setNextStepAdvise(NextStepAdvise.newBuilder().build()).build();
     doNothing().when(engine).endNodeExecution(any());
-    markAsFailureAdviseHandler.handleAdvise(NodeExecution.builder().build(), adviserResponse);
+    markAsFailureAdviseHandler.handleAdvise(NodeExecution.builder().status(Status.FAILED).build(), adviserResponse);
+    verify(engine).endNodeExecution(any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void handleAdviseWithoutFailedNode() {
+    AdviserResponse adviserResponse =
+        AdviserResponse.newBuilder().setNextStepAdvise(NextStepAdvise.newBuilder().build()).build();
+    NodeExecution updatedNodeExecution = NodeExecution.builder().status(Status.FAILED).build();
+
+    doNothing().when(engine).endNodeExecution(any());
+    doReturn(updatedNodeExecution).when(nodeExecutionServiceImpl).updateStatusWithOps(any(), any(), any(), any());
+
+    markAsFailureAdviseHandler.handleAdvise(NodeExecution.builder().status(Status.EXPIRED).build(), adviserResponse);
     verify(engine).endNodeExecution(any());
   }
 

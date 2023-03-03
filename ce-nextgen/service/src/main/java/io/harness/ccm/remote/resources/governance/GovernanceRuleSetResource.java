@@ -195,8 +195,8 @@ public class GovernanceRuleSetResource {
             description = "update a existing Rule pack", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
   public ResponseDTO<RuleSet>
-  updateRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                 NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+  updateRuleSet(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing Rule pack object") @Valid CreateRuleSetDTO createRuleSetDTO) {
     rbacHelper.checkRuleSetEditPermission(accountId, null, null);
@@ -216,14 +216,15 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
     ruleSetService.update(accountId, ruleSet);
+    RuleSet updatedRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleSetUpdateEvent(accountId, ruleSet.toDTO(), oldRuleSet.toDTO()));
-      return ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
+      outboxService.save(new RuleSetUpdateEvent(accountId, updatedRuleSet.toDTO(), oldRuleSet.toDTO()));
+      return updatedRuleSet;
     })));
   }
 

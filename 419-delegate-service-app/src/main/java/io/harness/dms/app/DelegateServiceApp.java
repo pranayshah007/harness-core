@@ -12,9 +12,12 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.resources.DummyResource;
+import io.harness.delegate.resources.health.DelegateServiceHealthResource;
 import io.harness.delegate.utils.DelegateServiceSwaggerGenerator;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.dms.module.DelegateServiceModule;
+import io.harness.health.HealthService;
+import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 
@@ -61,6 +64,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
     modules.add(new DelegateServiceModule(delegateServiceConfig));
     Injector injector = Guice.createInjector(modules);
 
+    registerHealthCheck(environment, injector);
     registerResources(environment, injector);
     registerAuthenticationFilter(environment, injector);
   }
@@ -71,6 +75,13 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
 
   private void registerResources(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(DummyResource.class));
+    environment.jersey().register(injector.getInstance(DelegateServiceHealthResource.class));
+  }
+
+  private void registerHealthCheck(Environment environment, Injector injector) {
+    final HealthService healthService = injector.getInstance(HealthService.class);
+    environment.healthChecks().register("DelegateServiceApp", healthService);
+    healthService.registerMonitor(injector.getInstance(HPersistence.class));
   }
 
   @Override

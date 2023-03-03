@@ -22,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.freeze.beans.FreezeNotifications;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -210,20 +211,23 @@ public class NotificationHelperTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testConstructTemplateData() {
+    FreezeNotifications freezeNotifications = FreezeNotifications.builder().customizedMessage("message").build();
     FreezeInfoConfig freezeInfoConfig1 = FreezeInfoConfig.builder()
                                              .orgIdentifier(ORG_IDENTIFIER)
                                              .projectIdentifier(PROJ_IDENTIFIER)
                                              .name(FREEZE_IDENTIFIER)
                                              .windows(Collections.emptyList())
+                                             .notifications(Collections.singletonList(freezeNotifications))
                                              .build();
     Map<String, String> templateData =
         notificationHelper.constructTemplateData(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE, freezeInfoConfig1,
-            Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true);
-    assertThat(templateData.size()).isEqualTo(5);
+            Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true, freezeNotifications);
+    assertThat(templateData.size()).isEqualTo(6);
     assertThat(templateData.get("BLACKOUT_WINDOW_URL"))
         .isEqualTo("baseUrl/account/accountId/cd/orgs/oId/projects/pId/setup/freeze-windows");
     assertThat(templateData.get("BLACKOUT_WINDOW_NAME")).isEqualTo(FREEZE_IDENTIFIER);
     assertThat(templateData.get("WORKFLOW_URL")).isEqualTo("executionUrl");
+    assertThat(templateData.get("CUSTOMIZED_MESSAGE")).isEqualTo(" message");
 
     FreezeWindow freezeWindow = new FreezeWindow();
     freezeWindow.setTimeZone("Asia/Calcutta");
@@ -234,11 +238,12 @@ public class NotificationHelperTest extends CategoryTest {
                                              .projectIdentifier(PROJ_IDENTIFIER)
                                              .name(FREEZE_IDENTIFIER)
                                              .windows(Collections.singletonList(freezeWindow))
+                                             .notifications(Collections.singletonList(freezeNotifications))
                                              .build();
     Map<String, String> templateData2 =
         notificationHelper.constructTemplateData(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE, freezeInfoConfig2,
-            Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true);
-    assertThat(templateData2.size()).isEqualTo(8);
+            Ambiance.newBuilder().build(), ACCOUNT_ID, "executionUrl", "baseUrl", true, freezeNotifications);
+    assertThat(templateData2.size()).isEqualTo(9);
   }
 
   @Test

@@ -13,11 +13,13 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
+import io.harness.cdng.ecs.beans.EcsRollingDeployOutcome;
 import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -107,11 +109,22 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       return EcsStepCommonHelper.getFailureResponseBuilder(ecsRollingDeployResponse, stepResponseBuilder).build();
     }
 
+    EcsRollingDeployOutcome ecsRollingDeployOutcome =
+        EcsRollingDeployOutcome.builder()
+            .serviceName(ecsRollingDeployResponse.getEcsRollingDeployResult().getServiceName())
+            .build();
+
     List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
         ecsRollingDeployResponse, infrastructureOutcome.getInfrastructureKey());
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(ecsRollingDeployOutcome)
+                         .build())
+        .stepOutcome(stepOutcome)
+        .build();
   }
 
   @Override

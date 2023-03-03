@@ -66,7 +66,9 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .name("entity_unavailability_start_end")
-                 .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.accountId)
+                 .field(EntityUnavailabilityStatusesKeys.orgIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
                  .field(EntityUnavailabilityStatusesKeys.startTime)
                  .field(EntityUnavailabilityStatusesKeys.endTime)
                  .build())
@@ -75,6 +77,7 @@ public class EntityUnavailabilityStatuses implements PersistentEntity, UuidAware
                  .field(EntityUnavailabilityStatusesKeys.accountId)
                  .field(EntityUnavailabilityStatusesKeys.orgIdentifier)
                  .field(EntityUnavailabilityStatusesKeys.projectIdentifier)
+                 .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
                  .build())
         .build();
   }
