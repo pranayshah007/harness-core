@@ -114,7 +114,7 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
     List<RoleAssignmentDBO> dbResult =
         Lists.newArrayList(toDBO(getRoleAssignment()), toDBO(getRoleAssignment()), toDBO(getRoleAssignment()));
     when(roleAssignmentRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(dbResult, dbResult.size()));
-    PageResponse<RoleAssignment> result = roleAssignmentDao.list(pageRequest, roleAssignmentFilter);
+    PageResponse<RoleAssignment> result = roleAssignmentDao.list(pageRequest, roleAssignmentFilter, true);
     assertEquals(dbResult.size(), result.getContent().size());
     for (int i = 0; i < dbResult.size(); i++) {
       assertEquals(dbResult.get(i).getIdentifier(), result.getContent().get(i).getIdentifier());
@@ -136,14 +136,14 @@ public class RoleAssignmentDaoImplTest extends AccessControlCoreTestBase {
     RoleAssignmentFilter roleAssignmentFilterClone = (RoleAssignmentFilter) HObjectMapper.clone(roleAssignmentFilter);
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(roleAssignmentRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(emptyList(), 0));
-    roleAssignmentDao.list(pageRequest, roleAssignmentFilter);
+    roleAssignmentDao.list(pageRequest, roleAssignmentFilter, true);
     verify(roleAssignmentRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any());
     assertFilterCriteria(roleAssignmentFilterClone, criteriaArgumentCaptor);
 
     roleAssignmentFilter = getRoleAssignmentFilter(true);
     roleAssignmentFilterClone = (RoleAssignmentFilter) HObjectMapper.clone(roleAssignmentFilter);
     criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
-    roleAssignmentDao.list(pageRequest, roleAssignmentFilter);
+    roleAssignmentDao.list(pageRequest, roleAssignmentFilter, true);
     verify(roleAssignmentRepository, times(2)).findAll(criteriaArgumentCaptor.capture(), any());
     assertFilterCriteria(roleAssignmentFilterClone, criteriaArgumentCaptor);
   }

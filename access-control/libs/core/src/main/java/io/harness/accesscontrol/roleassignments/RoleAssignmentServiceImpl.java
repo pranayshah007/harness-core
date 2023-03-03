@@ -62,7 +62,13 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
 
   @Override
   public PageResponse<RoleAssignment> list(PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter) {
-    return roleAssignmentDao.list(pageRequest, roleAssignmentFilter);
+    return list(pageRequest, roleAssignmentFilter, true);
+  }
+
+  @Override
+  public PageResponse<RoleAssignment> list(
+      PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
+    return roleAssignmentDao.list(pageRequest, roleAssignmentFilter, hideInternal);
   }
 
   @Override

@@ -18,6 +18,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.REETIKA;
@@ -28,6 +29,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -265,6 +267,33 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   public void testGetFilter() {
     RoleAssignmentFilterDTO roleAssignmentFilterDTO = getRoleAssignmentFilterDTO();
     testGetFilterInternal(roleAssignmentFilterDTO);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetFilterWithInternalRoles() {
+    RoleAssignmentFilterDTO roleAssignmentFilterDTO = getRoleAssignmentFilterDTO();
+    RoleAssignmentFilterDTO roleAssignmentFilterDTOClone =
+        (RoleAssignmentFilterDTO) HObjectMapper.clone(roleAssignmentFilterDTO);
+    preViewPrincipalPermissions(true, true, true);
+
+    ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentFilter.class);
+    when(roleAssignmentService.list(eq(pageRequest), any(), anyBoolean()))
+        .thenReturn(getEmptyPageResponse(pageRequest));
+
+    ResponseDTO<PageResponse<RoleAssignmentResponseDTO>> responseDTO =
+        roleAssignmentResource.getFilteredRoleAssignmentsWithInternalRoles(
+            pageRequest, harnessScopeParams, roleAssignmentFilterDTO);
+    assertEquals(0, responseDTO.getData().getContent().size());
+
+    verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
+    verify(roleAssignmentService, times(1))
+        .list(eq(pageRequest), roleAssignmentFilterArgumentCaptor.capture(), eq(false));
+    RoleAssignmentFilter roleAssignmentFilter = roleAssignmentFilterArgumentCaptor.getValue();
+    assertFilter(roleAssignmentFilterDTOClone, roleAssignmentFilterDTOClone.getPrincipalTypeFilter(),
+        roleAssignmentFilterDTOClone.getPrincipalFilter(), roleAssignmentFilter);
   }
 
   @Test
