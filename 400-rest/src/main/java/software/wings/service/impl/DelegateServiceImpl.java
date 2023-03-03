@@ -2839,7 +2839,11 @@ public class DelegateServiceImpl implements DelegateService {
         // Broadcast Message containing, DelegateId and SeqNum (if applicable)
         StringBuilder message = new StringBuilder(128).append("[X]").append(delegate.getUuid());
         updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
-        broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+        if (isNotEmpty(delegate.getUuid())){
+          broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+        }else{
+          log.info("");
+        }
       }
     }
 

@@ -56,7 +56,11 @@ public class DelegateStreamHeartbeatService
   @Override
   public void finish(
       @NotNull DelegateHeartbeatResponseStreamingWrapper response, @NotNull DelegateHeartbeatParams params) {
-    broadcasterFactory.lookup(STREAM_DELEGATE + params.getAccountId(), true).broadcast(response.get());
+    if (response.get() != null) {
+      broadcasterFactory.lookup(STREAM_DELEGATE + params.getAccountId(), true).broadcast(response.get());
+    } else {
+      log.error("Getting DelegateHeartbeatResponseStreamingWrapper resposne null");
+    }
   }
 
   @Override
@@ -84,6 +88,7 @@ public class DelegateStreamHeartbeatService
                                                   .build())
           .build();
     } else {
+      log.warn("Getting isHeartbeatAsObject as false,delegate id {}", existingDelegate.getUuid());
       return DelegateHeartbeatResponseStreamingWrapper.builder()
           .isHeartbeatAsObject(false)
           .responseMessage(new StringBuilder(128).append("[X]").append(params.getDelegateId()).toString())

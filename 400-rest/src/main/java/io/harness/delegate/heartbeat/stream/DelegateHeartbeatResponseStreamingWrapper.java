@@ -21,7 +21,7 @@ public class DelegateHeartbeatResponseStreamingWrapper {
     if (isHeartbeatAsObject) {
       return delegateHeartbeatResponseStreaming;
     } else {
-      return responseMessage;
+      return null;
     }
   }
 }
