@@ -22,18 +22,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String ORG_IDENTIFIER = "orgIdentifier";
+  public static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  public static final String PIPELINE = "PIPELINE";
+  public static final String STAGES = "STAGES";
   @Inject private OutboxService outboxService;
+
   @Override
   public void onNodeStart(NodeStartInfo nodeStartInfo) {
-    switch (nodeStartInfo.getNodeExecution().getGroup()) {
-      case "PIPELINE":
-        sendPipelineExecutionEventForAudit(nodeStartInfo);
-        break;
-      case "STAGES":
-        sendStageExecutionEventForAudit(nodeStartInfo);
-        break;
-      default:
-        log.info(String.format("Current type of event is not supported for Audits!"));
+    if (nodeStartInfo == null || nodeStartInfo.getNodeExecution() == null
+        || nodeStartInfo.getNodeExecution().getGroup() == null) {
+      return;
+    }
+
+    String nodeGroup = null;
+    try {
+      nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
+      switch (nodeGroup) {
+        case PIPELINE:
+          sendPipelineExecutionEventForAudit(nodeStartInfo);
+          break;
+        case STAGES:
+          sendStageExecutionEventForAudit(nodeStartInfo);
+          break;
+        default:
+          log.info(String.format("Current type of NodeGroup is not supported for Audits!"));
+      }
+    } catch (Exception ex) {
+      log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
     }
   }
 
@@ -41,9 +58,9 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
     StageStartEvent stageStartEvent =
         StageStartEvent.builder()
-            .accountIdentifier(ambiance.getSetupAbstractionsMap().get("account"))
-            .orgIdentifier(ambiance.getSetupAbstractionsMap().get("orgIdentifier"))
-            .projectIdentifier(ambiance.getSetupAbstractionsMap().get("projectIdentifier"))
+            .accountIdentifier(ambiance.getSetupAbstractionsMap().get(ACCOUNT_ID))
+            .orgIdentifier(ambiance.getSetupAbstractionsMap().get(ORG_IDENTIFIER))
+            .projectIdentifier(ambiance.getSetupAbstractionsMap().get(PROJECT_IDENTIFIER))
             .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
             .stageIdentifier(nodeStartInfo.getNodeExecution().getIdentifier())
             .planExecutionId(nodeStartInfo.getNodeExecution().getAmbiance().getPlanExecutionId())
@@ -58,9 +75,9 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
     PipelineStartEvent pipelineStartEvent =
         PipelineStartEvent.builder()
-            .accountIdentifier(ambiance.getSetupAbstractionsMap().get("account"))
-            .orgIdentifier(ambiance.getSetupAbstractionsMap().get("orgIdentifier"))
-            .projectIdentifier(ambiance.getSetupAbstractionsMap().get("projectIdentifier"))
+            .accountIdentifier(ambiance.getSetupAbstractionsMap().get(ACCOUNT_ID))
+            .orgIdentifier(ambiance.getSetupAbstractionsMap().get(ORG_IDENTIFIER))
+            .projectIdentifier(ambiance.getSetupAbstractionsMap().get(PROJECT_IDENTIFIER))
             .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
             .startTs(nodeStartInfo.getNodeExecution().getStartTs())
