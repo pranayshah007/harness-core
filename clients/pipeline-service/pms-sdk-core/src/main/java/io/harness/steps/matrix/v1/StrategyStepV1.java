@@ -35,6 +35,7 @@ import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +50,7 @@ public class StrategyStepV1 extends ChildrenExecutableWithRollbackAndRbac<Strate
                                                .build();
 
   @Inject MatrixConfigServiceV1 matrixConfigService;
+  @Inject ForConfigServiceV1 forConfigService;
   @Inject EnforcementClientService enforcementClientService;
 
   @Override
@@ -77,31 +79,40 @@ public class StrategyStepV1 extends ChildrenExecutableWithRollbackAndRbac<Strate
     } catch (EnforcementServiceConnectionException | WrongFeatureStateException e) {
       log.warn("Got exception while taking to enforcement service, taking default limit of 100 for maxConcurrency");
     }
-    // TODO: BRIJESH] Doing only matrix in this PR. Will implement For//While in comings PRs.
+    int maxConcurrency = 0;
+    if (!ParameterField.isBlank(
+            (stepParameters.getStrategyConfig().getStrategyInfoConfig().getValue()).getMaxConcurrency())) {
+      maxConcurrency =
+          (stepParameters.getStrategyConfig().getStrategyInfoConfig().getValue()).getMaxConcurrency().getValue();
+    }
+    List<Child> children = new ArrayList<>();
+    // TODO: BRIJESH] add support for While looping strategy as well.
     if (stepParameters.getStrategyConfig().getType() == StrategyTypeV1.MATRIX) {
-      if (stepParameters.getStrategyConfig().getMatrixConfig().isExpression()) {
+      if (stepParameters.getStrategyConfig().getStrategyInfoConfig().isExpression()) {
         throw new InvalidRequestException("Expression for matrix at runtime could not be resolved!");
       } else {
-        int maxConcurrency = 0;
-        if (!ParameterField.isBlank(
-                (stepParameters.getStrategyConfig().getMatrixConfig().getValue()).getMaxConcurrency())) {
-          maxConcurrency =
-              (stepParameters.getStrategyConfig().getMatrixConfig().getValue()).getMaxConcurrency().getValue();
-        }
-        List<Child> children =
+        children =
             matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
-        if (maxConcurrency == 0) {
-          maxConcurrency = children.size();
-        }
-        if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
-          maxConcurrency = maxConcurrencyLimitBasedOnPlan;
-        }
-        return ChildrenExecutableResponse.newBuilder()
-            .addAllChildren(children)
-            .setMaxConcurrency(maxConcurrency)
-            .setShouldProceedIfFailed(shouldProceedIfFailed)
-            .build();
       }
+    } else if (stepParameters.getStrategyConfig().getType() == StrategyTypeV1.FOR) {
+      children = forConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+    }
+    // If children list is not empty then return all the children.
+    if (!children.isEmpty()) {
+      // If maxConcurrency was not defined then set it the count of all children.
+      if (maxConcurrency == 0) {
+        maxConcurrency = children.size();
+      }
+      // MaxConcurrency must not be more than maxConcurrencyLimitBasedOnPlan.
+      if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
+        maxConcurrency = maxConcurrencyLimitBasedOnPlan;
+      }
+
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(children)
+          .setMaxConcurrency(maxConcurrency)
+          .setShouldProceedIfFailed(shouldProceedIfFailed)
+          .build();
     }
     return ChildrenExecutableResponse.newBuilder()
         .addChildren(Child.newBuilder().setChildNodeId(stepParameters.getChildNodeId()).build())

@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -51,6 +52,7 @@ import org.mockito.MockitoAnnotations;
 public class StrategyStepV1Test extends CategoryTest {
   private static final String CHILD_ID = generateUuid();
   @Mock MatrixConfigServiceV1 matrixConfigService;
+  @Mock ForConfigServiceV1 forConfigService;
   @Mock EnforcementClientService enforcementClient;
   @InjectMocks StrategyStepV1 strategyStep;
 
@@ -86,6 +88,53 @@ public class StrategyStepV1Test extends CategoryTest {
     strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
 
     verify(matrixConfigService).fetchChildren(strategyConfig, "childNodeId");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testObtainChildrenFor() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-strategy-v1.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid);
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = new YamlField(stageYamlNodes.get(2));
+
+    YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
+    StrategyConfigV1 strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfigV1.class);
+    StrategyStepParametersV1 stepParameters =
+        StrategyStepParametersV1.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
+
+    when(forConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    ChildrenExecutableResponse childrenExecutableResponse =
+        strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+
+    // No children were returned from forConfigService so by default one child will be returned.
+    assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(1);
+    assertThat(childrenExecutableResponse.getMaxConcurrency()).isEqualTo(0);
+    assertThat(childrenExecutableResponse.getChildren(0).getChildNodeId()).isEqualTo("childNodeId");
+
+    when(forConfigService.fetchChildren(strategyConfig, "childNodeId"))
+        .thenReturn(List.of(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build(),
+            ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build(),
+            ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("childNodeId").build()));
+    childrenExecutableResponse =
+        strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+
+    // 3 children were returned from forConfigService and maxConcurrency=2 defined in yaml.
+    assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(3);
+    assertThat(childrenExecutableResponse.getMaxConcurrency()).isEqualTo(2);
+    assertThat(childrenExecutableResponse.getChildren(0).getChildNodeId()).isEqualTo("childNodeId");
+    assertThat(childrenExecutableResponse.getChildren(1).getChildNodeId()).isEqualTo("childNodeId");
+    assertThat(childrenExecutableResponse.getChildren(2).getChildNodeId()).isEqualTo("childNodeId");
   }
 
   @Test

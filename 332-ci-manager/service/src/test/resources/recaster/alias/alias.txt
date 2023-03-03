@@ -24,6 +24,7 @@ io.harness.pms.sdk.core.data.StringOutcome
 io.harness.beans.steps.outcome.CIStepOutcome
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.v1.MatrixConfigV1
+io.harness.plancreator.strategy.v1.ForConfigV1
 io.harness.ci.beans.entities.CIExecutionConfig
 io.harness.app.beans.entities.ExecutionQueueLimit
 io.harness.beans.dependencies.CIDependencyType

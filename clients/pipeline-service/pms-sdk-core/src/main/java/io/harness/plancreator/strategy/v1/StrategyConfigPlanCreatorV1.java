@@ -60,21 +60,9 @@ public class StrategyConfigPlanCreatorV1 extends ChildrenPlanCreator<StrategyCon
       throw new InvalidRequestException("Invalid use of strategy field. Please check");
     }
     StrategyTypeV1 strategyType = config.getType();
-    ParameterField<Integer> maxConcurrency = null;
-    if (strategyType == StrategyTypeV1.MATRIX) {
-      if (!ParameterField.isNotNull(config.getMatrixConfig())) {
-        throw new InvalidRequestException(String.format(
-            "StrategyType is %s but matrix configuration is not defined. Please define valid matrix configuration and retry.",
-            strategyType));
-      }
-      maxConcurrency = config.getMatrixConfig().getValue().getMaxConcurrency();
-    } else {
-      throw new InvalidRequestException(
-          String.format("Strategy of type %s not supported at this moment.", strategyType));
-    }
+    ParameterField<Integer> maxConcurrency = config.getStrategyInfoConfig().getValue().getMaxConcurrency();
 
     //    StrategyValidationUtils.validateStrategyNode(config);
-
     StepParameters stepParameters = StrategyStepParametersV1.builder()
                                         .childNodeId(childNodeId)
                                         .strategyConfig(config)

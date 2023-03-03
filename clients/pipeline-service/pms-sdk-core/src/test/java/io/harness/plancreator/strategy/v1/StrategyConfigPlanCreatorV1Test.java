@@ -95,7 +95,7 @@ public class StrategyConfigPlanCreatorV1Test extends PmsSdkCoreTestBase {
     StrategyConfigV1 strategyConfig =
         StrategyConfigV1.builder()
             .type(StrategyTypeV1.MATRIX)
-            .matrixConfig(ParameterField.createValueField(MatrixConfigV1.builder().build()))
+            .strategyInfoConfig(ParameterField.createValueField(MatrixConfigV1.builder().build()))
             .build();
     StepParameters stepParameters = StrategyStepParametersV1.builder()
                                         .childNodeId(childNodeId)

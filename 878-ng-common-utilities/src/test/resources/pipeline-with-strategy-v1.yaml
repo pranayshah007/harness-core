@@ -45,3 +45,24 @@ stages:
                 environmentVariables: []
                 outputVariables: []
           timeout: 10s
+  - type: Custom
+    id: stage1
+    name: stage1
+    strategy:
+      type: for
+      spec:
+        iterations: 3
+        concurrency: 2
+    spec:
+      steps:
+        - type: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s

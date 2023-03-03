@@ -32,7 +32,7 @@ public class MatrixConfigServiceV1 implements StrategyConfigServiceV1 {
   @Inject MatrixConfigServiceHelper matrixConfigServiceHelper;
   // Fetching all the combinations for the matrix.
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfigV1 strategyConfig, String childNodeId) {
-    MatrixConfigV1 matrixConfig = strategyConfig.getMatrixConfig().getValue();
+    MatrixConfigV1 matrixConfig = (MatrixConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.fetchChildren(keys, matrixConfig.getAxis().getAxes(),
         matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), childNodeId);
@@ -41,7 +41,7 @@ public class MatrixConfigServiceV1 implements StrategyConfigServiceV1 {
   // Expanding the YAML for matrix so that the expanded YAML can directly be executed. This is used by CI.
   public StrategyInfo expandJsonNode(
       StrategyConfigV1 strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
-    MatrixConfigV1 matrixConfig = strategyConfig.getMatrixConfig().getValue();
+    MatrixConfigV1 matrixConfig = (MatrixConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.expandJsonNode(keys, matrixConfig.getAxis().getAxes(),
         matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), matrixConfig.getMaxConcurrency(),
