@@ -480,19 +480,24 @@ public class ExecutionHelper {
                                                       .build();
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
-      if (isRetry) {
-        Plan newPlan = retryExecutionHelper.transformPlan(
-            plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
-        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
-      }
       ExecutionMode executionMode = executionMetadata.getExecutionMode();
-      if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
-        Plan newPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(
-            plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList());
-        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
-      }
+      plan = transformPlan(
+          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
+  }
+
+  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
+      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+    if (isRetry) {
+      return retryExecutionHelper.transformPlan(
+          plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+    }
+    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
+          plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList());
+    }
+    return plan;
   }
 
   public PlanExecution startExecutionV2(String accountId, String orgIdentifier, String projectIdentifier,
