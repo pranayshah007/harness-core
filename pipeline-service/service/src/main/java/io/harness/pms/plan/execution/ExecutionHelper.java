@@ -42,6 +42,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -464,8 +465,7 @@ public class ExecutionHelper {
 
   public PlanExecution startExecution(String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMetadata executionMetadata, PlanExecutionMetadata planExecutionMetadata, boolean isRetry,
-      List<String> identifierOfSkipStages, String previousExecutionId, List<String> retryStagesIdentifier,
-      boolean isRollbackMode) {
+      List<String> identifierOfSkipStages, String previousExecutionId, List<String> retryStagesIdentifier) {
     long startTs = System.currentTimeMillis();
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgIdentifier, projectIdentifier)) {
@@ -491,7 +491,8 @@ public class ExecutionHelper {
             plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
         return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
       }
-      if (isRollbackMode) {
+      ExecutionMode executionMode = executionMetadata.getExecutionMode();
+      if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
         Plan newPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(
             plan, previousExecutionId, resp.getPreservedNodesInRollbackModeList());
         return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);

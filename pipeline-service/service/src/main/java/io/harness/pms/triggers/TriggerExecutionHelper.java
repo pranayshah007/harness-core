@@ -368,7 +368,7 @@ public class TriggerExecutionHelper {
 
         PlanExecution planExecution = executionHelper.startExecution(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
-            executionMetaDataBuilder.build(), planExecutionMetadataBuilder.build(), false, null, null, null, false);
+            executionMetaDataBuilder.build(), planExecutionMetadataBuilder.build(), false, null, null, null);
         // check if abort prev execution needed.
         requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
         return planExecution;

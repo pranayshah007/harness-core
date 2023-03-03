@@ -152,7 +152,7 @@ public class PipelineExecutor {
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }
 
-  // todo: need to take notifyOnlyUser and isDebug
+  // todo: check if we need to take notifyOnlyUser and isDebug
   public PlanExecution startPostProdRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
     String executionId = generateUuid();
@@ -170,7 +170,7 @@ public class PipelineExecutor {
     PlanExecutionMetadata planExecutionMetadata =
         rollbackModeExecutionHelper.transformPlanExecutionMetadata(originalPlanExecutionMetadata, executionId);
     return executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, executionMetadata,
-        planExecutionMetadata, false, null, originalExecutionId, null, true);
+        planExecutionMetadata, false, null, originalExecutionId, null);
   }
 
   private PlanExecutionResponseDto getPlanExecutionResponseDto(String accountId, String orgIdentifier,
@@ -181,7 +181,7 @@ public class PipelineExecutor {
           execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null, null);
     } else {
       planExecution = executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier,
-          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null, null, false);
+          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null, null);
     }
     return PlanExecutionResponseDto.builder()
         .planExecution(planExecution)
@@ -243,7 +243,7 @@ public class PipelineExecutor {
     } else {
       planExecution = executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier,
           execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), true, identifierOfSkipStages,
-          previousExecutionId, retryStagesIdentifier, false);
+          previousExecutionId, retryStagesIdentifier);
     }
     return PlanExecutionResponseDto.builder()
         .planExecution(planExecution)
