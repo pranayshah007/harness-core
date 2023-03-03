@@ -36,6 +36,7 @@ public interface CEViewService {
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<QLCEView> getAllViews(
       String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
+  List<CEView> getAllViews(String accountId);
   List<CEView> getViewByState(String accountId, ViewState viewState);
   void createDefaultView(String accountId, ViewFieldIdentifier viewFieldIdentifier);
   DefaultViewIdDto getDefaultViewIds(String accountId);

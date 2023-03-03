@@ -39,7 +39,8 @@ public interface CCMRbacHelper {
 
   void checkRecommendationsViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

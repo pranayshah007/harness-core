@@ -35,4 +35,6 @@ public class AnomalyData {
   String cloudProvider;
   Double anomalyScore;
   AnomalyFeedback userFeedback;
+  String perspectiveId;
+  String perspectiveName;
 }
