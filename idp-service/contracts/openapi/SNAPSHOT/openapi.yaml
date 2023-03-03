@@ -150,6 +150,53 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - EnvironmentSecret
+  /v1/backstage-permissions:
+    get:
+      summary: Gets all backstage permissions
+      responses:
+        '200':
+          $ref: '#/components/responses/BackstagePermissionsResponse'
+      operationId: get-backstage-permissions
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Get all backstage permissions for a given account
+      security:
+        - x-api-key: []
+      x-internal: true
+      tags:
+        - BackstagePermissions
+    post:
+      summary: Creates backstage Permissions
+      operationId: create-backstage-permissions
+      responses:
+        '201':
+          $ref: '#/components/responses/BackstagePermissionsResponse'
+      description: Creates backstage Permissions for a given account
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/BackstagePermissionsRequest'
+      x-internal: true
+      tags:
+        - BackstagePermissions
+    put:
+      summary: Updates Backstage Permission
+      operationId: update-backstage-permissions
+      responses:
+        '200':
+          $ref: '#/components/responses/BackstagePermissionsResponse'
+      description: Update Backstage Permission
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      requestBody:
+        $ref: '#/components/requestBodies/BackstagePermissionsRequest'
+      tags:
+        - BackstagePermissions
   '/v1/status-info/{type}':
     parameters:
       - $ref: '#/components/parameters/StatusType'
@@ -268,6 +315,42 @@ components:
       properties:
         secret:
           $ref: '#/components/schemas/EnvironmentSecret'
+    BackstagePermissions:
+      title: BackstagePermissions
+      x-stoplight:
+        id: mc6dey4g3grx5
+      type: object
+      properties:
+        identifer:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        user_group:
+          type: string
+        created:
+          type: integer
+          format: int64
+        updated:
+          type: integer
+          format: int64
+    BackstagePermissionsRequest:
+      title: BackstagePermissionsRequest
+      x-stoplight:
+        id: ixq59j5xh1mr3
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/BackstagePermissions'
+    BackstagePermissionsResponse:
+      title: BackstagePermissionsResponse
+      x-stoplight:
+        id: iy9wq68joydm6
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/BackstagePermissions'
     StatusInfo:
       title: StatusInfo
       x-stoplight:
@@ -383,6 +466,11 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/EnvironmentSecretRequest'
+    BackstagePermissionsRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackstagePermissionsRequest'
     StatusInfoRequest:
       content:
         application/json:
@@ -427,6 +515,12 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    BackstagePermissionsResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackstagePermissionsResponse'
     StatusInfoResponse:
       description: Example response
       content:
@@ -453,3 +547,5 @@ components:
 tags:
   - name: EnvironmentSecret
     description: Mapping of Environment Variables to Secrets
+  - name: BackstagePermissions
+    description: Backstage Permissions
