@@ -39,6 +39,8 @@ import static io.harness.rule.OwnerRule.VOJIN;
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.beans.accountdetails.AccountDetailsConstants.CROSS_GENERATION_ACCESS_UPDATED;
+import static software.wings.beans.accountdetails.AccountDetailsConstants.DEFAULT_EXPERIENCE_UPDATED;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.ILLEGAL_ACCOUNT_NAME;
@@ -47,6 +49,7 @@ import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -87,6 +90,9 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scheduler.PersistentScheduler;
@@ -109,6 +115,8 @@ import software.wings.beans.SubdomainUrl;
 import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
+import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
+import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.GovernanceFeature;
@@ -146,9 +154,11 @@ import software.wings.utils.AccountPermissionUtils;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.newrelic.NewRelicCVServiceConfiguration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.serializer.HObjectMapper;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
@@ -205,6 +215,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Inject @Named(GovernanceFeature.FEATURE_NAME) private PremiumFeature governanceFeature;
 
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private OutboxService outboxService;
 
   @Rule public ExpectedException thrown = ExpectedException.none();
   private static final String HARNESS_NAME = "Harness";
@@ -559,6 +570,115 @@ public class AccountServiceTest extends WingsBaseTest {
     account.setDefaultExperience(DefaultExperience.NG);
     accountService.update(account);
     assertThat(wingsPersistence.get(Account.class, account.getUuid())).isEqualTo(account);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateDefaultExperience() {
+    Account account = anAccount()
+                          .withCompanyName("Wings")
+                          .withAccountName("Wings")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateDefaultExperience(account.getUuid(), DefaultExperience.NG);
+    Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
+
+    assertThat(updatedAccount.getDefaultExperience()).isEqualTo(DefaultExperience.NG);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateDefaultExperience_forNGAudits() throws JsonProcessingException {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateDefaultExperience(account.getUuid(), DefaultExperience.NG);
+
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(DEFAULT_EXPERIENCE_UPDATED);
+    AccountDetailsDefaultExperienceUpdateEvent accountDetailsDefaultExperienceUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), AccountDetailsDefaultExperienceUpdateEvent.class);
+
+    assertThat(accountDetailsDefaultExperienceUpdateEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(accountDetailsDefaultExperienceUpdateEvent.getOldDefaultExperienceYamlDTO().getDefaultExperience())
+        .isEqualTo(DefaultExperience.CG);
+    assertThat(accountDetailsDefaultExperienceUpdateEvent.getNewDefaultExperienceYamlDTO().getDefaultExperience())
+        .isEqualTo(DefaultExperience.NG);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_forIsCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    account.isCrossGenerationAccessEnabled(Boolean.TRUE);
+    accountService.update(account);
+
+    assertThat(wingsPersistence.get(Account.class, account.getUuid())).isEqualTo(account);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateCrossGenerationAccessEnabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateCrossGenerationAccessEnabled(account.getUuid(), true, false);
+    Account updatedAccount = wingsPersistence.get(Account.class, account.getUuid());
+
+    assertTrue(updatedAccount.isCrossGenerationAccessEnabled());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdateCrossGenerationAccessEnabled_forNGAudits() throws JsonProcessingException {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("mike@harness.io"))
+                          .withDefaultExperience(DefaultExperience.NG)
+                          .build();
+    wingsPersistence.save(account);
+    accountService.updateCrossGenerationAccessEnabled(account.getUuid(), true, true);
+
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+
+    assertThat(outboxEvent.getEventType()).isEqualTo(CROSS_GENERATION_ACCESS_UPDATED);
+    AccountDetailsCrossGenerationAccessUpdateEvent accountDetailsCrossGenerationAccessUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), AccountDetailsCrossGenerationAccessUpdateEvent.class);
+
+    assertThat(accountDetailsCrossGenerationAccessUpdateEvent.getAccountIdentifier()).isEqualTo(account.getUuid());
+    assertThat(accountDetailsCrossGenerationAccessUpdateEvent.getOldCrossGenerationAccessYamlDTO()
+                   .isCrossGenerationAccessEnabled())
+        .isEqualTo(false);
+    assertThat(accountDetailsCrossGenerationAccessUpdateEvent.getNewCrossGenerationAccessYamlDTO()
+                   .isCrossGenerationAccessEnabled())
+        .isEqualTo(true);
   }
 
   @Test

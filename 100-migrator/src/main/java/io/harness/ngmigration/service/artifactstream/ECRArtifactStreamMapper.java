@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,13 +20,18 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.EcrSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.EcrArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +53,32 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
                   .imagePath(ParameterField.createValueField(ecrArtifactStream.getImageName()))
                   .tag(ParameterField.createValueField("<+input>"))
                   .build())
+        .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.ECR;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    String imagePath = PLEASE_FIX_ME;
+    String region = "us-east-1";
+
+    if (artifactStream != null) {
+      EcrArtifactStream ecrArtifactStream = (EcrArtifactStream) artifactStream;
+      imagePath = ecrArtifactStream.getImageName();
+      region = ecrArtifactStream.getRegion();
+    }
+
+    return EcrSpec.builder()
+        .connectorRef(getConnectorRef(migratedEntities, artifactStream))
+        .region(region)
+        .imagePath(imagePath)
+        .tag(PLEASE_FIX_ME)
+        .eventConditions(Collections.emptyList())
         .build();
   }
 }

@@ -21,13 +21,16 @@ import io.harness.batch.processing.entities.ClusterDataDetails;
 import io.harness.batch.processing.pricing.gcp.bigquery.VMInstanceServiceBillingData.VMInstanceServiceBillingDataBuilder;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.beans.FeatureName;
+import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
@@ -36,6 +39,7 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -422,6 +426,69 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     return query(formattedQuery, "GCP", null);
   }
 
+  @Override
+  public void addCostCategoriesColumnInUnifiedTable(String tableName) {
+    BigQuery bigQueryService = getBigQueryService();
+    String query = format(BQConst.ADD_COLUMN, tableName, BQConst.costCategory, BQConst.COST_CATEGORY_DATA_TYPE);
+    log.info("Add cost category column Query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      bigQueryService.query(queryConfig);
+      log.info("costCategory column added");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.warn("Error: ", bigQueryException);
+    }
+  }
+
+  @Override
+  public void removeAllCostCategories(String tableName, String startTime, String endTime, CloudProvider cloudProvider,
+      List<String> cloudProviderAccountIds) {
+    BigQuery bigQueryService = getBigQueryService();
+    String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
+    String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
+    String query = format(BQConst.COST_CATEGORY_REMOVE, tableName, BQConst.costCategory, startTime, endTime,
+        cloudAccountIdColumn, cloudProviderAccountIdsString);
+    log.info("Remove cost categories query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      bigQueryService.query(queryConfig);
+      log.info("costCategories removed");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.warn("Error: ", bigQueryException);
+    }
+  }
+
+  @Override
+  public void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
+    BigQuery bigQueryService = getBigQueryService();
+    String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
+    String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
+    String query = format(BQConst.COST_CATEGORY_UPDATE, tableName, BQConst.costCategory, costCategoriesStatement,
+        startTime, endTime, cloudAccountIdColumn, cloudProviderAccountIdsString);
+    log.info("Update cost category column query: {}", query);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    try {
+      bigQueryService.query(queryConfig);
+      log.info("costCategory updated");
+    } catch (BigQueryException | InterruptedException bigQueryException) {
+      log.error("Error: ", bigQueryException);
+    }
+  }
+
+  private static String getCloudAccountIdColumnName(CloudProvider cloudProvider) {
+    switch (cloudProvider) {
+      case AWS:
+        return BQConst.awsUsageAccountId;
+      case GCP:
+        return BQConst.gcpBillingAccountId;
+      case AZURE:
+        return BQConst.azureSubscriptionGuid;
+      default:
+        throw new InvalidRequestException(String.format("Unknown cloudProvider: %s", cloudProvider));
+    }
+  }
+
   private static String createSubQuery(List<String> resourceIds) {
     StringBuffer sb = new StringBuffer(100);
     sb.append(" (");
@@ -596,7 +663,19 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   public BigQuery getBigQueryService() {
-    ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-    return BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials = null;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: In getBigQueryService. using older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: In getBigQueryService. using Google ADC");
+      try {
+        sourceCredentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
+    }
+    return BigQueryOptions.newBuilder().setCredentials(sourceCredentials).build().getService();
   }
 }

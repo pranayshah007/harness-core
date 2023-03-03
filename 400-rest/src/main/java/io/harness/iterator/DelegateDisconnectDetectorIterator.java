@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateDisconnectDetectorIterator
-    extends IteratorPumpModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
+    extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
   private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 

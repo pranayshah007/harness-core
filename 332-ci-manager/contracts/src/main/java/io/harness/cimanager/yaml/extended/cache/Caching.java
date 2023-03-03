@@ -34,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.yaml.extended.cache.Caching")
 @OwnedBy(CI)
 public class Caching {
+  @ApiModelProperty(hidden = true) String uuid;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> enabled;

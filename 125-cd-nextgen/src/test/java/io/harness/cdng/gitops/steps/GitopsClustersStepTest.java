@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -19,6 +19,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -59,7 +60,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.domain.PageImpl;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -98,29 +98,28 @@ public class GitopsClustersStepTest extends CategoryTest {
 
   private void mockClusterService() {
     doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id"));
 
     doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
+        asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1Id").build()))
         .when(clusterService)
         .listAcrossEnv(
             0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1Id", "env2Id", "env3"));
 
-    doReturn(
-        new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build())))
+    doReturn(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2Id").build(),
+                 io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2Id").build()))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env2Id"));
   }
@@ -336,6 +335,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testToGitOpsOutcomeForServiceOverrides() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
@@ -358,6 +358,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testToGitOpsOutcomeForEnvrionmentOveride() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
@@ -379,6 +380,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.MEENA)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testMultipleEnvsToOneCluster() {
     Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal env1 = GitopsClustersStep.IndividualClusterInternal.builder()

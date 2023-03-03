@@ -26,9 +26,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
@@ -44,6 +43,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.io.IOException;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -95,14 +95,12 @@ public class GovernanceRuleExecutionResource {
   private static final String RESOURCESFILENAME = "resources";
   public static final String GCP_CREDENTIALS_PATH = "GOOGLE_APPLICATION_CREDENTIALS";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
-  //  private final CCMRbacHelper rbacHelper
   private final RuleExecutionService ruleExecutionService;
   @Inject CENextGenConfiguration configuration;
   @Inject private BigQueryService bigQueryService;
 
   @Inject
   public GovernanceRuleExecutionResource(RuleExecutionService ruleExecutionService) {
-    //    this rbacHelper = rbacHelper
     this.ruleExecutionService = ruleExecutionService;
   }
 
@@ -122,7 +120,6 @@ public class GovernanceRuleExecutionResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Rule Execution  object")
       @Valid CreateRuleExecutionDTO createRuleExecutionDTO) {
-    // rbacHelper checkRuleExecutionEditPermission(accountId, null, null)
     if (createRuleExecutionDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
@@ -149,8 +146,6 @@ public class GovernanceRuleExecutionResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing CreateRuleExecutionFilterDTO object")
       @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
-    // rbacHelper checkRuleExecutionPermission(accountId, null, null)
-    // TO DO: Implement search support in this api
     RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
     ruleExecutionFilter.setAccountId(accountId);
     return ResponseDTO.newResponse(ruleExecutionService.filterExecution(ruleExecutionFilter));
@@ -207,7 +202,16 @@ public class GovernanceRuleExecutionResource {
         // Other ways to return this file is by using a signed url concept. We can see this when adoption grows
         // https://cloud.google.com/storage/docs/access-control/signed-urls
         log.info("Fetching files from GCS");
-        ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        GoogleCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        if (credentials == null) {
+          try {
+            log.info("WI: Using Google ADC");
+            credentials = GoogleCredentials.getApplicationDefault();
+          } catch (IOException e) {
+            log.error("Exception in using Google ADC", e);
+          }
+        }
+
         log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
         Storage storage = StorageOptions.newBuilder()
                               .setProjectId(configuration.getGcpConfig().getGcpProjectId())

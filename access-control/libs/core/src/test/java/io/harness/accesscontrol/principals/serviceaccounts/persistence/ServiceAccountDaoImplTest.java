@@ -27,7 +27,6 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
-import com.google.common.collect.Lists;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,7 +122,7 @@ public class ServiceAccountDaoImplTest extends AccessControlCoreTestBase {
     String scopeIdentifier = randomAlphabetic(10);
     ServiceAccountDBO serviceAccountDBO = ServiceAccountDBO.builder().build();
     when(serviceAccountRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-        .thenReturn(Lists.newArrayList(serviceAccountDBO));
+        .thenReturn(Optional.of(serviceAccountDBO));
     assertEquals(Optional.of(ServiceAccount.builder().build()), serviceAccountDao.delete(identifier, scopeIdentifier));
     verify(serviceAccountRepository, times(1)).deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
   }
@@ -135,7 +134,7 @@ public class ServiceAccountDaoImplTest extends AccessControlCoreTestBase {
     String identifier = randomAlphabetic(10);
     String scopeIdentifier = randomAlphabetic(10);
     when(serviceAccountRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier))
-        .thenReturn(Lists.newArrayList());
+        .thenReturn(Optional.empty());
     assertEquals(Optional.empty(), serviceAccountDao.delete(identifier, scopeIdentifier));
     verify(serviceAccountRepository, times(1)).deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
   }

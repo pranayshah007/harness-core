@@ -407,6 +407,7 @@ public class RESTToGraphQLHelper {
             .build());
 
     List<QLCEViewField> clusterFields = ViewFieldUtils.getClusterFields();
+    List<QLCEViewField> clusterFieldsNg = ViewFieldUtils.getNgClusterFields();
     viewFieldHashMap.put("CLUSTER_NAME",
         QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(0).getFieldId())
@@ -425,6 +426,13 @@ public class RESTToGraphQLHelper {
         QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(3).getFieldId())
             .fieldName(clusterFields.get(3).getFieldId())
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_WORKLOAD_ID",
+        QLCEViewFieldInput.builder()
+            .fieldId(clusterFieldsNg.get(5).getFieldId())
+            .fieldName(clusterFieldsNg.get(5).getFieldId())
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());
@@ -453,6 +461,27 @@ public class RESTToGraphQLHelper {
         QLCEViewFieldInput.builder()
             .fieldId("clusterId")
             .fieldName("clusterId")
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_NODE",
+        QLCEViewFieldInput.builder()
+            .fieldId(clusterFieldsNg.get(6).getFieldId())
+            .fieldName(clusterFieldsNg.get(6).getFieldId())
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_POD",
+        QLCEViewFieldInput.builder()
+            .fieldId("instanceId")
+            .fieldName("Pod")
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_PARENT_INSTANCE_ID",
+        QLCEViewFieldInput.builder()
+            .fieldId("parentInstanceId")
+            .fieldName("Parent instance id")
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());

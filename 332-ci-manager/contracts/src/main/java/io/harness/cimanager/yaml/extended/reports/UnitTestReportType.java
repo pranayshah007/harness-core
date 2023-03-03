@@ -12,6 +12,7 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("unit_test_report_type")
@@ -20,6 +21,8 @@ public enum UnitTestReportType {
   @JsonProperty("JUnit") JUNIT("JUnit");
 
   private final String yamlName;
+
+  @ApiModelProperty(hidden = true) String uuid;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static UnitTestReportType getUnitTestReportType(@JsonProperty("type") String yamlName) {

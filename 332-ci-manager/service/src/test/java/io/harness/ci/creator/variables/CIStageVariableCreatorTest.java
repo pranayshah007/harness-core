@@ -13,9 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
 import io.harness.category.element.UnitTests;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -32,7 +30,6 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -139,7 +136,6 @@ public class CIStageVariableCreatorTest {
             "pipeline.stages.gcpBuildPush.variables.GCP_SECRET_KEY",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.namespace",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.labels",
-            "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.tolerations",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.automountServiceAccountToken",
             "pipeline.stages.gcpBuildPush.delegateSelectors", "pipeline.stages.gcpBuildPush.spec.sharedPaths",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.hostNames",

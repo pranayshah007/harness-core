@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and ci-manager-config.yml
 COPY --chown=65534:65534 ci-manager-capsule.jar /opt/harness/
@@ -36,5 +36,5 @@ COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
 RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 
 USER root
-RUN microdnf install -y dnf yum \
+RUN microdnf install -y yum \
 && microdnf clean all

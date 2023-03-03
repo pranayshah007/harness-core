@@ -129,7 +129,30 @@ paths:
         - EnvironmentSecret
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+    delete:
+      summary: Deletes Multiple Environment Secret
+      operationId: delete-environment-secrets
+      responses:
+        '204':
+          description: No Content
+      description: Deletes the multiple environment secrets specified in the request
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - schema:
+            type: array
+            items:
+              type: string
+          in: query
+          name: environment-secret
+          description: Identifier field of environment secrets
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - EnvironmentSecret
   '/v1/status-info/{type}':
+    parameters:
+      - $ref: '#/components/parameters/StatusType'
     get:
       summary: Gets Status Info by type
       tags:
@@ -144,14 +167,8 @@ paths:
         '200':
           $ref: '#/components/responses/StatusInfoResponse'
       x-internal: true
-    parameters:
-      - schema:
-          type: string
-        name: type
-        in: path
-        required: true
     post:
-      summary: 'Saves Status Info by type'
+      summary: Saves Status Info by type
       tags:
         - StatusInfo
       operationId: save-status-info-by-type
@@ -165,6 +182,54 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/StatusInfoRequest'
+  '/v1/namespace-info/{accountIdentifier}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      operationId: get-namespace-info
+      description: Get the corresponding customer namepsace using account id.
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - Namespace
+    parameters:
+      - schema:
+          type: string
+        name: accountIdentifier
+        in: path
+        required: true
+    post:
+      summary: Create Namespace
+      operationId: create-namespace
+      description: Create Namespace from accountId
+      security:
+        - x-api-key: []
+      x-internal: true
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      tags:
+        - Namespace
+  '/v1/account-info/{namespace}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      operationId: get-account-for-namespace
+      security:
+        - x-api-key: []
+      tags:
+        - AccountInfo
+    parameters:
+      - schema:
+          type: string
+        name: namespace
+        in: path
+        required: true
 components:
   schemas:
     EnvironmentSecret:
@@ -175,9 +240,11 @@ components:
       properties:
         identifier:
           type: string
-        name:
+        env_name:
           type: string
         secret_identifier:
+          type: string
+        decrypted_value:
           type: string
         created:
           type: integer
@@ -209,6 +276,12 @@ components:
       properties:
         currentStatus:
           type: string
+          enum:
+            - COMPLETED
+            - RUNNING
+            - PENDING
+            - FAILED
+            - NOT_FOUND
         reason:
           type: string
         updatedAt:
@@ -230,6 +303,20 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusInfo'
+    NamespaceInfo:
+      title: NamespaceInfo
+      x-stoplight:
+        id: 8ba4gj00yfwre
+      type: object
+      properties:
+        accountIdentifier:
+          type: string
+        namespace:
+          type: string
+      description: Namespace response body content
+    NamepsaceResponse:
+      $ref: '#/components/schemas/NamespaceInfo'
+      description: Namespace response body
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -266,6 +353,15 @@ components:
       schema:
         type: string
       description: Identifier field of the environment secret the resource is scoped to
+    StatusType:
+      name: type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - infra
+          - onboarding
   requestBodies:
     EnvironmentSecretRequest:
       content:
@@ -340,6 +436,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    NamespaceResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NamepsaceResponse'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/NamepsaceResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

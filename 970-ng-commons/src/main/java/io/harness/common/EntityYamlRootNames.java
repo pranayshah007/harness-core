@@ -27,6 +27,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
+  public static final String GITOPS_SYNC = "GitOpsSync";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -219,6 +220,13 @@ public class EntityYamlRootNames {
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+  public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   public static final String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+
+  // AWS SAM
+  public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
+
+  public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

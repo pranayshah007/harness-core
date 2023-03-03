@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step.pcf;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
@@ -14,7 +15,6 @@ import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -25,7 +25,7 @@ import software.wings.sm.states.pcf.PcfSwitchBlueGreenRoutes;
 
 import java.util.Map;
 
-public class PcfSwapRoutesStepMapperImpl extends StepMapper {
+public class PcfSwapRoutesStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -39,6 +39,11 @@ public class PcfSwapRoutesStepMapperImpl extends StepMapper {
     } else {
       return StepSpecTypeConstants.TAS_SWAP_ROUTES;
     }
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

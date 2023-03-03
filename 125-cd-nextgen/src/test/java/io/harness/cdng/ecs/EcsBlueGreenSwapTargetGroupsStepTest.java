@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -55,6 +56,8 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+
+import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -233,7 +236,9 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
                                                   .taskRequest(TaskRequest.newBuilder().build())
                                                   .passThroughData(ecsExecutionPassThroughData)
                                                   .build();
-    doReturn(taskChainResponseMock).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponseMock)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
 
     ecsBlueGreenSwapTargetGroupsStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
 
@@ -270,6 +275,7 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
 
     verify(ecsStepCommonHelper)
         .queueEcsTask(stepElementParameters, ecsBlueGreenSwapTargetGroupsRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true);
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG);
   }
 }

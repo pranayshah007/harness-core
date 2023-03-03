@@ -16,7 +16,9 @@ import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -56,6 +58,9 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
 
+  List<AbstractServiceLevelObjective> getAllSLOs(
+      ProjectParams projectParams, ServiceLevelObjectiveType serviceLevelObjectiveType);
+
   List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers);
 
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
@@ -82,4 +87,9 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
 
   AbstractServiceLevelObjective get(String sloId);
+
+  void handleNotification(AbstractServiceLevelObjective serviceLevelObjective);
+
+  List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
+  SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);
 }

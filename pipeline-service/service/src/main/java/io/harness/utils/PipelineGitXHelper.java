@@ -23,7 +23,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineGitXHelper {
-  public void setupGitParentEntityDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void setupGitParentEntityDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (null != gitEntityInfo) {
       if (!GitAwareContextHelper.isNullOrDefault(orgIdentifier)) {
@@ -31,6 +32,13 @@ public class PipelineGitXHelper {
       }
       if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
         gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
+      }
+      // setting connector and repo name. This is required to pass to child pipeline from parent pipeline
+      if (!GitAwareContextHelper.isNullOrDefault(connectorRef)) {
+        gitEntityInfo.setParentEntityConnectorRef(connectorRef);
+      }
+      if (!GitAwareContextHelper.isNullOrDefault(repo)) {
+        gitEntityInfo.setParentEntityRepoName(repo);
       }
       gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
       GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
@@ -48,6 +56,12 @@ public class PipelineGitXHelper {
       }
       if (EmptyPredicate.isNotEmpty(entityGitDetails.getFilePath())) {
         gitEntityInfo.setFilePath(entityGitDetails.getFilePath());
+      }
+      if (isNotEmpty(entityGitDetails.getParentEntityConnectorRef())) {
+        gitEntityInfo.setParentEntityConnectorRef(entityGitDetails.getParentEntityConnectorRef());
+      }
+      if (isNotEmpty(entityGitDetails.getParentEntityRepoName())) {
+        gitEntityInfo.setParentEntityRepoName(entityGitDetails.getParentEntityRepoName());
       }
     }
   }

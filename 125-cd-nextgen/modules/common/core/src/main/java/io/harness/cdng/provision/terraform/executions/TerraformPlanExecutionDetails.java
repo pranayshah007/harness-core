@@ -62,6 +62,8 @@ public class TerraformPlanExecutionDetails implements PersistentEntity, UuidAwar
   private String tfHumanReadablePlanId;
   @NotNull private String tfHumanReadablePlanFileBucket;
   @NotNull private EncryptionConfig encryptionConfig;
+  private String tfcPolicyChecksFileId;
+  private String tfcPolicyChecksFileBucket;
   /**
    * Currently, encryptedTfPlan is storing only one element. But in future encryptedTfPlan will be broken in multiple
    * parts and stored in vault, because one element can exceed the allowed size limit.

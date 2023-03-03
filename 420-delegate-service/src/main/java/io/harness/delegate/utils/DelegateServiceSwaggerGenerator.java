@@ -8,6 +8,7 @@
 package io.harness.delegate.utils;
 
 import io.harness.delegate.resources.DummyResource;
+import io.harness.delegate.resources.health.DelegateServiceHealthResource;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 
 import com.google.common.collect.ImmutableList;
@@ -19,7 +20,7 @@ public class DelegateServiceSwaggerGenerator {
   // Add resource classes explicitly here.
   // Adding DelegateSetupResource as a dummy resource for swagger to work, will change later.
   private static final List<Class<?>> RESOURCE_CLASSES =
-      ImmutableList.<Class<?>>builder().add(DummyResource.class).build();
+      ImmutableList.<Class<?>>builder().add(DummyResource.class, DelegateServiceHealthResource.class).build();
 
   /**
    * Gets swagger bundle configuration.

@@ -34,4 +34,5 @@ public class ServiceResponseDTO {
   Map<String, String> tags;
   @JsonIgnore Long version;
   String yaml;
+  @Schema(hidden = true) boolean v2Service;
 }

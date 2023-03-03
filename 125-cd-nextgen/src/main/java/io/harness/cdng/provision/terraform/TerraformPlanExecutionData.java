@@ -86,6 +86,7 @@ public class TerraformPlanExecutionData {
       });
     }
     builder.varFiles(varFiles);
+    builder.isTerraformCloudCli(ParameterField.createValueField(false));
     return builder.build();
   }
 

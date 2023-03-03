@@ -11,6 +11,7 @@ import static io.harness.delegate.beans.pcf.ResizeStrategy.DOWNSIZE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.DOWNSCALE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.UPSCALE_NEW_FIRST;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
@@ -19,7 +20,6 @@ import io.harness.cdng.tas.TasInstanceCountType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class PcfSetupStepMapperImpl extends StepMapper {
+public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -46,6 +46,11 @@ public class PcfSetupStepMapperImpl extends StepMapper {
     } else {
       return StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
     }
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override
@@ -89,7 +94,8 @@ public class PcfSetupStepMapperImpl extends StepMapper {
 
       TasCanaryAppSetupStepInfo tasCanaryAppSetupStepInfo =
           TasCanaryAppSetupStepInfo.infoBuilder()
-              .resizeStrategy(state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST)
+              .resizeStrategy(ParameterField.createValueField(
+                  state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST))
               .instanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
               .additionalRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))

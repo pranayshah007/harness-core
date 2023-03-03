@@ -229,8 +229,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress)
       throws IOException, ParseException {
     try {
-      FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, false);
+      FetchFilesResult fetchFilesResult =
+          gitOpsTaskHelper.getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(),
+              gitOpsTaskParams.getAccountId(), logCallback, gitOpsTaskParams.isCloseLogStream());
       updateFilesNotFoundWithEmptyContent(
           fetchFilesResult, gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths());
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);

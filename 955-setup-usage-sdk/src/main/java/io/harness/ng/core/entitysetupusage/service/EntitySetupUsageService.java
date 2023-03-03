@@ -31,7 +31,6 @@ public interface EntitySetupUsageService {
   Page<EntitySetupUsageDTO> listAllEntityUsageWithSupportForTwoFqnForASingleEntity(int page, int size,
       String accountIdentifier, String referredEntityFQN1, String referredEntityFQN2, EntityType referredEntityType,
       String searchTerm);
-
   List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm);
 

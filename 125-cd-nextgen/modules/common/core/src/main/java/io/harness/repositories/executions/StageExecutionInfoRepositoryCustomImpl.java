@@ -18,6 +18,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,9 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
   }
 
   @Override
-  public List<StageExecutionInfo> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, StageExecutionInfo.class);
+    return mongoTemplate.remove(query, StageExecutionInfo.class);
   }
 
   public Criteria createScopeCriteria(Scope scope) {

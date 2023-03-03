@@ -36,13 +36,14 @@ import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -72,7 +73,7 @@ import org.mockito.MockitoAnnotations;
 public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Inject Map<StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap;
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private SLOHealthIndicatorServiceImpl sloHealthIndicatorService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
@@ -90,7 +91,7 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   private ServiceLevelIndicator serviceLevelIndicator;
   AnalysisStateExecutor sliMetricAnalysisStateExecutor;
   private SLIMetricAnalysisState sliMetricAnalysisState;
-  ServiceLevelObjectiveDTO serviceLevelObjective;
+  ServiceLevelObjectiveV2DTO serviceLevelObjective;
 
   @Inject private Map<DowntimeType, DowntimeSpecDetailsTransformer> downtimeTransformerMap;
 
@@ -105,13 +106,16 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().sources(Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    serviceLevelObjective = builderFactory.getServiceLevelObjectiveDTOBuilder()
-                                .monitoredServiceRef(monitoredServiceDTO.getIdentifier())
-                                .healthSourceRef(generateUuid())
-                                .build();
-    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
-    serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-        builderFactory.getProjectParams(), serviceLevelObjective.getServiceLevelIndicators().get(0).getIdentifier());
+    serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier());
     verificationTaskId = serviceLevelIndicator.getUuid();
     startTime = clock.instant().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     endTime = startTime.plus(5, ChronoUnit.MINUTES);

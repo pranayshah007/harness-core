@@ -73,6 +73,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -88,7 +89,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MongoPersistence implements HPersistence {
   private final LoadingCache<String, Boolean> delegateMigrationFlagCache =
       CacheBuilder.newBuilder()
-          .maximumSize(20)
+          .maximumSize(50)
           .expireAfterWrite(10, TimeUnit.SECONDS)
           .build(new CacheLoader<String, Boolean>() {
             @Override
@@ -233,11 +234,11 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
-  public boolean isMigrationEnabled(Class cls) {
+  public boolean isMigrationEnabled(String className) {
     try {
-      return delegateMigrationFlagCache.get(cls.getName());
+      return delegateMigrationFlagCache.get(className);
     } catch (ExecutionException e) {
-      log.error("Exception occurred while checking for delegate migration flag.", e);
+      log.error("Exception occurred while checking for delegate migration flag for class {}.", className, e);
       return false;
     }
   }
@@ -277,6 +278,17 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, boolean isMigrationEnabled) {
+    if (isMigrationEnabled) {
+      Optional<Store> secondaryStore = getSecondaryStore(cls);
+      if (secondaryStore.isPresent()) {
+        return getDatastore(secondaryStore.get()).createQuery(cls);
+      }
+    }
+    return getDatastore(getPrimaryStore(cls)).createQuery(cls);
+  }
+
+  @Override
   public <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls) {
     return getDefaultAnalyticsDatastore(cls).createQuery(cls);
   }
@@ -291,6 +303,14 @@ public class MongoPersistence implements HPersistence {
   @Override
   public <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, Set<QueryChecks> queryChecks) {
     Query<T> query = createQuery(cls);
+    ((HQuery) query).setQueryChecks(queryChecks);
+    return query;
+  }
+
+  @Override
+  public <T extends PersistentEntity> Query<T> createQuery(
+      Class<T> cls, Set<QueryChecks> queryChecks, boolean isMigrationEnabled) {
+    Query<T> query = createQuery(cls, isMigrationEnabled);
     ((HQuery) query).setQueryChecks(queryChecks);
     return query;
   }
@@ -312,6 +332,18 @@ public class MongoPersistence implements HPersistence {
   @Override
   public <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls) {
     return getDatastore(cls).createUpdateOperations(cls);
+  }
+
+  @Override
+  public <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(
+      Class<T> cls, boolean isMigrationEnabled) {
+    if (isMigrationEnabled) {
+      Optional<Store> secondaryStore = getSecondaryStore(cls);
+      if (secondaryStore.isPresent()) {
+        return getDatastore(secondaryStore.get()).createUpdateOperations(cls);
+      }
+    }
+    return getDatastore(getPrimaryStore(cls)).createUpdateOperations(cls);
   }
 
   @Override
@@ -360,6 +392,13 @@ public class MongoPersistence implements HPersistence {
   public <T extends PersistentEntity> String save(T entity) {
     onSave(entity);
     AdvancedDatastore datastore = getDatastore(entity);
+    return HPersistence.retry(() -> datastore.save(entity).getId().toString());
+  }
+
+  @Override
+  public <T extends PersistentEntity> String save(T entity, boolean isMigrationEnabled) {
+    onSave(entity);
+    AdvancedDatastore datastore = getDatastore(entity, isMigrationEnabled);
     return HPersistence.retry(() -> datastore.save(entity).getId().toString());
   }
 
@@ -444,6 +483,11 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T extends PersistentEntity> T get(Class<T> cls, String id, boolean isMigrationEnabled) {
+    return createQuery(cls, isMigrationEnabled).filter(ID_KEY, id).get();
+  }
+
+  @Override
   public <T extends PersistentEntity> boolean delete(Class<T> cls, String uuid) {
     AdvancedDatastore datastore = getDatastore(cls);
     return HPersistence.retry(() -> {
@@ -460,6 +504,15 @@ public class MongoPersistence implements HPersistence {
   @Override
   public final <T extends PersistentEntity> boolean deleteOnServer(Query<T> query) {
     AdvancedDatastore datastore = getDatastore(query.getEntityClass());
+    return HPersistence.retry(() -> {
+      WriteResult result = datastore.delete(query);
+      return !(result == null || result.getN() == 0);
+    });
+  }
+
+  @Override
+  public final <T extends PersistentEntity> boolean deleteOnServer(Query<T> query, boolean isMigrationEnabled) {
+    AdvancedDatastore datastore = getDatastore(query.getEntityClass(), isMigrationEnabled);
     return HPersistence.retry(() -> {
       WriteResult result = datastore.delete(query);
       return !(result == null || result.getN() == 0);
@@ -541,11 +594,31 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T extends PersistentEntity> UpdateResults update(
+      T entity, UpdateOperations<T> ops, boolean isMigrationEnabled) {
+    // TODO: add encryption handling; right now no encrypted classes use update
+    // When necessary, we can fix this by adding Class<T> cls to the args and then similar to updateField
+    onEntityUpdate(entity, ops, currentTimeMillis());
+    AdvancedDatastore datastore = getDatastore(entity, isMigrationEnabled);
+    return HPersistence.retry(() -> datastore.update(entity, ops));
+  }
+
+  @Override
   public <T extends PersistentEntity> UpdateResults update(Query<T> updateQuery, UpdateOperations<T> updateOperations) {
     // TODO: add encryption handling; right now no encrypted classes use update
     // When necessary, we can fix this by adding Class<T> cls to the args and then similar to updateField
     onUpdate(updateQuery, updateOperations, currentTimeMillis());
     AdvancedDatastore datastore = getDatastore(updateQuery.getEntityClass());
+    return HPersistence.retry(() -> datastore.update(updateQuery, updateOperations));
+  }
+
+  @Override
+  public <T extends PersistentEntity> UpdateResults update(
+      Query<T> updateQuery, UpdateOperations<T> updateOperations, boolean isMigrationEnabled) {
+    // TODO: add encryption handling; right now no encrypted classes use update
+    // When necessary, we can fix this by adding Class<T> cls to the args and then similar to updateField
+    onUpdate(updateQuery, updateOperations, currentTimeMillis());
+    AdvancedDatastore datastore = getDatastore(updateQuery.getEntityClass(), isMigrationEnabled);
     return HPersistence.retry(() -> datastore.update(updateQuery, updateOperations));
   }
 
@@ -565,10 +638,39 @@ public class MongoPersistence implements HPersistence {
   }
 
   @Override
+  public <T extends PersistentEntity> T findAndModify(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled) {
+    try {
+      onUpdate(query, updateOperations, currentTimeMillis());
+      AdvancedDatastore datastore = getDatastore(query.getEntityClass(), isMigrationEnabled);
+      setMaxTimeInOptions(datastore, findAndModifyOptions);
+      return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("findAndModify query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
+      throw ex;
+    }
+  }
+
+  @Override
   public <T extends PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions) {
     try {
       AdvancedDatastore datastore = getDatastore(query.getEntityClass());
+      setMaxTimeInOptions(datastore, findAndModifyOptions);
+      return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("findAndModifySystemData query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
+      throw ex;
+    }
+  }
+
+  @Override
+  public <T extends PersistentEntity> T findAndModifySystemData(Query<T> query, UpdateOperations<T> updateOperations,
+      FindAndModifyOptions findAndModifyOptions, boolean isMigrationEnabled) {
+    try {
+      AdvancedDatastore datastore = getDatastore(query.getEntityClass(), isMigrationEnabled);
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {

@@ -563,7 +563,7 @@ public class UserResource {
   @FeatureRestrictionCheck(FeatureRestrictionName.TWO_FACTOR_AUTH_SUPPORT)
   public RestResponse<Boolean>
   reset2fa(@PathParam("userId") @NotEmpty String userId,
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier) {
+      @AccountIdentifier @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, null, null), Resource.of(USER, userId), MANAGE_USER_PERMISSION);
     return new RestResponse<>(userInfoService.sendTwoFactorAuthenticationResetEmail(userId, accountIdentifier));

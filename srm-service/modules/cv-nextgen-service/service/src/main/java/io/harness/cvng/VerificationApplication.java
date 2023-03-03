@@ -76,7 +76,6 @@ import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.SLORecalculationFailureHandler;
 import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHandler;
-import io.harness.cvng.core.jobs.ServiceLevelObjectiveV2VerifyTaskHandler;
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.SideKickService;
@@ -100,8 +99,6 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
@@ -478,7 +475,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCVNGDemoPerpetualTaskIterator(injector);
     registerSLORecalculationFailure(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
-    registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
     registerCompositeSLODataExecutorTaskIterator(injector);
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
@@ -938,41 +934,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
         () -> dataCollectionTasksPerpetualTaskStatusUpdateIterator.process(), 0, 2, TimeUnit.MINUTES);
   }
 
-  private void registerServiceLevelObjectiveV2VerifyTaskIterator(Injector injector) {
-    ScheduledThreadPoolExecutor serviceLevelObjectiveV2VerifyTaskExecutor = new ScheduledThreadPoolExecutor(
-        3, new ThreadFactoryBuilder().setNameFormat("service-level-objective-v2-verify-task-iterator").build());
-
-    ServiceLevelObjectiveV2VerifyTaskHandler serviceLevelObjectiveV2VerifyTaskHandler =
-        injector.getInstance(ServiceLevelObjectiveV2VerifyTaskHandler.class);
-
-    PersistenceIterator serviceLevelObjectiveV2VerifyTaskIterator =
-        MongoPersistenceIterator
-            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .iteratorName("ServiceLevelObjectiveV2VerifyTaskIterator")
-            .clazz(AbstractServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveV2Keys.nextVerificationIteration)
-            .targetInterval(ofMinutes(30))
-            .acceptableNoAlertDelay(ofMinutes(5))
-            .executorService(serviceLevelObjectiveV2VerifyTaskExecutor)
-            .semaphore(new Semaphore(2))
-            .handler(serviceLevelObjectiveV2VerifyTaskHandler)
-            .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.and(
-                    query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                        .greaterThan(
-                            injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()),
-                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE)))
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-
-    injector.injectMembers(serviceLevelObjectiveV2VerifyTaskIterator);
-    serviceLevelObjectiveV2VerifyTaskExecutor.scheduleWithFixedDelay(
-        () -> serviceLevelObjectiveV2VerifyTaskIterator.process(), 0, 5, TimeUnit.MINUTES);
-  }
-
   private void registerCompositeSLODataExecutorTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor compositeSLODataExecutorTaskExecutor = new ScheduledThreadPoolExecutor(
         3, new ThreadFactoryBuilder().setNameFormat("composite-slo-data-collection-task-iterator").build());
@@ -1111,18 +1072,21 @@ public class VerificationApplication extends Application<VerificationConfigurati
     SLONotificationHandler notificationHandler = injector.getInstance(SLONotificationHandler.class);
 
     PersistenceIterator dataCollectionIterator =
-        MongoPersistenceIterator.<ServiceLevelObjective, MorphiaFilterExpander<ServiceLevelObjective>>builder()
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
             .iteratorName("SLONotificationIterator")
-            .clazz(ServiceLevelObjective.class)
-            .fieldName(ServiceLevelObjectiveKeys.nextNotificationIteration)
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.nextNotificationIteration)
             .targetInterval(ofMinutes(60))
             .acceptableNoAlertDelay(ofMinutes(10))
             .executorService(notificationExecutor)
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query -> query.field(ServiceLevelObjectiveKeys.notificationRuleRefs).exists())
+            .filterExpander(query
+                -> query.and(query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE),
+                    query.criteria(ServiceLevelObjectiveV2Keys.notificationRuleRefs).exists()))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

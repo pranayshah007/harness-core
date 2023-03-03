@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.inject.Singleton;
@@ -269,7 +268,6 @@ public class BitbucketServiceImpl implements BitbucketService {
     }
   }
 
-  @VisibleForTesting
   public BitbucketRestClient getBitbucketClient(
       BitbucketConfig bitbucketConfig, List<EncryptedDataDetail> encryptionDetails) {
     try {

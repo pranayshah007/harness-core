@@ -32,6 +32,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -39,6 +40,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.plancreator.strategy.HarnessForConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.pipeline.filter.PipelineFilter;
@@ -540,7 +543,30 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .deploymentType(KUBERNETES)
             .build());
 
-    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}};
+    // multiservice with strategy
+    final DeploymentStageNode node8 = new DeploymentStageNode();
+    node8.setStrategy(
+        StrategyConfig.builder()
+            .repeat(HarnessForConfig.builder().items(ParameterField.createValueField(List.of("a", "b"))).build())
+            .build());
+    node8.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .services(
+                ServicesYaml.builder()
+                    .values(ParameterField.createValueField(List.of(
+                        ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("service_1")).build())))
+                    .build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value("env").build())
+                             // default to false
+                             .deployToAll(ParameterField.createValueField(false))
+                             .gitOpsClusters(ParameterField.createValueField(null))
+                             .build())
+            .gitOpsEnabled(Boolean.TRUE)
+            .deploymentType(KUBERNETES)
+            .build());
+
+    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}};
   }
   private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
     final DeploymentStageNode node1 =

@@ -97,6 +97,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -483,7 +484,7 @@ public class ArtifactServiceImpl implements ArtifactService {
 
   @Override
   public void updateArtifactSourceName(ArtifactStream artifactStream) {
-    Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream);
+    Query<Artifact> query = prepareArtifactWithMetadataQuery(artifactStream, false);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
     ops.set("artifactSourceName", artifactStream.getSourceName());
     wingsPersistence.update(query, ops);
@@ -926,7 +927,7 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
-  public Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream) {
+  public Query<Artifact> prepareArtifactWithMetadataQuery(ArtifactStream artifactStream, boolean hitSecondary) {
     // TODO: ASR: update with accountId
     Query<Artifact> artifactQuery =
         wingsPersistence.createQuery(Artifact.class, excludeAuthority)
@@ -946,6 +947,10 @@ public class ArtifactServiceImpl implements ArtifactService {
       return artifactQuery;
     }
     artifactQuery.filter(ArtifactKeys.artifactSourceName, artifactStream.getSourceName());
+    if (artifactStream.getAccountId() != null && hitSecondary
+        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, artifactStream.getAccountId())) {
+      artifactQuery.useReadPreference(ReadPreference.secondaryPreferred());
+    }
     return artifactQuery;
   }
 

@@ -12,11 +12,13 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.task.aws.lambda.AwsLambdaArtifactConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
+import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -28,10 +30,13 @@ public class AwsLambdaDeployRequest implements AwsLambdaCommandRequest, NestedAn
   AwsLambdaCommandTypeNG awsLambdaCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaInfraConfig awsLambdaInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String awsLambdaDeployManifestContent;
-  String functionName;
-  String qualifier;
+  @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) String functionName;
+  @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> awsLambdaAliasManifestContent;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {

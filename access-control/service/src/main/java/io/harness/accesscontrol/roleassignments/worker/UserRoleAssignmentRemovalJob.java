@@ -22,6 +22,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.NGConstants;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
@@ -161,17 +162,17 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   private void deleteAccountScopeRoleAssignments(String accountId) {
     try {
       String scopeIdentifier = "/ACCOUNT/" + accountId;
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
                               .is(scopeIdentifier)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                              .and(RoleAssignmentDBOKeys.roleIdentifier)
                               .in(NGConstants.ACCOUNT_BASIC_ROLE, NGConstants.ACCOUNT_VIEWER_ROLE)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .and(RoleAssignmentDBOKeys.principalType)
                               .is(USER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed)
+                              .and(RoleAssignmentDBOKeys.managed)
                               .is(true);
 
       long count = roleAssignmentRepository.deleteMulti(criteria);
@@ -185,17 +186,17 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   private void deleteOrganizationScopeRoleAssignments(String accountId) {
     try {
       Pattern startsWithScope = Pattern.compile("^".concat("/ACCOUNT/" + accountId));
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
                               .regex(startsWithScope)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                              .and(RoleAssignmentDBOKeys.roleIdentifier)
                               .is(ORGANIZATION_VIEWER_ROLE)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .and(RoleAssignmentDBOKeys.principalType)
                               .is(USER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ORGANIZATION.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed)
+                              .and(RoleAssignmentDBOKeys.managed)
                               .is(true);
 
       long count = roleAssignmentRepository.deleteMulti(criteria);
@@ -210,17 +211,17 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   private void deleteProjectScopeRoleAssignments(String accountId) {
     try {
       Pattern startsWithScope = Pattern.compile("^".concat("/ACCOUNT/" + accountId));
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
                               .regex(startsWithScope)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                              .and(RoleAssignmentDBOKeys.roleIdentifier)
                               .is(PROJECT_VIEWER_ROLE)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .and(RoleAssignmentDBOKeys.principalType)
                               .is(USER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.PROJECT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed)
+                              .and(RoleAssignmentDBOKeys.managed)
                               .is(true);
 
       long count = roleAssignmentRepository.deleteMulti(criteria);
@@ -246,19 +247,19 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       scopeIdentifiers.add(scopeIdentifier);
     }
     try {
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
                               .is(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .and(RoleAssignmentDBOKeys.principalType)
                               .is(USER_GROUP)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+                              .and(RoleAssignmentDBOKeys.scopeIdentifier)
                               .in(scopeIdentifiers)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+                              .and(RoleAssignmentDBOKeys.roleIdentifier)
                               .in(NGConstants.ACCOUNT_VIEWER_ROLE)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
+                              .and(RoleAssignmentDBOKeys.principalScopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName());
 
       Pageable pageable = Pageable.unpaged();

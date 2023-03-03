@@ -9,8 +9,8 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
+import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -26,7 +26,6 @@ import io.harness.serializer.JsonUtils;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
-import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class MultiDeploymentSpawnerUtils {
@@ -79,8 +78,8 @@ public class MultiDeploymentSpawnerUtils {
   Map<String, String> getMapFromEnvironmentYaml(EnvironmentYamlV2 environmentYamlV2,
       InfraStructureDefinitionYaml infraStructureDefinitionYaml, Scope envGroupScope) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
-    matrixMetadataMap.put(
-        ENVIRONMENT_REF, getEnvironmentRef(environmentYamlV2.getEnvironmentRef().getValue(), envGroupScope));
+    matrixMetadataMap.put(ENVIRONMENT_REF,
+        EnvironmentStepsUtils.getEnvironmentRef(environmentYamlV2.getEnvironmentRef().getValue(), envGroupScope));
     if (!ParameterField.isBlank(environmentYamlV2.getEnvironmentInputs())
         && EmptyPredicate.isNotEmpty(environmentYamlV2.getEnvironmentInputs().getValue())) {
       matrixMetadataMap.put(ENVIRONMENT_INPUTS, JsonUtils.asJson(environmentYamlV2.getEnvironmentInputs().getValue()));
@@ -98,20 +97,6 @@ public class MultiDeploymentSpawnerUtils {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }
     return matrixMetadataMap;
-  }
-
-  private static String getEnvironmentRef(String environmentRef, Scope envGroupScope) {
-    // project level env groups not modified
-    if (envGroupScope == null || Scope.PROJECT.equals(envGroupScope) || Scope.UNKNOWN.equals(envGroupScope)) {
-      return environmentRef;
-    }
-
-    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit == null || envRefSplit.length == 1) {
-      return envGroupScope.getYamlRepresentation() + "." + environmentRef;
-    } else {
-      return environmentRef;
-    }
   }
 
   public void addServiceOverridesToMap(Map<String, String> environmentsMap, Map<String, Object> serviceOverrideInputs) {

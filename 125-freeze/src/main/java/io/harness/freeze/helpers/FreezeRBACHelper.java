@@ -10,7 +10,6 @@ package io.harness.freeze.helpers;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -69,50 +68,39 @@ public class FreezeRBACHelper {
 
   public boolean checkIfUserHasFreezeOverrideAccessWithPrincipal(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
-      Principal principal = getPrincipalInfoFromSecurityContext();
-      PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);
-      return checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, projectId, orgId,
-          accessControlClient,
-          io.harness.accesscontrol.acl.api.Principal.of(
-              convertToAccessControlPrincipalType(principalType), principal.getName()));
-    }
-    return false;
+    Principal principal = getPrincipalInfoFromSecurityContext();
+    PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);
+    return checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, projectId, orgId,
+        accessControlClient,
+        io.harness.accesscontrol.acl.api.Principal.of(
+            convertToAccessControlPrincipalType(principalType), principal.getName()));
   }
 
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
-      Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
-      boolean overrideAccess = accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), resource,
-          PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
-      if (overrideAccess) {
-        log.info("User had deployment freezeOverride Access");
-      }
-      return overrideAccess;
+    Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
+    boolean overrideAccess = accessControlClient.hasAccess(
+        ResourceScope.of(accountId, orgId, projectId), resource, PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
+    if (overrideAccess) {
+      log.info("User had deployment freezeOverride Access");
     }
-    return false;
+    return overrideAccess;
   }
 
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient,
       io.harness.accesscontrol.acl.api.Principal principal) {
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_DEPLOYMENT_FREEZE_OVERRIDE)) {
-      if (principal == null) {
-        return false;
-      }
-      Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
-      boolean overrideAccess =
-          accessControlClient.hasAccess(io.harness.accesscontrol.acl.api.Principal.of(
-                                            principal.getPrincipalType(), principal.getPrincipalIdentifier()),
-              ResourceScope.of(accountId, orgId, projectId), resource,
-              PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
-      if (overrideAccess) {
-        log.info("User had deployment freezeOverride Access");
-      }
-      return overrideAccess;
+    if (principal == null) {
+      return false;
     }
-    return false;
+    Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
+    boolean overrideAccess = accessControlClient.hasAccess(
+        io.harness.accesscontrol.acl.api.Principal.of(principal.getPrincipalType(), principal.getPrincipalIdentifier()),
+        ResourceScope.of(accountId, orgId, projectId), resource, PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
+    if (overrideAccess) {
+      log.info("User had deployment freezeOverride Access");
+    }
+    return overrideAccess;
   }
 
   public Optional<Pair<String, String>> getResourceTypeAndPermission(FreezeEntityType type) {

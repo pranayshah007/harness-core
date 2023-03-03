@@ -51,6 +51,5 @@ public abstract class DelegateArtifactTaskHandler<T extends ArtifactSourceDelega
   public ArtifactTaskExecutionResponse getArtifactPaths(T attributesRequest) {
     throw new InvalidRequestException("Operation not supported");
   }
-
   public abstract void decryptRequestDTOs(T dto);
 }
