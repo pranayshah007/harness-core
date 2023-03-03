@@ -231,9 +231,11 @@ public class EcrArtifactResource {
         region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
       }
       if (isEmpty(ecrConnectorIdentifier)) {
-        ecrConnectorIdentifier = ecrArtifactConfig.getConnectorRef().getValue();
+        ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
+    ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
     region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
