@@ -344,8 +344,30 @@ public class HelmClientImpl implements HelmClient {
                          .replace("${NAMESPACE}", namespace)
                          .replace("${OVERRIDE_VALUES}", keyValueOverrides);
 
+    Map<HelmSubCommandType, String> currentValueMap = helmCommandData.getValueMap();
+    Map<HelmSubCommandType, String> valueMap = new HashMap<>();
+    if (currentValueMap != null) {
+      valueMap = currentValueMap;
+    }
+
+    if (((HelmVersion.V380.equals(helmCommandData.getHelmVersion())
+            || HelmVersion.V3.equals(helmCommandData.getHelmVersion())))) {
+      String validate = "--validate --is-upgrade";
+      if (currentValueMap != null) {
+        String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
+        if (currentValueForTemplate != null) {
+          validate = validate + currentValueForTemplate;
+        }
+      }
+      valueMap.put(HelmSubCommandType.TEMPLATE, validate);
+    } else {
+      if (currentValueMap == null) {
+        valueMap = currentValueMap;
+      }
+    }
+
     command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
-        helmCommandData.isHelmCmdFlagsNull(), helmCommandData.getValueMap(), helmCommandData.getHelmVersion());
+        helmCommandData.isHelmCmdFlagsNull(), valueMap, helmCommandData.getHelmVersion());
     logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
     command = applyKubeConfigToCommand(command, kubeConfigLocation);
     String errorMessagePrefix = "Failed to render helm chart. ";

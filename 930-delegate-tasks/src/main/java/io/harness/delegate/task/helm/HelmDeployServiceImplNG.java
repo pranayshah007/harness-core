@@ -65,7 +65,6 @@ import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
-import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig.HelmChartManifestDelegateConfigBuilder;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -85,7 +84,6 @@ import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmConstants;
-import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -126,7 +124,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -212,71 +209,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       skipApplyDefaultValuesYaml(commandRequest);
 
-      // call listReleases method
-      HelmListReleaseResponseNG helmListReleaseResponseNG = listReleases(commandRequest);
-
-      log.info(helmListReleaseResponseNG.getOutput());
-
-      // if list release failed due to unknown exception:
-      if (helmListReleaseResponseNG.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
-        throw new HelmNGException(prevVersion,
-            new HelmClientRuntimeException(
-                new HelmClientException(helmListReleaseResponseNG.getOutput(), USER, HelmCliCommandType.LIST_RELEASE)),
-            false);
-      }
-
-      boolean checkNewHelmInstall = checkNewHelmInstall(helmListReleaseResponseNG);
-
-      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())
-          || HelmVersion.V3.equals(commandRequest.getHelmVersion())) {
-        Map<HelmSubCommandType, String> valueMap = new HashMap<>();
-        String validate;
-        if (checkNewHelmInstall) {
-          validate = "--validate ";
-        } else {
-          validate = "--validate --is-upgrade";
-        }
-
-        HelmChartManifestDelegateConfigBuilder updatedHelmChartManifestDelegateConfigBuilder =
-            HelmChartManifestDelegateConfig.builder();
-
-        HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
-            (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
-        if (helmChartManifestDelegateConfig != null) {
-          if (helmChartManifestDelegateConfig.getHelmCommandFlag() != null) {
-            Map<HelmSubCommandType, String> currentValueMap =
-                helmChartManifestDelegateConfig.getHelmCommandFlag().getValueMap();
-            if (currentValueMap != null) {
-              valueMap = currentValueMap;
-              String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
-              if (currentValueForTemplate != null) {
-                validate = validate + currentValueForTemplate;
-              }
-            }
-          }
-          updatedHelmChartManifestDelegateConfigBuilder.storeDelegateConfig(
-              helmChartManifestDelegateConfig.getStoreDelegateConfig());
-          updatedHelmChartManifestDelegateConfigBuilder.chartName(helmChartManifestDelegateConfig.getChartName());
-          updatedHelmChartManifestDelegateConfigBuilder.helmVersion(helmChartManifestDelegateConfig.getHelmVersion());
-          updatedHelmChartManifestDelegateConfigBuilder.chartVersion(helmChartManifestDelegateConfig.getChartVersion());
-          updatedHelmChartManifestDelegateConfigBuilder.checkIncorrectChartVersion(
-              helmChartManifestDelegateConfig.isCheckIncorrectChartVersion());
-          updatedHelmChartManifestDelegateConfigBuilder.useCache(helmChartManifestDelegateConfig.isUseCache());
-          updatedHelmChartManifestDelegateConfigBuilder.useRepoFlags(helmChartManifestDelegateConfig.isUseRepoFlags());
-          updatedHelmChartManifestDelegateConfigBuilder.deleteRepoCacheDir(
-              helmChartManifestDelegateConfig.isDeleteRepoCacheDir());
-          updatedHelmChartManifestDelegateConfigBuilder.skipApplyHelmDefaultValues(
-              helmChartManifestDelegateConfig.isSkipApplyHelmDefaultValues());
-          updatedHelmChartManifestDelegateConfigBuilder.subChartName(helmChartManifestDelegateConfig.getSubChartName());
-        }
-
-        valueMap.put(HelmSubCommandType.TEMPLATE, validate);
-        HelmCommandFlag updatedHelmCommandFlag = HelmCommandFlag.builder().valueMap(valueMap).build();
-        HelmChartManifestDelegateConfig updatedHelmChartManifestDelegateConfig =
-            updatedHelmChartManifestDelegateConfigBuilder.helmCommandFlag(updatedHelmCommandFlag).build();
-        commandRequest.setManifestDelegateConfig(updatedHelmChartManifestDelegateConfig);
-      }
-
       resources = printHelmChartKubernetesResources(commandRequest);
 
       List<KubernetesResourceId> workloads = readResources(resources);
@@ -291,9 +223,22 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, InstallUpgrade);
 
+      // call listReleases method
+      HelmListReleaseResponseNG helmListReleaseResponseNG = listReleases(commandRequest);
+
+      log.info(helmListReleaseResponseNG.getOutput());
+
+      // if list release failed due to unknown exception:
+      if (helmListReleaseResponseNG.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
+        throw new HelmNGException(prevVersion,
+            new HelmClientRuntimeException(
+                new HelmClientException(helmListReleaseResponseNG.getOutput(), USER, HelmCliCommandType.LIST_RELEASE)),
+            false);
+      }
+
       // list releases cmd passed
       isInstallUpgrade = true;
-      if (checkNewHelmInstall) {
+      if (checkNewHelmInstall(helmListReleaseResponseNG)) {
         // install
         logCallback.saveExecutionLog("No previous deployment found for release. Installing chart");
         commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(

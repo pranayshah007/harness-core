@@ -200,39 +200,13 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
       skipApplyDefaultValuesYaml(commandRequest);
 
-      boolean checkNewHelmInstall = checkNewHelmInstall(commandRequest);
-
-      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())
-          || HelmVersion.V3.equals(commandRequest.getHelmVersion())) {
-        Map<HelmSubCommandType, String> valueMap = new HashMap<>();
-        String validate;
-        if (checkNewHelmInstall) {
-          validate = "--validate ";
-        } else {
-          validate = "--validate --is-upgrade";
-        }
-        if (commandRequest.getHelmCommandFlag() != null) {
-          Map<HelmSubCommandType, String> currentValueMap = commandRequest.getHelmCommandFlag().getValueMap();
-          if (currentValueMap != null) {
-            valueMap = currentValueMap;
-            String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
-            if (currentValueForTemplate != null) {
-              validate = validate + currentValueForTemplate;
-            }
-          }
-        }
-        valueMap.put(HelmSubCommandType.TEMPLATE, validate);
-        HelmCommandFlag updatedHelmCommandFlag = HelmCommandFlag.builder().valueMap(valueMap).build();
-        commandRequest.setHelmCommandFlag(updatedHelmCommandFlag);
-      }
-
       printHelmChartKubernetesResources(commandRequest);
 
       executionLogCallback =
           markDoneAndStartNew(commandRequest, executionLogCallback, HelmDummyCommandUnitConstants.InstallUpgrade);
       helmChartInfo = getHelmChartDetails(commandRequest);
 
-      if (checkNewHelmInstall) {
+      if (checkNewHelmInstall(commandRequest)) {
         executionLogCallback.saveExecutionLog("No previous deployment found for release. Installing chart");
         commandResponse = HelmCommandResponseMapper.getHelmInstallCommandResponse(
             helmClient.install(HelmCommandDataMapper.getHelmCommandData(commandRequest), false));
@@ -249,12 +223,21 @@ public class HelmDeployServiceImpl implements HelmDeployService {
               commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
       List<KubernetesResourceId> k8sWorkloads = Collections.emptyList();
       if (useK8sSteadyStateCheck) {
-        if (checkNewHelmInstall
-            && (HelmVersion.V380.equals(commandRequest.getHelmVersion())
-                || HelmVersion.V3.equals(commandRequest.getHelmVersion()))) {
-          String validateAndIsUpgrade = "--validate --is-upgrade";
-          Map<HelmSubCommandType, String> valueMap = commandRequest.getHelmCommandFlag().getValueMap();
-          valueMap.put(HelmSubCommandType.TEMPLATE, validateAndIsUpgrade);
+        if (HelmVersion.V380.equals(commandRequest.getHelmVersion())
+            || HelmVersion.V3.equals(commandRequest.getHelmVersion())) {
+          Map<HelmSubCommandType, String> valueMap = new HashMap<>();
+          String validate = "--validate --is-upgrade";
+          if (commandRequest.getHelmCommandFlag() != null) {
+            Map<HelmSubCommandType, String> currentValueMap = commandRequest.getHelmCommandFlag().getValueMap();
+            if (currentValueMap != null) {
+              valueMap = currentValueMap;
+              String currentValueForTemplate = currentValueMap.get(HelmSubCommandType.TEMPLATE);
+              if (currentValueForTemplate != null) {
+                validate = validate + currentValueForTemplate;
+              }
+            }
+          }
+          valueMap.put(HelmSubCommandType.TEMPLATE, validate);
           HelmCommandFlag updatedHelmCommandFlag = HelmCommandFlag.builder().valueMap(valueMap).build();
           commandRequest.setHelmCommandFlag(updatedHelmCommandFlag);
         }
