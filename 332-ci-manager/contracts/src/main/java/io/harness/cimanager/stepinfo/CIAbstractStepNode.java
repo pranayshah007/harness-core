@@ -7,6 +7,7 @@
 
 package io.harness.beans.steps;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -41,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 public abstract class CIAbstractStepNode extends AbstractStepNode {
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
