@@ -94,7 +94,8 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
 
       TasCanaryAppSetupStepInfo tasCanaryAppSetupStepInfo =
           TasCanaryAppSetupStepInfo.infoBuilder()
-              .resizeStrategy(state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST)
+              .resizeStrategy(ParameterField.createValueField(
+                  state.getResizeStrategy() == DOWNSIZE_OLD_FIRST ? DOWNSCALE_OLD_FIRST : UPSCALE_NEW_FIRST))
               .instanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
               .additionalRoutes(
                   ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList())))

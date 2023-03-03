@@ -14955,10 +14955,19 @@
               ]
             },
             "resizeStrategy": {
-              "type": "string",
-              "enum": [
-                "UpScaleNewFirst",
-                "DownScaleOldFirst"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "UpScaleNewFirst",
+                    "DownScaleOldFirst"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
               ]
             },
             "tasInstanceCountType": {
