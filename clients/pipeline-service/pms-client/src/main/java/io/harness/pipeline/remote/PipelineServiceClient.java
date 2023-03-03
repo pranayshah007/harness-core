@@ -76,6 +76,17 @@ public interface PipelineServiceClient {
       @Query(GitSyncApiConstants.REPO_IDENTIFIER_KEY) String yamlGitConfigId,
       @Query(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo);
 
+  @GET(PIPELINE_ENDPOINT + "{pipelineIdentifier}")
+  Call<ResponseDTO<PMSPipelineResponseDTO>> getPipelineByIdentifier(
+      @Path(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(GitSyncApiConstants.BRANCH_KEY) String branch,
+      @Query(GitSyncApiConstants.REPO_IDENTIFIER_KEY) String yamlGitConfigId,
+      @Query(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Header("Load-From-Cache") @DefaultValue("false") String loadFromCache);
+
   @GET(PIPELINE_ENDPOINT + "resolved-templates-pipeline-yaml/{pipelineIdentifier}")
   Call<ResponseDTO<TemplatesResolvedPipelineResponseDTO>> getResolvedTemplatesPipelineByIdentifier(
       @Path(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,

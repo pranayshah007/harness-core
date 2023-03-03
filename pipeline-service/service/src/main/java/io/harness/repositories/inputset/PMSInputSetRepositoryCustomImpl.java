@@ -381,7 +381,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   public void deleteAllInputSetsWhenPipelineDeleted(Query query) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Input Set; attempt: {}", "[Failed]: Failed deleting Input Set; attempt: {}");
-    Failsafe.with(retryPolicy).get(() -> mongoTemplate.findAllAndRemove(query, InputSetEntity.class));
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, InputSetEntity.class));
   }
 
   @Override

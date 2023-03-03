@@ -22,31 +22,7 @@ copy_ng_manager_jars
 
 copy_ng_dashboard_jars
 
-
-mkdir -p dist/delegate-service-app ;
-cd dist/delegate-service-app
-
-cp ${HOME}/.bazel-dirs/bin/270-delegate-service-app/module_deploy.jar delegate-service-capsule.jar
-cp ../../270-delegate-service-app/keystore.jks .
-cp ../../270-delegate-service-app/key.pem .
-cp ../../270-delegate-service-app/cert.pem .
-cp ../../270-delegate-service-app/delegate-service-config.yml .
-cp ../../270-delegate-service-app/src/main/resources/redisson-jcache.yaml .
-
-cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-cie-jdk ./Dockerfile-cie-jdk
-cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -r ../../dockerization/delegate-service-app/scripts/ .
-
-cp ../../protocol.info .
-echo ${JDK} > jdk.txt
-echo ${VERSION} > version.txt
-if [ ! -z ${PURPOSE} ]
-then
-    echo ${PURPOSE} > purpose.txt
-fi
-
-cd ../..
+copy_dms_jars
 
 mkdir -p dist/cv-nextgen ;
 cd dist/cv-nextgen

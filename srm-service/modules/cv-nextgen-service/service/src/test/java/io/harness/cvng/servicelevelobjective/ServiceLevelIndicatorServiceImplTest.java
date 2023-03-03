@@ -47,7 +47,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
@@ -401,7 +400,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .type(ServiceLevelIndicatorType.LATENCY)
         .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(ServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
@@ -420,7 +418,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .type(ServiceLevelIndicatorType.LATENCY)
         .spec(ServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()

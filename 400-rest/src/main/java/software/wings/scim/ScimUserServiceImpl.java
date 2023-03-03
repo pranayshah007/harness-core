@@ -42,8 +42,10 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   private static final String FORMATTED_NAME = "formatted";
   private static final String VALUE = "value";
   private static final String PRIMARY = "primary";
+  private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -156,13 +159,15 @@ public class ScimUserServiceImpl implements ScimUserService {
     userResource.setUserName(user.getEmail());
     userResource.setDisplayName(user.getName());
 
+    boolean isJpmcFfOn = featureFlagService.isEnabled(PL_JPMC_SCIM_REQUIREMENTS, accountId);
+
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
         final String givenNm = user.getGivenName() == null ? user.getName() : user.getGivenName();
         final String familyNm = user.getFamilyName() == null ? user.getName() : user.getFamilyName();
         put(FAMILY_NAME, familyNm);
         put(GIVEN_NAME, givenNm);
-        if (featureFlagService.isEnabled(PL_JPMC_SCIM_REQUIREMENTS, accountId)) {
+        if (isJpmcFfOn) {
           if (user.getGivenName() == null && user.getFamilyName() == null) {
             put(FORMATTED_NAME, user.getName());
           } else {
@@ -178,6 +183,19 @@ public class ScimUserServiceImpl implements ScimUserService {
         put(PRIMARY, true);
       }
     };
+
+    if (isJpmcFfOn) {
+      Map<String, String> metaMap = new HashMap<String, String>() {
+        {
+          put("resourceType", "User");
+          put("created", simpleDateFormat.format(new Date(user.getCreatedAt())));
+          put("lastModified", simpleDateFormat.format(new Date(user.getLastUpdatedAt())));
+          put("version", "");
+          put("location", "");
+        }
+      };
+      userResource.setMeta(JsonUtils.asTree(metaMap));
+    }
 
     userResource.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
     userResource.setName(JsonUtils.asTree(nameMap));

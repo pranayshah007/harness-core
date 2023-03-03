@@ -18,6 +18,7 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -35,6 +36,7 @@ public class AwsLambdaDeployRequest implements AwsLambdaCommandRequest, NestedAn
   @NonFinal @Expression(ALLOW_SECRETS) AwsLambdaArtifactConfig awsLambdaArtifactConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String functionName;
   @NonFinal @Expression(ALLOW_SECRETS) String qualifier;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> awsLambdaAliasManifestContent;
 
   @Override
   public AwsLambdaCommandTypeNG getAwsLambdaCommandType() {

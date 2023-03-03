@@ -72,7 +72,7 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
@@ -116,7 +116,7 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }

@@ -19,8 +19,10 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.exception.ExceptionUtils;
@@ -43,6 +45,7 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -76,6 +79,15 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
 
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(awsLambdaCommandResponse.getUnitProgressData().getUnitProgresses());
+      InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
+          awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
+      List<ServerInstanceInfo> serverInstanceInfoList = awsLambdaHelper.getServerInstanceInfo(
+          awsLambdaCommandResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      stepResponseBuilder.stepOutcome(stepOutcome);
       stepResponse = awsLambdaHelper.generateStepResponse(awsLambdaCommandResponse, stepResponseBuilder, ambiance);
     } catch (Exception e) {
       log.error("Error while processing aws lambda function rollback response: {}", ExceptionUtils.getMessage(e), e);
@@ -119,8 +131,11 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .awsLambdaInfraConfig(awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance))
             .awsLambdaArtifactConfig(awsLambdaPrepareRollbackOutcome.getAwsLambdaArtifactConfig())
-            .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackOutcome.getAwsLambdaDeployManifestContent())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .awsLambdaFunctionAliasDefinitionContents(
+                awsLambdaPrepareRollbackOutcome.getAwsLambdaFunctionAliasDefinitionContents())
+            .functionCode(awsLambdaPrepareRollbackOutcome.getFunctionCode())
+            .functionConfiguration(awsLambdaPrepareRollbackOutcome.getFunctionConfiguration())
             .build();
 
     return awsLambdaHelper

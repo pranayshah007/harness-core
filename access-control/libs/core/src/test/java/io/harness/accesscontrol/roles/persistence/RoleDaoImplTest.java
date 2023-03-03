@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
@@ -294,7 +293,7 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
     managedFilters.forEach(managedFilter -> {
       when(roleRepository.deleteByIdentifierAndScopeIdentifierAndManaged(
                role.getIdentifier(), role.getScopeIdentifier(), managedFilter))
-          .thenReturn(singletonList(roleDBO));
+          .thenReturn(Optional.of(roleDBO));
       Optional<Role> roleOptional = roleDao.delete(role.getIdentifier(), role.getScopeIdentifier(), managedFilter);
       assertTrue(roleOptional.isPresent());
       assertEquals(role, roleOptional.get());
@@ -310,7 +309,7 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
     List<Boolean> managedFilters = Lists.newArrayList(false, true);
     managedFilters.forEach(managedFilter -> {
       when(roleRepository.deleteByIdentifierAndScopeIdentifierAndManaged(identifier, scopeIdentifier, managedFilter))
-          .thenReturn(emptyList());
+          .thenReturn(Optional.empty());
       Optional<Role> roleOptional = roleDao.delete(identifier, scopeIdentifier, managedFilter);
       assertFalse(roleOptional.isPresent());
     });

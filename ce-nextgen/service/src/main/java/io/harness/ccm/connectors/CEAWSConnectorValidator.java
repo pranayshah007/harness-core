@@ -395,7 +395,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       log.info("Latest .csv.gz file in {}/{} latestFileName: {} latestFileLastmodifiedTime: {}", s3BucketName,
           s3PathPrefix, latestFileName, latestFileLastmodifiedTime);
       long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-      if (!latestFileName.isEmpty() && latestFileLastmodifiedTime.getTime() < now) {
+      if (latestFileLastmodifiedTime.getTime() < now) {
         String reason = String.format("No CUR file is found in last 24 hrs at %s/%s. ", s3BucketName, s3PathPrefix);
         errorList.add(
             ErrorDetail.builder()

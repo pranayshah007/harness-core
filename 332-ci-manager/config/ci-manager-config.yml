@@ -166,8 +166,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.5
-  liteEngineImage: harness/ci-lite-engine:1.16.5
+  addonImage: harness/ci-addon:1.16.6
+  liteEngineImage: harness/ci-lite-engine:1.16.6
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -214,7 +214,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.7-rootless
+      image: harness/drone-git:1.2.8-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -278,7 +278,7 @@ ciExecutionServiceConfig:
         - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.7
+      gitClone: harness/drone-git:1.2.8
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
@@ -289,6 +289,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.7
       cacheS3: plugins/cache:1.4.7
+      sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

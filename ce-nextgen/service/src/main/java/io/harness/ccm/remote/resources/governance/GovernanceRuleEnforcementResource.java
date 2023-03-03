@@ -340,10 +340,12 @@ public class GovernanceRuleEnforcementResource {
         log.error("Error in toggle'ing job from dkron", e);
       }
     }
+    ruleEnforcementService.update(ruleEnforcement);
+    RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(
-          new RuleEnforcementUpdateEvent(accountId, ruleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
-      return ruleEnforcementService.update(ruleEnforcement);
+          new RuleEnforcementUpdateEvent(accountId, updatedRuleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
+      return updatedRuleEnforcement;
     })));
   }
   // TO DO add filter support

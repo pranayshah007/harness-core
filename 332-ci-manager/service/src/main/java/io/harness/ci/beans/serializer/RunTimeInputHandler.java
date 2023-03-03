@@ -28,6 +28,7 @@ import io.harness.beans.yaml.extended.TISplitStrategy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
@@ -35,6 +36,8 @@ import io.harness.yaml.extended.ci.codebase.Build;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -354,6 +357,48 @@ public class RunTimeInputHandler {
       m.remove(UUID_FIELD_NAME);
     }
     return m;
+  }
+
+  public static Map<String, String> resolveMapParameterV2(String fieldName, String stepType, String stepIdentifier,
+      ParameterField<Map<String, ParameterField<String>>> fields, boolean isMandatory) {
+    if (ParameterField.isNull(fields) || fields.isExpression()) {
+      if (isMandatory) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      }
+      return Collections.emptyMap();
+    }
+
+    Map<String, ParameterField<String>> resolvedFields = fields.getValue();
+
+    if (EmptyPredicate.isEmpty(resolvedFields)) {
+      if (isMandatory) {
+        throw new CIStageExecutionUserException(
+            format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
+                stepIdentifier));
+      }
+      return Collections.emptyMap();
+    }
+
+    Map<String, String> finalMap = new HashMap<>();
+    for (Map.Entry<String, ParameterField<String>> entry : resolvedFields.entrySet()) {
+      if (EmptyPredicate.isEmpty(entry.getKey()) || ParameterField.isBlank(entry.getValue())) {
+        continue;
+      }
+      if (entry.getValue().isExpression()) {
+        log.warn(format("Field [%s] has invalid value", entry.getKey()));
+      }
+
+      // only disallow null values, empty values can be allowed
+      if (entry.getValue().getValue() != null) {
+        finalMap.put(entry.getKey(), entry.getValue().getValue());
+      }
+    }
+    if (isNotEmpty(finalMap)) {
+      finalMap.remove(UUID_FIELD_NAME);
+    }
+    return finalMap;
   }
 
   public static Map<String, JsonNode> resolveJsonNodeMapParameter(String fieldName, String stepType,

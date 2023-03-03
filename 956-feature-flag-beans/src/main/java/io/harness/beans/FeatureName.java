@@ -56,7 +56,6 @@ public enum FeatureName {
   AZURE_WEBAPP,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
-  CDNG_ENABLED,
   CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
   CE_SAMPLE_DATA_GENERATION("Used to show sample data in CCM CG", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
@@ -472,6 +471,7 @@ public enum FeatureName {
   SRM_ET_CRITICAL_EVENTS("Enable code errors critical events configuration", HarnessTeam.CV),
   SRM_ET_JIRA_INTEGRATION("Enable code errors JIRA integration", HarnessTeam.CV),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
+  CET_ENABLED("Enable Continuous Error Tracking module in UI", HarnessTeam.CET),
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
   CI_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CI UI", HarnessTeam.CI),
@@ -547,6 +547,7 @@ public enum FeatureName {
   CDS_ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
   CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP),
   SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV),
+  SRM_ENABLE_REQUEST_SLO("Control Request Based SLO feature on UI", HarnessTeam.CV),
   CD_NG_DYNAMIC_PROVISIONING_ENV_V2(
       "Enable dynamic provisioning support in v2 environment. Epic: CDS-39606", HarnessTeam.CDC),
   CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY(
@@ -633,7 +634,16 @@ public enum FeatureName {
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
       HarnessTeam.PIPELINE),
   CD_TERRAFORM_CLOUD_CLI_NG("FF to enable terraform cloud backend cli in NG", HarnessTeam.CDP),
-  PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE);
+  PIE_ASYNC_VALIDATION("Validate Pipelines asynchronously on Get calls in Pipeline Studio", HarnessTeam.PIPELINE),
+  CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_GAMEDAY_ENABLED("Enable gameday feature in CHAOS", HarnessTeam.CHAOS),
+  CDS_JIRA_PAT_AUTH("PAT auth support for jira connector", HarnessTeam.CDC),
+  PL_MIGRATE_SECRETS_FROM_LOCAL_TO_GCP_KMS_PROD3(
+      "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
+  CDS_MANIFEST_LAST_STEP("Show last step of the manifest directly when user is editing manifest", HarnessTeam.CDP),
+  CHAOS_SRM_EVENT(
+      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS);
 
   @Deprecated
   FeatureName() {

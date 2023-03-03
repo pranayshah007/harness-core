@@ -187,6 +187,6 @@ public class JiraTaskNGHandler {
   }
 
   private JiraClient getJiraClient(JiraTaskNGParameters parameters) {
-    return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(parameters));
+    return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(parameters.getJiraConnectorDTO()));
   }
 }

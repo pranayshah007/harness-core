@@ -18,11 +18,8 @@ import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
-import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.request.ListFilesInCommitRequest;
 import io.harness.beans.response.GitFileBatchResponse;
-import io.harness.beans.response.GitFileContentBatchResponse;
-import io.harness.beans.response.GitFileContentResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -128,8 +125,4 @@ public interface ScmClient {
   GitFileResponse getFile(ScmConnector scmConnector, GitFileRequest gitFileContentRequest);
 
   GitFileBatchResponse getBatchFile(GitFileBatchRequest gitFileBatchRequest);
-
-  GitFileContentResponse getFileContent(GitFileRequestV2 gitFileRequestV2);
-
-  GitFileContentBatchResponse getBatchFileContent(GitFileBatchRequest gitFileBatchRequest);
 }

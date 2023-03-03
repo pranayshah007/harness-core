@@ -43,7 +43,6 @@ import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
 import io.harness.beans.request.GitFileRequestV2;
 import io.harness.beans.response.GitFileBatchResponse;
-import io.harness.beans.response.GitFileContentResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
@@ -422,27 +421,6 @@ public class ScmServiceClientImplTest extends CategoryTest {
     assertThat(gitFileResponse.getCommitId()).isEqualTo("");
     assertThat(gitFileResponse.getBranch()).isEqualTo("");
     assertThat(gitFileResponse.getStatusCode()).isEqualTo(Constants.SCM_INTERNAL_SERVER_ERROR_CODE);
-  }
-
-  @Test
-  @Owner(developers = MOHIT_GARG)
-  @Category(UnitTests.class)
-  public void testGetFileContent() {
-    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
-    when(scmGitProviderMapper.mapToSCMGitProvider(any(), eq(true))).thenReturn(getGitProviderDefault());
-    doReturn(FileContent.newBuilder().setStatus(200).setContent(fileContent).build())
-        .when(scmServiceClient)
-        .getFileContent(any(), any(), any());
-    when(scmBlockingStub.getLatestCommitOnFile(any()))
-        .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setError("").setCommitId(commitId).build());
-    GitFileContentResponse gitFileContentResponse = scmServiceClient.getFileContent(
-        GitFileRequestV2.builder().branch(branch).filepath(filepath).build(), scmBlockingStub);
-    assertThat(gitFileContentResponse.getContent()).isEqualTo(fileContent);
-    verify(scmBlockingStub, times(0)).getLatestCommitOnFile(any());
-
-    scmServiceClient.getFile(
-        scmConnector, GitFileRequest.builder().branch(branch).filepath(filepath).build(), scmBlockingStub);
-    verify(scmBlockingStub, times(1)).getLatestCommitOnFile(any());
   }
 
   @Test

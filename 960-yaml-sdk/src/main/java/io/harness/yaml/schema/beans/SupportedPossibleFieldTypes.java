@@ -31,6 +31,8 @@ public enum SupportedPossibleFieldTypes {
    As which is behaviour of UI when user switch from visual to yaml without giving inputs
    */
   runtimeEmptyStringAllowed,
+  // allow only <+input>
+  onlyRuntimeInputAllowed,
 
   /**
    * Only used for setting default.

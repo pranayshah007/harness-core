@@ -259,6 +259,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
+import io.harness.plancreator.strategy.v1.StrategyConfigPlanCreatorV1;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -403,6 +404,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CommandStepPlanCreator());
     planCreators.add(new SpecNodePlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new StrategyConfigPlanCreatorV1());
     planCreators.add(new AzureWebAppRollbackStepPlanCreator());
     planCreators.add(new AzureWebAppSlotDeploymentStepPlanCreator());
     planCreators.add(new AzureWebAppSlotSwapSlotPlanCreator());

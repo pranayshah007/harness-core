@@ -155,6 +155,8 @@ public class NextGenConfiguration extends Configuration {
   private static final String GCP_PACKAGE = "io.harness.ng.core.gcp.resources";
   private static final String MODULEVERSION_RESOURCE_PACKAGE = "io.harness.ng.moduleversion.resource";
   private static final String TERRAFORM_CLOUD_RESOURCE_PACKAGE = "io.harness.ng.core.terraformcloud.resources";
+  private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -300,7 +302,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.MODULEVERSION_RESOURCE_PACKAGE, NextGenConfiguration.REFRESH_RESOURCE_PACKAGE,
                 DEPLOYMENT_STAGE_PACKAGE, NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE,
                 NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
-                NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE))
+                NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
+                NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

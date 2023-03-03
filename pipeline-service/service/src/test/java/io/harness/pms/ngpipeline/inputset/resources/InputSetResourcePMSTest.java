@@ -516,18 +516,18 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
-            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null);
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, null, null, false);
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .mergeInputSetIntoPipeline(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml, null, null, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineYaml, null, null, null, false);
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMS = MergeInputSetRequestDTOPMS.builder()
                                                            .withMergedPipelineYaml(true)
                                                            .inputSetReferences(Collections.emptyList())
                                                            .build();
     ResponseDTO<MergeInputSetResponseDTOPMS> mergeInputSetResponseDTOPMSResponseDTO =
-        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMS);
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMS, "false");
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getCompletePipelineYaml(), pipelineYaml);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
@@ -535,20 +535,21 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(pipelineYaml)
         .when(validateAndMergeHelper)
         .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
-            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null, false);
 
     MergeInputSetRequestDTOPMS inputSetRequestDTOPMSWithStages = MergeInputSetRequestDTOPMS.builder()
                                                                      .withMergedPipelineYaml(false)
                                                                      .inputSetReferences(Collections.emptyList())
                                                                      .stageIdentifiers(stages)
                                                                      .build();
-    mergeInputSetResponseDTOPMSResponseDTO = inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID,
-        ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMSWithStages);
+    mergeInputSetResponseDTOPMSResponseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTOPMSWithStages, "false");
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getStatus(), Status.SUCCESS);
     assertEquals(mergeInputSetResponseDTOPMSResponseDTO.getData().getPipelineYaml(), pipelineYaml);
     verify(validateAndMergeHelper, times(1))
         .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
-            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null);
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, Collections.emptyList(), null, null, stages, null, false);
   }
 
   @Test
@@ -561,13 +562,14 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doThrow(new InvalidInputSetException("merging error", dummyErrorResponse))
         .when(validateAndMergeHelper)
         .getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(ACCOUNT_ID, ORG_IDENTIFIER,
-            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null);
+            PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null, null, false);
     MergeInputSetRequestDTOPMS inputSetRequestDTO = MergeInputSetRequestDTOPMS.builder()
                                                         .withMergedPipelineYaml(true)
                                                         .inputSetReferences(inputSetReferences)
                                                         .build();
-    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTO);
+    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTO, "false");
     MergeInputSetResponseDTOPMS data = responseDTO.getData();
     assertThat(data.isErrorResponse()).isTrue();
     assertThat(data.getInputSetErrorWrapper()).isEqualTo(dummyErrorResponse);

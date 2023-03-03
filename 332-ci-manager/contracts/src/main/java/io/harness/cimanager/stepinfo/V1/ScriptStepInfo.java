@@ -71,8 +71,8 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   }
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> envs;
-  public ParameterField<Map<String, String>> getEnvs() {
+  ParameterField<Map<String, ParameterField<String>>> envs;
+  public ParameterField<Map<String, ParameterField<String>>> getEnvs() {
     if (ParameterField.isNull(this.envs)) {
       this.envs.setValue(Collections.emptyMap());
     }
@@ -100,9 +100,9 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @ConstructorProperties({"uuid", "run", "outputs", "envs", "reports", "image", "resources", "privileged", "user",
       "shell", "pull", "volumes"})
   public ScriptStepInfo(String uuid, ParameterField<String> run, ParameterField<List<String>> outputs,
-      ParameterField<Map<String, String>> envs, ParameterField<List<Report>> reports, ParameterField<String> image,
-      ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell,
-      PullPolicy pull, ParameterField<List<Volume>> volumes) {
+      ParameterField<Map<String, ParameterField<String>>> envs, ParameterField<List<Report>> reports,
+      ParameterField<String> image, ContainerResource resources, ParameterField<Boolean> privileged,
+      ParameterField<Integer> user, Shell shell, PullPolicy pull, ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.envs = envs;

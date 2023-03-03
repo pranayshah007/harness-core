@@ -47,6 +47,7 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.store.Store;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.security.DelegateTokenAuthenticator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
@@ -193,6 +194,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(CacheConfig.builder().cacheBackend(NOOP).build());
     modules.add(cacheModule);
+    modules.add(new DelegateServiceCacheModule(configuration.getDelegateServiceRedisConfig(), false));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

@@ -17,7 +17,6 @@ import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -28,7 +27,7 @@ import software.wings.sm.states.pcf.PcfPluginState;
 
 import java.util.Map;
 
-public class PcfPluginStepMapperImpl extends StepMapper {
+public class PcfPluginStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;

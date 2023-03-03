@@ -838,7 +838,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       return AutoUpgrade.ON;
     } else if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - delegateCreationTime)
         <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
-      return AutoUpgrade.SYNCHRONIZING;
+      return AutoUpgrade.DETECTING;
     }
     return AutoUpgrade.OFF;
   }

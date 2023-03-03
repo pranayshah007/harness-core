@@ -71,8 +71,8 @@ public class DelegateStackdriverLogServiceTest {
 
     try (MockedStatic<StackdriverLoggerFactory> logger = Mockito.mockStatic(StackdriverLoggerFactory.class)) {
       logger.when(() -> StackdriverLoggerFactory.get(tokenBean)).thenReturn(logging);
-      var response =
-          delegateStackdriverLogService.fetchPageLogs(List.of(), mock(PageRequest.class), 1675807200L, 1675808100L);
+      var response = delegateStackdriverLogService.fetchPageLogs(
+          "any_id", List.of(), mock(PageRequest.class), 1675807200L, 1675808100L);
       List<DelegateStackDriverLog> content = response.getContent();
       assertThat(content.size()).isEqualTo(2);
 
