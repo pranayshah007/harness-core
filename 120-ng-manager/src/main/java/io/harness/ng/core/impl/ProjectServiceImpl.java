@@ -407,6 +407,8 @@ public class ProjectServiceImpl implements ProjectService {
       project.setAccountIdentifier(accountIdentifier);
       project.setOrgIdentifier(orgIdentifier);
       project.setId(existingProject.getId());
+      project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
+                                                                  : existingProject.getCreatedAt());
       if (project.getVersion() == null) {
         project.setVersion(existingProject.getVersion());
       }
