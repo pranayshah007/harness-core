@@ -37,6 +37,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
   public void onNodeStart(NodeStartInfo nodeStartInfo) {
     if (nodeStartInfo == null || nodeStartInfo.getNodeExecution() == null
         || nodeStartInfo.getNodeExecution().getGroup() == null) {
+      log.info(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
       return;
     }
 
