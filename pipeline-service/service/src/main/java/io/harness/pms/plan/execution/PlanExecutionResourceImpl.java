@@ -96,11 +96,11 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public ResponseDTO<PlanExecutionResponseDto> runPostProdRollback(String accountId, String orgIdentifier,
+  public ResponseDTO<PlanExecutionResponseDto> runPostExecutionRollback(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String planExecutionId) {
     // pipelineIdentifier needed for access control check
     PlanExecution planExecution =
-        pipelineExecutor.startPostProdRollback(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+        pipelineExecutor.startPostExecutionRollback(accountId, orgIdentifier, projectIdentifier, planExecutionId);
     return ResponseDTO.newResponse(PlanExecutionResponseDto.builder().planExecution(planExecution).build());
   }
 

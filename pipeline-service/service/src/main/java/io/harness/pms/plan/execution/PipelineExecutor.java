@@ -153,7 +153,7 @@ public class PipelineExecutor {
   }
 
   // todo: check if we need to take notifyOnlyUser and isDebug
-  public PlanExecution startPostProdRollback(
+  public PlanExecution startPostExecutionRollback(
       String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);

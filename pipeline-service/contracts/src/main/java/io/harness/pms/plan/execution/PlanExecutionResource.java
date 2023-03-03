@@ -124,18 +124,19 @@ public interface PlanExecutionResource {
           }) String inputSetPipelineYaml);
 
   @POST
-  @Path("postProdRollback/{planExecutionId}")
-  @ApiOperation(value = "Rollback a previous Execution", nickname = "postProdRollback")
+  @Path("postExecutionRollback/{planExecutionId}")
+  @ApiOperation(value = "Rollback a previous Execution", nickname = "postExecutionRollback")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  @Operation(operationId = "postProdRollback", description = "Rollback a previous Execution",
+  @Operation(operationId = "postExecutionRollback", description = "Rollback a previous Execution",
       summary = "Rollback a previous Execution",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns pipeline execution details")
       })
+  @Hidden
   ResponseDTO<PlanExecutionResponseDto>
-  runPostProdRollback(
+  runPostExecutionRollback(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
           description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(

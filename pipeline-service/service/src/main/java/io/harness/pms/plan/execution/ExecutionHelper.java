@@ -302,7 +302,8 @@ public class ExecutionHelper {
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug);
+            .setIsDebug(isDebug)
+            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
