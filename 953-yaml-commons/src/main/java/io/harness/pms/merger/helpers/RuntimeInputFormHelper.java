@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
@@ -218,7 +219,12 @@ public class RuntimeInputFormHelper {
     });
 
     // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    // TODO: we are updating the json node, due to race condition ConcurrentModificationException is possible here. To
+    // minimize the race condition, adding NotEmpty condition on templateMap. Find permanent way to solve this issue
+    if (isNotEmpty(templateMap)) {
+      JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
+      return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    }
+    return null;
   }
 }
