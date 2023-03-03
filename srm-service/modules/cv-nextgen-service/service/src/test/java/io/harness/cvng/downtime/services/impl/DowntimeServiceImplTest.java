@@ -8,6 +8,7 @@
 package io.harness.cvng.downtime.services.impl;
 
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
+import static io.harness.rule.TestUserProvider.testUserProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -119,6 +121,7 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
     recurringDowntimeDTO = builderFactory.getRecurringDowntimeDTO();
     oneTimeDurationBasedDowntimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
     oneTimeEndTimeBasedDowntimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
+    testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").email("user1@harness.io").build());
   }
 
   @Test
@@ -882,6 +885,8 @@ public class DowntimeServiceImplTest extends CvNextGenTestBase {
 
     assertThat(downtimeListViewPageResponse.getContent().get(0).getName())
         .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getName());
+    assertThat(downtimeListViewPageResponse.getContent().get(0).getLastModified().getLastModifiedBy())
+        .isEqualTo(testUserProvider.activeUser().getEmail());
     assertThat(downtimeListViewPageResponse.getContent().get(0).getIdentifier())
         .isEqualTo(oneTimeEndTimeBasedDowntimeDTO.getIdentifier());
     assertThat(downtimeListViewPageResponse.getContent().get(0).getCategory())

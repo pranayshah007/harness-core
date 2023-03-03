@@ -156,7 +156,6 @@ import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
@@ -410,7 +409,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
-        return new NoopUserProvider();
+        return new UserPrincipalUserProvider();
       }
     });
     modules.add(new ProviderModule() {
