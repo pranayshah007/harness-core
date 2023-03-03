@@ -15,7 +15,6 @@ java_library(
         "//125-cd-nextgen/modules/azure/core/src/main/java/io/harness/cdng/azure/webapp/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/beans/common:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/configfile/steps:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/environment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/services:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",

@@ -23,8 +23,8 @@ import static java.util.function.Predicate.not;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
-import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
+import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
