@@ -99,14 +99,17 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
       int seqIndex = msg.lastIndexOf("[TOKEN]");
       if (seqIndex != -1) {
         msg = msg.substring(3, seqIndex);
+        log.info("[DEF]: Getting TOKEN message {}", msg);
       } else {
         msg = msg.substring(3);
+        log.info("[DEF]: WHAT IS THIS?? {}", msg);
       }
+      log.info("[DEF]: Delegate event filter log message is {}", msg);
 
       if (!delegateId.equals(msg)) {
         return abort(message);
       }
-      return continueWith(message);
+      //return continueWith(message);
     }
 
     if (message instanceof PerpetualTaskBroadcastEvent) {
