@@ -306,7 +306,7 @@ public class AwsApiHelperService {
 
       } while (result.isTruncated());
 
-      sortAscending(objectSummaryListFinal);
+      sortDescending(objectSummaryListFinal);
 
       List<BuildDetails> pageBuildDetails =
           getObjectSummariesNG(pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region);
