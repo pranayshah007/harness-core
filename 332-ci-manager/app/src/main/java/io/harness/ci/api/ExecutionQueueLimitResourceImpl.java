@@ -16,10 +16,9 @@ import io.harness.repositories.ExecutionQueueLimitRepository;
 import com.google.inject.Inject;
 import java.util.Optional;
 
-public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResource {
+public class ExecutionQueueLimitResourceImpl {
   @Inject ExecutionQueueLimitRepository executionQueueLimitRepository;
 
-  @Override
   public ResponseDTO<Boolean> updateExecutionLimits(
       String accountIdentifier, ExecutionQueueLimitDTO executionQueueLimitDTO) {
     Optional<ExecutionQueueLimit> firstByAccountIdentifier =
@@ -36,7 +35,6 @@ public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResou
     return ResponseDTO.newResponse(true);
   }
 
-  @Override
   public ResponseDTO<ExecutionQueueLimitDTO> getExecutionLimits(String accountIdentifier) {
     Optional<ExecutionQueueLimit> firstByAccountIdentifier =
         executionQueueLimitRepository.findFirstByAccountIdentifier(accountIdentifier);

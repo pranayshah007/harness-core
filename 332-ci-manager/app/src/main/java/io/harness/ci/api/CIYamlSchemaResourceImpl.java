@@ -53,7 +53,7 @@ import lombok.AllArgsConstructor;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-public class CIYamlSchemaResourceImpl implements CIYamlSchemaResource, YamlSchemaResource {
+public class CIYamlSchemaResourceImpl {
   CIYamlSchemaService ciYamlSchemaService;
 
   public ResponseDTO<List<PartialSchemaDTO>> getYamlSchema(
@@ -61,7 +61,6 @@ public class CIYamlSchemaResourceImpl implements CIYamlSchemaResource, YamlSchem
     List<PartialSchemaDTO> partialSchemaDTOList = new ArrayList<>();
     partialSchemaDTOList.add(
         ciYamlSchemaService.getStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope));
-
     return ResponseDTO.newResponse(partialSchemaDTOList);
   }
 

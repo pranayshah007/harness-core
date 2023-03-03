@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
-public class CIDashboardOverviewResourceImpl implements CIDashboardOverviewResource {
+public class CIDashboardOverviewResourceImpl {
   private final CIOverviewDashboardService ciOverviewDashboardService;
   private final long HR_IN_MS = 60 * 60 * 1000;
   private final long DAY_IN_MS = 24 * HR_IN_MS;

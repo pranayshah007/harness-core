@@ -20,11 +20,13 @@ import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
 import io.harness.app.beans.entities.DashboardBuildsActiveAndFailedInfo;
 import io.harness.app.beans.entities.DashboardBuildsHealthInfo;
+import io.harness.app.resources.CIDashboardOverviewResourceImpl;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -66,14 +68,13 @@ import javax.ws.rs.QueryParam;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-public interface CIDashboardOverviewResource {
-  String PROJECT_RESOURCE_TYPE = "PROJECT";
-  String VIEW_PROJECT_PERMISSION = "core_project_view";
+public class CIDashboardOverviewResource {
+  @Inject CIDashboardOverviewResourceImpl ciDashboardOverviewResource;
 
   @GET
   @Path("/buildHealth")
   @ApiOperation(value = "Get build health", nickname = "getBuildHealth")
-  @NGAccessControlCheck(resourceType = PROJECT_RESOURCE_TYPE, permission = VIEW_PROJECT_PERMISSION)
+  @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   @Operation(operationId = "getBuildHealth",
       summary = "Gets the Build Health by accountIdentifier, orgIdentifier and projectIdentifier for an interval.",
       responses =
@@ -86,7 +87,10 @@ public interface CIDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval);
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ciDashboardOverviewResource.getBuildHealth(
+        accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval);
+  };
 
   @GET
   @Path("/buildExecution")
@@ -99,14 +103,17 @@ public interface CIDashboardOverviewResource {
         ApiResponse(responseCode = "default", description = "Returns the list of build Execution count per day.")
       })
   @ApiOperation(value = "Get build execution", nickname = "getBuildExecution")
-  @NGAccessControlCheck(resourceType = PROJECT_RESOURCE_TYPE, permission = VIEW_PROJECT_PERMISSION)
+  @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   ResponseDTO<DashboardBuildExecutionInfo>
   getBuildExecution(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval);
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ciDashboardOverviewResource.getBuildExecution(
+        accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval);
+  };
 
   @GET
   @Path("/repositoryBuild")
@@ -119,14 +126,17 @@ public interface CIDashboardOverviewResource {
             description = "Returns the list of build Execution count and health of each repository for an interval.")
       })
   @ApiOperation(value = "Get build getRepositoryBuild", nickname = "getRepositoryBuild")
-  @NGAccessControlCheck(resourceType = PROJECT_RESOURCE_TYPE, permission = VIEW_PROJECT_PERMISSION)
+  @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   ResponseDTO<DashboardBuildRepositoryInfo>
   getRepositoryBuild(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval);
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ciDashboardOverviewResource.getRepositoryBuild(
+        accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval);
+  };
   @GET
   @Path("/getBuilds")
   @Operation(operationId = "getActiveAndFailedBuild",
@@ -138,14 +148,17 @@ public interface CIDashboardOverviewResource {
             description = "Returns the list of build Execution count and health of each repository for an interval.")
       })
   @ApiOperation(value = "Get builds", nickname = "getBuilds")
-  @NGAccessControlCheck(resourceType = PROJECT_RESOURCE_TYPE, permission = VIEW_PROJECT_PERMISSION)
+  @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
   ResponseDTO<DashboardBuildsActiveAndFailedInfo>
   getActiveAndFailedBuild(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @Parameter(description = "Retrieves build status for the specified number of days. The default value is 20 days.")
-      @QueryParam("top") @DefaultValue("20") long days);
+      @QueryParam("top") @DefaultValue("20") long days) {
+    return ciDashboardOverviewResource.getActiveAndFailedBuild(
+        accountIdentifier, orgIdentifier, projectIdentifier, days);
+  };
 
   @GET
   @Path("/usage/ci")
@@ -153,5 +166,7 @@ public interface CIDashboardOverviewResource {
   @NGAccessControlCheck(resourceType = "ACCOUNT", permission = "core_account_view")
   ResponseDTO<CIUsageResult> getCIUsageData(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.TIMESTAMP) long timestamp);
+      @NotNull @QueryParam(NGCommonEntityConstants.TIMESTAMP) long timestamp) {
+    return ciDashboardOverviewResource.getCIUsageData(accountIdentifier, timestamp);
+  };
 }

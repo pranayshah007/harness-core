@@ -24,7 +24,7 @@ import lombok.AllArgsConstructor;
 
 @OwnedBy(CI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class CIExecutionConfigResourceImpl implements CIExecutionConfigResource {
+public class CIExecutionConfigResourceImpl {
   @Inject CIExecutionConfigService configService;
 
   public ResponseDTO<Boolean> updateExecutionConfig(Type infra, String accountIdentifier, List<Operation> operations) {

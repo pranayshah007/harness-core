@@ -16,6 +16,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.account.accesscontrol.ResourceTypes;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.resources.CIExecutionConfigResourceImpl;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.config.Operation;
@@ -25,6 +26,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -75,7 +77,9 @@ import javax.ws.rs.QueryParam;
       @Content(mediaType = "application/json", schema = @Schema(implementation = AccessDeniedErrorDTO.class))
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = AccessDeniedErrorDTO.class))
     })
-public interface CIExecutionConfigResource {
+public class CIExecutionConfigResource {
+  @Inject CIExecutionConfigResourceImpl executionConfigResourceImpl;
+
   @POST
   @Path("/update-config")
   @ApiOperation(value = "Update execution config", nickname = "updateExecutionConfig")
@@ -87,7 +91,9 @@ public interface CIExecutionConfigResource {
   updateExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(required = true,
-          description = "Details of the Update Operations") @NotNull @Valid List<Operation> operations);
+          description = "Details of the Update Operations") @NotNull @Valid List<Operation> operations) {
+    return executionConfigResourceImpl.updateExecutionConfig(infra, accountIdentifier, operations);
+  };
 
   @POST
   @Path("/reset-config")
@@ -99,8 +105,10 @@ public interface CIExecutionConfigResource {
   ResponseDTO<Boolean>
   resetExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @RequestBody(
-          required = true, description = "Details of the Reset Operations") @NotNull @Valid List<Operation> operations);
+      @RequestBody(required = true,
+          description = "Details of the Reset Operations") @NotNull @Valid List<Operation> operations) {
+    return executionConfigResourceImpl.resetExecutionConfig(infra, accountIdentifier, operations);
+  };
 
   @DELETE
   @Path("/")
@@ -110,7 +118,9 @@ public interface CIExecutionConfigResource {
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "True or False") })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   ResponseDTO<Boolean>
-  deleteExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+  deleteExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return executionConfigResourceImpl.deleteExecutionConfig(accountIdentifier);
+  };
 
   @GET
   @Path("/")
@@ -120,7 +130,9 @@ public interface CIExecutionConfigResource {
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "List of deprecated tags for CI builds") })
   ResponseDTO<List<DeprecatedImageInfo>>
-  getExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+  getExecutionConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    executionConfigResourceImpl.getExecutionConfig(accountIdentifier);
+  };
 
   @GET
   @Path("/get-deprecated-config")
@@ -133,7 +145,9 @@ public interface CIExecutionConfigResource {
         ApiResponse(description = "Get Customer's deprecated tags for CI builds")
       })
   ResponseDTO<CIExecutionImages>
-  getDeprecatedConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+  getDeprecatedConfig(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return executionConfigResourceImpl.getDeprecatedConfig(accountIdentifier);
+  };
 
   @GET
   @Path("/get-customer-config")
@@ -149,7 +163,9 @@ public interface CIExecutionConfigResource {
   ResponseDTO<CIExecutionImages>
   getCustomerConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra,
       @NotNull @QueryParam(NGCommonEntityConstants.OVERRIDES_ONLY) @DefaultValue("true") boolean overridesOnly,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return executionConfigResourceImpl.getCustomerConfig(infra, overridesOnly, accountIdentifier);
+  };
 
   @GET
   @Path("/get-default-config")
@@ -163,5 +179,7 @@ public interface CIExecutionConfigResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
   ResponseDTO<CIExecutionImages>
-  getDefaultConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra);
+  getDefaultConfig(@NotNull @QueryParam(NGCommonEntityConstants.INFRA) Type infra) {
+    return executionConfigResourceImpl.getDefaultConfig(infra);
+  };
 }

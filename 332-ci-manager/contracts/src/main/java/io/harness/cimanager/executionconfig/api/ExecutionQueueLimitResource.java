@@ -15,11 +15,13 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.account.accesscontrol.ResourceTypes;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.resources.ExecutionQueueLimitResourceImpl;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -67,7 +69,8 @@ import javax.ws.rs.QueryParam;
       @Content(mediaType = "application/json", schema = @Schema(implementation = AccessDeniedErrorDTO.class))
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = AccessDeniedErrorDTO.class))
     })
-public interface ExecutionQueueLimitResource {
+public class ExecutionQueueLimitResource {
+  @Inject ExecutionQueueLimitResourceImpl executionQueueLimitResource;
   @POST
   @Path("/")
   @ApiOperation(value = "Update execution queue limits", nickname = "updateExecutionQueueLimits")
@@ -78,7 +81,9 @@ public interface ExecutionQueueLimitResource {
   ResponseDTO<Boolean>
   updateExecutionLimits(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @RequestBody(required = true, description = "Update execution queue limits DTO") @NotNull
-      @Valid ExecutionQueueLimitDTO executionQueueLimitDTO);
+      @Valid ExecutionQueueLimitDTO executionQueueLimitDTO) {
+    return executionQueueLimitResource.updateExecutionLimits(accountIdentifier, executionQueueLimitDTO);
+  };
 
   @GET
   @Path("/")
@@ -88,5 +93,7 @@ public interface ExecutionQueueLimitResource {
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Execution Queue Limits") })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   ResponseDTO<ExecutionQueueLimitDTO>
-  getExecutionLimits(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
+  getExecutionLimits(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return executionQueueLimitResource.getExecutionLimits(accountIdentifier);
+  };
 }
