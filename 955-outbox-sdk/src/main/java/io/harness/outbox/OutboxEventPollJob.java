@@ -66,10 +66,13 @@ public class OutboxEventPollJob implements Runnable {
       }
     } catch (Exception exception) {
       log.error("Unexpected error occurred during the execution of OutboxPollJob", exception);
+    }catch(Throwable e){
+      log.error("[InsideThrowable]:Unexpected error occurred during the execution of OutboxPollJob and OutboxPollJobThread died" ,e);
     }
   }
 
   private void pollAndHandleOutboxEvents() {
+    log.info("Acquiring lock in pollAndHandleOutboxEvents " + Thread.currentThread().getName());
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(outboxLockId, Duration.ofMinutes(2))) {
       if (lock == null) {
         log.warn("Could not acquire lock for outbox poll job");
@@ -105,6 +108,7 @@ public class OutboxEventPollJob implements Runnable {
         }
       }
     }
+    log.info("Releasing lock in pollAndHandleOutboxEvents " + Thread.currentThread().getName());
   }
 
   private boolean handle(OutboxEvent outboxEvent) {
