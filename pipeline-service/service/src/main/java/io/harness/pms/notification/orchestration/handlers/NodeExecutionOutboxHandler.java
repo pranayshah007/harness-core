@@ -46,10 +46,10 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
             sendStageExecutionEventForAudit(nodeStartInfo);
             break;
           default:
-            log.info(String.format("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup));
+            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
         }
       } catch (Exception ex) {
-        log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
+        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
       }
     }
   }
