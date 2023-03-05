@@ -15,6 +15,8 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -28,6 +30,6 @@ public class AwsLambdaStepPassThroughData implements PassThroughData {
   String errorMsg;
   UnitProgressData unitProgressData;
   InfrastructureOutcome infrastructureOutcome;
-  String manifestContent;
-  ManifestOutcome manifestsOutcome;
+  Map<String, List<String>> manifestFileContentsMap;
+  List<ManifestOutcome> manifestsOutcomes;
 }

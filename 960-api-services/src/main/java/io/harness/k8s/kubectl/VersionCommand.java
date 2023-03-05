@@ -8,17 +8,25 @@
 package io.harness.k8s.kubectl;
 
 public class VersionCommand extends AbstractExecutable {
+  private boolean jsonVersion;
   public VersionCommand(Kubectl client) {
     this.client = client;
   }
 
   Kubectl client;
 
+  public VersionCommand jsonVersion() {
+    this.jsonVersion = true;
+    return this;
+  }
+
   @Override
   public String command() {
     StringBuilder command = new StringBuilder();
     command.append(client.command()).append("version");
-
+    if (jsonVersion) {
+      command.append(" --output=json");
+    }
     return command.toString();
   }
 }

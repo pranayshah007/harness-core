@@ -9,7 +9,6 @@ package io.harness.delegate.exception;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.DataException;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -17,8 +16,8 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @EqualsAndHashCode(callSuper = false)
-public class AwsLambdaException extends DataException {
-  public AwsLambdaException(Throwable cause) {
-    super(cause);
+public class AwsLambdaException extends Exception {
+  public AwsLambdaException(String message) {
+    super(message);
   }
 }

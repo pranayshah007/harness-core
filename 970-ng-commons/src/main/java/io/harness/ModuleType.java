@@ -7,6 +7,10 @@
 
 package io.harness;
 
+import static io.harness.ModuleType.ModuleLifeCycleStage.ONBOARDED;
+import static io.harness.ModuleType.ModuleLifeCycleStage.ONBOARDING_IN_PROGRESS;
+import static io.harness.ModuleType.ModuleVisibility.INTERNAL;
+import static io.harness.ModuleType.ModuleVisibility.PUBLIC;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,51 +21,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(PL)
-// When adding new module the internal and ignore fields should be set to true unless all the services deploys these
-// changes.
+// When adding new module lifecycleStage field should be set to ONBOARDING_IN_PROGRESS unless all the services deploys
+// these changes.
 public enum ModuleType {
-  @JsonProperty("CD") CD("Continuous Deployment"),
-  @JsonProperty("CI") CI("Continuous Integration"),
-  @JsonProperty("CV") @Deprecated CV("Continuous Verification"),
-  @JsonProperty("CF") CF("Continuous Features"),
-  @JsonProperty("CE") CE("Continuous Efficiency"),
-  @JsonProperty("STO") STO("Security Testing Orchestration"),
-  @JsonProperty("CHAOS") CHAOS("Chaos Engineering"),
-  @JsonProperty("SRM") SRM("Service Reliability Management"),
+  // Public modules which have been onboarded
+  @JsonProperty("CD") CD("Continuous Deployment", PUBLIC, ONBOARDED),
+  @JsonProperty("CI") CI("Continuous Integration", PUBLIC, ONBOARDED),
+  @JsonProperty("CV") @Deprecated CV("Continuous Verification", PUBLIC, ONBOARDED),
+  @JsonProperty("CF") CF("Continuous Features", PUBLIC, ONBOARDED),
+  @JsonProperty("CE") CE("Continuous Efficiency", PUBLIC, ONBOARDED),
+  @JsonProperty("STO") STO("Security Testing Orchestration", PUBLIC, ONBOARDED),
+  @JsonProperty("CHAOS") CHAOS("Chaos Engineering", PUBLIC, ONBOARDED),
+  @JsonProperty("SRM") SRM("Service Reliability Management", PUBLIC, ONBOARDED),
+  @JsonProperty("IACM") IACM("Infrastructure as Code Manager", PUBLIC, ONBOARDED),
 
-  // TODO: Remove internal flag once licensing is added.
-  @JsonProperty("CODE") CODE("Code", true, false),
+  // Internal modules which have been onboarded
+  @JsonProperty("CODE") CODE("Code", INTERNAL, ONBOARDED), // TODO: Remove internal flag once licensing is added.
+  @JsonProperty("CORE") CORE("Core", INTERNAL, ONBOARDED),
+  @JsonProperty("PMS") PMS("Pipelines", INTERNAL, ONBOARDED),
+  @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
 
-  // Internal
-  @JsonProperty("CORE") CORE("Core", true, false),
-  @JsonProperty("PMS") PMS("Pipelines", true, false),
-  @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
-  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
-  @JsonProperty("IACM")
-  IACM("Infrastructure as Code Manager", false,
-      false); // TODO: This will be enabled once pipeline has consumed the code and can be safely enabled
-
+  // Internal modules which have not been onboarded yet
+  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS);
   String displayName;
-  boolean internal;
+  ModuleVisibility visibility;
 
   // Until workaround is implemented Ignore flag should be set to True for the first release of a new module
-  boolean ignore;
+  ModuleLifeCycleStage lifecycleStage;
 
-  ModuleType(String displayName) {
-    this(displayName, false, false);
-  }
+  enum ModuleVisibility { INTERNAL, PUBLIC }
+  enum ModuleLifeCycleStage { ONBOARDING_IN_PROGRESS, ONBOARDED }
 
-  ModuleType(String displayName, boolean internal, boolean ignore) {
+  ModuleType(String displayName, ModuleVisibility visibility, ModuleLifeCycleStage lifecycleStage) {
     this.displayName = displayName;
-    this.internal = internal;
-    this.ignore = ignore;
+    this.visibility = visibility;
+    this.lifecycleStage = lifecycleStage;
   }
 
   public static List<ModuleType> getModules() {
     List<ModuleType> moduleList = new ArrayList<>();
-    for (ModuleType moduleEnum : ModuleType.values()) {
-      if (!moduleEnum.ignore) {
-        moduleList.add(moduleEnum);
+    for (ModuleType module : ModuleType.values()) {
+      if (ModuleLifeCycleStage.ONBOARDED.equals(module.lifecycleStage)) {
+        moduleList.add(module);
       }
     }
 
@@ -83,6 +84,6 @@ public enum ModuleType {
   }
 
   public boolean isInternal() {
-    return internal;
+    return ModuleVisibility.INTERNAL.equals(visibility);
   }
 }
