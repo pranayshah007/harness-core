@@ -79,4 +79,7 @@ public interface PMSInputSetService {
 
   PMSInputSetListRepoResponse getListOfRepos(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  List<InputSetEntity> updateRepoURLForRemoteInputSets(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 }
