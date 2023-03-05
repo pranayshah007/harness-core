@@ -134,7 +134,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineSettingsService pipelineSettingsService;
   @Inject private final EntitySetupUsageClient entitySetupUsageClient;
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
-  @Inject private final PMSPipelineServiceHelper pipelineServiceHelper;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSInputSetService pmsInputSetService;
 
