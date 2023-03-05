@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
   public static final String PIPELINE = "PIPELINE";
-  public static final String STAGES = "STAGES";
+  public static final String STAGE = "STAGE";
   @Inject private OutboxService outboxService;
 
   @Override
@@ -42,14 +42,14 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
           case PIPELINE:
             sendPipelineExecutionEventForAudit(nodeStartInfo);
             break;
-          case STAGES:
+          case STAGE:
             sendStageExecutionEventForAudit(nodeStartInfo);
             break;
           default:
-            log.info(String.format("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup));
+            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
         }
       } catch (Exception ex) {
-        log.error(String.format("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup), ex);
+        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
       }
     }
   }
@@ -60,7 +60,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
       return true;
     }
 
-    log.error(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
+    log.error("Required fields to send an outBoxEvent are not populated in nodeStartInfo!");
     return false;
   }
 

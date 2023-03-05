@@ -87,6 +87,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .orgIdentifier(stageStartEvent.getOrgIdentifier())
                                                         .projectIdentifier(stageStartEvent.getProjectIdentifier())
                                                         .pipelineIdentifier(stageStartEvent.getPipelineIdentifier())
+                                                        .stageIdentifier(stageStartEvent.getStageIdentifier())
                                                         .planExecutionId(stageStartEvent.getPlanExecutionId())
                                                         .nodeExecutionId(stageStartEvent.getNodeExecutionId())
                                                         .build();
@@ -100,6 +101,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                                         .orgIdentifier(stageEndEvent.getOrgIdentifier())
                                                         .projectIdentifier(stageEndEvent.getProjectIdentifier())
                                                         .pipelineIdentifier(stageEndEvent.getPipelineIdentifier())
+                                                        .stageIdentifier(stageEndEvent.getStageIdentifier())
                                                         .planExecutionId(stageEndEvent.getPlanExecutionId())
                                                         .nodeExecutionId(stageEndEvent.getNodeExecutionId())
                                                         .build();
@@ -141,7 +143,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
             return false;
         }
       } catch (Exception ex) {
-        log.error(String.format("Unexpected error occurred during handling of event", ex));
+        log.error("Unexpected error occurred during handling of event", ex);
         return false;
       }
     }
