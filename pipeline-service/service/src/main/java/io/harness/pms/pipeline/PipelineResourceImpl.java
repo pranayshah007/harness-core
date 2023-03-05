@@ -59,13 +59,11 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.security.dto.UserPrincipal;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
-import io.harness.utils.UserHelperService;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -104,7 +102,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
-  private final UserHelperService userHelperService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -554,9 +551,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @Override
   public ResponseDTO<List<PMSPipelineSummaryResponseDTO>> updateRepoURL(
       String targetAccountIdentifier, String targetOrgIdentifier, String targetProjectIdentifier) {
-    UserPrincipal userPrincipal = userHelperService.getUserPrincipalOrThrow();
-    log.info(String.format("User : %s updating repo url for pipelines for account : %s , org : %s , project : %s",
-        userPrincipal.getName(), targetAccountIdentifier, targetOrgIdentifier, targetProjectIdentifier));
+    log.info(String.format("Updating repo url for pipelines for account : %s , org : %s , project : %s",
+        targetAccountIdentifier, targetOrgIdentifier, targetProjectIdentifier));
     List<PipelineEntity> pipelineEntities = pmsPipelineService.updateRepoURLForRemotePipelines(
         targetAccountIdentifier, targetOrgIdentifier, targetProjectIdentifier);
 
