@@ -22,6 +22,7 @@ import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -142,4 +143,7 @@ public interface PMSPipelineService {
 
   PipelineCRUDResult moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, MoveConfigOperationDTO moveConfigDTO);
+
+  List<PipelineEntity> updateRepoURLForRemotePipelines(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

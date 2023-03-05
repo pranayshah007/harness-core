@@ -290,10 +290,14 @@ public class GitAwareEntityHelper {
 
   public String getRepoUrl(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    return getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier, gitEntityInfo.getRepoName(),
+        gitEntityInfo.getConnectorRef());
+  }
+
+  public String getRepoUrl(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String repoName, String connectorRef) {
     Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-    return scmGitSyncHelper
-        .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
-        .getRepoUrl();
+    return scmGitSyncHelper.getRepoUrl(scope, repoName, connectorRef, Collections.emptyMap()).getRepoUrl();
   }
 
   @VisibleForTesting

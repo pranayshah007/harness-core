@@ -40,6 +40,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -60,6 +61,7 @@ import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.StepCategory;
@@ -79,6 +81,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
+import io.harness.utils.PageUtils;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -86,6 +89,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -129,6 +133,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineSettingsService pipelineSettingsService;
   @Inject private final EntitySetupUsageClient entitySetupUsageClient;
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  @Inject private final PMSPipelineServiceHelper pipelineServiceHelper;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -812,6 +818,32 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, moveConfigDTO, pipeline);
 
     return PipelineCRUDResult.builder().pipelineEntity(movedPipelineEntity).build();
+  }
+
+  @Override
+  public List<PipelineEntity> updateRepoURLForRemotePipelines(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = pipelineServiceHelper.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, null,
+        PipelineFilterPropertiesDto.builder().build(), false, null, null);
+    Pageable pageRequest = PageUtils.getPageRequest(
+        0, 1000, new ArrayList<>(), Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+    Page<PipelineEntity> pipelineEntities =
+        list(criteria, pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, false);
+    List<PipelineEntity> updatedPipelineEntityList = new ArrayList<>();
+
+    for (PipelineEntity pipelineEntity : pipelineEntities) {
+      if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+        Criteria criteriaToUpdate = PMSPipelineServiceHelper.getPipelineEqualityCriteria(
+            accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier(), false, null);
+        Update update = new Update();
+        update.set(PipelineEntityKeys.repoURL,
+            gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier,
+                pipelineEntity.getRepo(), pipelineEntity.getConnectorRef()));
+        updatedPipelineEntityList.add(
+            updatePipelineMetadata(accountIdentifier, orgIdentifier, projectIdentifier, criteriaToUpdate, update));
+      }
+    }
+    return updatedPipelineEntityList;
   }
 
   @VisibleForTesting

@@ -676,4 +676,22 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.UUID) String uuid);
+
+  @POST
+  @Path("update-repo-url")
+  @Hidden
+  @ApiOperation(value = "Update Repo URL for all pipelines in given scope", nickname = "updateRepoUrlForAllPipelines")
+  @Operation(operationId = "updateRepoUrlForAllPipelines",
+      description = "Update Repo URL for all pipelines in given scope",
+      summary = "Update Repo URL for all pipelines in given scope",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return uuid of the started event")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  ResponseDTO<List<PMSPipelineSummaryResponseDTO>>
+  updateRepoURL(@Parameter(description = "") @QueryParam("targetAccountIdentifier") String targetAccountIdentifier,
+      @Parameter(description = "") @QueryParam("targetOrgIdentifier") String targetOrgIdentifier,
+      @Parameter(description = "") @QueryParam("targetProjectIdentifier") String targetProjectIdentifier);
 }
