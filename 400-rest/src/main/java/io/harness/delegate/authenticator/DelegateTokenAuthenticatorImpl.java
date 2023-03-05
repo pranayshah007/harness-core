@@ -20,6 +20,7 @@ import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
@@ -275,6 +276,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       throw new InvalidRequestException("Access denied", USER_ADMIN);
     }
     decryptDelegateToken(encryptedJWT, accountKey);
+    delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY);
   }
 
   private boolean decryptJWTDelegateToken(String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT,

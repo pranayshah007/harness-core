@@ -5,10 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.utils;
+package io.harness.dms.app;
 
 import io.harness.delegate.resources.DummyResource;
-import io.harness.delegate.resources.health.DelegateServiceHealthResource;
+import io.harness.dms.health.DelegateServiceHealthResource;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 
 import com.google.common.collect.ImmutableList;
