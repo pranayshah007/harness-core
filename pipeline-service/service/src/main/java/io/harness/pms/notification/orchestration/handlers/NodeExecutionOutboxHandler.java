@@ -22,6 +22,10 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+/***
+ * This Class constructs NodeExecutionEvents and
+ * sends them to Outbox for audits.
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
