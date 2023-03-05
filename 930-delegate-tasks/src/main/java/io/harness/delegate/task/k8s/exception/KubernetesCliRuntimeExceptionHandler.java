@@ -8,9 +8,11 @@
 package io.harness.delegate.task.k8s.exception;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -32,6 +34,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.zeroturnaround.exec.ProcessResult;
 
 @OwnedBy(CDP)
@@ -154,9 +157,26 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
     if (cliErrorMessage.matches(INVALID_TYPE_VALUE_REGEX)) {
       List<String> extractedValues = extractValuesFromFirstMatch(cliErrorMessage, INVALID_TYPE_ERROR_PATTERN, 1);
       String invalidFieldName = extractedValues.isEmpty() ? "" : extractedValues.get(0);
-      return getExplanationExceptionWithCommand(KubernetesExceptionHints.VALIDATION_FAILED_INVALID_TYPE,
+      String resourcesNotApplied = isEmpty(kubernetesTaskException.getResourcesNotApplied())
+          ? EMPTY
+          : kubernetesTaskException.getResourcesNotApplied();
+      String kubectlVersion = EMPTY;
+      if (isNotEmpty(kubernetesTaskException.getKubectlVersion())) {
+        try {
+          JSONObject jsonObject = new JSONObject(kubernetesTaskException.getKubectlVersion());
+          String clientVersion = (String) ((JSONObject) jsonObject.get("clientVersion")).get("gitVersion");
+          String serverVersion = (String) ((JSONObject) jsonObject.get("serverVersion")).get("gitVersion");
+          kubectlVersion = format("clientVersion: [%s] %nserverVersion: [%s]", clientVersion, serverVersion);
+        } catch (Exception ex) {
+          kubectlVersion = EMPTY;
+        }
+      }
+      return getExplanationExceptionWithCommandAndExtraInformation(
+          KubernetesExceptionHints.VALIDATION_FAILED_INVALID_TYPE,
           format(KubernetesExceptionExplanation.VALIDATION_FAILED_INVALID_TYPE, invalidFieldName),
-          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException),
+          format(KubernetesExceptionExplanation.FAILED_COMMAND_RESOURCES_NOT_APPLIED, resourcesNotApplied),
+          format(KubernetesExceptionExplanation.FAILED_COMMAND_KUBECTL_VERSION, kubectlVersion), consolidatedError);
     }
     if (cliErrorMessage.contains(UNKNOWN_FIELD_MESSAGE)) {
       String unknownFields = String.join("\n", getAllResourceNames(cliErrorMessage, UNKNOWN_FIELD_ERROR_PATTERN, ":"));
@@ -244,6 +264,15 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
     if (EmptyPredicate.isNotEmpty(command)) {
       return NestedExceptionUtils.hintWithExplanationAndCommandException(
           hint, explanation, command, new KubernetesTaskException(errorMessage));
+    }
+    return getExplanationException(hint, explanation, errorMessage);
+  }
+
+  private WingsException getExplanationExceptionWithCommandAndExtraInformation(String hint, String explanation,
+      String command, String resourcesNotApplied, String version, String errorMessage) {
+    if (EmptyPredicate.isNotEmpty(command)) {
+      return NestedExceptionUtils.hintWithExplanationsException(
+          hint, new KubernetesTaskException(errorMessage), explanation, command, resourcesNotApplied, version);
     }
     return getExplanationException(hint, explanation, errorMessage);
   }

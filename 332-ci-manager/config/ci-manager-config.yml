@@ -1,3 +1,4 @@
+
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -166,8 +167,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.5
-  liteEngineImage: harness/ci-lite-engine:1.16.5
+  addonImage: harness/ci-addon:1.16.6
+  liteEngineImage: harness/ci-lite-engine:1.16.6
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -177,6 +178,8 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+    internalAccounts:
+      - "kmpySmUISimoRrJL6NL73w"
   stoStepConfig:
     defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
     defaultEntrypoint:
@@ -289,6 +292,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.7
       cacheS3: plugins/cache:1.4.7
+      sscaOrchestration: harness/ssca-plugin:latest
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

@@ -9,6 +9,7 @@ package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -21,4 +22,5 @@ public class HostedVmConfig {
   boolean splitLinuxAmd64Pool;
   boolean splitLinuxArm64Pool;
   boolean splitWindowsAmd64Pool;
+  List<String> internalAccounts;
 }
