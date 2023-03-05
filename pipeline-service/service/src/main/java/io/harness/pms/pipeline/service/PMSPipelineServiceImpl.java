@@ -56,6 +56,7 @@ import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
+import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
@@ -135,6 +136,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
   @Inject private final PMSPipelineServiceHelper pipelineServiceHelper;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final PMSInputSetService pmsInputSetService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -856,15 +858,21 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     for (PipelineEntity pipelineEntity : pipelineEntities) {
       if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+        log.info("Current Repo URL {} for pipeline identifier : {}", pipelineEntity.getRepoURL(),
+            pipelineEntity.getIdentifier());
         Criteria criteriaToUpdate = PMSPipelineServiceHelper.getPipelineEqualityCriteria(
             accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier(), false, null);
         Update update = new Update();
         update.set(PipelineEntityKeys.repoURL,
             gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier,
                 pipelineEntity.getRepo(), pipelineEntity.getConnectorRef()));
-        updatedPipelineEntityList.add(
-            updatePipelineMetadata(accountIdentifier, orgIdentifier, projectIdentifier, criteriaToUpdate, update));
-        log.info("Updated Repo URL for {}", pipelineEntity);
+        PipelineEntity updatedPipelineEntity =
+            updatePipelineMetadata(accountIdentifier, orgIdentifier, projectIdentifier, criteriaToUpdate, update);
+        updatedPipelineEntityList.add(updatedPipelineEntity);
+        log.info("Updated Repo URL for Pipeline {}", updatedPipelineEntity);
+        log.info("Updating Repo URL for input sets for pipeline identifier : {}", pipelineEntity.getIdentifier());
+        pmsInputSetService.updateRepoURLForRemoteInputSets(
+            accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier());
       }
     }
     return updatedPipelineEntityList;

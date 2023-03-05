@@ -51,6 +51,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
@@ -69,6 +70,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -529,6 +531,33 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
     return PMSInputSetListRepoResponse.builder().repositories(inputSetRepoList).build();
+  }
+
+  @Override
+  public List<InputSetEntity> updateRepoURLForRemoteInputSets(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, InputSetListTypePMS.ALL, null, false);
+    List<InputSetEntity> inputSetEntities = list(criteria);
+    List<InputSetEntity> updatedInputSetList = new ArrayList<>();
+
+    for (InputSetEntity inputSetEntity : inputSetEntities) {
+      if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+        log.info("Current Repo URL {} for input set identifier : {}", inputSetEntity.getRepoURL(),
+            inputSetEntity.getIdentifier());
+        Criteria criteriaToUpdate = PMSInputSetFilterHelper.getCriteriaForFind(accountIdentifier, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, inputSetEntity.getIdentifier(), true);
+        Update update = new Update();
+        update.set(InputSetEntity.InputSetEntityKeys.repoURL,
+            gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier,
+                inputSetEntity.getRepo(), inputSetEntity.getConnectorRef()));
+        InputSetEntity updatedInputSet = inputSetRepository.update(criteriaToUpdate, update);
+        updatedInputSetList.add(updatedInputSet);
+        log.info("Updated Repo URL for Input Set {}", updatedInputSet);
+      }
+    }
+
+    return updatedInputSetList;
   }
 
   @VisibleForTesting
