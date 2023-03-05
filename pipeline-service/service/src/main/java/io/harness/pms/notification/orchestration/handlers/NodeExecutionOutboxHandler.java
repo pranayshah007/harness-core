@@ -22,11 +22,15 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+/***
+ * This Class constructs NodeExecutionEvents and
+ * sends them to Outbox for audits.
+ */
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
   public static final String PIPELINE = "PIPELINE";
-  public static final String STAGES = "STAGES";
+  public static final String STAGE = "STAGE";
   @Inject private OutboxService outboxService;
 
   @Override
@@ -42,7 +46,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
           case PIPELINE:
             sendPipelineExecutionEventForAudit(nodeStartInfo);
             break;
-          case STAGES:
+          case STAGE:
             sendStageExecutionEventForAudit(nodeStartInfo);
             break;
           default:
@@ -57,9 +61,10 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
   private boolean validatePresenceOfNodeGroup(NodeStartInfo nodeStartInfo) {
     if (nodeStartInfo != null && nodeStartInfo.getNodeExecution() != null
         && nodeStartInfo.getNodeExecution().getGroup() != null) {
-      log.error(String.format("Required fields to send an outBoxEvent are not populated in nodeStartInfo!"));
       return true;
     }
+
+    log.error("Required fields to send an outBoxEvent are not populated in nodeStartInfo!");
     return false;
   }
 

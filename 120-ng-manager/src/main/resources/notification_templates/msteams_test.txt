@@ -4,7 +4,7 @@
   "summary": "Deployment Freeze Window ${BLACKOUT_WINDOW_NAME} Activation",
   "sections": [
     {
-      "activityTitle": "A deployment freeze ${BLACKOUT_WINDOW_NAME} has been activated on ${START_TIME}. The freeze will end on ${END_TIME}."
+      "activityTitle": "A deployment freeze ${BLACKOUT_WINDOW_NAME} has been activated on ${START_TIME}. The freeze will end on ${END_TIME}. ${CUSTOMIZED_MESSAGE}"
     }
   ]
 }

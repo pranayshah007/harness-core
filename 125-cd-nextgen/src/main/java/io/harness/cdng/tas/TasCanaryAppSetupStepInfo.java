@@ -7,9 +7,12 @@
 
 package io.harness.cdng.tas;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
@@ -22,6 +25,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -52,11 +56,14 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @NotNull TasResizeStrategyType resizeStrategy;
+  @NotNull
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.RESIZE_STRATEGY_TAS_CLASSPATH)
+  ParameterField<TasResizeStrategyType> resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCountType, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      TasResizeStrategyType resizeStrategy) {
+      ParameterField<TasResizeStrategyType> resizeStrategy) {
     super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }
@@ -77,7 +84,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
         .tasInstanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
-        .resizeStrategy(this.resizeStrategy)
+        .resizeStrategy(this.resizeStrategy.getValue())
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

@@ -95,6 +95,7 @@ public class WinrmConnectorImpl implements BaseConnector {
     return WinRmCredentialsSpecDTO.builder()
         .auth(WinRmAuthDTO.builder().type(authScheme).spec(spec).build())
         .port(connectionAttributes.getPort())
+        .parameters(connectionAttributes.getParameters())
         .build();
   }
 

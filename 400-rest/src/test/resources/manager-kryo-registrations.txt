@@ -512,7 +512,7 @@
 5253:io.harness.shell.ScriptType
 5254:software.wings.beans.ConnectionType
 5255:software.wings.beans.WinRmConnectionAttributes
-5256:software.wings.beans.WinRmCommandParameter
+5256:io.harness.ng.core.dto.secrets.WinRmCommandParameter
 5257:software.wings.api.BarrierStepExecutionSummary
 5258:software.wings.api.BarrierExecutionData
 5259:software.wings.helpers.ext.helm.request.HelmInstallCommandRequest
@@ -3024,6 +3024,7 @@
 9800011:io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig
 9800012:io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
+9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
