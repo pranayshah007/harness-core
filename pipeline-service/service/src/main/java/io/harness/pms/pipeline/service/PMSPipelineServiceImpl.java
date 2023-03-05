@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
@@ -62,7 +63,6 @@ import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.StepCategory;
@@ -82,7 +82,6 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
-import io.harness.utils.PageUtils;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -842,12 +841,17 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public List<PipelineEntity> updateRepoURLForRemotePipelines(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = pipelineServiceHelper.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier, null,
-        PipelineFilterPropertiesDto.builder().build(), false, null, null);
-    Pageable pageRequest = PageUtils.getPageRequest(
-        0, 1000, new ArrayList<>(), Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
-    Page<PipelineEntity> pipelineEntities =
-        list(criteria, pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, false);
+    if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
+      throw new InvalidRequestException(
+          String.format("Invalid inputs : %s , %s , %s", accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+    Criteria criteria = new Criteria();
+    criteria.and(PipelineEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(PipelineEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PipelineEntityKeys.projectIdentifier).is(projectIdentifier);
+    criteria.and(PipelineEntityKeys.deleted).is(false);
+
+    List<PipelineEntity> pipelineEntities = pmsPipelineRepository.findAll(criteria);
     List<PipelineEntity> updatedPipelineEntityList = new ArrayList<>();
 
     for (PipelineEntity pipelineEntity : pipelineEntities) {
@@ -860,6 +864,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                 pipelineEntity.getRepo(), pipelineEntity.getConnectorRef()));
         updatedPipelineEntityList.add(
             updatePipelineMetadata(accountIdentifier, orgIdentifier, projectIdentifier, criteriaToUpdate, update));
+        log.info("Updated Repo URL for {}", pipelineEntity);
       }
     }
     return updatedPipelineEntityList;

@@ -72,7 +72,6 @@ import com.google.inject.Inject;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -549,18 +548,13 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<List<PMSPipelineSummaryResponseDTO>> updateRepoURL(
+  public ResponseDTO<Boolean> updateRepoURL(
       String targetAccountIdentifier, String targetOrgIdentifier, String targetProjectIdentifier) {
     log.info(String.format("Updating repo url for pipelines for account : %s , org : %s , project : %s",
         targetAccountIdentifier, targetOrgIdentifier, targetProjectIdentifier));
-    List<PipelineEntity> pipelineEntities = pmsPipelineService.updateRepoURLForRemotePipelines(
+    pmsPipelineService.updateRepoURLForRemotePipelines(
         targetAccountIdentifier, targetOrgIdentifier, targetProjectIdentifier);
 
-    List<PMSPipelineSummaryResponseDTO> pipelineSummaryList = new ArrayList<>();
-    pipelineEntities.forEach(pipelineEntity -> {
-      pipelineSummaryList.add(PMSPipelineDtoMapper.preparePipelineSummaryForListView(pipelineEntity, null));
-    });
-
-    return ResponseDTO.newResponse(pipelineSummaryList);
+    return ResponseDTO.newResponse(true);
   }
 }

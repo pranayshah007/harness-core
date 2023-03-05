@@ -690,7 +690,7 @@ public interface PipelineResource {
         ApiResponse(responseCode = "default", description = "Return uuid of the started event")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  ResponseDTO<List<PMSPipelineSummaryResponseDTO>>
+  ResponseDTO<Boolean>
   updateRepoURL(@Parameter(description = "") @QueryParam("targetAccountIdentifier") String targetAccountIdentifier,
       @Parameter(description = "") @QueryParam("targetOrgIdentifier") String targetOrgIdentifier,
       @Parameter(description = "") @QueryParam("targetProjectIdentifier") String targetProjectIdentifier);

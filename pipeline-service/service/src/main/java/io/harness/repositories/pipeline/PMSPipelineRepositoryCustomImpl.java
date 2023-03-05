@@ -474,6 +474,12 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
                 moveConfigOperationType));
   }
 
+  @Override
+  public List<PipelineEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, PipelineEntity.class);
+  }
+
   @VisibleForTesting
   PipelineEntity moveConfigOperations(PipelineEntity pipelineToMove, Update pipelineUpdate, Criteria pipelineCriteria,
       Update metadataUpdate, Criteria metadataCriteria, MoveConfigOperationType moveConfigOperationType) {
