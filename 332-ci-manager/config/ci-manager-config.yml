@@ -1,3 +1,4 @@
+
 # Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
@@ -177,6 +178,8 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+    internalAccounts:
+      - "kmpySmUISimoRrJL6NL73w"
   stoStepConfig:
     defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
     defaultEntrypoint:

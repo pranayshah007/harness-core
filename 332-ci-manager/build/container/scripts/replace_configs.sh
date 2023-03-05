@@ -151,6 +151,15 @@ if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitWindowsAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$HOSTED_VM_INTERNAL_ACCOUNTS" ]]; then
+  IFS=',' read -ra INTERNAL_ACCOUNTS <<< "$HOSTED_VM_INTERNAL_ACCOUNTS"
+  INDEX=0
+  for HOSTED_VM_INTERNAL_URL in "${INTERNAL_ACCOUNTS[@]}"; do
+    export HOSTED_VM_INTERNAL_URL; export INDEX; yq -i '.ciExecutionServiceConfig.hostedVmConfig.internalAccounts.[env(INDEX)]=env(HOSTED_VM_INTERNAL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi
