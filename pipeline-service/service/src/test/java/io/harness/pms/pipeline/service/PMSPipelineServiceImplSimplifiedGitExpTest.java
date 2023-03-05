@@ -32,6 +32,7 @@ import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -68,6 +69,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PMSPipelineRepository pipelineRepository;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
+  @Mock private GitAwareEntityHelper gitAwareEntityHelper;
   @Mock private PMSInputSetService pmsInputSetService;
 
   String accountIdentifier = "acc";
@@ -82,7 +84,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     pipelineService =
         new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
             null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, null, pmsInputSetService);
+            pipelineAsyncValidationService, gitAwareEntityHelper, pmsInputSetService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
