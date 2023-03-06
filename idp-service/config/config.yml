@@ -84,3 +84,6 @@ jwtIdentityServiceSecret: ""
 backstageSaToken: ""
 backstageSaCaCrt: ""
 backstageMasterUrl: ""
+
+provisionModuleConfig:
+  triggerPipelineUrl: ""
