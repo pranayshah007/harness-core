@@ -27,17 +27,19 @@ public class StageEndEvent extends NodeExecutionEvent {
   private long startTs;
   private String nodeExecutionId;
   private long endTs;
+  private String status;
 
   @Builder
   public StageEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
-      String nodeExecutionId, Long endTs) {
+      String nodeExecutionId, Long endTs, String status) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
     this.startTs = startTs;
     this.nodeExecutionId = nodeExecutionId;
     this.endTs = endTs;
+    this.status = status;
   }
 
   @JsonIgnore

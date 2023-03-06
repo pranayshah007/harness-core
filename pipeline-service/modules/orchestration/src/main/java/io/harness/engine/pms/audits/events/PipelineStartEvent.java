@@ -24,14 +24,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PipelineStartEvent extends NodeExecutionEvent {
-  private TriggerType triggerType;
-  private TriggeredBy triggeredBy;
+  private String triggerType;
+  private String triggeredBy;
   private long startTs;
 
   @Builder
   public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
-      Long startTs) {
+      String pipelineIdentifier, String planExecutionId, String triggerType, String triggeredBy, Long startTs) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;

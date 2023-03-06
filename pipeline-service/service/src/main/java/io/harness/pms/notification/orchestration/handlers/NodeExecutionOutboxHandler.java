@@ -13,7 +13,9 @@ import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
+import io.harness.engine.pms.audits.events.PipelineEndEvent;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
+import io.harness.engine.pms.audits.events.StageEndEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
 import io.harness.logging.AutoLogContext;
 import io.harness.outbox.api.OutboxService;
@@ -97,11 +99,79 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
             .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
             .startTs(nodeStartInfo.getNodeExecution().getStartTs())
+            .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType().name())
+            .triggeredBy(AmbianceUtils.getEmail(ambiance))
             .build();
 
     outboxService.save(pipelineStartEvent);
   }
 
   @Override
-  public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {}
+  public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
+    /*Status status = nodeUpdateInfo.getStatus();
+    EnumSet<Status> FINAL_STATUSES = StatusUtils.finalStatuses();
+
+    //
+    if (FINAL_STATUSES.contains(status)) {
+      sendEndEventForAudit(nodeUpdateInfo);
+    }*/
+  }
+
+  private void sendEndEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeUpdateInfo.getNodeExecution().getAmbiance())) {
+      String nodeGroup = nodeUpdateInfo.getNodeExecution().getGroup();
+      try {
+        switch (nodeGroup) {
+          case PIPELINE:
+            sendPipelineEndEventForAudit(nodeUpdateInfo);
+            break;
+          case STAGE:
+            sendStageEndEventForAudit(nodeUpdateInfo);
+            break;
+          default:
+            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
+        }
+      } catch (Exception ex) {
+        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
+      }
+    }
+  }
+
+  private void sendStageEndEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
+    Ambiance ambiance = nodeUpdateInfo.getNodeExecution().getAmbiance();
+    StageEndEvent stageEndEvent =
+        StageEndEvent.builder()
+            .accountIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId))
+            .orgIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier))
+            .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
+            .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+            .stageIdentifier(nodeUpdateInfo.getNodeExecution().getIdentifier())
+            .planExecutionId(nodeUpdateInfo.getNodeExecution().getAmbiance().getPlanExecutionId())
+            .nodeExecutionId(nodeUpdateInfo.getNodeExecution().getUuid())
+            .startTs(nodeUpdateInfo.getNodeExecution().getStartTs())
+            .endTs(nodeUpdateInfo.getNodeExecution().getEndTs())
+            .status(nodeUpdateInfo.getStatus().name())
+            .build();
+
+    outboxService.save(stageEndEvent);
+  }
+
+  private void sendPipelineEndEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
+    Ambiance ambiance = nodeUpdateInfo.getNodeExecution().getAmbiance();
+    PipelineEndEvent pipelineEndEvent =
+        PipelineEndEvent.builder()
+            .accountIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId))
+            .orgIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier))
+            .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
+            .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .startTs(nodeUpdateInfo.getNodeExecution().getStartTs())
+            .endTs(nodeUpdateInfo.getNodeExecution().getEndTs())
+            .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType().name())
+            .triggeredBy(AmbianceUtils.getEmail(ambiance))
+            .status(nodeUpdateInfo.getStatus().name())
+            .build();
+
+    outboxService.save(pipelineEndEvent);
+  }
 }

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,6 +21,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PipelineTimeoutEvent extends NodeExecutionEvent {
+  @Builder
+  public PipelineTimeoutEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+  }
+
   @Override
   public String getEventType() {
     return NodeExecutionOutboxEvents.PIPELINE_TIMEOUT;

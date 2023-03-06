@@ -10,10 +10,9 @@ package io.harness.engine.pms.audits.events;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.plan.TriggerType;
-import io.harness.pms.contracts.plan.TriggeredBy;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,8 +21,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PipelineResumeEvent extends NodeExecutionEvent {
-  private TriggerType triggerType;
-  private TriggeredBy triggeredBy;
+  private String triggerType;
+  private String triggeredBy;
+
+  public PipelineResumeEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String planExecutionId, String triggerType, String triggeredBy) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+    this.triggerType = triggerType;
+    this.triggeredBy = triggeredBy;
+  }
+
+  @Builder
 
   @Override
   public String getEventType() {
