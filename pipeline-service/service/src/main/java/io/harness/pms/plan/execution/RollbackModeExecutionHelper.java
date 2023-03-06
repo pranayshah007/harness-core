@@ -104,11 +104,25 @@ public class RollbackModeExecutionHelper {
     return YamlUtils.write(pipelineNode).replace("---\n", "");
   }
 
-  public Plan transformPlanForRollbackMode(Plan plan, String previousExecutionId, List<String> nodeIDsToPreserve) {
-    Map<String, Node> planNodeIDToUpdatedPlanNodes = new HashMap<>();
+  /**
+   * Step1: Initialise a map from planNodeIDs to Plan Nodes
+   * Step2: fetch all node executions of previous execution
+   * Step3: create identity plan nodes for all node executions that are the descendants of any stage, and add them to
+   * the map
+   * Step4: Go through `createdPlan`. If any Plan node has AdvisorObtainmentsForRollbackMode, add them to the
+   * corresponding Identity Plan Node in the initialised map
+   * Step5: From `createdPlan`, pick out all nodes that are not a descendants of some stage, and add them to the
+   * initialised map. Step6: For all IDs in `nodeIDsToPreserve`, remove the Identity Plan Nodes in the map, and put the
+   * Plan nodes from `createdPlan`
+   */
+  public Plan transformPlanForRollbackMode(
+      Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve) {
+    Map<String, Node> planNodeIDToUpdatedPlanNodes = new HashMap<>(); // step 1
 
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesWithStageFQNs(previousExecutionId);
-    // create Identity Node for every Node Execution under Stage nodes
+    // step 2
+    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesForPlanExecutionID(previousExecutionId);
+
+    // step 3
     for (NodeExecution nodeExecution : nodeExecutions) {
       Node planNode = nodeExecution.getNode();
       if (planNode.getStepType().getStepCategory() == StepCategory.STAGE
@@ -120,7 +134,9 @@ public class RollbackModeExecutionHelper {
           nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
       planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), identityPlanNode);
     }
-    for (Node planNode : plan.getPlanNodes()) {
+
+    // step 4
+    for (Node planNode : createdPlan.getPlanNodes()) {
       if (EmptyPredicate.isNotEmpty(planNode.getAdvisorObtainmentsForRollbackMode())) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
         planNodeIDToUpdatedPlanNodes.put(
@@ -128,7 +144,8 @@ public class RollbackModeExecutionHelper {
       }
     }
 
-    for (Node planNode : plan.getPlanNodes()) {
+    // steps 5 and 6
+    for (Node planNode : createdPlan.getPlanNodes()) {
       if (nodeIDsToPreserve.contains(planNode.getUuid())
           || planNode.getStepType().getStepCategory() == StepCategory.STAGE
           || EmptyPredicate.isEmpty(planNode.getStageFqn())
@@ -137,14 +154,14 @@ public class RollbackModeExecutionHelper {
       }
     }
     return Plan.builder()
-        .uuid(plan.getUuid())
+        .uuid(createdPlan.getUuid())
         .planNodes(planNodeIDToUpdatedPlanNodes.values())
-        .startingNodeId(plan.getStartingNodeId())
-        .setupAbstractions(plan.getSetupAbstractions())
-        .graphLayoutInfo(plan.getGraphLayoutInfo())
-        .validUntil(plan.getValidUntil())
-        .valid(plan.isValid())
-        .errorResponse(plan.getErrorResponse())
+        .startingNodeId(createdPlan.getStartingNodeId())
+        .setupAbstractions(createdPlan.getSetupAbstractions())
+        .graphLayoutInfo(createdPlan.getGraphLayoutInfo())
+        .validUntil(createdPlan.getValidUntil())
+        .valid(createdPlan.isValid())
+        .errorResponse(createdPlan.getErrorResponse())
         .build();
   }
 }

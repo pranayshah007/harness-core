@@ -906,11 +906,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchNodesWithStageFQNs(String planExecutionId) {
-    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
-            .is(planExecutionId)
-            .and(NodeExecutionKeys.stageFqn).exists(true);
-
+  public List<NodeExecution> fetchNodesForPlanExecutionID(String planExecutionId) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
     Query query = new Query().addCriteria(criteria);
 
     return mongoTemplate.find(query, NodeExecution.class);
