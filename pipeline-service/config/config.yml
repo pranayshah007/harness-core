@@ -559,3 +559,5 @@ eventsFrameworkSnapshotDebezium:
 
 
 allowDifferentReposForPipelineAndInputSets: ${ALLOW_DIFFERENT_REPOS_FOR_PIPELINE_AND_INPUT_SETS:-false}
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}

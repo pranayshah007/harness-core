@@ -157,6 +157,7 @@ public class PipelineServiceConfiguration extends Configuration {
   // If flag is enabled, only one thread does Notify response cleanup.
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
   @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
+  @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
 
   private String managerServiceSecret;
   private String managerTarget;

@@ -396,7 +396,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     registerCorrelationFilter(environment, injector);
-    registerNotificationTemplates(injector);
+
+    if (!appConfig.isDisableFreezeNotificationTemplate()) {
+      registerNotificationTemplates(injector);
+    }
     registerPmsSdkEvents(appConfig.getPipelineServiceConsumersConfig(), injector);
 
     initializeGrpcServer(injector);
