@@ -1107,7 +1107,7 @@ public class GitClientV2Impl implements GitClientV2 {
   @Override
   public String downloadFiles(DownloadFilesRequest request) throws IOException {
     cleanup(request);
-    validateRequiredArgs(request);
+    validateRequiredArgsForManifest(request);
 
     final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
     synchronized (lockFile) {
@@ -1395,19 +1395,29 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   /**
-   * FilePath cant empty as well as (Branch and commitId both cant be empty)
+   * FilePath for override files can't empty as well as (Branch and commitId both can't be empty)
    *
    * @param request Download request
    * @throws InvalidRequestException for required args with message
    */
   private void validateRequiredArgs(FetchFilesByPathRequest request) {
     if (isEmpty(request.getFilePaths())) {
-      throw new InvalidRequestException("FilePaths can not be empty", USER);
+      throw new InvalidRequestException("Path for values.yaml files is not valid. Check the path is not empty", USER);
     }
+    validateCommonRequiredArgs(request);
+  }
 
-    if (isEmpty(request.getBranch()) && isEmpty(request.getCommitId())) {
-      throw new InvalidRequestException("No refs provided to checkout", USER);
+  /**
+   * FilePath for manifest files can't be empty as well as (Branch and commitId both can't be empty)
+   *
+   * @param request Download request
+   * @throws InvalidRequestException for required args with message
+   */
+  private void validateRequiredArgsForManifest(FetchFilesByPathRequest request) {
+    if (isEmpty(request.getFilePaths())) {
+      throw new InvalidRequestException("Path for manifest files is not valid. Check the path is not empty", USER);
     }
+    validateCommonRequiredArgs(request);
   }
 
   @VisibleForTesting
@@ -1466,5 +1476,11 @@ public class GitClientV2Impl implements GitClientV2 {
     }
 
     return null;
+  }
+
+  private void validateCommonRequiredArgs(FetchFilesByPathRequest request) {
+    if (isEmpty(request.getBranch()) && isEmpty(request.getCommitId())) {
+      throw new InvalidRequestException("No refs provided to checkout", USER);
+    }
   }
 }
