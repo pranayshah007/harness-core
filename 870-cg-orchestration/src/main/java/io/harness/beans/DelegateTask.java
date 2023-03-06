@@ -246,6 +246,10 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
         && Boolean.TRUE.equals(Boolean.valueOf(setupAbstractions.get(NgSetupFields.NG)));
   }
 
+  public boolean isSelectionLogsTrackingEnabled() {
+    return selectionLogsTrackingEnabled || isNGTask(getSetupAbstractions());
+  }
+
   public enum Status {
     QUEUED,
     STARTED,

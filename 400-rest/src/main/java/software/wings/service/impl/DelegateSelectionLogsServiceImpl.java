@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SearchFilter;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
@@ -124,10 +123,6 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   private void dispatchSelectionLogs(String accountId, List<DelegateSelectionLog> logs, RemovalCause removalCause) {
     try {
       dataStoreService.save(DelegateSelectionLog.class, logs, true);
-      // TODO: remove this once reading from datastore is operational
-      if (dataStoreService instanceof GoogleDataStoreServiceImpl) {
-        persistence.save(logs);
-      }
     } catch (Exception exception) {
       log.error("Error while saving into Database ", exception);
     }
@@ -250,20 +245,15 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Override
   public List<DelegateSelectionLogParams> fetchTaskSelectionLogs(String accountId, String taskId) {
     List<DelegateSelectionLog> delegateSelectionLogsList =
-        featureFlagService.isEnabled(FeatureName.DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE, accountId)
-        ? dataStoreService
-              .list(DelegateSelectionLog.class,
-                  aPageRequest()
-                      .withLimit(UNLIMITED)
-                      .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
-                      .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
-                      .build(),
-                  false)
-              .getResponse()
-        : persistence.createQuery(DelegateSelectionLog.class)
-              .filter(DelegateSelectionLogKeys.accountId, accountId)
-              .filter(DelegateSelectionLogKeys.taskId, taskId)
-              .asList();
+        dataStoreService
+            .list(DelegateSelectionLog.class,
+                aPageRequest()
+                    .withLimit(UNLIMITED)
+                    .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
+                    .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
+                    .build(),
+                false)
+            .getResponse();
 
     List<DelegateSelectionLog> logList = delegateSelectionLogsList.stream()
                                              .sorted(Comparator.comparing(DelegateSelectionLog::getEventTimestamp))
@@ -285,31 +275,22 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   @Override
   public Optional<DelegateSelectionLogParams> fetchSelectedDelegateForTask(String accountId, String taskId) {
     DelegateSelectionLog delegateSelectionLog = null;
-    if (featureFlagService.isEnabled(FeatureName.DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE, accountId)) {
-      List<DelegateSelectionLog> logs =
-          dataStoreService
-              .list(DelegateSelectionLog.class,
-                  aPageRequest()
-                      .withLimit(UNLIMITED)
-                      .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
-                      .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
-                      .addFilter(DelegateSelectionLogKeys.conclusion, SearchFilter.Operator.EQ, ASSIGNED)
-                      .build(),
-                  false)
-              .getResponse();
-      if (isNotEmpty(logs)) {
-        delegateSelectionLog = logs.stream()
-                                   .filter(selectionLog -> ASSIGNED.equals(selectionLog.getConclusion()))
-                                   .findFirst()
-                                   .orElse(null);
-      }
-    } else {
-      delegateSelectionLog = persistence.createQuery(DelegateSelectionLog.class)
-                                 .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                 .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                 .filter(DelegateSelectionLogKeys.conclusion, ASSIGNED)
-                                 .get();
+    List<DelegateSelectionLog> logs =
+        dataStoreService
+            .list(DelegateSelectionLog.class,
+                aPageRequest()
+                    .withLimit(UNLIMITED)
+                    .addFilter(DelegateSelectionLogKeys.accountId, SearchFilter.Operator.EQ, accountId)
+                    .addFilter(DelegateSelectionLogKeys.taskId, SearchFilter.Operator.EQ, taskId)
+                    .addFilter(DelegateSelectionLogKeys.conclusion, SearchFilter.Operator.EQ, ASSIGNED)
+                    .build(),
+                false)
+            .getResponse();
+    if (isNotEmpty(logs)) {
+      delegateSelectionLog =
+          logs.stream().filter(selectionLog -> ASSIGNED.equals(selectionLog.getConclusion())).findFirst().orElse(null);
     }
+
     if (delegateSelectionLog == null) {
       log.warn("Delegate selection log is null, returning empty optional for taskId {}", taskId);
       return Optional.empty();
