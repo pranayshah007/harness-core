@@ -186,6 +186,19 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
   }
 
   @Override
+  public ResponseDTO<PageResponse<RoleAssignmentResponseDTO>> getFilteredRoleAssignmentsWithInternalRoles(
+      PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterDTO roleAssignmentFilter) {
+    Optional<RoleAssignmentFilter> filter =
+        buildRoleAssignmentFilterWithPermissionFilter(harnessScopeParams, roleAssignmentFilter);
+    if (!filter.isPresent()) {
+      throw new UnauthorizedException("Current principal is not authorized to the view the role assignments",
+          USER_NOT_AUTHORIZED, WingsException.USER);
+    }
+    PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter.get(), false);
+    return ResponseDTO.newResponse(pageResponse.map(roleAssignmentDTOMapper::toResponseDTO));
+  }
+
+  @Override
   public ResponseDTO<PageResponse<RoleAssignmentAggregate>> getList(
       PageRequest pageRequest, HarnessScopeParams harnessScopeParams, RoleAssignmentFilterV2 roleAssignmentFilterV2) {
     Optional<RoleAssignmentFilterV2> roleAssignmentFilterV2WithPermittedFiltersOptional =

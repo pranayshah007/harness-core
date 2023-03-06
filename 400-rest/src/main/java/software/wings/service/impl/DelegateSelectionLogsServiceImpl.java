@@ -311,6 +311,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
                                  .get();
     }
     if (delegateSelectionLog == null) {
+      log.warn("Delegate selection log is null, returning empty optional for taskId {}", taskId);
       return Optional.empty();
     }
     return Optional.ofNullable(buildSelectionLogParams(delegateSelectionLog));

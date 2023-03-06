@@ -179,10 +179,8 @@ public class AwsLambdaTaskHelper {
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(
         awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion());
 
-    ListAliasesRequest listAliasesRequest = (ListAliasesRequest) ListAliasesRequest.builder()
-                                                .functionName(functionName)
-                                                .functionVersion(functionVersion)
-                                                .build();
+    ListAliasesRequest listAliasesRequest =
+        (ListAliasesRequest) ListAliasesRequest.builder().functionName(functionName).build();
 
     ListAliasesResponse listAliasesResponse = awsLambdaClient.listAliases(awsInternalConfig, listAliasesRequest);
 

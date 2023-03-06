@@ -45,7 +45,7 @@
           "$ref" : "#/definitions/cvng/StepWhenCondition"
         }, {
           "type" : "string",
-          "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "pattern" : "^<\\+input>$",
           "minLength" : 1
         } ]
       }
@@ -247,7 +247,7 @@
                 "$ref" : "#/definitions/cvng/StepWhenCondition"
               }, {
                 "type" : "string",
-                "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                "pattern" : "^<\\+input>$",
                 "minLength" : 1
               } ]
             }

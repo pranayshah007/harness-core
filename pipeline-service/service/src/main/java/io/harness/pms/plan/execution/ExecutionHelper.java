@@ -42,6 +42,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -96,6 +97,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,6 +135,7 @@ public class ExecutionHelper {
   AccessControlClient accessControlClient;
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
+  RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -300,7 +303,8 @@ public class ExecutionHelper {
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug);
+            .setIsDebug(isDebug)
+            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
@@ -477,13 +481,24 @@ public class ExecutionHelper {
                                                       .build();
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
-      if (isRetry) {
-        Plan newPlan = retryExecutionHelper.transformPlan(
-            plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
-        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
-      }
+      ExecutionMode executionMode = executionMetadata.getExecutionMode();
+      plan = transformPlan(
+          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
+  }
+
+  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
+      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+    if (isRetry) {
+      return retryExecutionHelper.transformPlan(
+          plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+    }
+    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
+          plan, previousExecutionId, Collections.emptyList());
+    }
+    return plan;
   }
 
   public PlanExecution startExecutionV2(String accountId, String orgIdentifier, String projectIdentifier,

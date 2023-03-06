@@ -10,8 +10,12 @@ package io.harness.audit.api.impl;
 import static io.harness.audit.Action.LOGIN;
 import static io.harness.audit.Action.LOGIN2FA;
 import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
+import static io.harness.audit.api.impl.AuditServiceImpl.entityChangeEvents;
+import static io.harness.audit.api.impl.AuditServiceImpl.loginEvents;
+import static io.harness.audit.api.impl.AuditServiceImpl.runTimeEvents;
 import static io.harness.audit.beans.PrincipalType.SYSTEM;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
@@ -44,6 +48,7 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
+import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.audit.repositories.AuditRepository;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
@@ -51,6 +56,7 @@ import io.harness.rule.Owner;
 
 import com.mongodb.BasicDBList;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import org.bson.Document;
 import org.junit.Before;
@@ -316,6 +322,88 @@ public class AuditServiceImplTest extends CategoryTest {
 
     Document unsuccessfulLoginDocument = (Document) andList.get(2);
     assertEquals(UNSUCCESSFUL_LOGIN, unsuccessfulLoginDocument.get("action"));
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testStaticFilters_includeLoginEventsAndSystem() {
+    String accountIdentifier = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    AuditFilterPropertiesDTO correctFilter =
+        AuditFilterPropertiesDTO.builder()
+            .scopes(singletonList(ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build()))
+            .staticFilters(List.of(StaticAuditFilterV2.LOGIN_EVENTS, StaticAuditFilterV2.SYSTEM_EVENTS))
+            .build();
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, correctFilter);
+    verify(auditRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    assertNotNull(auditEvents);
+    assertNotNull(criteria);
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList orList = (BasicDBList) docList.get(1).get("$or");
+    assertNotNull(orList);
+    assertEquals(2, orList.size());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateActionIsIncludedInFilters() {
+    Arrays.stream(Action.values()).forEach(action -> {
+      assertEquals(
+          true, entityChangeEvents.contains(action) || loginEvents.contains(action) || runTimeEvents.contains(action));
+    });
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testStaticFilters_includeLoginEvents() {
+    String accountIdentifier = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    AuditFilterPropertiesDTO correctFilter =
+        AuditFilterPropertiesDTO.builder()
+            .scopes(singletonList(ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build()))
+            .staticFilters(List.of(StaticAuditFilterV2.LOGIN_EVENTS))
+            .build();
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, correctFilter);
+    verify(auditRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    assertNotNull(auditEvents);
+    assertNotNull(criteria);
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList orList = (BasicDBList) docList.get(1).get("$or");
+    assertNotNull(orList);
+    assertEquals(1, orList.size());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testStaticFilters_includeSystem() {
+    String accountIdentifier = randomAlphabetic(10);
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(auditRepository.findAll(any(Criteria.class), any(Pageable.class))).thenReturn(getPage(emptyList(), 0));
+    AuditFilterPropertiesDTO correctFilter =
+        AuditFilterPropertiesDTO.builder()
+            .scopes(singletonList(ResourceScopeDTO.builder().accountIdentifier(accountIdentifier).build()))
+            .staticFilters(List.of(StaticAuditFilterV2.SYSTEM_EVENTS))
+            .build();
+    Page<AuditEvent> auditEvents = auditService.list(accountIdentifier, samplePageRequest, correctFilter);
+    verify(auditRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), any(Pageable.class));
+    Criteria criteria = criteriaArgumentCaptor.getValue();
+    assertNotNull(auditEvents);
+    assertNotNull(criteria);
+    List<Document> docList = (List<Document>) criteria.getCriteriaObject().get("$and");
+    BasicDBList orList = (BasicDBList) docList.get(1).get("$or");
+    assertNotNull(orList);
+    assertEquals(1, orList.size());
+
+    Document principalTypeDocument = (Document) orList.get(0);
+    assertEquals(SYSTEM, principalTypeDocument.get(AuditEventKeys.PRINCIPAL_TYPE_KEY));
   }
 
   @Test

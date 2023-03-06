@@ -55,6 +55,7 @@ java_library(
         "@maven//:javax_xml_bind_jaxb_api",
         "//419-delegate-service-app/src/main/java/io/harness/dms/module",
         "//419-delegate-service-app/src/main/java/io/harness/dms/configuration:module",
+        "//419-delegate-service-app/src/main/java/io/harness/dms/health:module",
     ],
 )
 

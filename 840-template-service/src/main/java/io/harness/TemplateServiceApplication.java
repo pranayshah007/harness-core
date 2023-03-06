@@ -41,6 +41,7 @@ import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
@@ -107,6 +108,7 @@ import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -226,6 +228,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerCorrelationFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
 
+    if (BooleanUtils.isTrue(templateServiceConfiguration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+
     if (templateServiceConfiguration.isShouldDeployWithGitSync()) {
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
     }
@@ -316,6 +322,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerApiResponseFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerMigrations(Injector injector) {
