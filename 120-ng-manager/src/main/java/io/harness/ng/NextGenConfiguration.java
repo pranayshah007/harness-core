@@ -247,6 +247,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
+  @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

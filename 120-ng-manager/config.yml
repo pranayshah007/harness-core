@@ -486,3 +486,5 @@ debeziumConsumersConfigs:
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
