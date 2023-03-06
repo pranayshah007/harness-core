@@ -1,4 +1,4 @@
-package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver;
+package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.SPG;
 
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(SPG)
-public class BitbucketServerUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler {
+public class BitbucketUpsertWebhookScmApiErrorHandler implements ScmApiErrorHandler {
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     switch (statusCode) {
