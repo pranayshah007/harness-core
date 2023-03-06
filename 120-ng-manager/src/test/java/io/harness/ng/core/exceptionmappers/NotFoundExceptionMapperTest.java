@@ -37,7 +37,7 @@ public class NotFoundExceptionMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToResponse() {
     Response response = notFoundExceptionMapper.toResponse(new NotFoundException("error"));
-    assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+    assertThat(response.getStatus()).isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
     assertThat(response.getEntity()).isInstanceOf(FailureDTO.class);
     FailureDTO failureDTO = (FailureDTO) response.getEntity();
     assertThat(failureDTO.getStatus()).isEqualTo(Status.FAILURE);
