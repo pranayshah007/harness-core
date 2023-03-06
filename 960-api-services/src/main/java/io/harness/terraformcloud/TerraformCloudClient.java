@@ -59,4 +59,6 @@ public interface TerraformCloudClient {
   String getLogs(String url, int offset, int limit) throws IOException;
 
   void overridePolicyChecks(String url, String token, String policyChecksId) throws IOException;
+
+  TerraformCloudResponse<List<RunData>> getAppliedRuns(String url, String token, String workspaceId) throws IOException;
 }

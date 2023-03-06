@@ -40,6 +40,18 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformCloudConfig implements PersistentEntity, CreatedAtAware {
+  @Id @dev.morphia.annotations.Id private String uuid;
+  @NotNull String accountId;
+  @NotNull String orgId;
+  @NotNull String projectId;
+  @NotNull String provisionerIdentifier;
+  @NotNull String stageExecutionId;
+  @NotNull long createdAt;
+
+  String connectorRef;
+  String lastSuccessfulRun;
+  String workspaceId;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -47,20 +59,9 @@ public class TerraformCloudConfig implements PersistentEntity, CreatedAtAware {
                  .field(TerraformCloudConfigKeys.accountId)
                  .field(TerraformCloudConfigKeys.orgId)
                  .field(TerraformCloudConfigKeys.projectId)
-                 .field(TerraformCloudConfigKeys.entityId)
+                 .field(TerraformCloudConfigKeys.provisionerIdentifier)
                  .descSortField(TerraformCloudConfigKeys.createdAt)
                  .build())
         .build();
   }
-
-  @Id @dev.morphia.annotations.Id private String uuid;
-  @NotNull String accountId;
-  @NotNull String orgId;
-  @NotNull String projectId;
-  @NotNull String entityId;
-  @NotNull String pipelineExecutionId;
-  @NotNull long createdAt;
-
-  String connectorRef;
-  String runId;
 }

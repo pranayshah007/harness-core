@@ -35,7 +35,6 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.beans.terraformcloud.PlanType;
-import io.harness.delegate.beans.terraformcloud.RollbackType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.task.TaskParameters;
@@ -440,6 +439,10 @@ public class TerraformCloudTaskTest {
     taskParameters.setRunId("run-123");
     doReturn(RunStatus.POLICY_CHECKED).when(terraformCloudTaskHelper).getRunStatus(any(), any(), any());
     doReturn("output").when(terraformCloudTaskHelper).applyRun(any(), any(), any(), any(), any());
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    runData.setAttributes(Attributes.builder().status(RunStatus.POLICY_CHECKED).build());
+    doReturn(runData).when(terraformCloudTaskHelper).getRun(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
@@ -457,9 +460,11 @@ public class TerraformCloudTaskTest {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
     TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_APPLY);
     taskParameters.setRunId("run-123");
-    doReturn(RunStatus.POLICY_OVERRIDE, RunStatus.POLICY_CHECKED)
-        .when(terraformCloudTaskHelper)
-        .getRunStatus(any(), any(), any());
+    RunData runData = new RunData();
+    runData.setId("run-123");
+    runData.setAttributes(Attributes.builder().status(RunStatus.POLICY_OVERRIDE).build());
+    doReturn(runData).when(terraformCloudTaskHelper).getRun(any(), any(), any());
+    doReturn(RunStatus.POLICY_CHECKED).when(terraformCloudTaskHelper).getRunStatus(any(), any(), any());
     doReturn("output").when(terraformCloudTaskHelper).applyRun(any(), any(), any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
 
@@ -470,7 +475,7 @@ public class TerraformCloudTaskTest {
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
     assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
-    verify(terraformCloudTaskHelper, times(2)).getRunStatus(any(), any(), any());
+    verify(terraformCloudTaskHelper, times(1)).getRunStatus(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).overridePolicy(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).applyRun(any(), any(), any(), any(), any());
@@ -497,6 +502,7 @@ public class TerraformCloudTaskTest {
     doReturn("policyCheckJsonId")
         .when(terraformCloudTaskHelper)
         .uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
+    doReturn("run-124").when(terraformCloudTaskHelper).getLastAppliedRunId(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
@@ -508,6 +514,24 @@ public class TerraformCloudTaskTest {
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
     verify(terraformCloudTaskHelper, times(1)).streamApplyLogs(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRunRollbackTaskShouldBeSkipedType() throws IOException {
+    doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
+    TaskParameters taskParameters = getRollbackTaskParams();
+    on(task).set("runRequestCreator", runRequestCreator);
+    doReturn(getRollbackRunData()).when(terraformCloudTaskHelper).getRun(any(), any(), any());
+    doReturn("relationshipId").when(terraformCloudTaskHelper).getRelationshipId(any(), any());
+    doReturn("run-123").when(terraformCloudTaskHelper).getLastAppliedRunId(any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRollbackTaskResponse.class);
+    verify(terraformCloudTaskHelper, times(0)).createRun(any(), any(), any(), anyBoolean(), any(), any());
+    verify(terraformCloudTaskHelper, times(0)).streamApplyLogs(any(), any(), any(), any());
   }
 
   private RunData getRollbackRunData() {
@@ -528,7 +552,7 @@ public class TerraformCloudTaskTest {
 
   private TaskParameters getRollbackTaskParams() {
     TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(TerraformCloudTaskType.ROLLBACK);
-    terraformCloudTaskParams.setRollbackType(RollbackType.APPLY);
+    terraformCloudTaskParams.setRunId("run-123");
     terraformCloudTaskParams.setMessage("dummy");
     return terraformCloudTaskParams;
   }

@@ -22,6 +22,8 @@ public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskRes
   Integer detailedExitCode;
   String tfPlanJsonFileId;
   String runId;
+  String lastAppliedRun;
   String tfOutput;
   String policyChecksJsonFileId;
+  String workspaceId;
 }

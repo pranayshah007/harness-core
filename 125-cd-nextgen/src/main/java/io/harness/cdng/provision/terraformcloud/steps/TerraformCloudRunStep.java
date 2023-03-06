@@ -7,18 +7,25 @@
 
 package io.harness.cdng.provision.terraformcloud.steps;
 
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
+import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.REFRESH_STATE;
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
+import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_LAST_APPLIED_RUN;
+
+import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudParamsMapper;
+import io.harness.cdng.provision.terraformcloud.TerraformCloudPassThroughData;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunSpecParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunType;
@@ -31,9 +38,12 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -42,13 +52,15 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -58,6 +70,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
@@ -72,7 +85,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTaskResponse> {
+public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRbac {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TERRAFORM_CLOUD_RUN.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -84,14 +97,22 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
   @Inject private TerraformCloudStepHelper helper;
   @Inject private TerraformCloudParamsMapper paramsMapper;
   @Inject private EncryptionHelper encryptionHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public Class getStepParametersClass() {
+  public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
   }
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD)) {
+      throw new AccessDeniedException(
+          format("Step is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD.name()),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -117,7 +138,7 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
   }
 
   @Override
-  public TaskRequest obtainTaskAfterRbac(
+  public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("Starting execution ObtainTask after Rbac for the Terraform Cloud Run Step");
     TerraformCloudRunStepParameters runStepParameters =
@@ -125,44 +146,43 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
     TerraformCloudRunSpecParameters runSpec = runStepParameters.getSpec();
 
     runSpec.validate();
-    TerraformCloudTaskParams terraformCloudTaskParams = paramsMapper.mapRunSpecToTaskParams(runSpec, ambiance);
+    TerraformCloudRunType runType = runSpec.getType();
+    TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
 
-    terraformCloudTaskParams.setAccountId(AmbianceUtils.getAccountId(ambiance));
-    terraformCloudTaskParams.setMessage(ParameterFieldHelper.getParameterFieldValue(runStepParameters.getMessage()));
-
-    TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
-    terraformCloudTaskParams.setTerraformCloudConnectorDTO(terraformCloudConnector);
-    terraformCloudTaskParams.setEncryptionDetails(encryptionHelper.getEncryptionDetail(
-        terraformCloudConnector.getCredential().getSpec(), AmbianceUtils.getAccountId(ambiance),
-        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
-
-    terraformCloudTaskParams.setEntityId(runSpec.getType() != REFRESH_STATE
-            ? helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance)
-            : null);
-
-    TaskData taskData = TaskData.builder()
-                            .async(true)
-                            .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
-                            .timeout(StepUtils.getTimeoutMillis(
-                                stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
-                            .parameters(new Object[] {terraformCloudTaskParams})
-                            .build();
-
-    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-        getCommandUnits(runSpec.getType()), TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(runStepParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    if (runType == PLAN_AND_APPLY || runType == PLAN_AND_DESTROY || runType == APPLY) {
+      // If we are doing any previsioning get the latest applied run that might be used for rollback
+      terraformCloudTaskParams.setTerraformCloudTaskType(GET_LAST_APPLIED_RUN);
+    }
+    return getTaskChainResponse(stepElementParameters, terraformCloudTaskParams, runStepParameters, ambiance);
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<TerraformCloudRunTaskResponse> responseSupplier)
-      throws Exception {
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+    TerraformCloudRunStepParameters runStepParameters =
+        (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
+    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
+        (TerraformCloudRunTaskResponse) responseSupplier.get();
+
+    helper.saveTerraformCloudConfig(runStepParameters.getSpec(), terraformCloudRunTaskResponse.getWorkspaceId(),
+        terraformCloudRunTaskResponse.getLastAppliedRun(), ambiance);
+    TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
+    terraformCloudTaskParams.setCommandUnitsProgress(
+        UnitProgressDataMapper.toCommandUnitsProgress(terraformCloudRunTaskResponse.getUnitProgressData()));
+    return getTaskChainResponse(stepElementParameters, terraformCloudTaskParams, runStepParameters, ambiance);
+  }
+
+  @Override
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
+      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     log.info("Handling Task result with Security Context for the Terraform Cloud Run Step");
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse = responseSupplier.get();
+    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
+        (TerraformCloudRunTaskResponse) responseSupplier.get();
     List<UnitProgress> unitProgresses = terraformCloudRunTaskResponse.getUnitProgressData() == null
         ? Collections.emptyList()
         : terraformCloudRunTaskResponse.getUnitProgressData().getUnitProgresses();
@@ -218,14 +238,52 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
           || runType == PLAN_AND_DESTROY) {
         terraformCloudRunOutcomeBuilder.outputs(
             new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())));
-        helper.saveTerraformCloudConfig(
-            runStepParameters.getSpec(), terraformCloudRunTaskResponse.getRunId(), ambiance);
       }
 
       stepResponseBuilder.stepOutcome(
           StepOutcome.builder().name(OUTCOME_NAME).outcome(terraformCloudRunOutcomeBuilder.build()).build());
     }
     return stepResponseBuilder.build();
+  }
+
+  private TaskChainResponse getTaskChainResponse(StepElementParameters stepElementParameters,
+      TerraformCloudTaskParams terraformCloudTaskParams, TerraformCloudRunStepParameters runStepParameters,
+      Ambiance ambiance) {
+    TaskData taskData = TaskData.builder()
+                            .async(true)
+                            .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
+                            .timeout(StepUtils.getTimeoutMillis(
+                                stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
+                            .parameters(new Object[] {terraformCloudTaskParams})
+                            .build();
+
+    return TaskChainResponse.builder()
+        .chainEnd(terraformCloudTaskParams.getTerraformCloudTaskType() != GET_LAST_APPLIED_RUN)
+        .passThroughData(TerraformCloudPassThroughData.builder().build())
+        .taskRequest(TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            getCommandUnits(runStepParameters.getSpec().getType()), TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
+            TaskSelectorYaml.toTaskSelector(runStepParameters.getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance)))
+        .build();
+  }
+
+  private TerraformCloudTaskParams getTerraformCloudTaskParams(
+      Ambiance ambiance, TerraformCloudRunStepParameters runStepParameters) {
+    TerraformCloudRunSpecParameters runSpec = runStepParameters.getSpec();
+    TerraformCloudTaskParams terraformCloudTaskParams = paramsMapper.mapRunSpecToTaskParams(runSpec, ambiance);
+
+    terraformCloudTaskParams.setAccountId(AmbianceUtils.getAccountId(ambiance));
+    terraformCloudTaskParams.setMessage(ParameterFieldHelper.getParameterFieldValue(runStepParameters.getMessage()));
+
+    TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
+    terraformCloudTaskParams.setTerraformCloudConnectorDTO(terraformCloudConnector);
+    terraformCloudTaskParams.setEncryptionDetails(encryptionHelper.getEncryptionDetail(
+        terraformCloudConnector.getCredential().getSpec(), AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+    terraformCloudTaskParams.setEntityId(runSpec.getType() != REFRESH_STATE
+            ? helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance)
+            : null);
+    return terraformCloudTaskParams;
   }
 
   private List<String> getCommandUnits(TerraformCloudRunType type) {
@@ -237,10 +295,12 @@ public class TerraformCloudRunStep extends CdTaskExecutable<TerraformCloudRunTas
             TerraformCloudCommandUnit.PLAN.getDisplayName(), TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName());
       case PLAN_AND_APPLY:
       case PLAN_AND_DESTROY:
-        return List.of(TerraformCloudCommandUnit.PLAN.getDisplayName(),
-            TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), TerraformCloudCommandUnit.APPLY.getDisplayName());
+        return List.of(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(),
+            TerraformCloudCommandUnit.PLAN.getDisplayName(), TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(),
+            TerraformCloudCommandUnit.APPLY.getDisplayName());
       case APPLY:
-        return Collections.singletonList(TerraformCloudCommandUnit.APPLY.getDisplayName());
+        return List.of(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(),
+            TerraformCloudCommandUnit.APPLY.getDisplayName());
       default:
         throw new IllegalStateException("Unexpected value: " + type);
     }

@@ -15784,6 +15784,16 @@
             "organization": {
               "type": "string"
             },
+            "overridePolicies": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "provisionerIdentifier": {
               "type": "string"
             },
@@ -15853,6 +15863,16 @@
             },
             "organization": {
               "type": "string"
+            },
+            "overridePolicies": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "provisionerIdentifier": {
               "type": "string"
@@ -16162,10 +16182,20 @@
                 }
               ]
             },
-            "message": {
-              "type": "string"
+            "overridePolicies": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "provisionerIdentifier": {
+              "type": "string"
+            },
+            "runMessage": {
               "type": "string"
             }
           }
@@ -16238,7 +16268,7 @@
                 }
               ]
             },
-            "message": {
+            "runMessage": {
               "type": "string"
             },
             "runType": {

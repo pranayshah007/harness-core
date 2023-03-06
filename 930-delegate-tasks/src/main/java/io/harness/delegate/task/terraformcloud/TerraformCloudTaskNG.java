@@ -8,6 +8,7 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
@@ -26,6 +27,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.RollbackType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.task.TaskParameters;
@@ -85,7 +87,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     TerraformCloudConfig terraformCloudConfig = terraformCloudConfigMapper.mapTerraformCloudConfigWithDecryption(
         terraformCloudConnectorDTO, taskParameters.getEncryptionDetails());
 
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    CommandUnitsProgress commandUnitsProgress = taskParameters.getCommandUnitsProgress() != null
+        ? taskParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     TerraformCloudDelegateTaskResponse taskResponse;
     switch (taskParameters.getTerraformCloudTaskType()) {
       case VALIDATE:
@@ -129,6 +133,11 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
       case ROLLBACK:
         taskResponse = rollback((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
             taskParameters, commandUnitsProgress);
+        break;
+      case GET_LAST_APPLIED_RUN:
+        taskResponse =
+            getLastAppliedRun((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                taskParameters, commandUnitsProgress);
         break;
       default:
         throw new InvalidRequestException("Terraform Cloud Task type not identified");
@@ -204,7 +213,8 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String token = credentials.getToken();
     String runId = taskParameters.getRunId();
 
-    RunStatus status = terraformCloudTaskHelper.getRunStatus(url, token, runId);
+    RunData runData = terraformCloudTaskHelper.getRun(url, token, runId);
+    RunStatus status = runData.getAttributes().getStatus();
     if (status == RunStatus.POLICY_OVERRIDE) {
       List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
       terraformCloudTaskHelper.overridePolicy(url, token, policyCheckData, logCallback);
@@ -213,6 +223,9 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     if (status == RunStatus.POLICY_CHECKED) {
       String output = terraformCloudTaskHelper.applyRun(url, token, runId, taskParameters.getMessage(), logCallback);
       return TerraformCloudRunTaskResponse.builder().runId(runId).tfOutput(output).build();
+    } else if (!runData.getAttributes().isHasChanges()) {
+      logCallback.saveExecutionLog("Apply will not run. No changes.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      return TerraformCloudRunTaskResponse.builder().runId(runId).build();
     } else {
       logCallback.saveExecutionLog(format("Apply can't be done when run is in status %s", status.name()),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
@@ -226,11 +239,28 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String url = credentials.getUrl();
     String token = credentials.getToken();
     String runId = taskParameters.getRunId();
+    String workspaceId = taskParameters.getWorkspace();
+    RollbackType rollbackType = taskParameters.getRollbackType();
 
-    RunData run = terraformCloudTaskHelper.getRun(url, token, runId);
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(), commandUnitsProgress);
+    logCallback.saveExecutionLog(
+        format("Check last applied run in workspace: %s", workspaceId), INFO, CommandExecutionStatus.RUNNING);
+    String lastAppliedRunId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspaceId);
+    if (lastAppliedRunId == null || lastAppliedRunId.equals(runId)) {
+      logCallback.saveExecutionLog(
+          "No run wasn't applied in this stage. Therefore skipping rollback.", INFO, CommandExecutionStatus.SUCCESS);
+      return TerraformCloudRollbackTaskResponse.builder().build();
+    }
 
-    RunRequest runRequest =
-        runRequestCreator.mapRunDataToRunRequest(run, taskParameters.getMessage(), taskParameters.getRollbackType());
+    RunData run =
+        terraformCloudTaskHelper.getRun(url, token, rollbackType == RollbackType.APPLY ? runId : lastAppliedRunId);
+    logCallback.saveExecutionLog(rollbackType == RollbackType.APPLY
+            ? format("Rolling back to version config version from run: %s", runId)
+            : format("There wasn't any run before execution. Destroy resources in workspace: %s", workspaceId),
+        INFO, CommandExecutionStatus.SUCCESS);
+
+    RunRequest runRequest = runRequestCreator.mapRunDataToRunRequest(run, taskParameters.getMessage(), rollbackType);
 
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequest, taskParameters.isDiscardPendingRuns(),
         taskParameters.getTerraformCloudTaskType(),
@@ -277,6 +307,33 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     }
     terraformCloudTaskHelper.streamApplyLogs(url, token, runData, logCallback);
     return terraformCloudTaskHelper.getApplyOutput(url, token, runData);
+  }
+
+  private TerraformCloudDelegateTaskResponse getLastAppliedRun(
+      TerraformCloudApiTokenCredentials terraformCloudCredentials, TerraformCloudTaskParams params,
+      CommandUnitsProgress commandUnitsProgress) throws IOException {
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(), commandUnitsProgress);
+    String url = terraformCloudCredentials.getUrl();
+    String token = terraformCloudCredentials.getToken();
+    String workspace;
+    if (params.getWorkspace() != null) {
+      workspace = params.getWorkspace();
+    } else if (params.getRunId() != null) {
+      RunData runData = terraformCloudTaskHelper.getRun(url, token, params.getRunId());
+      workspace = terraformCloudTaskHelper.getRelationshipId(runData, "workspace");
+    } else {
+      logCallback.saveExecutionLog(
+          "Workspace or run id must be provided to fetch last applied run", ERROR, CommandExecutionStatus.FAILURE);
+      // ToDo throw custom exception here
+      throw new InvalidRequestException("Run id not provided");
+    }
+    logCallback.saveExecutionLog(
+        format("Fetch last applied run in workspace: %s", workspace), INFO, CommandExecutionStatus.RUNNING);
+    String lastAppliedId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspace);
+    logCallback.saveExecutionLog(
+        format("Last applied run was: %s", lastAppliedId), INFO, CommandExecutionStatus.SUCCESS);
+    return TerraformCloudRunTaskResponse.builder().lastAppliedRun(lastAppliedId).workspaceId(workspace).build();
   }
 
   @Override

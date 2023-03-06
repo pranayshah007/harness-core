@@ -42,6 +42,7 @@ import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.jsonwebtoken.lang.Collections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -194,12 +195,13 @@ public class TerraformCloudTaskHelper {
       logCallback.saveExecutionLog(
           format("Apply %s execution...", runData.getId()), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       streamLogs(logCallback, apply.getAttributes().getLogReadUrl());
+      logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } else if (!runData.getAttributes().isHasChanges()) {
+      logCallback.saveExecutionLog("Apply will not run. No changes.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } else {
       logCallback.saveExecutionLog(format("Apply for run id: %s is unreachable", runData.getId()), LogLevel.ERROR,
           CommandExecutionStatus.FAILURE);
-      return;
     }
-    logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
   public String uploadJsonFile(String accountId, String delegateId, String taskId, String entityId, String fileName,
@@ -335,5 +337,10 @@ public class TerraformCloudTaskHelper {
             format("Policy check: %s is overridden", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       }
     }
+  }
+
+  public String getLastAppliedRunId(String url, String token, String workspace) throws IOException {
+    List<RunData> appliedRuns = terraformCloudClient.getAppliedRuns(url, token, workspace).getData();
+    return Collections.isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
   }
 }

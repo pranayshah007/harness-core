@@ -58,8 +58,11 @@ public class TerraformCloudRollbackStepInfo implements CDAbstractStepInfo {
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> discardPendingRuns;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> overridePolicies;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> message;
+  @JsonProperty("runMessage")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> message;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
@@ -68,10 +71,11 @@ public class TerraformCloudRollbackStepInfo implements CDAbstractStepInfo {
   @Builder(builderMethodName = "infoBuilder")
   public TerraformCloudRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> provisionerIdentifier, ParameterField<Boolean> discardPendingRuns,
-      ParameterField<String> message) {
+      ParameterField<Boolean> overridePolicies, ParameterField<String> message) {
     this.delegateSelectors = delegateSelectors;
     this.provisionerIdentifier = provisionerIdentifier;
     this.discardPendingRuns = discardPendingRuns;
+    this.overridePolicies = overridePolicies;
     this.message = message;
   }
 
@@ -95,6 +99,8 @@ public class TerraformCloudRollbackStepInfo implements CDAbstractStepInfo {
         .delegateSelectors(delegateSelectors)
         .provisionerIdentifier(provisionerIdentifier)
         .discardPendingRuns(discardPendingRuns)
+        .overridePolicies(overridePolicies)
+        .message(message)
         .build();
   }
 

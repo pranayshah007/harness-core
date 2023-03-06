@@ -15,6 +15,7 @@ import lombok.Getter;
 @Getter
 @OwnedBy(CDP)
 public enum TerraformCloudCommandUnit {
+  FETCH_LAST_APPLIED_RUN("Fetch last applied run"),
   PLAN("Plan"),
   POLICY_CHECK("Policy check"),
   APPLY("Apply");
