@@ -9,7 +9,7 @@ set -xe
 export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
 echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
 
-service_folders=("pipeline-service" "access-control" "platform-service" "batch-processing" "ce-nextgen")
+service_folders=("pipeline-service" "access-control" "platform-service" "batch-processing" "ce-nextgen" "audit-event-streaming")
 
 #Need confirmation for below services reference path of build.properties
 #"260-delegate" "315-sto-manager" "debezium-service"
