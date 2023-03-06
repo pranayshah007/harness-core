@@ -32,7 +32,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
-import io.harness.delegate.task.git.metadata.GitFetchMetadataContext;
+import io.harness.git.GitFetchMetadataContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmServiceClient;

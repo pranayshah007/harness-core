@@ -8,6 +8,7 @@
 package io.harness.connector.service.git;
 
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.model.GitRepositoryType.YAML;
 import static io.harness.shell.SshSessionFactory.getSSHSession;
 
@@ -115,6 +116,13 @@ public class NGGitServiceImpl implements NGGitService {
   @Override
   public FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
+    return fetchFilesByPath(
+        DEFAULT_FETCH_IDENTIFIER, gitStoreDelegateConfig, accountId, sshSessionConfig, gitConfigDTO);
+  }
+
+  @Override
+  public FetchFilesResult fetchFilesByPath(String identifier, GitStoreDelegateConfig gitStoreDelegateConfig,
+      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
     FetchFilesByPathRequest fetchFilesByPathRequest =
         FetchFilesByPathRequest.builder()
             .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))

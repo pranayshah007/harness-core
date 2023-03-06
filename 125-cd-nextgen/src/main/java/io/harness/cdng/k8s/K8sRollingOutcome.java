@@ -30,5 +30,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sRollingOutcome implements Outcome, ExecutionSweepingOutput {
   String releaseName;
   int releaseNumber;
+  K8sGitFetchInfo manifest;
   List<KubernetesResourceId> prunedResourceIds;
 }
