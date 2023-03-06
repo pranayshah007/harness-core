@@ -345,6 +345,8 @@ func TestDequeue(t *testing.T) {
 	mock.ExpectSMembers(utils.GetAllSubTopicsFromTopicKey(request1.Topic)).SetVal([]string{"account1"})
 	mock.ExpectXPendingExt(pendingExtArgs).SetVal([]redis.XPendingExt{})
 	mock.ExpectXReadGroup(xReadGroupArgs).SetVal([]redis.XStream{})
+	mock.ExpectXLen(utils.GetSubTopicStreamQueueKey(request1.Topic, "account1")).SetVal(int64(0))
+	mock.ExpectSRem(utils.GetAllSubTopicsFromTopicKey(request1.Topic), "account1").SetVal(int64(0))
 	response3, err3 := r.Dequeue(context.Background(), request1)
 	assert.Nil(t, err3)
 	assert.Equal(t, len(response3), 0)
