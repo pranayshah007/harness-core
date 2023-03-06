@@ -12,8 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.common.beans.ScmApis;
+import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.BaseUrls;
@@ -40,15 +45,17 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
   private final BaseUrls baseUrls;
   private final ScmOrchestratorService scmOrchestratorService;
   private final AccountOrgProjectHelper accountOrgProjectHelper;
+  private final GitSyncConnectorHelper gitSyncConnectorHelper;
 
   @Inject
   public WebhookServiceImpl(WebhookEventRepository webhookEventRepository,
       ScmOrchestratorService scmOrchestratorService, AccountOrgProjectHelper accountOrgProjectHelper,
-      BaseUrls baseUrls) {
+      BaseUrls baseUrls,GitSyncConnectorHelper gitSyncConnectorHelper) {
     this.webhookEventRepository = webhookEventRepository;
     this.baseUrls = baseUrls;
     this.scmOrchestratorService = scmOrchestratorService;
     this.accountOrgProjectHelper = accountOrgProjectHelper;
+    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
   }
 
   @Override
@@ -66,6 +73,9 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     try (AutoLogContext ignore1 = new NgAutoLogContext(upsertWebhookRequestDTO.getProjectIdentifier(),
              upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      // What if we dont give repo name
+      ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(upsertWebhookRequestDTO.getAccountIdentifier(),
+              upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(), upsertWebhookRequestDTO.getConnectorIdentifierRef());
       String target = getTargetUrl(upsertWebhookRequestDTO.getAccountIdentifier());
       CreateWebhookResponse createWebhookResponse =
           scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
@@ -73,6 +83,14 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
               upsertWebhookRequestDTO.getProjectIdentifier(), upsertWebhookRequestDTO.getOrgIdentifier(),
               upsertWebhookRequestDTO.getAccountIdentifier(), upsertWebhookRequestDTO.getConnectorIdentifierRef(), null,
               null);
+      if (ScmApiErrorHandlingHelper.isFailureResponse(createWebhookResponse.getStatus(), scmConnector.getConnectorType())) {
+        ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.UPSERT_WEBHOOK, scmConnector.getConnectorType(),
+                scmConnector.getUrl(), createWebhookResponse.getStatus(), createWebhookResponse.getError(),
+                ErrorMetadata.builder()
+                        .connectorRef(upsertWebhookRequestDTO.getConnectorIdentifierRef())
+                        .build());
+      }
+
       UpsertWebhookResponseDTO response = UpsertWebhookResponseDTO.builder()
                                               .webhookResponse(createWebhookResponse.getWebhook())
                                               .error(createWebhookResponse.getError())
