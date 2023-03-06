@@ -112,7 +112,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
         delegateNgTokenService.getDelegateToken(accountId, delegateNgTokenService.getDefaultTokenName(owner), true);
     String tokenValue;
     if (Objects.isNull(delegateTokenDetails) || !delegateTokenDetails.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
-      tokenValue = "<please create a Delegate Token>";
+      tokenValue = "<No Default Delegate Token available, create a default token>";
     } else {
       tokenValue = delegateTokenDetails.getValue();
     }
