@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 17
+version: 18
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -35,6 +35,10 @@ roles:
       - core_template_view
       - core_governancePolicy_view
       - core_governancePolicySets_view
+      - chaos_chaoshub_view
+      - chaos_chaosinfrastructure_view
+      - chaos_chaosexperiment_view
+      - chaos_chaosgameday_view
       - chi_monitoredservice_view
       - chi_slo_view
       - chi_downtime_view
