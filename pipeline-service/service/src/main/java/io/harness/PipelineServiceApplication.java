@@ -372,22 +372,22 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
     PipelineServiceIteratorsConfig iteratorsConfig = appConfig.getIteratorsConfig();
-    injector.getInstance(TriggerWebhookExecutionService.class)
-        .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
-    injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
+//    injector.getInstance(TriggerWebhookExecutionService.class)
+//        .registerIterators(iteratorsConfig.getTriggerWebhookConfig());
+//    injector.getInstance(ScheduledTriggerHandler.class).registerIterators(iteratorsConfig.getScheduleTriggerConfig());
     injector.getInstance(TimeoutEngine.class)
         .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
                                     .name("TimeoutEngine")
                                     .poolSize(iteratorsConfig.getTimeoutEngineConfig().getThreadPoolCount())
                                     .build(),
             Duration.ofSeconds(iteratorsConfig.getTimeoutEngineConfig().getTargetIntervalInSeconds()));
-    injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
-    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
-    injector.getInstance(CustomApprovalInstanceHandler.class)
-        .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
-    injector.getInstance(ResourceRestraintPersistenceMonitor.class)
-        .registerIterators(iteratorsConfig.getResourceRestraintConfig());
-    injector.getInstance(InterruptMonitor.class).registerIterators(iteratorsConfig.getInterruptMonitorConfig());
+//    injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
+//    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
+//    injector.getInstance(CustomApprovalInstanceHandler.class)
+//        .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
+//    injector.getInstance(ResourceRestraintPersistenceMonitor.class)
+//        .registerIterators(iteratorsConfig.getResourceRestraintConfig());
+//    injector.getInstance(InterruptMonitor.class).registerIterators(iteratorsConfig.getInterruptMonitorConfig());
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
 
     registerYamlSdk(injector);
@@ -801,18 +801,18 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   }
 
   private void registerScheduledJobs(Injector injector, PipelineServiceConfiguration appConfig) {
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
-        .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L,
-            appConfig.getDelegatePollingConfig().getSyncDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
-        .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L,
-            appConfig.getDelegatePollingConfig().getAsyncDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
-        .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L,
-            appConfig.getDelegatePollingConfig().getProgressDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("progressUpdateServiceExecutor")))
-        .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L,
-            appConfig.getDelegatePollingConfig().getProgressDelay(), TimeUnit.MILLISECONDS);
+//    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+//        .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L,
+//            appConfig.getDelegatePollingConfig().getSyncDelay(), TimeUnit.MILLISECONDS);
+//    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+//        .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L,
+//            appConfig.getDelegatePollingConfig().getAsyncDelay(), TimeUnit.MILLISECONDS);
+//    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+//        .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L,
+//            appConfig.getDelegatePollingConfig().getProgressDelay(), TimeUnit.MILLISECONDS);
+//    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("progressUpdateServiceExecutor")))
+//        .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L,
+//            appConfig.getDelegatePollingConfig().getProgressDelay(), TimeUnit.MILLISECONDS);
 
     if (appConfig.isLockNotifyResponseCleanup()) {
       injector.getInstance(NotifierScheduledExecutorService.class)
