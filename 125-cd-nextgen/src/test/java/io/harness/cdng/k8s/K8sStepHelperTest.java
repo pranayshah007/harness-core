@@ -34,7 +34,9 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -3967,6 +3969,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
 
     // without OpenShift Params
+    openshiftManifestOutcome = OpenshiftManifestOutcome.builder().identifier("OpenShift").store(gitStore).build();
     Map<String, ManifestOutcome> manifestOutcomeMapOnlyTemplate =
         ImmutableMap.of("OpenShift", openshiftManifestOutcome);
     OptionalOutcome manifestsOutcomeOnlyTemplate =
@@ -3974,7 +3977,19 @@ public class K8sStepHelperTest extends CategoryTest {
 
     doReturn(manifestsOutcomeOnlyTemplate).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
 
-    assertThat(k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams)).isNotNull();
+    k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(openshiftManifestOutcome), eq(ambiance), eq(rollingStepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .infrastructure(k8sDirectInfrastructureOutcome)
+                    .manifestFiles(emptyList())
+                    .lastActiveUnitProgressData(null)
+                    .build()),
+            eq(true), eq(null));
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isEmpty();
   }
 
   @Test
@@ -4138,15 +4153,19 @@ public class K8sStepHelperTest extends CategoryTest {
                                                                       .identifier("OpenshiftParam")
                                                                       .store(CustomRemoteStoreConfig.builder().build())
                                                                       .build();
-    K8sStepPassThroughData passThroughData =
-        K8sStepPassThroughData.builder()
-            .manifestOutcome(OpenshiftManifestOutcome.builder().store(store).build())
-            .manifestOutcomeList(asList(openshiftParamManifestOutcome))
-            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-            .shouldOpenFetchFilesStream(true)
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        OpenshiftManifestOutcome.builder()
+            .store(store)
+            .paramsPaths(ParameterField.createValueField(Collections.singletonList("path/to/param.yaml")))
             .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(openshiftManifestOutcome)
+                                                 .manifestOutcomeList(asList(openshiftParamManifestOutcome))
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
-    valuesFilesContentMap.put("id",
+    valuesFilesContentMap.put("OpenshiftParam",
         asList(CustomSourceFile.builder().fileContent("param yaml payload").filePath("path/to/param.yaml").build()));
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
@@ -4179,6 +4198,37 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isEqualTo(updatedK8sStepPassThroughData);
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getTaskName())
         .isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName());
+
+    // Without params path in Openshift Template manifest
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().namespace(NAMESPACE).build();
+    openshiftManifestOutcome = OpenshiftManifestOutcome.builder().identifier("OpenShift").store(store).build();
+    updatedK8sStepPassThroughData =
+        passThroughData.toBuilder()
+            .manifestOutcome(openshiftManifestOutcome)
+            .manifestOutcomeList(singletonList(openshiftParamManifestOutcome))
+            .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
+            .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
+            .manifestFiles(emptyList())
+            .shouldOpenFetchFilesStream(false)
+            .infrastructure(k8sDirectInfrastructureOutcome)
+            .build();
+
+    k8sStepHelper.executeNextLink(
+        k8sStepExecutor, ambiance, rollingStepElementParams, updatedK8sStepPassThroughData, responseDataSuplier);
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(openshiftManifestOutcome), eq(ambiance), eq(rollingStepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .infrastructure(k8sDirectInfrastructureOutcome)
+                    .manifestFiles(emptyList())
+                    .lastActiveUnitProgressData(null)
+                    .zippedManifestId("zip")
+                    .build()),
+            eq(false), eq(null));
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isEqualTo(singletonList("param yaml payload"));
   }
 
   @Test
@@ -4381,13 +4431,26 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
 
     // without Kustomize Patches
+    kustomizeManifestOutcome = KustomizeManifestOutcome.builder().identifier("Kustomize").store(gitStore).build();
     Map<String, ManifestOutcome> manifestOutcomeMapOnlyTemplate =
         ImmutableMap.of("Kustomize", kustomizeManifestOutcome);
     OptionalOutcome manifestsOutcomeOnlyTemplate =
         OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMapOnlyTemplate)).build();
 
     doReturn(manifestsOutcomeOnlyTemplate).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
-    assertThat(k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams)).isNotNull();
+    k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(kustomizeManifestOutcome), eq(ambiance), eq(rollingStepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .infrastructure(k8sDirectInfrastructureOutcome)
+                    .manifestFiles(emptyList())
+                    .lastActiveUnitProgressData(null)
+                    .build()),
+            eq(true), eq(null));
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isEmpty();
   }
 
   @Test
