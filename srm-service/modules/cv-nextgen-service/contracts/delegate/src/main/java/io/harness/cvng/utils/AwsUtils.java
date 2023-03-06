@@ -68,7 +68,6 @@ public class AwsUtils {
     return "https://" + serviceName + "." + region + ".amazonaws.com";
   }
   public List<String> getAwsRegions() {
-    log.error("penguin while fetching AWS regions");
     List<String> awsRegions = new ArrayList<>();
     try {
       HttpRequest request = HttpRequest.newBuilder()
@@ -110,7 +109,6 @@ public class AwsUtils {
                                       .secretAccessKey(awsCredentials.secretAccessKey())
                                       .sessionToken(sessionToken)
                                       .build();
-    log.error("penguin awsAccessKeys {}", awsAccessKeys);
     return awsAccessKeys;
   }
   private AwsInternalConfig createAwsInternalConfig(AwsConnectorDTO awsConnectorDTO) {
