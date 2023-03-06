@@ -236,6 +236,7 @@ public class PluginSettingUtils {
         return map;
       case SECURITY:
       case DOCKER:
+      case SSCA_ORCHESTRATION:
         map.put(EnvVariableEnum.DOCKER_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.DOCKER_PASSWORD, PLUGIN_PASSW);
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);

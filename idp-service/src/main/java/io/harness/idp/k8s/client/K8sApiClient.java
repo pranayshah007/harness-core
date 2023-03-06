@@ -81,6 +81,7 @@ public class K8sApiClient implements K8sClient {
       configMapData.clear();
     }
     configMapData.putAll(data);
+    configMap.setData(configMapData);
     return replaceConfigMap(coreV1Api, configMap);
   }
 

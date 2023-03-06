@@ -80,7 +80,7 @@ public class StepElementConfig {
   ParameterField<String> skipCondition;
 
   @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StepWhenCondition> when;
 
   @NotNull String type;

@@ -45,8 +45,10 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
+import io.harness.utils.ScopeWiseIds;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -105,6 +107,19 @@ public class EnvironmentInfraFilterHelper {
    */
   public List<io.harness.gitops.models.Cluster> fetchClustersFromGitOps(
       String accountId, String orgId, String projectId, Set<String> clsRefs) {
+    List<io.harness.gitops.models.Cluster> clusters = new ArrayList<>();
+    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
+    clusters.addAll(getClusters(accountId, orgId, projectId, scopeWiseIds.getProjectIds()));
+    clusters.addAll(getClusters(accountId, orgId, null, scopeWiseIds.getOrgIds()));
+    clusters.addAll(getClusters(accountId, null, null, scopeWiseIds.getAccountIds()));
+    return clusters;
+  }
+
+  @NotNull
+  private List<Cluster> getClusters(String accountId, String orgId, String projectId, List<String> clsRefs) {
+    if (isEmpty(clsRefs)) {
+      return new ArrayList<>();
+    }
     Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", clsRefs));
     final ClusterQuery query = ClusterQuery.builder()
                                    .accountId(accountId)
@@ -117,13 +132,12 @@ public class EnvironmentInfraFilterHelper {
     final Response<PageResponse<Cluster>> response =
         Failsafe.with(retryPolicyForGitopsClustersFetch).get(() -> gitopsResourceClient.listClusters(query).execute());
 
-    List<io.harness.gitops.models.Cluster> clusterList;
     if (response.isSuccessful() && response.body() != null) {
-      clusterList = CollectionUtils.emptyIfNull(response.body().getContent());
+      return CollectionUtils.emptyIfNull(response.body().getContent());
     } else {
+      log.error("Failed to fetch clusters from gitops-service {}", response.errorBody());
       throw new InvalidRequestException("Failed to fetch clusters from gitops-service, cannot apply filter");
     }
-    return clusterList;
   }
 
   /**
@@ -532,7 +546,7 @@ public class EnvironmentInfraFilterHelper {
 
     if (isNotEmpty(filteredClusterRefs)) {
       envClusterRefs.add(EnvClusterRefs.builder()
-                             .envRef(environment.getIdentifier())
+                             .envRef(environment.fetchRef())
                              .envName(environment.getName())
                              .envType(environment.getType().name())
                              .clusterRefs(new HashSet<>(filteredClusterRefs))

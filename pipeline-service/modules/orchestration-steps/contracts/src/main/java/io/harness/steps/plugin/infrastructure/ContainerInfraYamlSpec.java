@@ -50,32 +50,30 @@ public class ContainerInfraYamlSpec {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
   @NotNull @Size(min = 1) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> namespace;
   @YamlSchemaTypes(value = {string})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> annotations;
   @YamlSchemaTypes(value = {string})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> labels;
-  @YamlSchemaTypes({string})
-  @ApiModelProperty(dataType = INTEGER_CLASSPATH, hidden = true)
-  private ParameterField<Integer> runAsUser;
-  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true) private ParameterField<String> serviceAccountName;
-  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true) private ParameterField<String> initTimeout;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> serviceAccountName;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> initTimeout;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> nodeSelector;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;", hidden = true)
+  @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;")
   private ParameterField<List<Toleration>> tolerations;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "[Lio.harness.steps.plugin.infrastructure.volumes.ContainerVolume;", hidden = true)
+  @ApiModelProperty(dataType = "[Lio.harness.steps.plugin.infrastructure.volumes.ContainerVolume;")
   ParameterField<List<ContainerVolume>> volumes;
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> automountServiceAccountToken;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext", hidden = true)
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext")
   ParameterField<SecurityContext> containerSecurityContext;
-  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true) private ParameterField<String> priorityClassName;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> priorityClassName;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
   private ParameterField<OSType> os;

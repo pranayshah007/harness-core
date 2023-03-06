@@ -49,8 +49,6 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.LastModifiedBy;
 
 @Data
 @Builder
@@ -81,8 +79,9 @@ public class Downtime
   private EntitiesRule entitiesRule;
 
   private boolean enabled;
-  @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
-  @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+
+  @SchemaIgnore private EmbeddedUser createdBy;
+  @SchemaIgnore private EmbeddedUser lastUpdatedBy;
   private long createdAt;
   private long lastUpdatedAt;
 

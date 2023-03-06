@@ -81,7 +81,7 @@ public class StageElementConfig {
 
   @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
   @VariableExpression
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StageWhenCondition> when;
 
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)

@@ -49,6 +49,7 @@ io.harness.plancreator.strategy.AxisConfig
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.v1.MatrixConfigV1
+io.harness.plancreator.strategy.v1.ForConfigV1
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.v1.StrategyConfigV1
 io.harness.plancreator.strategy.HarnessForConfig
