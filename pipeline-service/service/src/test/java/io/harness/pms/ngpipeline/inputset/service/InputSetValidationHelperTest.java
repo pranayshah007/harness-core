@@ -208,7 +208,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
         .getMetadata(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, true);
     assertThatThrownBy(()
                            -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null,
-                               accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false))
+                               accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null))
         .hasMessageContaining("does not exist or has been deleted")
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -238,7 +238,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false);
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     mockSettings.close();
@@ -269,7 +269,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "defaultBranch", null, false);
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "defaultBranch", null);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     mockSettings.close();
@@ -304,7 +304,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false);
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     assertThat(yamlDiffDTO.getGitDetails().getBranch()).isEqualTo("thisBranch");

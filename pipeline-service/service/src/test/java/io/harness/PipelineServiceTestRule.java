@@ -177,12 +177,6 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
       public boolean getSerializationForDelegate() {
         return false;
       }
-
-      @Provides
-      @Singleton
-      public boolean getAllowDifferentReposForPipelineAndInputSets() {
-        return false;
-      }
     });
 
     modules.add(new AbstractModule() {
