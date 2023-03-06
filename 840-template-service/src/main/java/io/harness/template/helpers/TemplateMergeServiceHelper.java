@@ -320,7 +320,7 @@ public class TemplateMergeServiceHelper {
 
   private void validateAndAddToQueue(Map<String, TemplateEntity> remoteTemplates, Queue<YamlField> yamlNodeQueue) {
     remoteTemplates.forEach((templateIdentifier, templateEntity) -> {
-      YamlNode yamlNode = validateAndGetYamlNode(remoteTemplates.get(templateIdentifier).getYaml());
+      YamlNode yamlNode = validateAndGetYamlNode(remoteTemplates.get(templateIdentifier).getYaml(), templateIdentifier);
       yamlNodeQueue.addAll(yamlNode.fields());
     });
   }

@@ -8,6 +8,7 @@
 package io.harness.template.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
@@ -68,14 +69,14 @@ public class TemplateUtils {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (null != gitEntityInfo) {
       // Set Parent's Repo
-      if (EmptyPredicate.isNotEmpty(repoFromTemplate)) {
+      if (isNotEmpty(repoFromTemplate)) {
         gitEntityInfo.setParentEntityRepoName(repoFromTemplate);
       } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
         gitEntityInfo.setParentEntityRepoName(gitEntityInfo.getRepoName());
       }
 
       // Set Parent's ConnectorRef
-      if (EmptyPredicate.isNotEmpty(connectorFromTemplate)) {
+      if (isNotEmpty(connectorFromTemplate)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorFromTemplate);
       } else if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
         gitEntityInfo.setParentEntityConnectorRef(gitEntityInfo.getConnectorRef());
@@ -126,6 +127,20 @@ public class TemplateUtils {
                 Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.template").build()))
             .build();
     return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
+  }
+
+  public static YamlNode validateAndGetYamlNode(String yaml, String templateIdentifier) {
+    if (isEmpty(yaml)) {
+      throw new NGTemplateException(String.format("Template with path %s not found.", templateIdentifier));
+    }
+    YamlNode yamlNode;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      throw new NGTemplateException(
+          String.format("Could not convert %s template yaml to JsonNode: ", templateIdentifier) + e.getMessage());
+    }
+    return yamlNode;
   }
 
   public static YamlNode validateAndGetYamlNode(String yaml) {
