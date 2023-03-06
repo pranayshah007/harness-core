@@ -363,6 +363,7 @@ io.harness.plancreator.strategy.AxisConfig
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.v1.MatrixConfigV1
+io.harness.plancreator.strategy.v1.ForConfigV1
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.v1.StrategyConfigV1
 io.harness.plancreator.strategy.HarnessForConfig
@@ -450,6 +451,7 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters
+io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStepDetailsInfo
 io.harness.cdng.provision.azure.AzureCreateBPStepNode
 io.harness.cdng.provision.azure.AzureCreateBPStepInfo
 io.harness.cdng.provision.azure.AzureCreateBPStepConfiguration

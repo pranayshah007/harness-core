@@ -261,13 +261,14 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoID, GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
+      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO, String loadFromCache) {
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;
     try {
       mergedYaml = validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYamlWithDefaultValues(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch,
-          pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge());
+          pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(), mergeInputSetRequestDTO.getLastYamlToMerge(),
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (InvalidInputSetException e) {
       InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
       return ResponseDTO.newResponse(
@@ -276,8 +277,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     String fullYaml = "";
     if (mergeInputSetRequestDTO.isWithMergedPipelineYaml()) {
       fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID,
-          mergeInputSetRequestDTO.getStageIdentifiers());
+          pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(),
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     }
     return ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
                                        .isErrorResponse(false)
@@ -306,8 +307,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     String fullYaml = "";
     if (mergeInputSetRequestDTO.isGetResponseWithMergedPipelineYaml()) {
       fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID,
-          mergeInputSetRequestDTO.getStageIdentifiers());
+          pipelineIdentifier, mergedYaml, pipelineBranch, pipelineRepoID, mergeInputSetRequestDTO.getStageIdentifiers(),
+          false);
     }
     return ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
                                        .isErrorResponse(false)
@@ -324,8 +325,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineBranch, String pipelineRepoID, GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull @Valid MergeInputSetTemplateRequestDTO mergeInputSetTemplateRequestDTO) {
     String fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, mergeInputSetTemplateRequestDTO.getRuntimeInputYaml(), pipelineBranch, pipelineRepoID,
-        null);
+        pipelineIdentifier, mergeInputSetTemplateRequestDTO.getRuntimeInputYaml(), pipelineBranch, pipelineRepoID, null,
+        false);
     return ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
                                        .isErrorResponse(false)
                                        .pipelineYaml(mergeInputSetTemplateRequestDTO.getRuntimeInputYaml())
@@ -340,7 +341,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml) {
     String pipelineYaml = validateAndMergeHelper
                               .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-                                  pipelineBranch, pipelineRepoID, false)
+                                  pipelineBranch, pipelineRepoID, false, false)
                               .getYaml();
     String newInputSetYaml = InputSetSanitizer.sanitizeInputSetAndUpdateInputSetYAML(pipelineYaml, invalidInputSetYaml);
     if (EmptyPredicate.isEmpty(newInputSetYaml)) {

@@ -136,6 +136,10 @@ public class CEViewDao {
         .asList();
   }
 
+  public List<CEView> list(String accountId) {
+    return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).asList();
+  }
+
   public CEView findByName(String accountId, String name) {
     return hPersistence.createQuery(CEView.class)
         .filter(CEViewKeys.accountId, accountId)

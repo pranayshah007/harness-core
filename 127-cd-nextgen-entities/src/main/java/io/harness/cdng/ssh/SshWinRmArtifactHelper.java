@@ -26,6 +26,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
@@ -46,6 +47,7 @@ import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateCo
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
@@ -207,7 +209,6 @@ public class SshWinRmArtifactHelper {
           .registry(acrArtifactOutcome.getRegistry())
           .image(acrArtifactOutcome.getImage())
           .tag(acrArtifactOutcome.getTag())
-          .tagRegex(acrArtifactOutcome.getTagRegex())
           .build();
     } else if (artifactOutcome instanceof GcrArtifactOutcome) {
       GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) artifactOutcome;
@@ -215,6 +216,14 @@ public class SshWinRmArtifactHelper {
           .identifier(gcrArtifactOutcome.getIdentifier())
           .primaryArtifact(gcrArtifactOutcome.isPrimaryArtifact())
           .version(gcrArtifactOutcome.getTag())
+          .build();
+    } else if (artifactOutcome instanceof DockerArtifactOutcome) {
+      DockerArtifactOutcome dockerArtifactOutcome = (DockerArtifactOutcome) artifactOutcome;
+      return DockerArtifactDelegateConfig.builder()
+          .identifier(dockerArtifactOutcome.getIdentifier())
+          .primaryArtifact(dockerArtifactOutcome.isPrimaryArtifact())
+          .imagePath(dockerArtifactOutcome.getImagePath())
+          .tag(dockerArtifactOutcome.getTag())
           .build();
     } else {
       throw new UnsupportedOperationException(

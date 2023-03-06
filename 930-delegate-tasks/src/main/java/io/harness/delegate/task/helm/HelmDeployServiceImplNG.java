@@ -9,8 +9,10 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
@@ -139,7 +141,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
-      ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM);
+      ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM, CUSTOM_REMOTE, HARNESS);
   private static final String SUB_CHARTS_FOLDER = "charts";
   @Inject private HelmClient helmClient;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
@@ -1104,6 +1106,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         case S3_HELM:
         case OCI_HELM:
           helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
+          break;
+        case CUSTOM_REMOTE:
+        case HARNESS:
+          log.debug(
+              format("No repo url exists for %s store", manifestDelegateConfig.getStoreDelegateConfig().getType()));
           break;
         default:
           log.warn("Unsupported store type: " + manifestDelegateConfig.getStoreDelegateConfig().getType());

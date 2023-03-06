@@ -17,6 +17,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.BOOL_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NAMESPACE_STRING_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.ENUM_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.EXPRESSION_PATTERN;
+import static io.harness.yaml.schema.beans.SchemaConstants.INPUT_SET_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.INTEGER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ITEMS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.MIN_LENGTH_NODE;
@@ -613,6 +614,12 @@ public class YamlSchemaGenerator {
       case runtimeEmptyStringAllowed:
         objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
         objectNode.put(PATTERN_NODE, RUNTIME_INPUT_PATTERN_EMPTY_STRING_ALLOWED);
+        return objectNode;
+      // only <+input> is allowed
+      case onlyRuntimeInputAllowed:
+        objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
+        objectNode.put(PATTERN_NODE, INPUT_SET_PATTERN);
+        objectNode.put(MIN_LENGTH_NODE, 1);
         return objectNode;
       case none:
         return null;

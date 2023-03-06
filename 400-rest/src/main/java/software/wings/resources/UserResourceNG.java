@@ -513,6 +513,8 @@ public class UserResourceNG {
         .externallyManaged(user.isImported())
         .defaultAccountId(user.getDefaultAccountId())
         .twoFactorAuthenticationEnabled(user.isTwoFactorAuthenticationEnabled())
+        .createdAt(user.getCreatedAt())
+        .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
         .accounts(user.getAccounts()
                       .stream()

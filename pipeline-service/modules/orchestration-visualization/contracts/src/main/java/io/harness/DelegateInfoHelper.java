@@ -57,9 +57,14 @@ public class DelegateInfoHelper {
 
   public DelegateSelectionLogParams getDelegateSelectionLogParams(String accountId, String taskId) {
     try {
-      return SafeHttpCall.execute(delegateSelectionLogHttpClient.getDelegateInfo(accountId, taskId)).getResource();
+      DelegateSelectionLogParams delegateSelectionLogParams =
+          SafeHttpCall.execute(delegateSelectionLogHttpClient.getDelegateInfo(accountId, taskId)).getResource();
+      if (delegateSelectionLogParams == null) {
+        log.warn("DelegateSelectionLogParams is null for account {} and task {}", accountId, taskId);
+      }
+      return delegateSelectionLogParams;
     } catch (Exception exception) {
-      log.error("Not able to talk to delegate service. Ignoring delegate Information", exception);
+      log.warn("Not able to talk to delegate service. Ignoring delegate Information", exception);
       return DelegateSelectionLogParams.builder().build();
     }
   }
@@ -84,7 +89,7 @@ public class DelegateInfoHelper {
             }
             return null;
           } catch (Exception exception) {
-            log.error("Not able to talk to delegate service. Ignoring delegate Information", exception);
+            log.warn("Not able to talk to delegate service. Ignoring delegate Information", exception);
             return null;
           }
         })

@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import io.harness.beans.IdentifierRef;
@@ -14,6 +15,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -123,5 +127,28 @@ public class FullyQualifiedIdentifierHelper {
     return FullyQualifiedIdentifierHelper
         .getIdentifierRefWithScope(accountId, orgIdentifier, projectIdentifier, identifierOrRef)
         .buildScopedIdentifier();
+  }
+
+  public ScopeWiseIds getScopeWiseIds(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Collection<String> refs) {
+    List<String> projectIds = new ArrayList<>();
+    List<String> orgIds = new ArrayList<>();
+    List<String> accountIds = new ArrayList<>();
+
+    for (String ref : refs) {
+      if (isNotEmpty(ref)) {
+        IdentifierRef identifierRef =
+            IdentifierRefHelper.getIdentifierRef(ref, accountIdentifier, orgIdentifier, projectIdentifier);
+
+        if (Scope.PROJECT.equals(identifierRef.getScope())) {
+          projectIds.add(identifierRef.getIdentifier());
+        } else if (Scope.ORG.equals(identifierRef.getScope())) {
+          orgIds.add(identifierRef.getIdentifier());
+        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
+          accountIds.add(identifierRef.getIdentifier());
+        }
+      }
+    }
+    return ScopeWiseIds.builder().accountIds(accountIds).orgIds(orgIds).projectIds(projectIds).build();
   }
 }

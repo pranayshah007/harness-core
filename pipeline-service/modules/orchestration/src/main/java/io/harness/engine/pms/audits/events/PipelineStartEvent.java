@@ -15,6 +15,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,6 +28,7 @@ public class PipelineStartEvent extends NodeExecutionEvent {
   private TriggeredBy triggeredBy;
   private long startTs;
 
+  @Builder
   public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
       Long startTs) {
