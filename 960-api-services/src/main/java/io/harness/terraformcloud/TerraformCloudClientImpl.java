@@ -165,6 +165,14 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
     executeRestCall(call);
   }
 
+  @Override
+  public TerraformCloudResponse<List<RunData>> getAppliedRuns(String url, String token, String workspaceId)
+      throws IOException {
+    Call<TerraformCloudResponse<List<RunData>>> call =
+        getRestClient(url).getRunsByStatus(getAuthorization(token), workspaceId, "applied");
+    return executeRestCall(call);
+  }
+
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()

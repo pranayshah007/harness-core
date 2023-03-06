@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudCapabili
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -55,6 +56,8 @@ public class TerraformCloudTaskParams
 
   RollbackType rollbackType;
   String message;
+
+  CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

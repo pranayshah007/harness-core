@@ -17,6 +17,8 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -35,6 +37,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (
         changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.identifier) != null) {
       return dbObject.get(ServiceEntityKeys.identifier).toString();
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
+        && dbObject.get(PlanExecutionSummaryKeys.planExecutionId) != null) {
+      return dbObject.get(PlanExecutionSummaryKeys.planExecutionId).toString();
     }
     return null;
   }
@@ -50,6 +55,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (
         changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.accountId) != null) {
       return dbObject.get(ServiceEntityKeys.accountId).toString();
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
+        && dbObject.get(PlanExecutionSummaryKeys.accountId) != null) {
+      return dbObject.get(PlanExecutionSummaryKeys.accountId).toString();
     }
     return null;
   }
@@ -64,6 +72,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (
         changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.orgIdentifier) != null) {
       return dbObject.get(ServiceEntityKeys.orgIdentifier).toString();
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
+        && dbObject.get(PlanExecutionSummaryKeys.orgIdentifier) != null) {
+      return dbObject.get(PlanExecutionSummaryKeys.orgIdentifier).toString();
     }
     return null;
   }
@@ -77,6 +88,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == ServiceEntity.class
         && dbObject.get(ServiceEntityKeys.projectIdentifier) != null) {
       return dbObject.get(ServiceEntityKeys.projectIdentifier).toString();
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
+        && dbObject.get(PlanExecutionSummaryKeys.projectIdentifier) != null) {
+      return dbObject.get(PlanExecutionSummaryKeys.projectIdentifier).toString();
     }
     return null;
   }
@@ -92,6 +106,8 @@ public class TagsInfoCDChangeDataHandlerHelper {
       return "PROJECT";
     } else if (changeEvent.getEntityType() == ServiceEntity.class) {
       return "SERVICE";
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class) {
+      return "EXECUTION";
     }
     return null;
   }
@@ -120,6 +136,11 @@ public class TagsInfoCDChangeDataHandlerHelper {
         changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.identifier) != null) {
       if (dbObject.get(ServiceEntityKeys.tags) != null) {
         return (BasicDBList) dbObject.get(ServiceEntityKeys.tags);
+      }
+    } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class
+        && dbObject.get(PlanExecutionSummaryKeys.planExecutionId) != null) {
+      if (dbObject.get(PlanExecutionSummaryKeys.tags) != null) {
+        return (BasicDBList) dbObject.get(PlanExecutionSummaryKeys.tags);
       }
     }
     return null;

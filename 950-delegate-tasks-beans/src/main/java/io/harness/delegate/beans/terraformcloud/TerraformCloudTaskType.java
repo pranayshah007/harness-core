@@ -21,5 +21,6 @@ public enum TerraformCloudTaskType {
   RUN_PLAN_AND_DESTROY,
   RUN_PLAN,
   RUN_APPLY,
-  ROLLBACK
+  ROLLBACK,
+  GET_LAST_APPLIED_RUN
 }

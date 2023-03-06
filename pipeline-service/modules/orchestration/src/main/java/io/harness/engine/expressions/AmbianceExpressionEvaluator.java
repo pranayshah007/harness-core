@@ -13,6 +13,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.expressions.functors.ExecutionSweepingOutputFunctor;
+import io.harness.engine.expressions.functors.ExpandedJsonFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionAncestorFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionChildFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
@@ -24,6 +25,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.exception.EngineExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.RegexFunctor;
@@ -73,6 +75,8 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Inject private PlanExecutionService planExecutionService;
   @Inject private PlanService planService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+
+  @Inject private PlanExpansionService planExpansionService;
 
   protected final Ambiance ambiance;
   private final Set<NodeExecutionEntityType> entityTypes;
@@ -150,6 +154,9 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .ambiance(ambiance)
             .entityTypes(entityTypes)
             .build());
+
+    addToContext("expandedJson",
+        ExpandedJsonFunctor.builder().planExpansionService(planExpansionService).ambiance(ambiance).build());
   }
 
   /**
@@ -182,7 +189,12 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     if (entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
       listBuilder.add("output");
     }
-    return listBuilder.add("child").add("ancestor").add("qualified").addAll(super.fetchPrefixes()).build();
+    return listBuilder.add("expandedJson")
+        .add("child")
+        .add("ancestor")
+        .add("qualified")
+        .addAll(super.fetchPrefixes())
+        .build();
   }
 
   @Override

@@ -227,8 +227,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // call listReleases method
       HelmListReleaseResponseNG helmListReleaseResponseNG = listReleases(commandRequest);
-
-      log.info(helmListReleaseResponseNG.getOutput());
+      logCallback.saveExecutionLog(helmListReleaseResponseNG.getOutput() + "\n");
 
       // if list release failed due to unknown exception:
       if (helmListReleaseResponseNG.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
@@ -377,7 +376,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private boolean checkIfReleasePurgingNeeded(HelmInstallCommandRequestNG commandRequest) {
     HelmListReleaseResponseNG commandResponse = listReleases(commandRequest);
-    log.info(commandResponse.getOutput());
+    commandRequest.getLogCallback().saveExecutionLog(commandResponse.getOutput() + "\n");
 
     if (commandResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       if (isEmpty(commandResponse.getReleaseInfoList())) {
