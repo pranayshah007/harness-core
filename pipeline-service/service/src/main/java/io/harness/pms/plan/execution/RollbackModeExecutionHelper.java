@@ -64,9 +64,28 @@ public class RollbackModeExecutionHelper {
       PlanExecutionMetadata planExecutionMetadata, String planExecutionID) {
     return planExecutionMetadata.withPlanExecutionId(planExecutionID)
         .withProcessedYaml(transformProcessedYaml(planExecutionMetadata.getProcessedYaml()))
-        .withUuid(null); // this uuid is the mongo uuid
+        .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
+                         // Metadata is saved later on in the execution, a new object is stored rather than replacing
+                         // the Metadata for the original execution
   }
 
+  /**
+   * This is to reverse the stages in the processed yaml
+   * Original->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s1
+   *  - stage:
+   *       identifier: s2
+   * Transformed->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s2
+   *   - stage:
+   *       identifier: s1
+   */
   private String transformProcessedYaml(String processedYaml) {
     JsonNode pipelineNode;
     try {
