@@ -58,6 +58,9 @@ public class DockerPublicRegistryProcessor {
   public BuildDetailsInternal verifyBuildNumber(DockerInternalConfig dockerConfig, String imageName, String tag)
       throws IOException {
     DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
+    if (tag == null) {
+      tag = "";
+    }
     Response<DockerPublicImageTagResponse.Result> response =
         registryRestClient.getPublicImageTag(imageName, tag).execute();
     if (!isSuccessful(response)) {

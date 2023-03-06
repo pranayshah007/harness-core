@@ -147,6 +147,8 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFilesStore(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))
@@ -180,7 +182,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
     if (TerragruntTaskRunType.RUN_ALL == inheritOutput.getRunConfiguration().getRunType()) {
       throw new InvalidRequestException(
-          "Inheriting from a plan which has used \"All Modules\" at Terragrunt PLan Step is not supported");
+          "Inheriting from a plan which has used \"All Modules\" at Terragrunt Plan Step is not supported");
     }
 
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
@@ -188,6 +190,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     builder.accountId(accountId)
         .entityId(entityId)
+        .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .stateFileId(helper.getLatestFileId(entityId))
         .workspace(inheritOutput.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
@@ -222,6 +225,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
     builder.accountId(accountId)
         .entityId(entityId)
         .stateFileId(helper.getLatestFileId(entityId))
+        .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
         .workspace(terragruntConfig.getWorkspace())
         .configFilesStore(helper.getGitFetchFilesConfig(
             terragruntConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))

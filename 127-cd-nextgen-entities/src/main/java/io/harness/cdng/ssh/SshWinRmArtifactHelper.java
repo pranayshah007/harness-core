@@ -20,11 +20,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -37,11 +41,15 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -66,7 +74,7 @@ import javax.annotation.Nonnull;
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmArtifactHelper {
-  private static final List<String> NEXUS_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget");
+  private static final List<String> NEXUS_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget", "raw");
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
@@ -184,6 +192,38 @@ public class SshWinRmArtifactHelper {
           .image(azureArtifactsOutcome.getImage())
           .imagePullSecret(azureArtifactsOutcome.getImagePullSecret())
           .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
+    } else if (artifactOutcome instanceof EcrArtifactOutcome) {
+      EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
+      return EcrArtifactDelegateConfig.builder()
+          .identifier(ecrArtifactOutcome.getIdentifier())
+          .primaryArtifact(ecrArtifactOutcome.isPrimaryArtifact())
+          .version(ecrArtifactOutcome.getTag())
+          .build();
+    } else if (artifactOutcome instanceof AcrArtifactOutcome) {
+      AcrArtifactOutcome acrArtifactOutcome = (AcrArtifactOutcome) artifactOutcome;
+      return AcrArtifactDelegateConfig.builder()
+          .identifier(acrArtifactOutcome.getIdentifier())
+          .primaryArtifact(acrArtifactOutcome.isPrimaryArtifact())
+          .subscription(acrArtifactOutcome.getSubscription())
+          .registry(acrArtifactOutcome.getRegistry())
+          .image(acrArtifactOutcome.getImage())
+          .tag(acrArtifactOutcome.getTag())
+          .build();
+    } else if (artifactOutcome instanceof GcrArtifactOutcome) {
+      GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) artifactOutcome;
+      return GcrArtifactDelegateConfig.builder()
+          .identifier(gcrArtifactOutcome.getIdentifier())
+          .primaryArtifact(gcrArtifactOutcome.isPrimaryArtifact())
+          .version(gcrArtifactOutcome.getTag())
+          .build();
+    } else if (artifactOutcome instanceof DockerArtifactOutcome) {
+      DockerArtifactOutcome dockerArtifactOutcome = (DockerArtifactOutcome) artifactOutcome;
+      return DockerArtifactDelegateConfig.builder()
+          .identifier(dockerArtifactOutcome.getIdentifier())
+          .primaryArtifact(dockerArtifactOutcome.isPrimaryArtifact())
+          .imagePath(dockerArtifactOutcome.getImagePath())
+          .tag(dockerArtifactOutcome.getTag())
           .build();
     } else {
       throw new UnsupportedOperationException(

@@ -57,6 +57,7 @@ public class K8sRollingRollbackStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.spec.pruningEnabled",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.name");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.name",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Rollout_Rollback.when");
   }
 }

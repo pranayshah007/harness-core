@@ -98,6 +98,7 @@ import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
@@ -136,6 +137,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -181,20 +183,8 @@ public class K8sHelmCommonStepHelper {
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
-    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
 
-    if (!isEmpty(stepOverrides)) {
-      for (ManifestOutcome manifestOutcome : stepOverrides) {
-        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
-              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
-          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
-        }
-      }
-    }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       gitFetchFilesConfigs.addAll(
           mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
@@ -958,6 +948,7 @@ public class K8sHelmCommonStepHelper {
 
   public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {
     return valuesFileContents.stream()
+        .filter(Objects::nonNull)
         .map(valuesFileContent -> engineExpressionService.renderExpression(ambiance, valuesFileContent, false))
         .collect(Collectors.toList());
   }
@@ -1177,8 +1168,16 @@ public class K8sHelmCommonStepHelper {
     try {
       FileStoreNodeDTO baseValuesFile =
           validateAndFetchFileFromHarnessStore(scopedManifestFilePath, ngAccess, manifestIdentifier).get();
-      fileContents.add(((FileNodeDTO) baseValuesFile).getContent());
-      logCallback.saveExecutionLog(color(format("%nSuccessfully fetched values.yaml file"), White));
+      FileNodeDTO fileNode = (FileNodeDTO) baseValuesFile;
+      String fileContent = fileNode.getContent() == null ? "" : fileNode.getContent();
+      fileContents.add(fileContent);
+
+      if (isEmpty(fileContent)) {
+        logCallback.saveExecutionLog(
+            format("%nFetched values.yaml file is empty [file path: %s]", scopedManifestFilePath), LogLevel.WARN);
+      } else {
+        logCallback.saveExecutionLog(color(format("%nSuccessfully fetched values.yaml file"), White));
+      }
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
           color(format("No values.yaml found for manifest with identifier: %s.", manifestIdentifier), White));
@@ -1204,8 +1203,13 @@ public class K8sHelmCommonStepHelper {
         FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
         if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
           FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
-          fileContents.add(file.getContent());
-          logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          String fileContent = file.getContent() == null ? "" : file.getContent();
+          fileContents.add(fileContent);
+          if (isEmpty(fileContent)) {
+            logCallback.saveExecutionLog(format("- %s is empty", scopedFilePath), LogLevel.WARN);
+          } else {
+            logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          }
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
         }

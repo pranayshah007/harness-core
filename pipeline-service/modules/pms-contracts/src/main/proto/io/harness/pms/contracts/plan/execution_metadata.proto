@@ -28,6 +28,7 @@ message ExecutionMetadata {
   PipelineStageInfo pipelineStageInfo = 16;
   string harnessVersion = 17;
   bool isDebug = 18;
+  ExecutionMode executionMode = 19;
 }
 
 message RetryExecutionInfo {
@@ -50,4 +51,11 @@ enum PipelineStoreType {
   UNDEFINED = 0;  // this is for backwards compatibility
   INLINE = 1;
   REMOTE = 2;
+}
+
+enum ExecutionMode {
+  UNDEFINED_MODE = 0;  // will be treated as NORMAL
+  NORMAL = 1;
+  POST_EXECUTION_ROLLBACK = 2;
+  PIPELINE_ROLLBACK = 3;
 }

@@ -7,9 +7,6 @@
 
 package io.harness.steps.common.steps.stepgroup;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,8 +14,6 @@ import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.when.beans.StepWhenCondition;
-import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
@@ -43,9 +38,7 @@ public class StepGroupStepParameters implements StepParameters {
   String name;
   ParameterField<String> skipCondition;
   StepWhenCondition when;
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
-  ParameterField<List<FailureStrategyConfig>> failureStrategies;
+  List<FailureStrategyConfig> failureStrategies;
 
   String childNodeID;
 
@@ -57,8 +50,8 @@ public class StepGroupStepParameters implements StepParameters {
         .identifier(config.getIdentifier())
         .name(config.getName())
         .skipCondition(config.getSkipCondition())
-        .when(config.getWhen())
-        .failureStrategies(config.getFailureStrategies())
+        .when(config.getWhen() != null ? config.getWhen().getValue() : null)
+        .failureStrategies(config.getFailureStrategies() != null ? config.getFailureStrategies().getValue() : null)
         .childNodeID(childNodeID)
         .build();
   }

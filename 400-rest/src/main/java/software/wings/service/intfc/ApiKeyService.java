@@ -38,4 +38,5 @@ public interface ApiKeyService extends OwnedByAccount {
   void evictPermissionsAndRestrictionsForUserGroup(UserGroup userGroup);
   void loadUserGroupsForApiKeys(List<ApiKeyEntry> apiKeyEntries, String accountId);
   Boolean isApiKeyValid(String key, String accountId);
+  ApiKeyEntry migrateToKMS(ApiKeyEntry apiKeyEntry);
 }

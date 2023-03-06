@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static java.util.Objects.requireNonNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -28,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformConfigDAL {
+  private static final String NOT_NULL_MESSAGE = "%s must not be null";
+
   @Inject private HPersistence persistence;
   @Inject private EngineExpressionService engineExpressionService;
 
@@ -56,5 +60,31 @@ public class TerraformConfigDAL {
                            .filter(TerraformConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
                            .filter(TerraformConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
                            .filter(TerraformConfigKeys.entityId, entityId));
+  }
+
+  public void deleteForAccount(String accountId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+
+    persistence.delete(persistence.createQuery(TerraformConfig.class).filter(TerraformConfigKeys.accountId, accountId));
+  }
+
+  public void deleteForOrganization(String accountId, String orgId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+
+    persistence.delete(persistence.createQuery(TerraformConfig.class)
+                           .filter(TerraformConfigKeys.accountId, accountId)
+                           .filter(TerraformConfigKeys.orgId, orgId));
+  }
+
+  public void deleteForProject(String accountId, String orgId, String projectId) {
+    requireNonNull(accountId, String.format(NOT_NULL_MESSAGE, accountId));
+    requireNonNull(orgId, String.format(NOT_NULL_MESSAGE, orgId));
+    requireNonNull(projectId, String.format(NOT_NULL_MESSAGE, projectId));
+
+    persistence.delete(persistence.createQuery(TerraformConfig.class)
+                           .filter(TerraformConfigKeys.accountId, accountId)
+                           .filter(TerraformConfigKeys.orgId, orgId)
+                           .filter(TerraformConfigKeys.projectId, projectId));
   }
 }

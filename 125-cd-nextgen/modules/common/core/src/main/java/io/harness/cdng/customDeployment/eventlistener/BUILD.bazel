@@ -24,7 +24,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception:module",
         "@maven//:com_google_inject_guice",
         "@maven//:com_google_protobuf_protobuf_java",
-        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_core",
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )

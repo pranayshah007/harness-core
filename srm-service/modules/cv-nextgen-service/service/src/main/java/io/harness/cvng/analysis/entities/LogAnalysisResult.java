@@ -56,6 +56,10 @@ public final class LogAnalysisResult extends VerificationTaskBase implements Per
                  .field(LogAnalysisResultKeys.analysisStartTime)
                  .field(LogAnalysisResultKeys.analysisEndTime)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .field(LogAnalysisResultKeys.verificationTaskId)
+                 .field(LogAnalysisResultKeys.analysisEndTime)
+                 .build())
         .build();
   }
 

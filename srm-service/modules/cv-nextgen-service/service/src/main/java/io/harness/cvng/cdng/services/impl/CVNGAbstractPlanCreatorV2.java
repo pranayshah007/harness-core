@@ -41,6 +41,8 @@ import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
@@ -107,7 +109,7 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -321,6 +323,15 @@ public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> 
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
                                         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                         .build());
+          break;
+        case MARK_AS_FAILURE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnMarkFailureAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkFailureAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
           break;
         default:
           Switch.unhandled(actionType);

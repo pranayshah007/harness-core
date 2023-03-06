@@ -31,6 +31,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.account.AccountTrustLevel;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
@@ -63,6 +64,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 
@@ -105,6 +107,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private LicenseInfo licenseInfo;
 
+  @Getter @Setter private int trustLevel = AccountTrustLevel.UNINITIALIZED;
+
   @Getter @Setter private CeLicenseInfo ceLicenseInfo;
 
   private Set<AccountEvent> accountEvents;
@@ -129,6 +133,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter private String migratedToClusterUrl;
 
   @Getter @Setter DefaultExperience defaultExperience;
+
+  @Accessors(fluent = true) @Getter @Setter Boolean isCrossGenerationAccessEnabled = Boolean.FALSE;
 
   @Getter @Setter boolean createdFromNG;
 
@@ -598,11 +604,13 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean immutableDelegateEnabled = true;
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
+    private Boolean isCrossGenerationAccessEnabled = Boolean.FALSE;
     private boolean createdFromNG;
     private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
+    private int trustLevel = AccountTrustLevel.UNINITIALIZED;
 
     private Builder() {}
 
@@ -627,6 +635,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withDefaultExperience(DefaultExperience defaultExperience) {
       this.defaultExperience = defaultExperience;
+      return this;
+    }
+
+    public Builder withIsCrossGenerationAccessEnabled(Boolean isCrossGenerationAccessEnabled) {
+      this.isCrossGenerationAccessEnabled = isCrossGenerationAccessEnabled;
       return this;
     }
 
@@ -780,6 +793,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
+    public Builder withTrustLevel(int trustLevel) {
+      this.trustLevel = trustLevel;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -806,11 +824,13 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withRingName(ringName)
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
+          .withIsCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled)
           .withCreatedFromNG(createdFromNG)
           .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
-          .withServiceAccountConfig(serviceAccountConfig);
+          .withServiceAccountConfig(serviceAccountConfig)
+          .withTrustLevel(trustLevel);
     }
 
     public Account build() {
@@ -842,12 +862,14 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setHarnessSupportAccessAllowed(isHarnessSupportAccessAllowed);
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
+      account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
       account.setCreatedFromNG(createdFromNG);
       account.setProductLed(isProductLed);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
       account.setServiceAccountConfig(serviceAccountConfig);
+      account.setTrustLevel(trustLevel);
       return account;
     }
   }

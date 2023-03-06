@@ -36,6 +36,7 @@ import io.harness.lock.PersistentLocker;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.oas.OASModule;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
@@ -176,6 +177,12 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      public boolean getAllowDifferentReposForPipelineAndInputSets() {
+        return false;
+      }
     });
 
     modules.add(new AbstractModule() {
@@ -203,6 +210,7 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(PipelineGovernanceService.class).toInstance(mock(PipelineGovernanceService.class));
         bind(PipelineEnforcementService.class).toInstance(mock(PipelineEnforcementService.class));
         bind(TemplateResourceClient.class).toInstance(mock(TemplateResourceClient.class));
+        bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
       }
     });
 

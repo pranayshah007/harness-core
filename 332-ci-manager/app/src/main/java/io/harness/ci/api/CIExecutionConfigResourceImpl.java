@@ -43,6 +43,10 @@ public class CIExecutionConfigResourceImpl implements CIExecutionConfigResource 
     return ResponseDTO.newResponse(configService.getDeprecatedTags(accountIdentifier));
   }
 
+  public ResponseDTO<CIExecutionImages> getDeprecatedConfig(String accountIdentifier) {
+    return ResponseDTO.newResponse(configService.getDeprecatedImages(accountIdentifier));
+  }
+
   public ResponseDTO<CIExecutionImages> getCustomerConfig(Type infra, boolean overridesOnly, String accountIdentifier) {
     CIExecutionImages ciExecutionImages = configService.getCustomerConfig(accountIdentifier, infra, overridesOnly);
     return ResponseDTO.newResponse(ciExecutionImages);

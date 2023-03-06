@@ -7,6 +7,7 @@
 
 package io.harness.connector.impl;
 
+import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
@@ -74,11 +75,13 @@ import io.harness.secretmanagerclient.dto.VaultAwsIamRoleCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
 import io.harness.security.encryption.AccessType;
+import io.harness.security.encryption.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.impl.security.NGEncryptorService;
+import software.wings.settings.SettingVariableTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -117,6 +120,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
   private final String PROJECT_IDENTIFIER = "SECRET_MANAGEMENT";
   private final String KMS_IDENTIFIER = "KMS_ID";
   public static final String HTTP_VAULT_URL = "http://vault.com";
+  private String encryptedValue = randomAlphabetic(10);
 
   @Before
   public void doSetup() {
@@ -211,6 +215,60 @@ public class NGVaultServiceImplTest extends CategoryTest {
     exceptionRule.expect(SecretManagementException.class);
     exceptionRule.expectMessage("Secret [authtoken] not found or has been deleted.");
     ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void test_decryptSecretRefData_withSecretEncryptionTypeLocal() {
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("authtoken").decryptedValue(encryptedValue.toCharArray()).build();
+
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                           .orgIdentifier(null)
+                                           .projectIdentifier(null)
+                                           .encryptionType(EncryptionType.LOCAL)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                           .build();
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, null, null, secretRefData.getIdentifier()))
+        .thenReturn(encryptedDataDTO);
+    when(ngEncryptorService.fetchSecretValue(any(), any(), any())).thenReturn(randomAlphabetic(10).toCharArray());
+
+    ngVaultService.decryptSecretRefData(ACCOUNT_IDENTIFIER, null, null, secretRefData);
+
+    verify(ngConnectorSecretManagerService, times(1)).getLocalConfigDTO(ACCOUNT_IDENTIFIER);
+    verify(ngConnectorSecretManagerService, times(0))
+        .getUsingIdentifier(ACCOUNT_IDENTIFIER, null, null, HARNESS_SECRET_MANAGER_IDENTIFIER, false);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void test_decryptSecretRefData_withSecretEncryptionTypeOtherThanLocal() {
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("authtoken").decryptedValue(encryptedValue.toCharArray()).build();
+
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                           .orgIdentifier(null)
+                                           .projectIdentifier(null)
+                                           .encryptionType(EncryptionType.GCP_KMS)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
+                                           .build();
+    when(ngEncryptedDataService.get(ACCOUNT_IDENTIFIER, null, null, secretRefData.getIdentifier()))
+        .thenReturn(encryptedDataDTO);
+    when(ngEncryptorService.fetchSecretValue(any(), any(), any())).thenReturn(randomAlphabetic(10).toCharArray());
+
+    ngVaultService.decryptSecretRefData(ACCOUNT_IDENTIFIER, null, null, secretRefData);
+
+    verify(ngConnectorSecretManagerService, times(0)).getLocalConfigDTO(ACCOUNT_IDENTIFIER);
+    verify(ngConnectorSecretManagerService, times(1))
+        .getUsingIdentifier(ACCOUNT_IDENTIFIER, null, null, HARNESS_SECRET_MANAGER_IDENTIFIER, false);
   }
 
   @Test

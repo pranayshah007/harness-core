@@ -16,7 +16,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.event.handler.impl.account.AccountChangeHandler;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -38,7 +38,10 @@ import lombok.extern.slf4j.Slf4j;
  * Publishes `group` events to segment for all accounts at regular intervals.
  */
 @Slf4j
-public class SegmentGroupEventJob extends IteratorPumpModeHandler implements Handler<SegmentGroupEventJobContext> {
+public class SegmentGroupEventJob
+    extends IteratorPumpAndRedisModeHandler implements Handler<SegmentGroupEventJobContext> {
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(35);
+
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccountChangeHandler accountChangeHandler;
   @Inject private AccountService accountService;
@@ -55,11 +58,28 @@ public class SegmentGroupEventJob extends IteratorPumpModeHandler implements Han
                     .clazz(SegmentGroupEventJobContext.class)
                     .fieldName(SegmentGroupEventJobContextKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofMinutes(35))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this)
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<SegmentGroupEventJobContext, MorphiaFilterExpander<SegmentGroupEventJobContext>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                SegmentGroupEventJob.class,
+                MongoPersistenceIterator
+                    .<SegmentGroupEventJobContext, MorphiaFilterExpander<SegmentGroupEventJobContext>>builder()
+                    .clazz(SegmentGroupEventJobContext.class)
+                    .fieldName(SegmentGroupEventJobContextKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .handler(this)
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

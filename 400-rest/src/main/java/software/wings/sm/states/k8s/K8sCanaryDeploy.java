@@ -199,7 +199,9 @@ public class K8sCanaryDeploy extends AbstractK8sState {
                 featureFlagService.isEnabled(CDP_USE_K8S_DECLARATIVE_ROLLBACK, infraMapping.getAccountId()))
             .build();
     ExecutionResponse response = queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
-    saveK8sCanaryDeployRun(context);
+    if (!exportManifests) {
+      saveK8sCanaryDeployRun(context);
+    }
     return response;
   }
 

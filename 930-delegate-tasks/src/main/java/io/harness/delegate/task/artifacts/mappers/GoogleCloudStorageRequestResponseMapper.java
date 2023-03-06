@@ -13,10 +13,21 @@ import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageA
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GoogleCloudStorageRequestResponseMapper {
+  public List<GoogleCloudStorageArtifactDelegateResponse> toGoogleCloudStorageResponseList(
+      List<BuildDetails> buildDetails, GoogleCloudStorageArtifactDelegateRequest request) {
+    List<GoogleCloudStorageArtifactDelegateResponse> gcsArtifactDelegateResponseList = new ArrayList<>();
+    for (BuildDetails buildDetail : buildDetails) {
+      gcsArtifactDelegateResponseList.add(toGoogleCloudStorageResponse(buildDetail, request));
+    }
+    return gcsArtifactDelegateResponseList;
+  }
+
   public GoogleCloudStorageArtifactDelegateResponse toGoogleCloudStorageResponse(
       BuildDetails buildDetails, GoogleCloudStorageArtifactDelegateRequest request) {
     return GoogleCloudStorageArtifactDelegateResponse.builder()

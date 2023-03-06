@@ -207,16 +207,17 @@ pipelineServiceClientConfig:
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
-  connectTimeOutSeconds: 30
-  readTimeOutSeconds: 30
-
+  connectTimeOutSeconds: 120
+  readTimeOutSeconds: 120
 
 queueServiceClientConfig:
-  baseUrl: http://localhost:3457/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
+  httpClientConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
-queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -302,6 +303,8 @@ orchestrationStepConfig:
     addonImage: harness/ci-addon:1.14.19
     liteEngineImage: harness/ci-lite-engine:1.14.22
     isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
+
 
 shouldDeployWithGitSync: true
 
@@ -553,3 +556,8 @@ eventsFrameworkSnapshotDebezium:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+
+allowDifferentReposForPipelineAndInputSets: ${ALLOW_DIFFERENT_REPOS_FOR_PIPELINE_AND_INPUT_SETS:-false}
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}

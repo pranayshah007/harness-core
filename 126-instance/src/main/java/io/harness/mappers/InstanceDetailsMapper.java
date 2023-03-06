@@ -10,18 +10,22 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
+import io.harness.entities.ArtifactDetails;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
@@ -52,9 +56,10 @@ public class InstanceDetailsMapper {
   private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO, Boolean isGitops) {
     AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
-    String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
-    String artifactName =
-        StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : instanceDTO.getPrimaryArtifact().getTag();
+    ArtifactDetails primaryArtifact = instanceDTO.getPrimaryArtifact();
+    String artifactDisplayName = primaryArtifact == null ? null : primaryArtifact.getDisplayName();
+    String tag = primaryArtifact == null ? null : primaryArtifact.getTag();
+    String artifactName = StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : tag;
     return InstanceDetailsDTO.builder()
         .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())
@@ -94,6 +99,12 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.TAS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof SpotInstanceInfoDTO) {
       return ServiceSpecType.ELASTIGROUP;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AsgInstanceInfoDTO) {
+      return ServiceSpecType.ASG;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof GoogleFunctionInstanceInfoDTO) {
+      return ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AwsLambdaInstanceInfoDTO) {
+      return ServiceSpecType.AWS_LAMBDA;
     }
     return null;
   }

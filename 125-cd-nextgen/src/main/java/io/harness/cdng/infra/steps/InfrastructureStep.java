@@ -35,10 +35,13 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
+import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -371,6 +374,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       }
     }
 
+    if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.GCP.name()));
+      }
+    }
+
     if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
@@ -388,6 +399,22 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     if (InfrastructureKind.ASG.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_SAM.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
+    if (InfrastructureKind.AWS_LAMBDA.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
@@ -494,6 +521,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getCluster(), ecsInfrastructure.getRegion());
         break;
 
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
+            googleFunctionsInfrastructure.getProject(), googleFunctionsInfrastructure.getRegion());
+        break;
+
       case InfrastructureKind.TAS:
         TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
             (TanzuApplicationServiceInfrastructure) infrastructure;
@@ -504,6 +537,18 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.ASG:
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
+        break;
+
+      case InfrastructureKind.AWS_SAM:
+        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
+        break;
+
+      case InfrastructureKind.AWS_LAMBDA:
+        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
         break;
 
       default:

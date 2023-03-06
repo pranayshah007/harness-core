@@ -10,8 +10,8 @@ package io.harness.cdng.creator.plan.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.SidecarsListWrapper;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
-import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.constants.SidecarsStepConstants;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.utilities.SideCarsListArtifactsUtility;
 import io.harness.cdng.visitor.YamlTypes;
@@ -121,7 +121,7 @@ public class SideCarListPlanCreator extends ChildrenPlanCreator<SidecarsListWrap
     ForkStepParameters stepParameters = ForkStepParameters.builder().parallelNodeIds(childrenNodeIds).build();
     return PlanNode.builder()
         .uuid(sideCarsPlanNodeId)
-        .stepType(SidecarsStep.STEP_TYPE)
+        .stepType(SidecarsStepConstants.STEP_TYPE)
         .name(PlanCreatorConstants.SIDECARS_NODE_NAME)
         .identifier(YamlTypes.SIDECARS_ARTIFACT_CONFIG)
         .stepParameters(stepParameters)

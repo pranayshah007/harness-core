@@ -8,19 +8,23 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.template.TemplateStepNode;
-import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -30,6 +34,7 @@ import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
+import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -37,18 +42,36 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
+@Slf4j
 public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;
+  @Inject WorkflowHandlerFactory workflowHandlerFactory;
+  @Inject SecretRefUtils secretRefUtils;
 
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
-    return Collections.emptyList();
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return null;
+  }
+
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+    return secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode));
   }
 
   public abstract String getStepType(GraphNode stepYaml);
 
   public abstract State getState(GraphNode stepYaml);
+
+  String getSweepingOutputName(GraphNode graphNode) {
+    State state = getState(graphNode);
+    if (state instanceof SweepingOutputStateMixin) {
+      return ((SweepingOutputStateMixin) state).getSweepingOutputName();
+    }
+    return null;
+  }
 
   public List<StepExpressionFunctor> getExpressionFunctor(
       WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
@@ -58,7 +81,8 @@ public abstract class StepMapper {
   public abstract AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
 
   public Set<String> getExpressions(GraphNode graphNode) {
-    return Collections.emptySet();
+    Map<String, Object> properties = graphNode.getProperties();
+    return MigratorExpressionUtils.getExpressions(properties);
   }
 
   public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
@@ -67,17 +91,28 @@ public abstract class StepMapper {
 
   public TemplateStepNode defaultTemplateSpecMapper(WorkflowMigrationContext context, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
+    NGYamlFile template;
     if (StringUtils.isBlank(templateId)) {
       return null;
+    } else {
+      template = context.getMigratedEntities().get(
+          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    NGYamlFile template = context.getMigratedEntities().get(
-        CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
-    NGTemplateConfig templateConfig = (NGTemplateConfig) template.getYaml();
+    return getTemplateStepNode(context, graphNode, template);
+  }
+
+  @NotNull
+  TemplateStepNode getTemplateStepNode(WorkflowMigrationContext context, GraphNode graphNode, NGYamlFile template) {
+    if (template == null) {
+      log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
+          context.getWorkflow().getUuid(), graphNode.getName());
+      throw new InvalidRequestException(
+          String.format("The template used for step %s was not migrated", graphNode.getName()));
+    }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
-    templateLinkConfig.setVersionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel());
-    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(
-        template, context.getWorkflow().getAccountId(), templateConfig.getTemplateInfoConfig().getVersionLabel()));
+    templateLinkConfig.setTemplateInputs(
+        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId()));
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
@@ -144,9 +179,13 @@ public abstract class StepMapper {
     }
   }
 
-  public abstract WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode);
+  public abstract SupportStatus stepSupportStatus(GraphNode graphNode);
 
   public List<NGYamlFile> getChildNGYamlFiles(MigrationInputDTO inputDTO, GraphNode graphNode, String name) {
     return new ArrayList<>();
+  }
+
+  public boolean loopingSupported() {
+    return false;
   }
 }

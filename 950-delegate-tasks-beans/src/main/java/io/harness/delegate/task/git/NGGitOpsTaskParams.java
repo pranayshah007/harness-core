@@ -40,6 +40,8 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   GitOpsTaskType gitOpsTaskType;
   private String prLink;
   private GitApiTaskParams gitApiTaskParams;
+  private String prTitle;
+  private boolean isCloseLogStream;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

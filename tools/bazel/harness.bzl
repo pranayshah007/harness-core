@@ -4,9 +4,11 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 load("@rules_java//java:defs.bzl", orginal_java_binary = "java_binary", orginal_java_library = "java_library")
-load("//project/flags:report_unused.bzl", "REPORT_UNUSED")
 load("//:tools/bazel/unused_dependencies.bzl", "report_unused")
 load("//:tools/bazel/aeriform.bzl", "aeriformAnnotations")
+load("//project/flags:java_library_flags.bzl", "REPORT_UNUSED")
+load("//project/flags:java_library_flags.bzl", "REPORT_SIZE")
+load("//:tools/bazel/brannock.bzl", "brannock_rule")
 
 def java_library(**kwargs):
     tags = kwargs.pop("tags", [])
@@ -15,6 +17,12 @@ def java_library(**kwargs):
 
     if REPORT_UNUSED:
         report_unused(orginal_java_library, tags = tags, **kwargs)
+
+    if REPORT_SIZE:
+        deps = kwargs.pop("deps", [])
+        name = kwargs.pop("name")
+
+        brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)
 
     #aeriformAnnotations(**kwargs)
 
@@ -60,3 +68,9 @@ def java_binary(**kwargs):
 
     if REPORT_UNUSED:
         report_unused(orginal_java_binary, **kwargs)
+
+    if REPORT_SIZE:
+        deps = kwargs.pop("runtime_deps", [])
+        name = kwargs.pop("name")
+
+        brannock_rule(name = name + "_sizer", out = name + "_size_report.txt", deps = deps)

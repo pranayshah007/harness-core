@@ -7,6 +7,8 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
+import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.ACTIVE;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.INACTIVE;
 
 import io.harness.NGResourceFilterConstants;
@@ -47,12 +49,18 @@ public class StreamingDestinationServiceImpl implements StreamingDestinationServ
     return streamingDestinationRepository.findAll(criteria);
   }
 
+  @Override
+  public List<String> distinctAccounts() {
+    Criteria criteria = Criteria.where(status).is(ACTIVE);
+    return streamingDestinationRepository.findDistinctAccounts(criteria);
+  }
+
   private Criteria getCriteriaForStreamingDestinationList(
       String accountIdentifier, StreamingDestinationFilterProperties filterProperties) {
     Criteria criteria =
         Criteria.where(StreamingDestination.StreamingDestinationKeys.accountIdentifier).is(accountIdentifier);
     if (null != filterProperties.getStatus()) {
-      criteria.and(StreamingDestination.StreamingDestinationKeys.status).is(filterProperties.getStatus());
+      criteria.and(status).is(filterProperties.getStatus());
     }
     if (StringUtils.isNotEmpty(filterProperties.getSearchTerm())) {
       criteria.orOperator(

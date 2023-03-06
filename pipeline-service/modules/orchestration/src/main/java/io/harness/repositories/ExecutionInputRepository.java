@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.ExecutionInputInstance;
 
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
@@ -21,4 +22,11 @@ import org.springframework.data.repository.CrudRepository;
 public interface ExecutionInputRepository
     extends CrudRepository<ExecutionInputInstance, String>, ExecutionInputRepositoryCustom {
   Optional<ExecutionInputInstance> findByNodeExecutionId(String nodeExecutionId);
+
+  /**
+   * Delete all ExecutionInputInstance for given nodeExecutionIds
+   * Uses - nodeExecutionId_1 index
+   * @param nodeExecutionIds
+   */
+  void deleteAllByNodeExecutionIdIn(Set<String> nodeExecutionIds);
 }

@@ -8,7 +8,7 @@
 package io.harness.beans.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -16,6 +16,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
@@ -29,6 +30,7 @@ import io.harness.yaml.core.variables.NGVariable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -51,6 +53,7 @@ public class IntegrationStageNode extends AbstractStageNode {
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   IntegrationStageConfigImpl integrationStageConfig;
+  @VariableExpression List<NGVariable> pipelineVariables;
 
   @Override
   public String getType() {
@@ -69,18 +72,20 @@ public class IntegrationStageNode extends AbstractStageNode {
       this.name = name;
     }
   }
+  @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime, list})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
   @Builder
   public IntegrationStageNode(String uuid, String identifier, String name,
       ParameterField<List<FailureStrategyConfig>> failureStrategies, IntegrationStageConfigImpl integrationStageConfig,
-      StepType type, List<NGVariable> variables) {
+      StepType type, List<NGVariable> variables, List<NGVariable> pipelineVariables) {
     this.failureStrategies = failureStrategies;
     this.integrationStageConfig = integrationStageConfig;
     this.type = type;
     this.setVariables(variables);
+    this.pipelineVariables = pipelineVariables;
     this.setUuid(uuid);
     this.setIdentifier(identifier);
     this.setName(name);

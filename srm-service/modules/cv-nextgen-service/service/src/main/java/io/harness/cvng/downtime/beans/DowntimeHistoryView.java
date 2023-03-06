@@ -20,4 +20,6 @@ public class DowntimeHistoryView {
   DowntimeDuration duration;
   long startTime;
   long endTime;
+
+  DowntimeSpecDTO spec;
 }

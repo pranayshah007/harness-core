@@ -31,6 +31,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -199,11 +200,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (infraEntityOptional.isPresent()) {
       InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
 
-      if (oldInfrastructureEntity != null && oldInfrastructureEntity.getDeploymentType() != null
-          && requestInfra.getDeploymentType() != null
-          && !oldInfrastructureEntity.getDeploymentType().equals(requestInfra.getDeploymentType())) {
-        throw new InvalidRequestException(String.format("Infrastructure Deployment Type is not allowed to change."));
-      }
+      validateImmutableFieldsAndThrow(requestInfra, oldInfrastructureEntity);
 
       InfrastructureEntity updatedInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -235,6 +232,19 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
               requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
               requestInfra.getOrgIdentifier()));
+    }
+  }
+
+  private void validateImmutableFieldsAndThrow(InfrastructureEntity requestInfra, InfrastructureEntity oldInfra) {
+    if (oldInfra != null) {
+      if (oldInfra.getDeploymentType() != null && requestInfra.getDeploymentType() != null
+          && !oldInfra.getDeploymentType().equals(requestInfra.getDeploymentType())) {
+        throw new InvalidRequestException("Infrastructure Deployment Type is not allowed to change.");
+      }
+      if (oldInfra.getType() != null && requestInfra.getType() != null
+          && !oldInfra.getType().equals(requestInfra.getType())) {
+        throw new InvalidRequestException("Infrastructure Type is not allowed to change.");
+      }
     }
   }
 
@@ -321,8 +331,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envRef, String infraIdentifier) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envRef,
+      String infraIdentifier, boolean forceDelete) {
     InfrastructureEntity infraEntity = InfrastructureEntity.builder()
                                            .accountId(accountId)
                                            .orgIdentifier(orgIdentifier)
@@ -330,8 +340,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                            .envIdentifier(envRef)
                                            .identifier(infraIdentifier)
                                            .build();
-    // todo: check for infra usage in pipelines
-    // todo: outbox events
+
+    if (!forceDelete) {
+      infrastructureEntitySetupUsageHelper.checkThatInfraIsNotReferredByOthers(infraEntity);
+    }
+
     Criteria criteria = getInfrastructureEqualityCriteria(infraEntity);
     Optional<InfrastructureEntity> infraEntityOptional =
         get(accountId, orgIdentifier, projectIdentifier, envRef, infraIdentifier);
@@ -356,7 +369,8 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
                                .orgIdentifier(orgIdentifier)
                                .projectIdentifier(projectIdentifier)
                                .oldInfrastructureEntity(infraEntityOptional.get())
-                               .status(EnvironmentUpdatedEvent.Status.DELETED)
+                               .status(forceDelete ? EnvironmentUpdatedEvent.Status.FORCE_DELETED
+                                                   : EnvironmentUpdatedEvent.Status.DELETED)
                                .resourceType(EnvironmentUpdatedEvent.ResourceType.INFRASTRUCTURE)
                                .build());
         return true;
@@ -786,8 +800,11 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   public List<InfrastructureYamlMetadata> createInfrastructureYamlMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, List<String> infraIds) {
-    List<InfrastructureEntity> infrastructureEntities =
-        getAllInfrastructureFromIdentifierList(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
+    List<InfrastructureEntity> infrastructureEntities = new ArrayList<>();
+    if (!EngineExpressionEvaluator.hasExpressions(environmentRef)) {
+      infrastructureEntities =
+          getAllInfrastructureFromIdentifierList(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIds);
+    }
     List<InfrastructureYamlMetadata> infrastructureYamlMetadataList = new ArrayList<>();
     infrastructureEntities.forEach(infrastructureEntity
         -> infrastructureYamlMetadataList.add(createInfrastructureYamlMetadataInternal(infrastructureEntity)));

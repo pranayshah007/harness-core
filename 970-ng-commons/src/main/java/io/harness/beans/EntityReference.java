@@ -13,9 +13,11 @@ import io.harness.ng.core.NGAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@ApiModel(value = "EntityReference", subTypes = {IdentifierRef.class, InputSetReference.class}, discriminator = "type")
+@ApiModel(value = "EntityReference",
+    subTypes = {IdentifierRef.class, InputSetReference.class, NGTemplateReference.class}, discriminator = "type")
 public interface EntityReference extends NGAccess {
   @JsonIgnore String getFullyQualifiedName();
   String getBranch();
@@ -25,4 +27,7 @@ public interface EntityReference extends NGAccess {
   void setBranch(String branch);
   void setRepoIdentifier(String repoIdentifier);
   void setIsDefault(Boolean isDefault);
+  default Map<String, String> getMetadata() {
+    return Map.of();
+  }
 }

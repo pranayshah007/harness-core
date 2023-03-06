@@ -199,7 +199,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
       final List<ViewRule> rules = getRules();
       final List<SharedCostSplit> splits = getSharedCostSplits();
       return Stream
-          .of(getSharedCost(TEST_NAME_1, rules, SharingStrategy.FIXED, splits),
+          .of(getSharedCost(TEST_NAME_1, rules, SharingStrategy.EQUAL, splits),
               getSharedCost(TEST_NAME_2, rules, SharingStrategy.PROPORTIONAL, splits))
           .collect(Collectors.toList());
     }

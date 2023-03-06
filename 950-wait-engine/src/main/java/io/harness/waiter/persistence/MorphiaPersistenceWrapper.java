@@ -154,8 +154,10 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
 
   @Override
   public WaitInstance fetchForProcessingWaitInstance(String waitInstanceId, long now) {
-    final Query<WaitInstance> waitInstanceQuery =
-        hPersistence.createQuery(WaitInstance.class).filter(WaitInstanceKeys.uuid, waitInstanceId);
+    final Query<WaitInstance> waitInstanceQuery = hPersistence.createQuery(WaitInstance.class)
+                                                      .filter(WaitInstanceKeys.uuid, waitInstanceId)
+                                                      .field(WaitInstanceKeys.callbackProcessingAt)
+                                                      .lessThan(now);
 
     final UpdateOperations<WaitInstance> updateOperations =
         hPersistence.createUpdateOperations(WaitInstance.class)

@@ -13,11 +13,14 @@ import io.harness.category.element.FunctionalTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.TaskInput;
 import io.harness.rule.Owner;
 
 import software.wings.beans.bash.ShellScriptParameters;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
@@ -45,7 +48,14 @@ public class K8STaskRunnerTest {
   public void testCreateK8STask() throws IOException, ApiException {
     final var taskId = UUID.randomUUID().toString();
     final var taskPackage = DelegateTaskPackage.builder().delegateTaskId(taskId).data(createDummyTaskData()).build();
-    underTest.launchTask(taskPackage);
+
+    final byte[] taskPackageBytes =
+        null; // kryoSerializer.asDeflatedBytes(taskPackage); // TODO: switch to serialized task package file
+    final var pluginDescriptor =
+        TaskDescriptor.newBuilder()
+            .setInput(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(taskPackageBytes)).build())
+            .build();
+    underTest.launchTask(pluginDescriptor);
     underTest.cleanupTaskData(taskId);
   }
 

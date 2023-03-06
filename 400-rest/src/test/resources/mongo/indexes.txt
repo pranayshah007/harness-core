@@ -53,6 +53,7 @@ applicationManifests {"name": "createdAt_1", "background": true} {"createdAt": 1
 applications {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
 applications {"name": "appId_1", "background": true} {"appId": 1}
 applications {"name": "createdAt_1", "background": true} {"createdAt": 1}
+applications {"name": "rbacCoverIndex", "background": true} {"accountId": 1, "uuid": 1}
 applications {"name": "yaml", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "name": 1}
 approvalPollingJob {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 artifactStream {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -175,11 +176,8 @@ delegateProfiles {"name": "uniqueName", "unique": true} {"accountId": 1, "name":
 delegateProfiles {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
 delegateScopes {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateScopes {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
-delegateSelectionLogRecords {"name": "selectionLogsGroup", "background": true} {"accountId": 1, "taskId": 1, "message": 1, "groupId": 1}
+delegateSelectionLogRecords {"name": "selectionLogs", "background": true} {"accountId": 1, "taskId": 1, "message": 1}
 delegateSelectionLogRecords {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateSelectionLogTaskMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
-delegateSelectionLogTaskMetadata {"name": "taskId_1", "unique": true} {"taskId": 1}
-delegateSelectionLogTaskMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateSequenceConfig {"name": "appId_1", "background": true} {"appId": 1}
 delegateSequenceConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 delegateSequenceConfig {"name": "uniqueDelegateSequenceIdx", "unique": true} {"accountId": 1, "hostName": 1, "sequenceNum": 1}
@@ -190,6 +188,7 @@ delegateTasks {"name": "index", "background": true} {"status": 1, "expiry": 1}
 delegateTasks {"name": "pulling", "background": true} {"accountId": 1, "status": 1, "data.async": 1, "expiry": 1}
 delegateTasks {"name": "rebroadcast", "background": true} {"version": 1, "status": 1, "delegateId": 1, "nextBroadcast": 1}
 delegateTasks {"name": "rebroadcast1", "background": true} {"status": 1, "delegateId": 1, "nextBroadcast": 1}
+delegateTasks {"name": "taskcountperaccount", "background": true} {"accountId": 1, "delegateId": 1, "status": 1}
 delegateTasks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateTokens {"name": "byAccountAndName", "unique": true} {"accountId": 1, "name": 1}
 delegateTokens {"name": "byAccountAndNgAndOwnerAndStatus", "background": true} {"accountId": 1, "isNg": 1, "owner": 1, "status": 1}
@@ -337,6 +336,7 @@ gitFileActivity {"name": "accountId_filePath", "background": true} {"accountId":
 gitFileActivity {"name": "accountId_procCommitId_filePath_status", "background": true} {"accountId": 1, "processingCommitId": 1, "filePath": 1, "status": 1}
 gitFileActivity {"name": "accountId_procCommitId_status", "background": true} {"accountId": 1, "processingCommitId": 1, "status": 1}
 gitFileActivity {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+gitFileActivitySummary {"name": "accountId_appId_createdAt", "background": true} {"accountId": 1, "appId": 1, "createdAt": -1}
 gitFileActivitySummary {"name": "gitCommits_createdAt_direction_indx", "background": true} {"accountId": 1, "createdAt": 1, "gitToHarness": 1}
 gitFileActivitySummary {"name": "gitCommits_for_appId_indx", "background": true} {"accountId": 1, "appId": 1, "gitToHarness": 1}
 gitFileActivitySummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -402,6 +402,7 @@ infrastructureProvisioner {"name": "createdAt_1", "background": true} {"createdA
 infrastructureProvisioner {"name": "infrastructureProvisionerType_1", "background": true} {"infrastructureProvisionerType": 1}
 instance {"name": "accountId_computeProviderId_instanceInfoNamespace_instanceInfoPodName_createdAt", "background": true} {"accountId": 1, "computeProviderId": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": -1}
 instance {"name": "accountId_createdAt_appId", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1}
+instance {"name": "accountId_deletedAt_createdAt", "background": true} {"accountId": 1, "deletedAt": 1, "createdAt": 1}
 instance {"name": "appId_1", "background": true} {"appId": 1}
 instance {"name": "appid_inframapping_isdeleted_createdatdesc", "background": true} {"appId": 1, "infraMappingId": 1, "isDeleted": 1, "createdAt": -1}
 instance {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -811,7 +812,7 @@ userInvites {"name": "appId_1", "background": true} {"appId": 1}
 userInvites {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userInvites {"name": "email_createdAt", "background": true} {"email": 1, "createdAt": -1}
 users {"name": "accountsCreatedAt", "background": true} {"accounts": 1, "createdAt": -1}
-users {"name": "accountsIdx", "background": true} {"accounts": 1}
+users {"name": "accountsIdx_disabled_lastUpdatedAt", "background": true} {"accounts": 1, "disabled": 1, "lastUpdatedAt": -1}
 users {"name": "appId_1", "background": true} {"appId": 1}
 users {"name": "createdAt_1", "background": true} {"createdAt": 1}
 users {"name": "email_1", "unique": true} {"email": 1}
@@ -819,7 +820,7 @@ users {"name": "email_accounts_disabled", "background": true} {"email": 1, "acco
 users {"name": "email_pendingAccounts_disabled", "background": true} {"email": 1, "pendingAccounts": 1, "disabled": 1}
 users {"name": "externalUserId_1", "background": true} {"externalUserId": 1}
 users {"name": "name_accounts_disabled", "background": true} {"name": 1, "accounts": 1, "disabled": 1}
-users {"name": "pendingAccountsIdx", "background": true} {"pendingAccounts": 1}
+users {"name": "pendingAccountsIdx_disabled_lastUpdatedAt", "background": true} {"pendingAccounts": 1, "disabled": 1, "lastUpdatedAt": -1}
 users {"name": "userIdAccountIdx", "background": true} {"accounts": 1, "externalUserId": 1}
 verificationServiceConfigurations {"name": "accountId_1", "background": true} {"accountId": 1}
 verificationServiceConfigurations {"name": "appId_1", "background": true} {"appId": 1}
@@ -906,6 +907,7 @@ workflows {"name": "appId_name", "background": true} {"appId": 1, "name": 1}
 workflows {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflows {"name": "linkedArtifactStreamIds_1", "background": true} {"linkedArtifactStreamIds": 1}
 workflows {"name": "linkedTemplateUuids_1", "background": true} {"linkedTemplateUuids": 1}
+workflows {"name": "rbac_index", "background": true} {"accountId": 1, "uuid": 1, "appId": 1, "envId": 1, "templatized": 1, "templateExpressions": 1}
 yamlChangeSet {"name": "accountId_createdAt_index", "background": true} {"accountId": 1, "createdAt": -1}
 yamlChangeSet {"name": "accountId_queuekey_status_createdAt_index", "background": true} {"accountId": 1, "queueKey": 1, "status": 1, "createdAt": -1}
 yamlChangeSet {"name": "accountId_status_gitToHarness_createdAt_index", "background": true} {"accountId": 1, "status": 1, "gitToHarness": 1, "createdAt": 1}

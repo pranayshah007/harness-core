@@ -62,7 +62,7 @@ public class ModuleVersionResource implements ModuleVersionsApi {
         moduleVersionInfoService.getCurrentVersionOfAllModules(modulesversionPageRequest);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/module-versions", pageResponse.getResponse().size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, pageResponse.getTotal(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getResponse().stream().map(this::getModuleVersionsResponse).collect(Collectors.toList()))
         .build();

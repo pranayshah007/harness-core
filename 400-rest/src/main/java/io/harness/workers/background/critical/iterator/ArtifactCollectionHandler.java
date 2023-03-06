@@ -21,7 +21,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -54,9 +54,9 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
-public class ArtifactCollectionHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
+public class ArtifactCollectionHandler extends IteratorPumpAndRedisModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
-  private static final int ACCEPTABLE_NO_ALERT_DELAY = 30;
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(30);
 
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -75,7 +75,7 @@ public class ArtifactCollectionHandler extends IteratorPumpModeHandler implement
                            .clazz(ArtifactStream.class)
                            .fieldName(ArtifactStreamKeys.nextIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofSeconds(ACCEPTABLE_NO_ALERT_DELAY))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(REGULAR)
@@ -96,7 +96,7 @@ public class ArtifactCollectionHandler extends IteratorPumpModeHandler implement
                     .clazz(ArtifactStream.class)
                     .fieldName(ArtifactStreamKeys.nextIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofSeconds(ACCEPTABLE_NO_ALERT_DELAY))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                     .handler(this)
                     .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                     .persistenceProvider(persistenceProvider)

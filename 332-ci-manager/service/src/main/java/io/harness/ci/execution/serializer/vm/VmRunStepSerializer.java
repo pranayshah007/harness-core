@@ -7,7 +7,7 @@
 
 package io.harness.ci.serializer.vm;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.FeatureName;
@@ -25,7 +25,6 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
-import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -48,8 +47,7 @@ public class VmRunStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
-  private static List<String> INFORMATICA_ACCOUNT_IDS =
-      new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
+
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
     String command =
@@ -67,7 +65,7 @@ public class VmRunStepSerializer {
 
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runStepInfo.getDefaultTimeout());
     Map<String, String> envVars =
-        resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
 
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
@@ -81,8 +79,7 @@ public class VmRunStepSerializer {
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
-        && (INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())
-            || featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier()))) {
+        && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
           + command;
@@ -103,6 +100,7 @@ public class VmRunStepSerializer {
       ngAccess = AmbianceUtils.getNgAccess(ambiance);
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runStepBuilder.imageConnector(connectorDetails);
+      runStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(runStepInfo.getPrivileged(), false));
     }
 
     if (runStepInfo.getReports().getValue() != null) {

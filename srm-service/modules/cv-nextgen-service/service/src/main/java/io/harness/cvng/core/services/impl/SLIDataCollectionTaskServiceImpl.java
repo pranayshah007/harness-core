@@ -88,6 +88,9 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     Instant currentTime = clock.instant();
     if (nextTaskStartTime.isBefore(prevSLITask.getDataCollectionPastTimeCutoff(currentTime))) {
       nextTaskStartTime = prevSLITask.getDataCollectionPastTimeCutoff(currentTime);
+      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
+          prevSLITask.getVerificationTaskId(), prevSLITask.getEndTime().plus(1, ChronoUnit.MINUTES),
+          nextTaskStartTime.minus(1, ChronoUnit.MINUTES), serviceLevelIndicator);
       log.info("Restarting Data collection startTime: {}", nextTaskStartTime);
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(

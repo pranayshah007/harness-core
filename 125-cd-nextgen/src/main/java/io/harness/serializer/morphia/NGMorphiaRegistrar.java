@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
-import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.infra.InfraUseFromStage;
@@ -22,6 +22,7 @@ import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.morphia.MorphiaRegistrar;
@@ -48,6 +49,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(InstanceDeploymentInfo.class);
     set.add(AzureARMConfig.class);
     set.add(TerragruntConfig.class);
+    set.add(TerraformCloudConfig.class);
   }
 
   @Override
@@ -65,5 +67,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails",
         TerraformPlanExecutionDetails.class);
     h.put("io.harness.cdng.provision.terragrunt.TerragruntConfig", TerragruntConfig.class);
+    h.put("io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig", TerraformCloudConfig.class);
   }
 }

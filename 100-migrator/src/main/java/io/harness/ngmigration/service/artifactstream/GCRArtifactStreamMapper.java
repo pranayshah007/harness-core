@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,13 +20,18 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.GcrSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.GcrArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +53,30 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
                   .imagePath(ParameterField.createValueField(gcrArtifactStream.getDockerImageName()))
                   .tag(ParameterField.createValueField("<+input>"))
                   .build())
+        .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.GCR;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    String registryHostname = PLEASE_FIX_ME;
+    String imagePath = PLEASE_FIX_ME;
+    if (artifactStream != null) {
+      GcrArtifactStream gcrArtifactStream = (GcrArtifactStream) artifactStream;
+      registryHostname = gcrArtifactStream.getRegistryHostName();
+      imagePath = gcrArtifactStream.getDockerImageName();
+    }
+    return GcrSpec.builder()
+        .tag(PLEASE_FIX_ME)
+        .connectorRef(getConnectorRef(migratedEntities, artifactStream))
+        .eventConditions(Collections.emptyList())
+        .registryHostname(registryHostname)
+        .imagePath(imagePath)
         .build();
   }
 }

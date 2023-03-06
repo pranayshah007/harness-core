@@ -28,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class MachineRuntimeV1 implements RuntimeV1 {
   @Builder.Default @NotNull @ApiModelProperty(allowableValues = "machine") Type type = Type.MACHINE;
   @NotNull MachineRuntimeSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Value
   @Builder

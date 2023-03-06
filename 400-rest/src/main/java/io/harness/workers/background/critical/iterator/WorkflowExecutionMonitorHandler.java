@@ -33,7 +33,7 @@ import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AutoLogContext;
@@ -69,7 +69,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler implements Handler<WorkflowExecution> {
+public class WorkflowExecutionMonitorHandler
+    extends IteratorPumpAndRedisModeHandler implements Handler<WorkflowExecution> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
@@ -82,6 +83,7 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
   private static final Duration INACTIVITY_TIMEOUT = Duration.ofMinutes(3);
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
   private static final Duration SHELL_SCRIPT_EXPIRE_THRESHOLD = Duration.ofSeconds(10);
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = Duration.ofSeconds(30);
 
   @Override
   protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
@@ -93,12 +95,29 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
                            .fieldName(WorkflowExecutionKeys.nextIteration)
                            .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(Duration.ofSeconds(30))
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .schedulingType(SchedulingType.REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>)
+                   persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                       WorkflowExecution.class,
+                       MongoPersistenceIterator.<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>builder()
+                           .clazz(WorkflowExecution.class)
+                           .fieldName(WorkflowExecutionKeys.nextIteration)
+                           .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider));
   }
 
   @Override

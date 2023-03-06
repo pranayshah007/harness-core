@@ -191,6 +191,14 @@ public class GitClientHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetOwnerFromHTTPURLNoOwner() {
+    final String repoName = GitClientHelper.getGitOwner("https://github.com/", true);
+    assertThat(repoName).isEqualTo(null);
+  }
+
+  @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void testGitHubType() {

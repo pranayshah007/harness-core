@@ -10,7 +10,9 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
+import io.harness.ff.FeatureFlagService;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.search.SQLOperationHelper;
@@ -31,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 public class ApplicationTimeScalaRedisChangeEventHandler extends DebeziumAbstractRedisEventHandler {
   @Inject private TimeScaleDBService timeScaleDBService;
+  @Inject private FeatureFlagService featureFlagService;
   private static final String tableName = "cg_applications";
 
   @SneakyThrows
@@ -93,6 +96,9 @@ public class ApplicationTimeScalaRedisChangeEventHandler extends DebeziumAbstrac
   }
 
   public boolean dbOperation(String query) {
+    if (!featureFlagService.isGlobalEnabled(FeatureName.CDS_DEBEZIUM_ENABLED_CG)) {
+      return true;
+    }
     boolean successfulOperation = false;
     if (timeScaleDBService.isValid()) {
       int retryCount = 0;

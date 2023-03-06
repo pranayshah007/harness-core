@@ -97,6 +97,7 @@ mongo:
   aliasDBName: ng-harness
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 2147483647
 
 accountConfig:
   deploymentClusterName: ""
@@ -485,3 +486,5 @@ debeziumConsumersConfigs:
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}

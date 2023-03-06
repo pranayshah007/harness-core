@@ -27,25 +27,25 @@
     "failureStrategies": {
       "oneOf": [
         {
-          "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-        },
-        {
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
         },
         {
           "type": "string",
-          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "pattern": "^<\\+input>$",
           "minLength": 1
         }
       ]
     },
     "identifier": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+      "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
     },
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
     },
     "strategy": {
       "$ref": "#/definitions/StrategyConfig"
@@ -79,7 +79,16 @@
       }
     },
     "when": {
-      "$ref": "#/definitions/StageWhenCondition"
+      "oneOf": [
+        {
+          "$ref": "#/definitions/StageWhenCondition"
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>$",
+          "minLength": 1
+        }
+      ]
     }
   },
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -278,6 +287,63 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ActionStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "envs": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AquaTrivyStepInfo": {
       "allOf": [
         {
@@ -391,6 +457,15 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Attestation": {
+      "type": "object",
+      "properties": {
+        "privateKey": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "AwsEcrStepInfo": {
@@ -624,7 +699,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -767,7 +843,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {
@@ -925,6 +1002,63 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "BitriseStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "envs": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
             },
             "uses": {
               "type": "string"
@@ -1528,6 +1662,18 @@
           "oneOf": [
             {
               "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "key": {
+          "oneOf": [
+            {
+              "type": "string"
             },
             {
               "type": "string",
@@ -2920,7 +3066,8 @@
             "StepGroupRollback",
             "PipelineRollback",
             "ManualIntervention",
-            "ProceedWithDefaultValues"
+            "ProceedWithDefaultValues",
+            "MarkAsFailure"
           ]
         }
       },
@@ -3706,6 +3853,25 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ImageSbomSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomSourceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Infrastructure": {
       "type": "object",
       "discriminator": "type",
@@ -3753,6 +3919,12 @@
             },
             "infrastructure": {
               "$ref": "#/definitions/Infrastructure"
+            },
+            "pipelineVariables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NGVariable"
+              }
             },
             "skipGitClone": {
               "type": "boolean"
@@ -4314,6 +4486,28 @@
               "type": "string",
               "enum": [
                 "ManualIntervention"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MarkAsFailFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MarkAsFailure"
               ]
             }
           }
@@ -5072,7 +5266,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -5268,7 +5462,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5621,45 +5815,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/DependencyElement"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ParameterFieldListFailureStrategyConfig": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
           }
         }
       },
@@ -6304,6 +6459,30 @@
           "items": {
             "$ref": "#/definitions/PodSetupInfo"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PolicyConfig": {
+      "type": "object",
+      "required": [
+        "policySets"
+      ],
+      "properties": {
+        "policySets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7134,7 +7313,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -7357,7 +7537,8 @@
                     "Sh",
                     "Bash",
                     "Powershell",
-                    "Pwsh"
+                    "Pwsh",
+                    "Python"
                   ]
                 },
                 {
@@ -8040,6 +8221,80 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomOrchestrationSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SbomOrchestrationTool": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Syft"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Syft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SyftSbomOrchestration"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "image"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "image"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ImageSbomSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ScriptStepInfo": {
       "allOf": [
         {
@@ -8134,7 +8389,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {
@@ -8176,7 +8432,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -8398,25 +8654,25 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -8450,7 +8706,16 @@
           }
         },
         "when": {
-          "$ref": "#/definitions/StageWhenCondition"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StageWhenCondition"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -9056,6 +9321,32 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SscaOrchestrationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source",
+            "tool"
+          ],
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/Attestation"
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "tool": {
+              "$ref": "#/definitions/SbomOrchestrationTool"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StageRollbackFailureActionConfig": {
       "allOf": [
         {
@@ -9110,28 +9401,31 @@
         "description": {
           "type": "string"
         },
+        "enforce": {
+          "$ref": "#/definitions/PolicyConfig"
+        },
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
@@ -9144,7 +9438,16 @@
           "type": "string"
         },
         "when": {
-          "$ref": "#/definitions/StepWhenCondition"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StepWhenCondition"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -9985,6 +10288,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SscaOrchestration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SscaOrchestrationStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Sysdig"
               }
             }
@@ -10049,6 +10368,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "action"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ActionStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "background"
               }
             }
@@ -10057,6 +10392,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BackgroundStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "bitrise"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/BitriseStepInfoV1"
               }
             }
           }
@@ -10136,25 +10487,25 @@
         "failureStrategies": {
           "oneOf": [
             {
-              "$ref": "#/definitions/ParameterFieldListFailureStrategyConfig"
-            },
-            {
-              "type": "array"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
         },
         "identifier": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "steps": {
           "type": "array",
@@ -10171,7 +10522,16 @@
           "$ref": "#/definitions/TemplateLinkConfig"
         },
         "when": {
-          "$ref": "#/definitions/StepWhenCondition"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StepWhenCondition"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -10322,7 +10682,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -10332,6 +10692,25 @@
             },
             "value": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SyftSbomOrchestration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomOrchestrationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "spdx-json"
+              ]
             }
           }
         }
@@ -10694,7 +11073,8 @@
                     "sh",
                     "bash",
                     "powershell",
-                    "pwsh"
+                    "pwsh",
+                    "python"
                   ]
                 },
                 {

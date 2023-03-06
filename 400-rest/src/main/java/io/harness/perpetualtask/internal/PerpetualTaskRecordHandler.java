@@ -36,7 +36,7 @@ import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.IteratorExecutionHandler;
-import io.harness.iterator.IteratorPumpModeHandler;
+import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @BreakDependencyOn("software.wings.service.InstanceSyncConstants")
-public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implements PerpetualTaskCrudObserver {
+public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler implements PerpetualTaskCrudObserver {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private DelegateService delegateService;
   @Inject private PerpetualTaskService perpetualTaskService;
@@ -81,6 +81,9 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
   @Inject private AccountService accountService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
+
+  private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
+  private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
 
   @Override
   protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
@@ -92,8 +95,8 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
                     .clazz(PerpetualTaskRecord.class)
                     .fieldName(PerpetualTaskRecordKeys.assignIteration)
                     .targetInterval(targetInterval)
-                    .acceptableNoAlertDelay(ofSeconds(45))
-                    .acceptableExecutionTime(ofSeconds(30))
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                     .handler(this::assign)
                     .filterExpander(query
                         -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
@@ -104,6 +107,29 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
                     .schedulingType(REGULAR)
                     .persistenceProvider(persistenceProvider)
                     .redistribute(true));
+  }
+
+  @Override
+  protected void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>)
+            persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+                PerpetualTaskRecordHandler.class,
+                MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
+                    .clazz(PerpetualTaskRecord.class)
+                    .fieldName(PerpetualTaskRecordKeys.assignIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
+                    .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                    .handler(this::assign)
+                    .filterExpander(query
+                        -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
+                               .field(PerpetualTaskRecordKeys.assignAfterMs)
+                               .lessThanOrEq(System.currentTimeMillis()))
+                    .entityProcessController(
+                        new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
+                    .persistenceProvider(persistenceProvider));
   }
 
   @Override

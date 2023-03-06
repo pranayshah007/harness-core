@@ -38,6 +38,7 @@ public class PersistentVolumeClaimYaml implements CIVolume {
   @Builder.Default @NotNull private CIVolume.Type type = Type.PERSISTENT_VOLUME_CLAIM;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;
   @NotNull private PersistentVolumeClaimYamlSpec spec;
+  @ApiModelProperty(hidden = true) String uuid;
 
   @Data
   @Builder
@@ -49,5 +50,6 @@ public class PersistentVolumeClaimYaml implements CIVolume {
     @YamlSchemaTypes({runtime})
     @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
     private ParameterField<Boolean> readOnly;
+    @ApiModelProperty(hidden = true) String uuid;
   }
 }

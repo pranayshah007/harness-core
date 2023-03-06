@@ -67,9 +67,6 @@ public interface TerraformCloudRestClient {
   Call<TerraformCloudResponse<PlanData>> getPlan(
       @Header("Authorization") String authorization, @Path("planId") String planId);
 
-  @GET("api/v2/plans/{planId}/json-output")
-  Call<String> getPlanJsonOutput(@Header("Authorization") String authorization, @Path("planId") String planId);
-
   @GET("api/v2/applies/{applyId}")
   Call<TerraformCloudResponse<ApplyData>> getApply(
       @Header("Authorization") String authorization, @Path("applyId") String applyId);
@@ -78,11 +75,13 @@ public interface TerraformCloudRestClient {
   Call<TerraformCloudResponse<List<PolicyCheckData>>> listPolicyChecks(
       @Header("Authorization") String authorization, @Path("runId") String runId, @Query("page[number]") int page);
 
-  @GET("/api/v2/policy-checks/{policyCheckId}/output")
-  Call<String> getPolicyCheckOutput(
-      @Header("Authorization") String authorization, @Path("policyCheckId") String policyCheckId);
-
   @GET("/api/v2/state-versions/{stateVersionId}/outputs")
   Call<TerraformCloudResponse<List<StateVersionOutputData>>> getStateVersionOutputs(
-      @Header("Authorization") String authorization, @Path("stateVersionId") String stateVersionId);
+      @Header("Authorization") String authorization, @Path("stateVersionId") String stateVersionId,
+      @Query("page[number]") int page);
+
+  @Headers({"Content-Type: application/vnd.api+json"})
+  @POST("api/v2/policy-checks/{policyChecksId}/actions/override")
+  Call<Void> overridePolicyChecks(
+      @Header("Authorization") String authorization, @Path("policyChecksId") String policyChecksId);
 }

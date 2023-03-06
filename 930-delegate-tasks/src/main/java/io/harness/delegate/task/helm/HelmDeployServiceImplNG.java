@@ -9,8 +9,10 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
@@ -85,8 +87,8 @@ import io.harness.helm.HelmCommandResponseMapper;
 import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.K8sConstants;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
@@ -139,7 +141,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
-      ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM);
+      ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM, CUSTOM_REMOTE, HARNESS);
   private static final String SUB_CHARTS_FOLDER = "charts";
   @Inject private HelmClient helmClient;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
@@ -225,8 +227,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // call listReleases method
       HelmListReleaseResponseNG helmListReleaseResponseNG = listReleases(commandRequest);
-
-      log.info(helmListReleaseResponseNG.getOutput());
+      logCallback.saveExecutionLog(helmListReleaseResponseNG.getOutput() + "\n");
 
       // if list release failed due to unknown exception:
       if (helmListReleaseResponseNG.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
@@ -375,7 +376,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private boolean checkIfReleasePurgingNeeded(HelmInstallCommandRequestNG commandRequest) {
     HelmListReleaseResponseNG commandResponse = listReleases(commandRequest);
-    log.info(commandResponse.getOutput());
+    commandRequest.getLogCallback().saveExecutionLog(commandResponse.getOutput() + "\n");
 
     if (commandResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       if (isEmpty(commandResponse.getReleaseInfoList())) {
@@ -1052,11 +1053,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     HelmChartManifestDelegateConfig helmManifest =
         (HelmChartManifestDelegateConfig) commandRequest.getManifestDelegateConfig();
 
-    // sub-chart name will be non-empty only if FF is on and some value has been set
-    int index = isEmpty(helmManifest.getSubChartName())
-        ? -1
-        : helmTaskHelperBase.checkForDependencyUpdateFlag(
-            helmManifest.getHelmCommandFlag().getValueMap(), cliResponse.getOutput());
+    int index = helmTaskHelperBase.checkForDependencyUpdateFlag(
+        helmManifest.getHelmCommandFlag().getValueMap(), cliResponse.getOutput());
 
     return new HelmCommandResponseNG(cliResponse.getCommandExecutionStatus(),
         index == -1 ? cliResponse.getOutput() : cliResponse.getOutput().substring(index));
@@ -1107,6 +1105,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         case S3_HELM:
         case OCI_HELM:
           helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
+          break;
+        case CUSTOM_REMOTE:
+        case HARNESS:
+          log.debug(
+              format("No repo url exists for %s store", manifestDelegateConfig.getStoreDelegateConfig().getType()));
           break;
         default:
           log.warn("Unsupported store type: " + manifestDelegateConfig.getStoreDelegateConfig().getType());

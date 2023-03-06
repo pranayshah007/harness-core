@@ -308,7 +308,6 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     Response response = accountResourceGroupApi.listResourceGroupsAcc(page, limit, searchTerm, account, sort, order);
     List<ResourceGroupsResponse> entity = (List<ResourceGroupsResponse>) response.getEntity();
 
-    assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
@@ -452,7 +451,6 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     Response response = orgResourceGroupsApi.listResourceGroupsOrg(org, page, limit, searchTerm, account, sort, order);
     List<ResourceGroupsResponse> entity = (List<ResourceGroupsResponse>) response.getEntity();
 
-    assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
@@ -598,7 +596,6 @@ public class ResourceGroupApiImplTest extends CategoryTest {
         projectResourceGroupsApi.listResourceGroupsProject(org, project, page, limit, searchTerm, account, sort, order);
     List<ResourceGroupsResponse> entity = (List<ResourceGroupsResponse>) response.getEntity();
 
-    assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
@@ -641,7 +638,6 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     Response response = filterResourceGroupApi.filterResourceGroups(requestBody, account, page, limit, sort, order);
     List<ResourceGroupsResponse> entity = (List<ResourceGroupsResponse>) response.getEntity();
 
-    assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
     assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());

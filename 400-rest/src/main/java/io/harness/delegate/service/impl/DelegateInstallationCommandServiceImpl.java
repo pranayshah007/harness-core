@@ -37,6 +37,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
       + "  -e ACCOUNT_ID=${account_id} \\\n"
       + "  -e DELEGATE_TOKEN=${token} \\\n"
+      + "  -e LOG_STREAMING_SERVICE_URL=${manager_url}/log-service/ \\\n"
       + "  -e MANAGER_HOST_AND_PORT=${manager_url} ${image}";
 
   private static final String HELM_COMMAND =
@@ -49,14 +50,11 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "  --set delegateDockerImage=${image} \\\n"
       + "  --set replicas=1 --set upgrader.enabled=false";
 
-  private static final String TERRAFORM_COMMAND = "terraform apply \\\n"
-      + "-var delegate_name=terraform-delegate \\\n"
-      + "-var account_id=${account_id} \\\n"
-      + "-var delegate_token=${token} \\\n"
-      + "-var manager_endpoint=${manager_url} \\\n"
-      + "-var delegate_image=${image} \\\n"
-      + "-var replicas=1 \\\n"
-      + "-var upgrader_enabled=false";
+  private static final String KUBERNETES_MANIFEST_INSTRUCTIONS = "\"PUT_YOUR_DELEGATE_NAME\" with kubernetes-delegate\n"
+      + "\"PUT_YOUR_ACCOUNT_ID\" with ${account_id}\n"
+      + "\"PUT_YOUR_MANAGER_ENDPOINT\" with ${manager_url}\n"
+      + "\"PUT_YOUR_DELEGATE_TOKEN\" with ${token}\n"
+      + "\"PUT_YOUR_DELEGATE_IMAGE\" with ${image}";
 
   @Inject
   public DelegateInstallationCommandServiceImpl(
@@ -79,8 +77,8 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
         return substitute.replace(DOCKER_COMMAND);
       case "HELM":
         return substitute.replace(HELM_COMMAND);
-      case "TERRAFORM":
-        return substitute.replace(TERRAFORM_COMMAND);
+      case "KUBERNETES":
+        return substitute.replace(KUBERNETES_MANIFEST_INSTRUCTIONS);
       default:
         final String error = String.format("Unsupported installation command type %s.", commandType);
         log.error(error);
@@ -114,7 +112,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
         delegateNgTokenService.getDelegateToken(accountId, delegateNgTokenService.getDefaultTokenName(owner), true);
     String tokenValue;
     if (Objects.isNull(delegateTokenDetails) || !delegateTokenDetails.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
-      tokenValue = "<PUT YOUR TOKEN>";
+      tokenValue = "<please create a Delegate Token>";
     } else {
       tokenValue = delegateTokenDetails.getValue();
     }

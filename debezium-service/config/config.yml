@@ -78,7 +78,7 @@ debeziumConfigs:
           enabled: ${SNAPSHOT_EVENTS_FRAMEWORK_SSL_CONFIG_ENABLED:-false}
           CATrustStorePath: ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PATH:-/tmp/ca_trust_store}
           CATrustStorePassword:  ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PASSWORD:-}
-  - isEnabled: ${IS_ENABLED_APPLICATIONS:-true}
+  - isEnabled: ${IS_ENABLED_APPLICATIONS:-false}
     name: ${DEBEZIUM_NAME_APPLICATIONS:-applications} # unique for each debezium config
     mongodb.name: ${MONGODB_NAME_APPLICATIONS:-harnessMongo} # unique for each debezium config
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_APPLICATIONS:-false}
@@ -145,3 +145,7 @@ cfClientConfig:
 featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
+
+listOfErrorCodesForOffsetReset:
+  - 286 # Resume token cannot be found in oplog
+  - 10334 # Invalid BSONObj size

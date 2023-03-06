@@ -21,6 +21,7 @@ import static java.util.Objects.nonNull;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.api.impl.SecretPermissionValidator;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -30,6 +31,8 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.spec.server.ng.v1.AccountSecretApi;
 import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
+import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
+import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
@@ -37,16 +40,24 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class AccountSecretApiImpl implements AccountSecretApi {
   private final SecretCrudService ngSecretService;
   private final SecretPermissionValidator secretPermissionValidator;
   private final SecretApiUtils secretApiUtils;
+  private final NGEncryptedDataService ngEncryptedDataService;
+  private static final String validationErrorMessage =
+      "Validation has failed, Secret reference not found. Please check the reference path or make sure the delegate has secret manager access";
+  private static final String validationSuccessMessage = "Validation is Successful, Secret can be referenced";
 
   @Override
   public Response createAccountScopedSecret(SecretRequest secretRequest, String account, Boolean privateSecret) {
@@ -130,6 +141,28 @@ public class AccountSecretApiImpl implements AccountSecretApi {
         .build();
   }
 
+  @Override
+  public Response validateAccountSecretRef(@Valid SecretValidationMetadata body, String account) {
+    boolean isValid;
+    try {
+      isValid = ngEncryptedDataService.validateSecretRef(
+          account, null, null, body.getSecretManagerIdentifier(), body.getSecretRefPath());
+    } catch (Exception e) {
+      log.error("Secret path reference failed for secret on secretManager: {}, account: {}",
+          body.getSecretManagerIdentifier(), account);
+      throw e;
+    }
+    if (isValid) {
+      return Response.ok()
+          .entity(new SecretValidationResponse().message(validationSuccessMessage).success(true))
+          .build();
+    } else {
+      return Response.ok()
+          .entity(new SecretValidationResponse().message(validationErrorMessage).success(false))
+          .build();
+    }
+  }
+
   private Response updateSecret(SecretRequest secretRequest, String secret, String account) {
     SecretResponseWrapper secretResponseWrapper = ngSecretService.get(account, null, null, secret).orElse(null);
     secretPermissionValidator.checkForAccessOrThrow(ResourceScope.of(account, null, null),
@@ -170,17 +203,16 @@ public class AccountSecretApiImpl implements AccountSecretApi {
   private Response getSecrets(String account, List<String> secret, List<String> type, Boolean recursive,
       String searchTerm, Integer page, Integer limit) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-
-    List<SecretResponseWrapper> content = getNGPageResponse(
-        ngSecretService.list(account, null, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false))
-                                              .getContent();
+    Page<SecretResponseWrapper> secretPage =
+        ngSecretService.list(account, null, null, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =
         content.stream().map(secretApiUtils::toSecretResponse).collect(Collectors.toList());
 
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, "/v1/secrets", secretResponse.size(), page, limit);
+        ApiUtils.addLinksHeader(responseBuilder, secretPage.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(secretResponse).build();
   }

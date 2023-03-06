@@ -470,8 +470,7 @@ public class ViewParametersHelper {
   public List<QLCEViewFieldInput> getInFieldsList(final List<String> fields) {
     final List<QLCEViewFieldInput> qlCEViewFieldInputs = new ArrayList<>();
     for (final String field : fields) {
-      qlCEViewFieldInputs.add(
-          QLCEViewFieldInput.builder().fieldId(field.toLowerCase()).fieldName(field.toLowerCase()).build());
+      qlCEViewFieldInputs.add(QLCEViewFieldInput.builder().fieldId(field).fieldName(field.toLowerCase()).build());
     }
     return qlCEViewFieldInputs;
   }
@@ -744,6 +743,18 @@ public class ViewParametersHelper {
                                                   .findFirst();
     if (groupByFieldName.isPresent()) {
       entityGroupByFieldName = "No " + groupByFieldName.get();
+    }
+    return entityGroupByFieldName;
+  }
+
+  public String getEntityGroupByFieldId(final List<QLCEViewGroupBy> groupBy) {
+    String entityGroupByFieldName = OTHERS;
+    final Optional<String> groupByFieldId = groupBy.stream()
+                                                .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                .map(entry -> entry.getEntityGroupBy().getFieldId())
+                                                .findFirst();
+    if (groupByFieldId.isPresent()) {
+      entityGroupByFieldName = groupByFieldId.get();
     }
     return entityGroupByFieldName;
   }

@@ -7,9 +7,9 @@
 
 package io.harness.connector.service.git;
 
+import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.git.model.GitRepositoryType.YAML;
 import static io.harness.shell.SshSessionFactory.getSSHSession;
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

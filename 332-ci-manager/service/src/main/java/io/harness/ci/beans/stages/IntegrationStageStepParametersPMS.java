@@ -22,6 +22,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -62,6 +63,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
   Registry registry;
   CodeBase codeBase;
   TriggerPayload triggerPayload;
+  Boolean cloneManually;
 
   public static IntegrationStageStepParametersPMS getStepParameters(IntegrationStageNode stageNode, String childNodeID,
       BuildStatusUpdateParameter buildStatusUpdateParameter, PlanCreationContext ctx) {
@@ -92,6 +94,7 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
         getStepParameters(stageNode, childNodeID, null, ctx);
     integrationStageStepParametersPMS.setCodeBase(codeBase);
     integrationStageStepParametersPMS.setTriggerPayload(ctx.getTriggerPayload());
+    integrationStageStepParametersPMS.setCloneManually(IntegrationStageUtils.shouldCloneManually(codeBase));
     return integrationStageStepParametersPMS;
   }
 
@@ -152,25 +155,27 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
     }
   }
 
-  private static List<String> getStepIdentifiers(IntegrationStageConfig integrationStageConfig) {
+  public static List<String> getStepIdentifiers(IntegrationStageConfig integrationStageConfig) {
     List<String> stepIdentifiers = new ArrayList<>();
     integrationStageConfig.getExecution().getSteps().forEach(
-        executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers));
+        executionWrapper -> addStepIdentifier(executionWrapper, stepIdentifiers, ""));
     return stepIdentifiers;
   }
 
-  private static void addStepIdentifier(ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers) {
+  private static void addStepIdentifier(
+      ExecutionWrapperConfig executionWrapper, List<String> stepIdentifiers, String parentId) {
     if (executionWrapper != null) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         CIAbstractStepNode stepNode = getStepElementConfig(executionWrapper);
-        stepIdentifiers.add(stepNode.getIdentifier());
+        stepIdentifiers.add(parentId + stepNode.getIdentifier());
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
-        parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
+        parallelStepElementConfig.getSections().forEach(
+            section -> addStepIdentifier(section, stepIdentifiers, parentId));
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
         for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-          addStepIdentifier(wrapper, stepIdentifiers);
+          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
         }
       } else {
         throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");

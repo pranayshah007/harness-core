@@ -31,8 +31,9 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.artifact.steps.ArtifactsStepV2;
+import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -379,7 +380,7 @@ public class EnvironmentStepsUtilsTest extends CategoryTest {
     levels.add(Level.newBuilder()
                    .setRuntimeId(generateUuid())
                    .setSetupId(generateUuid())
-                   .setStepType(ArtifactsStepV2.STEP_TYPE)
+                   .setStepType(ArtifactsStepV2Constants.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())

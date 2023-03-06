@@ -66,6 +66,14 @@ public class AmbianceUtils {
     return stageLevel.get().getRuntimeId();
   }
 
+  public String getStageSetupIdAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    if (stageLevel.isPresent()) {
+      return stageLevel.get().getSetupId();
+    }
+    throw new InvalidRequestException("Stage not present");
+  }
+
   public static Ambiance cloneForChild(@NonNull Ambiance ambiance, @NonNull Level level) {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size());
     if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
@@ -109,7 +117,7 @@ public class AmbianceUtils {
   }
 
   public static Level obtainCurrentLevel(Ambiance ambiance) {
-    if (isEmpty(ambiance.getLevelsList())) {
+    if (ambiance == null || isEmpty(ambiance.getLevelsList())) {
       return null;
     }
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
@@ -172,17 +180,17 @@ public class AmbianceUtils {
 
   public static StepType getCurrentStepType(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
-    return level == null || level.getStepType() == null ? null : level.getStepType();
+    return level == null ? null : level.getStepType();
   }
 
   public static StepType getParentStepType(Ambiance ambiance) {
     Level level = obtainParentLevel(ambiance);
-    return level == null || level.getStepType() == null ? null : level.getStepType();
+    return level == null ? null : level.getStepType();
   }
 
   public static String getCurrentGroup(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
-    return level == null || level.getGroup() == null ? null : level.getGroup();
+    return level == null ? null : level.getGroup();
   }
 
   public static long getCurrentLevelStartTs(Ambiance ambiance) {
@@ -285,6 +293,7 @@ public class AmbianceUtils {
               .map(String::valueOf)
               .collect(Collectors.joining("_"));
   }
+
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
     int levelsCount = ambiance.getLevelsCount();
     // Parent of current level is stages.
@@ -292,11 +301,26 @@ public class AmbianceUtils {
       return true;
     }
     // Parent is Parallel and Its parent of parent is STAGES.
-    if (levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
-        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES")) {
-      return true;
+    return levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
+        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES");
+  }
+
+  public boolean isCurrentNodeUnderStageStrategy(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    return stageLevel.isPresent() && stageLevel.get().hasStrategyMetadata();
+  }
+
+  public boolean isCurrentLevelAtStep(Ambiance ambiance) {
+    StepType currentStepType = getCurrentStepType(ambiance);
+    if (currentStepType == null) {
+      return false;
     }
-    return false;
+    return currentStepType.getStepCategory() == StepCategory.STEP;
+  }
+
+  public boolean isCurrentLevelInsideStage(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    return stageLevel.isPresent();
   }
 
   public String getEmail(Ambiance ambiance) {
@@ -310,5 +334,12 @@ public class AmbianceUtils {
       return PipelineVersion.V0;
     }
     return metadata.getHarnessVersion();
+  }
+
+  public String getPipelineIdentifier(Ambiance ambiance) {
+    if (ambiance.getMetadata() != null) {
+      return ambiance.getMetadata().getPipelineIdentifier();
+    }
+    return null;
   }
 }

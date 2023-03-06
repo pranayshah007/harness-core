@@ -8,7 +8,6 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.ACCOUNT;
 import static io.harness.encryption.Scope.ORG;
@@ -33,17 +32,18 @@ import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.ListingScope;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.TemplateFilterProperties;
@@ -71,6 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
@@ -100,6 +101,7 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean getMetadataOnly, boolean loadFromCache) {
+    log.info("Principal in getOrThrowExceptionIfInvalid is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     try {
       Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
           templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
@@ -280,12 +282,12 @@ public class NGTemplateServiceHelper {
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {
-    FilterDTO pipelineFilterDTO =
+    FilterDTO templateFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.TEMPLATE);
-    if (pipelineFilterDTO == null) {
+    if (templateFilterDTO == null) {
       throw new InvalidRequestException("Could not find a Template filter with the identifier ");
     } else {
-      populateFilter(criteria, (TemplateFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), searchTerm,
+      populateFilter(criteria, (TemplateFilterPropertiesDTO) templateFilterDTO.getFilterProperties(), searchTerm,
           includeAllTemplatesCriteria);
     }
   }
@@ -314,7 +316,7 @@ public class NGTemplateServiceHelper {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
     addRepoFilter(criteria, templateFilter.getRepoName());
-    populateTagsFilter(criteria, templateFilter.getTags());
+    populateInFilter(criteria, TemplateEntityKeys.tags, TagMapper.convertToList(templateFilter.getTags()));
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
   }
@@ -343,7 +345,7 @@ public class NGTemplateServiceHelper {
       criteria.andOperator(criteriaList.toArray(new Criteria[0]));
     }
     addRepoFilter(criteria, templateFilter.getRepoName());
-    populateTagsFilter(criteria, templateFilter.getTags());
+    populateInFilter(criteria, TemplateEntityKeys.tags, templateFilter.getTags());
     populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
     populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
   }
@@ -396,20 +398,6 @@ public class NGTemplateServiceHelper {
           .regex(pattern, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS);
     }
     return null;
-  }
-
-  private static void populateTagsFilter(Criteria criteria, Map<String, String> tags) {
-    if (isEmpty(tags)) {
-      return;
-    }
-    criteria.and(TemplateEntityKeys.tags).in(TagMapper.convertToList(tags));
-  }
-
-  private static void populateTagsFilter(Criteria criteria, List<NGTag> tags) {
-    if (isEmpty(tags)) {
-      return;
-    }
-    criteria.and(TemplateEntityKeys.tags).in(tags.stream().map(NGTag::getValue).collect(Collectors.toList()));
   }
 
   private Criteria getCriteriaToReturnAllTemplatesAccessible(String orgIdentifier, String projectIdentifier) {
@@ -618,5 +606,18 @@ public class NGTemplateServiceHelper {
       return String.format(
           "[HARNESS]: Template with template identifier [%s] has been [%s]", templateIdentifier, operationType);
     }
+  }
+
+  public Update getTemplateUpdateForInlineToRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, TemplateMoveConfigOperationDTO moveConfigOperationDTO) {
+    Update update = new Update();
+    update.set(TemplateEntityKeys.repo, moveConfigOperationDTO.getRepoName());
+    update.set(TemplateEntityKeys.storeType, StoreType.REMOTE);
+    update.set(TemplateEntityKeys.filePath, moveConfigOperationDTO.getFilePath());
+    update.set(TemplateEntityKeys.connectorRef, moveConfigOperationDTO.getConnectorRef());
+    update.set(TemplateEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    update.set(TemplateEntityKeys.fallBackBranch, moveConfigOperationDTO.getBranch());
+    return update;
   }
 }

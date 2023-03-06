@@ -129,25 +129,21 @@ public class RuleEnforcementDAO {
   }
 
   public List<RuleEnforcement> ruleEnforcement(String accountId, List<String> ruleIds) {
-    List<RuleEnforcement> ruleEnforcements = hPersistence.createQuery(RuleEnforcement.class)
-                                                 .field(RuleEnforcementId.accountId)
-                                                 .equal(accountId)
-                                                 .field(RuleEnforcementId.ruleIds)
-                                                 .hasAnyOf(ruleIds)
-                                                 .asList();
-    log.info("{}", ruleEnforcements);
-    return ruleEnforcements;
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleIds)
+        .hasAnyOf(ruleIds)
+        .asList();
   }
 
   public List<RuleEnforcement> ruleSetEnforcement(String accountId, List<String> ruleSetIds) {
-    List<RuleEnforcement> ruleSetEnforcements = hPersistence.createQuery(RuleEnforcement.class)
-                                                    .field(RuleEnforcementId.accountId)
-                                                    .equal(accountId)
-                                                    .field(RuleEnforcementId.ruleSetIDs)
-                                                    .hasAnyOf(ruleSetIds)
-                                                    .asList();
-    log.info("{}", ruleSetEnforcements);
-    return ruleSetEnforcements;
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleSetIDs)
+        .hasAnyOf(ruleSetIds)
+        .asList();
   }
 
   public List<RuleEnforcement> listAll(String accountId, List<String> ruleEnforcementId) {

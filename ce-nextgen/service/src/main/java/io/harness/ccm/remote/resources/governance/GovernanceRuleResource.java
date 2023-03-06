@@ -29,12 +29,15 @@ import io.harness.ccm.audittrails.events.RuleCreateEvent;
 import io.harness.ccm.audittrails.events.RuleDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleUpdateEvent;
 import io.harness.ccm.governance.faktory.FaktoryProducer;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
+import io.harness.ccm.views.dto.CloneRuleDTO;
 import io.harness.ccm.views.dto.CreateRuleDTO;
 import io.harness.ccm.views.dto.GovernanceEnqueueResponseDTO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
 import io.harness.ccm.views.dto.ListDTO;
 import io.harness.ccm.views.entities.Rule;
+import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleSet;
@@ -142,11 +145,12 @@ import org.springframework.transaction.support.TransactionTemplate;
     })
 
 @NextGenManagerAuth
+
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
   private final RuleEnforcementService ruleEnforcementService;
-  //  private final CCMRbacHelper rbacHelper
+  private final CCMRbacHelper rbacHelper;
   private final ConnectorResourceClient connectorResourceClient;
   private final RuleExecutionService ruleExecutionService;
   private final TelemetryReporter telemetryReporter;
@@ -165,9 +169,9 @@ public class GovernanceRuleResource {
       ConnectorResourceClient connectorResourceClient, RuleExecutionService ruleExecutionService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       OutboxService outboxService, YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
-      CENextGenConfiguration configuration) {
+      CENextGenConfiguration configuration, CCMRbacHelper rbacHelper) {
     this.governanceRuleService = governanceRuleService;
-    //    this rbacHelper rbacHelper
+    this.rbacHelper = rbacHelper;
     this.ruleEnforcementService = ruleEnforcementService;
     this.ruleSetService = ruleSetService;
     this.connectorResourceClient = connectorResourceClient;
@@ -198,15 +202,17 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing Rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
-    } else {
+    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       rule.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else {
+      throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
     }
     if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
       throw new InvalidRequestException("Rule with the given name already exits");
@@ -237,6 +243,44 @@ public class GovernanceRuleResource {
         })));
   }
 
+  @POST
+  @Path("ruleClone")
+  @Timed
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ExceptionMetered
+  @ApiOperation(value = "Clone a rule", nickname = "CloneRule")
+  @LogAccountIdentifier
+  @Operation(operationId = "CloneRule", description = "Clone a Rule with the given ID.", summary = "Clone a rule",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "newly created rule", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Rule>
+  clone(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @RequestBody(
+          required = true, description = "Request body containing Rule uuid") @Valid CloneRuleDTO cloneRuleDTO) {
+    if (cloneRuleDTO == null) {
+      throw new InvalidRequestException(MALFORMED_ERROR);
+    }
+    RuleClone ruleClone = cloneRuleDTO.getRuleClone();
+    Rule existingRule = governanceRuleService.fetchById(accountId, ruleClone.getUuid(), false);
+    Rule newRule = Rule.builder().build();
+    newRule.setIsOOTB(false);
+    newRule.setName(existingRule.getName() + "-clone");
+    if (governanceRuleService.fetchByName(accountId, newRule.getName(), true) != null) {
+      throw new InvalidRequestException("A clone with the given name already exists");
+    }
+    newRule.setCloudProvider(existingRule.getCloudProvider());
+    newRule.setRulesYaml(existingRule.getRulesYaml());
+    newRule.setDescription(existingRule.getDescription());
+    newRule.setTags(existingRule.getTags());
+    CreateRuleDTO createRuleDTO = CreateRuleDTO.builder().rule(newRule).build();
+    return create(accountId, createRuleDTO);
+  }
+
   @PUT
   @Path("rule")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -254,25 +298,34 @@ public class GovernanceRuleResource {
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
+    rbacHelper.checkRuleEditPermission(accountId, null, null);
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
     Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (oldRule.getIsOOTB()) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, oldRule.getName());
-    oldRule.setRulesYaml(rule.getRulesYaml());
-    governanceRuleService.validateAWSSchema(oldRule);
-    governanceRuleService.custodianValidate(oldRule);
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
+    governanceRuleService.update(rule, accountId);
+    Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO(), oldRule.toDTO()));
-      return governanceRuleService.update(rule, accountId);
+      outboxService.save(new RuleUpdateEvent(accountId, updatedRule.toDTO(), oldRule.toDTO()));
+      return updatedRule;
     })));
   }
 
@@ -295,16 +348,23 @@ public class GovernanceRuleResource {
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(
           required = true, description = "Request body containing rule object") @Valid CreateRuleDTO createRuleDTO) {
-    // rbacHelper checkRuleEditPermission(accountId, null, null)
     if (createRuleDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
-    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
-    }
+
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
-    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, rule.getUuid(), true);
+    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+    }
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    if (rule.getRulesYaml() != null) {
+      Rule testSchema = Rule.builder().build();
+      testSchema.setName(oldRule.getName());
+      testSchema.setRulesYaml(rule.getRulesYaml());
+      governanceRuleService.validateAWSSchema(testSchema);
+      governanceRuleService.custodianValidate(testSchema);
+    }
     return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
   }
   // Internal API for deletion of OOTB rules
@@ -333,7 +393,7 @@ public class GovernanceRuleResource {
       @PathParam("ruleID") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
     if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      throw new InvalidRequestException("Editing OOTB rule is not allowed");
+      throw new InvalidRequestException("Deleting OOTB rule is not allowed");
     }
     governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
     boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);
@@ -360,7 +420,7 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleID") @Parameter(
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
-    // rbacHelper checkRuleDeletePermission(accountId, null, null)
+    rbacHelper.checkRuleDeletePermission(accountId, null, null);
     HashMap<String, Object> properties = new HashMap<>();
     Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
@@ -388,7 +448,7 @@ public class GovernanceRuleResource {
   listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO) {
-    // rbacHelper checkRuleViewPermission(accountId, null, null)
+    rbacHelper.checkRuleViewPermission(accountId, null, null);
     GovernanceRuleFilter query;
     if (listDTO == null) {
       query = GovernanceRuleFilter.builder().build();
@@ -396,7 +456,6 @@ public class GovernanceRuleResource {
       query = listDTO.getGovernanceRuleFilter();
     }
     query.setAccountId(accountId);
-    log.info("assigned {} {}", query.getAccountId(), query.getIsOOTB());
     return ResponseDTO.newResponse(governanceRuleService.list(query));
   }
 

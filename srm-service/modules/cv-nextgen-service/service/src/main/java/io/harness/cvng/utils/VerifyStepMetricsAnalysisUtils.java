@@ -40,6 +40,7 @@ import io.harness.cvng.cdng.beans.v2.MetricType;
 import io.harness.cvng.cdng.beans.v2.MetricValue;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.ProviderType;
+import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.AnalysisInfo;
@@ -49,29 +50,30 @@ import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
-import java.net.URISyntaxException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.http.client.utils.URIBuilder;
 
 public class VerifyStepMetricsAnalysisUtils {
   private static final long MILLIS_IN_MINUTE = 60000;
-  private static final String DATE_FORMAT_STRING = "yyyy-MM-dd HH:mm";
+  private static final long NORMALISATION_TIME_WINDOW_IN_MINUTES = 3;
+  private static final long NORMALISATION_TIME_WINDOW_IN_MILLIS =
+      NORMALISATION_TIME_WINDOW_IN_MINUTES * MILLIS_IN_MINUTE;
+  private static final long NORMALISATION_TIMESTAMP_OFFSET = NORMALISATION_TIME_WINDOW_IN_MILLIS / 2;
+  private static final String CONTROL_NODE_IDENTIFIER_F0R_AVERAGE_DATA = "None";
   public static final String LOAD_TEST_CURRENT_NODE_IDENTIFIER = "Current-test";
   public static final String LOAD_TEST_BASELINE_NODE_IDENTIFIER = "Baseline-test";
 
-  public static boolean isAnalysisResultExcluded(
+  public static boolean isAnalysisResultIncluded(
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, AnalysisResult analysisResult) {
-    return deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly() && AnalysisResult.UNHEALTHY != analysisResult;
+    return !deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly() || AnalysisResult.UNHEALTHY == analysisResult;
   }
 
   private static AnalysisReason getAnalysisReason(HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
@@ -122,17 +124,30 @@ public class VerifyStepMetricsAnalysisUtils {
     }
   }
 
-  private static MetricThreshold getMetricThresholdFromTimeSeriesThreshold(TimeSeriesThreshold timeSeriesThreshold) {
-    return MetricThreshold.builder()
-        .thresholdType(MetricThresholdType.fromTimeSeriesThresholdActionType(timeSeriesThreshold.getAction()))
-        .action(MetricCustomThresholdActions.getMetricCustomThresholdActions(
-            timeSeriesThreshold.getAction().equals(TimeSeriesThresholdActionType.IGNORE)
-                ? TimeSeriesCustomThresholdActions.IGNORE
-                : timeSeriesThreshold.getCriteria().getAction()))
-        .criteria(getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(timeSeriesThreshold))
-        .isUserDefined(ThresholdConfigType.USER_DEFINED == timeSeriesThreshold.getThresholdConfigType())
-        .id(timeSeriesThreshold.getUuid())
-        .build();
+  private static Optional<MetricThreshold> getMetricThresholdFromTimeSeriesThreshold(
+      TimeSeriesThreshold timeSeriesThreshold) {
+    MetricThreshold metricThreshold = null;
+    MetricThresholdCriteria metricThresholdCriteria =
+        getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(timeSeriesThreshold);
+    boolean isUserDefined = ThresholdConfigType.USER_DEFINED == timeSeriesThreshold.getThresholdConfigType();
+    if (isUserDefined
+        || (Objects.nonNull(metricThresholdCriteria.getLessThanThreshold())
+            && metricThresholdCriteria.getLessThanThreshold() > 0)
+        || (Objects.nonNull(metricThresholdCriteria.getGreaterThanThreshold())
+            && metricThresholdCriteria.getGreaterThanThreshold() > 0)) {
+      metricThreshold =
+          MetricThreshold.builder()
+              .thresholdType(MetricThresholdType.fromTimeSeriesThresholdActionType(timeSeriesThreshold.getAction()))
+              .action(MetricCustomThresholdActions.getMetricCustomThresholdActions(
+                  timeSeriesThreshold.getAction().equals(TimeSeriesThresholdActionType.IGNORE)
+                      ? TimeSeriesCustomThresholdActions.IGNORE
+                      : timeSeriesThreshold.getCriteria().getAction()))
+              .criteria(metricThresholdCriteria)
+              .isUserDefined(isUserDefined)
+              .id(timeSeriesThreshold.getUuid())
+              .build();
+    }
+    return Optional.ofNullable(metricThreshold);
   }
 
   private static MetricThresholdCriteria getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(
@@ -167,8 +182,8 @@ public class VerifyStepMetricsAnalysisUtils {
     AnalysisResult analysisResult = AnalysisResult.fromRisk(hostData.getRisk());
     ControlDataType controlDataType = null;
     if (analysisResult != AnalysisResult.NO_ANALYSIS) {
-      controlDataType =
-          (Objects.isNull(hostData.getNearestControlHost()) || hostData.getNearestControlHost().equals("None"))
+      controlDataType = (Objects.isNull(hostData.getNearestControlHost())
+                            || hostData.getNearestControlHost().equals(CONTROL_NODE_IDENTIFIER_F0R_AVERAGE_DATA))
           ? ControlDataType.AVERAGE
           : ControlDataType.MINIMUM_DEVIATION;
     }
@@ -236,9 +251,10 @@ public class VerifyStepMetricsAnalysisUtils {
   }
 
   private static List<MetricValue> getMetricValuesFromTimeSeriesRecordDtos(
-      List<TimeSeriesRecordDTO> timeSeriesRecordDtos) {
+      List<TimeSeriesRecordDTO> timeSeriesRecordDtos, String transactionGroup) {
     return CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
         .stream()
+        .filter(dto -> transactionGroup.equals(dto.getGroupName()))
         .map(timeSeriesRecordDto
             -> MetricValue.builder()
                    .value(timeSeriesRecordDto.getMetricValue())
@@ -314,12 +330,12 @@ public class VerifyStepMetricsAnalysisUtils {
       // In case of Load-test there will be a single node.
       AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode = metricsAnalysis.getTestDataNodes().get(0);
       analysedDeploymentTestDataNode.setNodeIdentifier(LOAD_TEST_CURRENT_NODE_IDENTIFIER);
-      analysedDeploymentTestDataNode.setTestData(
-          getMetricValuesFromTimeSeriesRecordDtos(testNodesRawData.get(LOAD_TEST_CURRENT_NODE_IDENTIFIER)));
+      analysedDeploymentTestDataNode.setTestData(getMetricValuesFromTimeSeriesRecordDtos(
+          testNodesRawData.get(LOAD_TEST_CURRENT_NODE_IDENTIFIER), metricsAnalysis.getTransactionGroup()));
       if (controlNodesRawData.containsKey(LOAD_TEST_BASELINE_NODE_IDENTIFIER)) {
         analysedDeploymentTestDataNode.setControlNodeIdentifier(LOAD_TEST_BASELINE_NODE_IDENTIFIER);
-        analysedDeploymentTestDataNode.setControlData(
-            getMetricValuesFromTimeSeriesRecordDtos(controlNodesRawData.get(LOAD_TEST_BASELINE_NODE_IDENTIFIER)));
+        analysedDeploymentTestDataNode.setControlData(getMetricValuesFromTimeSeriesRecordDtos(
+            controlNodesRawData.get(LOAD_TEST_BASELINE_NODE_IDENTIFIER), metricsAnalysis.getTransactionGroup()));
       }
     }
   }
@@ -328,23 +344,32 @@ public class VerifyStepMetricsAnalysisUtils {
       Map<String, List<TimeSeriesRecordDTO>> controlNodesRawData,
       Map<String, List<TimeSeriesRecordDTO>> testNodesRawData, MetricsAnalysis metricsAnalysis) {
     metricsAnalysis.getTestDataNodes().forEach(analysedDeploymentTestDataNode -> {
-      populateRawControlDataForAnalysedDeploymentTestDataNode(analysedDeploymentTestDataNode, controlNodesRawData);
-      populateRawTestDataForAnalysedDeploymentTestDataNode(analysedDeploymentTestDataNode, testNodesRawData);
+      populateRawControlDataForAnalysedDeploymentTestDataNode(
+          metricsAnalysis.getTransactionGroup(), analysedDeploymentTestDataNode, controlNodesRawData);
+      populateRawTestDataForAnalysedDeploymentTestDataNode(
+          metricsAnalysis.getTransactionGroup(), analysedDeploymentTestDataNode, testNodesRawData);
     });
   }
 
-  private static void populateRawTestDataForAnalysedDeploymentTestDataNode(
+  private static void populateRawTestDataForAnalysedDeploymentTestDataNode(String transactionGroup,
       AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
       Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
     analysedDeploymentTestDataNode.setTestData(getMetricValuesFromTimeSeriesRecordDtos(
-        mapOfHostIdentifierAndTimeSeriesRecordDtos.get(analysedDeploymentTestDataNode.getNodeIdentifier())));
+        mapOfHostIdentifierAndTimeSeriesRecordDtos.get(analysedDeploymentTestDataNode.getNodeIdentifier()),
+        transactionGroup));
   }
 
-  private static void populateRawControlDataForAnalysedDeploymentTestDataNode(
+  private static void populateRawControlDataForAnalysedDeploymentTestDataNode(String transactionGroup,
       AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
       Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
-    analysedDeploymentTestDataNode.setControlData(getMetricValuesFromTimeSeriesRecordDtos(
-        mapOfHostIdentifierAndTimeSeriesRecordDtos.get(analysedDeploymentTestDataNode.getControlNodeIdentifier())));
+    String controlNodeIdentifier = analysedDeploymentTestDataNode.getControlNodeIdentifier();
+    if (Objects.isNull(controlNodeIdentifier)
+        || controlNodeIdentifier.equals(CONTROL_NODE_IDENTIFIER_F0R_AVERAGE_DATA)) {
+      analysedDeploymentTestDataNode.setControlData(analysedDeploymentTestDataNode.getNormalisedControlData());
+    } else {
+      analysedDeploymentTestDataNode.setControlData(getMetricValuesFromTimeSeriesRecordDtos(
+          mapOfHostIdentifierAndTimeSeriesRecordDtos.get(controlNodeIdentifier), transactionGroup));
+    }
   }
 
   private static long getTimestampInMillisFromEpochMinute(long epochMinute) {
@@ -368,30 +393,11 @@ public class VerifyStepMetricsAnalysisUtils {
         .filter(cvConfig -> isTransactionGroupIncluded(requestedTransactionGroups, cvConfig))
         .collect(Collectors.toList());
   }
-
-  public static String setDeeplinkURLWithRange(DeploymentTimeSeriesAnalysis timeSeriesAnalysis, String deepLinkURL) {
-    LocalDateTime endTime = timeSeriesAnalysis.getEndTime().atZone(ZoneId.systemDefault()).toLocalDateTime();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
-    long diffMinutes = timeSeriesAnalysis.getStartTime().until(
-        timeSeriesAnalysis.getEndTime(), ChronoUnit.MINUTES); // this is a diff in min
-    String rangeInput = Math.max(diffMinutes, 1) + "m";
-    URIBuilder uriBuilder;
-    try {
-      uriBuilder = new URIBuilder(deepLinkURL);
-      uriBuilder.addParameter("g0.range_input", rangeInput); // eg. 10s or 10m or 1h
-      uriBuilder.addParameter("g0.g0.end_input", endTime.format(formatter)); // eg. YYYY-MM-DD HH:MM
-      return uriBuilder.build().toString();
-    } catch (URISyntaxException ignored) {
-    }
-    return null;
-  }
-
   public static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     return HealthSource.builder()
         .identifier(metricCVConfig.getFullyQualifiedIdentifier())
         .name(metricCVConfig.getMonitoringSourceName())
-        .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
-            metricCVConfig.getType()))
+        .type(MonitoredServiceDataSourceType.getMonitoredServiceDataSourceType(metricCVConfig.getType()))
         .providerType(ProviderType.METRICS)
         .build();
   }
@@ -430,6 +436,8 @@ public class VerifyStepMetricsAnalysisUtils {
     return CollectionUtils.emptyIfNull(metricDefinition.getThresholds())
         .stream()
         .map(VerifyStepMetricsAnalysisUtils::getMetricThresholdFromTimeSeriesThreshold)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(Collectors.toList());
   }
 
@@ -437,15 +445,134 @@ public class VerifyStepMetricsAnalysisUtils {
     return Objects.isNull(metricsForThisAnalysis);
   }
 
-  public static void removeMetricFromResult(Map<String, MetricsAnalysis> resultMap, String metricIdentifier) {
-    resultMap.remove(metricIdentifier);
-  }
-
-  public static boolean isTransactionGroupExcluded(
+  public static boolean isTransactionGroupIncluded(
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, String transactionGroup) {
-    return deploymentTimeSeriesAnalysisFilter.filterByTransactionNames()
-        && !deploymentTimeSeriesAnalysisFilter.getTransactionNames().contains(transactionGroup);
+    return !deploymentTimeSeriesAnalysisFilter.filterByTransactionNames()
+        || deploymentTimeSeriesAnalysisFilter.getTransactionNames().contains(transactionGroup);
   }
 
+  public static void populateTimestampsForNormalisedData(
+      MetricsAnalysis metricsAnalysis, Optional<TimeRange> controlDataTimeRange, TimeRange testDataTimeRange) {
+    boolean isFailFastApplied = isFailFastThresholdAppliedOnMetric(metricsAnalysis);
+
+    CollectionUtils.emptyIfNull(metricsAnalysis.getTestDataNodes()).forEach(testNode -> {
+      if (CollectionUtils.isNotEmpty(testNode.getNormalisedTestData())) {
+        calculateAndPopulateNormalisationTimestamps(
+            testDataTimeRange, testNode.getNormalisedTestData(), isFailFastApplied);
+      }
+      if (controlDataTimeRange.isPresent() && CollectionUtils.isNotEmpty(testNode.getNormalisedControlData())) {
+        calculateAndPopulateNormalisationTimestamps(
+            controlDataTimeRange.get(), testNode.getNormalisedControlData(), isFailFastApplied);
+      }
+    });
+  }
+
+  private static boolean isFailFastThresholdAppliedOnMetric(MetricsAnalysis metricsAnalysis) {
+    Set<String> failFastThresholdIds = getFailFastThresholdIdsForMetricAnalysis(metricsAnalysis);
+    boolean isFailFastApplied = false;
+    List<AnalysedDeploymentTestDataNode> testDataNodes = metricsAnalysis.getTestDataNodes();
+    if (CollectionUtils.isNotEmpty(testDataNodes)) {
+      for (AnalysedDeploymentTestDataNode testDataNode : testDataNodes) {
+        boolean isFailFastAppliedOnTestNode = isFailFastThresholdAppliedOnTestNode(testDataNode, failFastThresholdIds);
+        if (isFailFastAppliedOnTestNode) {
+          isFailFastApplied = true;
+          break;
+        }
+      }
+    }
+    return isFailFastApplied;
+  }
+
+  private static boolean isFailFastThresholdAppliedOnTestNode(
+      AnalysedDeploymentTestDataNode testDataNode, Set<String> failFastThresholdIds) {
+    boolean isFailFastApplied = false;
+    List<String> appliedThresholdIds = testDataNode.getAppliedThresholds();
+    if (CollectionUtils.isNotEmpty(appliedThresholdIds)) {
+      for (String id : appliedThresholdIds) {
+        if (failFastThresholdIds.contains(id)) {
+          isFailFastApplied = true;
+          break;
+        }
+      }
+    }
+    return isFailFastApplied;
+  }
+
+  private static Set<String> getFailFastThresholdIdsForMetricAnalysis(MetricsAnalysis metricsAnalysis) {
+    return CollectionUtils.emptyIfNull(metricsAnalysis.getThresholds())
+        .stream()
+        .filter(metricThreshold -> metricThreshold.getThresholdType() == MetricThresholdType.FAIL_FAST)
+        .map(MetricThreshold::getId)
+        .collect(Collectors.toSet());
+  }
+
+  private static void calculateAndPopulateNormalisationTimestampsForFailedFastThresholdUsecase(
+      TimeRange timeRange, List<MetricValue> normalisedData) {
+    long startTimestamp = timeRange.getStartTime().toEpochMilli();
+    for (int i = 0; i < normalisedData.size(); ++i) {
+      long normalisationTimestamp = startTimestamp + (i * MILLIS_IN_MINUTE);
+      normalisedData.get(i).setTimestampInMillis(normalisationTimestamp);
+    }
+  }
+
+  private static void calculateAndPopulateNormalisationTimestampsForNormalUsecase(
+      TimeRange timeRange, List<MetricValue> normalisedData) {
+    long startTimestamp = timeRange.getStartTime().toEpochMilli();
+    long endTimestamp = timeRange.getEndTime().toEpochMilli();
+    for (int i = 0; i < normalisedData.size(); ++i) {
+      long normalisationTimestamp =
+          startTimestamp + (i * NORMALISATION_TIME_WINDOW_IN_MILLIS) + NORMALISATION_TIMESTAMP_OFFSET;
+      if (normalisationTimestamp > endTimestamp) {
+        normalisationTimestamp = endTimestamp;
+      }
+      normalisedData.get(i).setTimestampInMillis(normalisationTimestamp);
+    }
+  }
+
+  private static void calculateAndPopulateNormalisationTimestamps(
+      TimeRange timeRange, List<MetricValue> normalisedData, boolean isFailFastApplied) {
+    if (isFailFastApplied) {
+      calculateAndPopulateNormalisationTimestampsForFailedFastThresholdUsecase(timeRange, normalisedData);
+    } else {
+      calculateAndPopulateNormalisationTimestampsForNormalUsecase(timeRange, normalisedData);
+    }
+  }
+
+  public static Map<String, MetricsAnalysis> filterUnhealthyMetricsAnalyses(Map<String, MetricsAnalysis> map) {
+    Map<String, MetricsAnalysis> filteredMetricAnalyses = new HashMap<>();
+    for (Map.Entry<String, MetricsAnalysis> entry : map.entrySet()) {
+      if (Objects.nonNull(entry.getValue()) && entry.getValue().getAnalysisResult() == AnalysisResult.UNHEALTHY) {
+        filteredMetricAnalyses.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return filteredMetricAnalyses;
+  }
+
+  public static void sortMetricsAnalysisResults(List<MetricsAnalysis> metricsAnalyses) {
+    if (CollectionUtils.isNotEmpty(metricsAnalyses)) {
+      metricsAnalyses.forEach(metricsAnalysis -> sortTestDataNodes(metricsAnalysis.getTestDataNodes()));
+      metricsAnalyses.sort(
+          Comparator.comparing(metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getHealthSource().getIdentifier())
+              .thenComparing(metricsAnalysis
+                  -> ((MetricsAnalysis) metricsAnalysis).getTransactionGroup(),
+                  Comparator.nullsLast(Comparator.naturalOrder()))
+              .thenComparing(
+                  metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getAnalysisResult(), Comparator.reverseOrder())
+              .thenComparing(metricsAnalysis -> ((MetricsAnalysis) metricsAnalysis).getMetricName()));
+    }
+  }
+
+  private static void sortTestDataNodes(List<AnalysedDeploymentTestDataNode> testDataNodes) {
+    if (CollectionUtils.isNotEmpty(testDataNodes)) {
+      testDataNodes.sort(Comparator
+                             .comparing(node
+                                 -> ((AnalysedDeploymentTestDataNode) node).getAnalysisResult(),
+                                 Comparator.nullsLast(Comparator.reverseOrder()))
+                             .thenComparing(node
+                                 -> ((AnalysedDeploymentTestDataNode) node).getControlNodeIdentifier(),
+                                 Comparator.nullsLast(Comparator.naturalOrder()))
+                             .thenComparing(node -> ((AnalysedDeploymentTestDataNode) node).getNodeIdentifier()));
+    }
+  }
   private VerifyStepMetricsAnalysisUtils() {}
 }

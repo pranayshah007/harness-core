@@ -71,6 +71,10 @@ if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ENABLE_AUTH" ]]; then
   export ENABLE_AUTH; yq -i '.enableAuth=env(ENABLE_AUTH)' $CONFIG_FILE
 fi

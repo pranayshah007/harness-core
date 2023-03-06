@@ -7,12 +7,17 @@
 
 package io.harness.cvng.downtime.beans;
 
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder
+@AllArgsConstructor
 public class AffectedEntity {
-  String serviceRef;
-  String envRef;
+  @NotNull String serviceName;
+  @NotNull String envName;
+
+  @NotNull String monitoredServiceIdentifier;
 }

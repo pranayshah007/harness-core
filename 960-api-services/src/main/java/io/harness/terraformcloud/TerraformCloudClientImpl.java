@@ -8,7 +8,10 @@
 package io.harness.terraformcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.Http.getOkHttpClientBuilder;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
@@ -23,6 +26,7 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -31,6 +35,20 @@ import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -42,7 +60,10 @@ import retrofit2.converter.scalars.ScalarsConverterFactory;
 @OwnedBy(CDP)
 @Singleton
 public class TerraformCloudClientImpl implements TerraformCloudClient {
-  static final long TIME_OUT = 60;
+  private static final String JSON_PLAN_OUTPUT_URL_PATTERN = "%s/api/v2/plans/%s/json-output";
+  private static final String POLICY_CHECK_OUTPUT_URL_PATTERN = "%s/api/v2/policy-checks/%s/output";
+  private static final String LOG_STREAM_URL_PATTERN = "%s?offset=%s&limit=%s";
+  private static final long TIME_OUT = 30;
 
   @Override
   public TerraformCloudResponse<List<OrganizationData>> listOrganizations(String url, String token, int page)
@@ -98,8 +119,9 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
 
   @Override
   public String getPlanJsonOutput(String url, String token, String planId) throws IOException {
-    Call<String> call = getRestClient(url).getPlanJsonOutput(getAuthorization(token), planId);
-    return executeRestCall(call);
+    HttpGet request = new HttpGet(String.format(JSON_PLAN_OUTPUT_URL_PATTERN, url, planId));
+    request.addHeader("Authorization", getAuthorization(token));
+    return executeHttpCall(request);
   }
 
   @Override
@@ -118,35 +140,51 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
 
   @Override
   public String getPolicyCheckOutput(String url, String token, String policyCheckId) throws IOException {
-    Call<String> call = getRestClient(url).getPolicyCheckOutput(getAuthorization(token), policyCheckId);
-    return executeRestCall(call);
+    HttpGet request = new HttpGet(String.format(POLICY_CHECK_OUTPUT_URL_PATTERN, url, policyCheckId));
+    request.addHeader("Authorization", getAuthorization(token));
+    return executeHttpCall(request);
   }
 
   @Override
   public TerraformCloudResponse<List<StateVersionOutputData>> getStateVersionOutputs(
-      String url, String token, String stateVersionId) throws IOException {
+      String url, String token, String stateVersionId, int page) throws IOException {
     Call<TerraformCloudResponse<List<StateVersionOutputData>>> call =
-        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId);
+        getRestClient(url).getStateVersionOutputs(getAuthorization(token), stateVersionId, page);
     return executeRestCall(call);
+  }
+
+  @Override
+  public String getLogs(String logsReadUrl, int offset, int limit) throws IOException {
+    String url = String.format(LOG_STREAM_URL_PATTERN, logsReadUrl, offset, limit);
+    return executeHttpCall(new HttpGet(url));
+  }
+
+  @Override
+  public void overridePolicyChecks(String url, String token, String policyChecksId) throws IOException {
+    Call<Void> call = getRestClient(url).overridePolicyChecks(getAuthorization(token), policyChecksId);
+    executeRestCall(call);
   }
 
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()
-                            .client(getHttpClient(url))
+                            .client(getOkHttpClient(url))
                             .baseUrl(url)
                             .addConverterFactory(ScalarsConverterFactory.create())
                             .addConverterFactory(JacksonConverterFactory.create())
+                            .addConverterFactory(JacksonConverterFactory.create(
+                                new ObjectMapper().enable(READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)))
                             .build();
     return retrofit.create(TerraformCloudRestClient.class);
   }
 
   @NotNull
-  private OkHttpClient getHttpClient(String url) {
+  private OkHttpClient getOkHttpClient(String url) {
     return getOkHttpClientBuilder()
         .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
         .readTimeout(TIME_OUT, TimeUnit.SECONDS)
         .proxy(Http.checkAndGetNonProxyIfApplicable(url))
+        .retryOnConnectionFailure(true)
         .build();
   }
 
@@ -168,6 +206,50 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
         log.error("Received Error TerraformCloudResponse: {}", errorResponse);
         response.errorBody().close();
       }
+    }
+  }
+
+  private String executeHttpCall(HttpRequestBase request) throws IOException {
+    String url = request.getURI().toURL().toString();
+    log.info("Requesting: {}", url);
+    String content;
+    try (CloseableHttpClient httpClient = getHttpClient(url);
+         CloseableHttpResponse response = httpClient.execute(request)) {
+      HttpEntity entity = response.getEntity();
+      if (response.getStatusLine().getStatusCode() == 200) {
+        content = EntityUtils.toString(entity);
+      } else {
+        throw new TerraformCloudApiException(EntityUtils.toString(entity), response.getStatusLine().getStatusCode());
+      }
+    } catch (IOException e) {
+      log.error("Error executing http call", e);
+      throw e;
+    }
+    return content;
+  }
+
+  @VisibleForTesting
+  CloseableHttpClient getHttpClient(String url) {
+    RequestConfig requestConfig = RequestConfig.custom()
+                                      .setConnectTimeout((int) TimeUnit.SECONDS.toMillis(TIME_OUT))
+                                      .setSocketTimeout((int) TimeUnit.SECONDS.toMillis(TIME_OUT))
+                                      .build();
+    HttpClientBuilder httpClientBuilder = HttpClients.custom().setDefaultRequestConfig(requestConfig);
+    setProxyIfRequired(url, httpClientBuilder);
+    return httpClientBuilder.build();
+  }
+
+  private void setProxyIfRequired(String url, HttpClientBuilder httpClientBuilder) {
+    HttpHost proxyHost = Http.getHttpProxyHost();
+    if (proxyHost != null && !Http.shouldUseNonProxy(url)) {
+      if (isNotEmpty(Http.getProxyUserName())) {
+        httpClientBuilder.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
+        BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(new AuthScope(proxyHost),
+            new UsernamePasswordCredentials(Http.getProxyUserName(), Http.getProxyPassword()));
+        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+      }
+      httpClientBuilder.setProxy(proxyHost);
     }
   }
 

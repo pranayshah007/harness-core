@@ -659,6 +659,12 @@ public class CfCommandTaskHelperNG {
       return;
     }
 
+    if (cfDeployCommandRequestNG.isStandardBlueGreen() && cfDeployCommandRequestNG.getDownSizeCount() == 0) {
+      executionLogCallback.saveExecutionLog(
+          color("# Skipping Downsizing of Old Instances as there will be a downtime if downsized to 0", White, Bold));
+      return;
+    }
+
     cfRequestConfig.setApplicationName(downsizeAppDetail.getApplicationName());
     ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
@@ -841,10 +847,9 @@ public class CfCommandTaskHelperNG {
     }
   }
 
-  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback,
-      List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, TasApplicationInfo newAppInfo,
-      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
-      throws PivotalClientApiException {
+  public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback, CfRequestConfig cfRequestConfig,
+      TasApplicationInfo newAppInfo, CfRollbackCommandRequestNG cfRollbackCommandRequestNG,
+      CfAppAutoscalarRequestData autoscalarRequestData) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog("\n");
     executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
     executionLogCallback.saveExecutionLog(format("Downsizing the %s app to zero", newAppInfo.getApplicationName()));

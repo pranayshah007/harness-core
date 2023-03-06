@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.infra;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
 
 import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
@@ -28,8 +29,10 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.infra.AwsAmiInfrastructure;
+import software.wings.infra.AwsAmiInfrastructure.AwsAmiInfrastructureKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +42,14 @@ import java.util.Map;
 public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
   @Override
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
+    if (infrastructureDefinition.getCloudProviderType() == AWS) {
+      AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();
+      if (isNotEmpty(awsAmiInfrastructure.getSpotinstCloudProvider())) {
+        return ServiceDefinitionType.ELASTIGROUP;
+      } else {
+        return ServiceDefinitionType.ASG;
+      }
+    }
     return ServiceDefinitionType.ELASTIGROUP;
   }
 
@@ -57,14 +68,20 @@ public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
   @Override
   public InfrastructureType getInfrastructureType(InfrastructureDefinition infrastructureDefinition) {
     if (infrastructureDefinition.getCloudProviderType() == AWS) {
-      return InfrastructureType.ELASTIGROUP;
+      AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();
+      if (isNotEmpty(awsAmiInfrastructure.getSpotinstCloudProvider())) {
+        return InfrastructureType.ELASTIGROUP;
+      } else {
+        return InfrastructureType.ASG;
+      }
     }
     throw new InvalidRequestException("Unsupported Infra for Ecs deployment");
   }
 
   @Override
   public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfigurations) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, Map<CgEntityId, CgEntityNode> entities,
+      List<ElastigroupConfiguration> elastigroupConfigurations) {
     NgEntityDetail connectorDetail;
     if (infrastructureDefinition.getCloudProviderType() == AWS) {
       AwsAmiInfrastructure awsAmiInfrastructure = (AwsAmiInfrastructure) infrastructureDefinition.getInfrastructure();
@@ -84,7 +101,8 @@ public class AmiElastigroupInfraDefMapper implements InfraDefMapper {
                 .getNgEntityDetail();
         return AsgInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .region(ParameterField.createValueField(awsAmiInfrastructure.getRegion()))
+            .region(getExpression(awsAmiInfrastructure.getExpressions(), AwsAmiInfrastructureKeys.region,
+                awsAmiInfrastructure.getRegion(), infrastructureDefinition.getProvisionerId()))
             .build();
       }
     }

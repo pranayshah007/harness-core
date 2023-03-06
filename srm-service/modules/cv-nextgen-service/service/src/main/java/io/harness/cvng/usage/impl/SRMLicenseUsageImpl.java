@@ -18,6 +18,7 @@ import io.harness.licensing.usage.params.UsageRequestParams;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import java.io.File;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
@@ -44,6 +45,11 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
   @Override
   public Page<SRMLicenseUsageDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest) {
-    throw new NotImplementedException("not implemented");
+    throw new NotImplementedException("List license usage is not implemented yet for SRM module");
+  }
+
+  @Override
+  public File getLicenseUsageCSVReport(String accountIdentifier, ModuleType moduleType, long currentTsInMs) {
+    throw new NotImplementedException("Get license usage CSV report is not implemented yet for SRM module");
   }
 }

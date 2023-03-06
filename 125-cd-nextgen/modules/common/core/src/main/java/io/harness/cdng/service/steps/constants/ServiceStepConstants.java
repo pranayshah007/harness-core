@@ -7,8 +7,17 @@
 
 package io.harness.cdng.service.steps.constants;
 
+import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
+
 public class ServiceStepConstants {
   public static final String SERVICE = "service";
   public static final String SERVICE_OVERRIDES = "service overrides";
   public static final String ENVIRONMENT_GLOBAL_OVERRIDES = "environment global overrides";
+
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(ExecutionNodeType.SERVICE.getName()).setStepCategory(StepCategory.STEP).build();
+  public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
+  public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 }

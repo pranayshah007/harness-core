@@ -7,13 +7,18 @@
 
 package io.harness.iacm.plan.creator;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.ActionStepVariableCreator;
 import io.harness.ci.creator.variables.PluginStepVariableCreator;
+import io.harness.ci.creator.variables.RunStepVariableCreator;
+import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
+import io.harness.ci.plancreator.RunStepPlanCreator;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.iacm.IACMStepType;
@@ -33,6 +38,7 @@ import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
+import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -50,8 +56,8 @@ import java.util.stream.Collectors;
 @Singleton
 @OwnedBy(HarnessTeam.IACM)
 public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
-  @Inject InjectorUtils injectorUtils;
   private static final String LITE_ENGINE_TASK = "liteEngineTask";
+  @Inject InjectorUtils injectorUtils;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -61,8 +67,10 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     planCreators.add(new PluginStepPlanCreator()); // Plugin step
     planCreators.add(new NGStageStepsPlanCreator()); // Rollback steps related
     planCreators.add(new ExecutionPmsPlanCreator()); // I think that the execution step is treated as a step also
+    planCreators.add(new RunStepPlanCreator());
+    planCreators.add(new ActionStepPlanCreator()); // Add GithubAction step
     planCreators.addAll(
-        Arrays.asList(IACMStepType.values()).stream().map(e -> e.getPlanCreator()).collect(Collectors.toList()));
+        Arrays.stream(IACMStepType.values()).map(IACMStepType::getPlanCreator).collect(Collectors.toList()));
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -88,9 +96,11 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
     variableCreators.add(new IACMTerraformPlanStepVariableCreator());
     variableCreators.add(new IACMTemplateStepVariableCreator());
+    variableCreators.add(new RunStepVariableCreator());
+    variableCreators.add(new ActionStepVariableCreator()); // variable creator for the action step
 
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS))); // ??
-
+    variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
     return variableCreators;
   }
 
@@ -114,10 +124,22 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
                                   .setType(StepSpecTypeConstants.PLUGIN)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
+    StepInfo runStepInfo = StepInfo.newBuilder()
+                               .setName("Run")
+                               .setType(StepSpecTypeConstants.RUN)
+                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                               .build();
+    StepInfo actionStepInfo = StepInfo.newBuilder()
+                                  .setName("Github Action plugin")
+                                  .setType(StepSpecTypeConstants.ACTION)
+                                  .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                  .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(pluginStepInfo);
+    stepInfos.add(runStepInfo);
+    stepInfos.add(actionStepInfo);
     Arrays.asList(IACMStepType.values())
         .forEach(e -> e.getStepCategories().forEach(category -> stepInfos.add(createStepInfo(e, category))));
     return stepInfos;

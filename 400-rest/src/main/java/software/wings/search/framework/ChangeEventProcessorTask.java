@@ -46,12 +46,10 @@ public class ChangeEventProcessorTask implements Runnable {
   private BlockingQueue<ChangeEvent<?>> changeEventQueue;
   private Set<String> accountIdsToSyncToTimescale;
   private long logMetricsCounter;
-  private boolean closeTimeScaleSyncProcessingOnFailure;
 
   ChangeEventProcessorTask(Set<SearchEntity<?>> searchEntities, Set<TimeScaleEntity<?>> timeScaleEntities,
       WingsPersistence wingsPersistence, ChangeEventMetricsTracker changeEventMetricsTracker,
-      BlockingQueue<ChangeEvent<?>> changeEventQueue, Set<String> accountIdsToSyncToTimescale,
-      boolean closeTimeScaleSyncProcessingOnFailure) {
+      BlockingQueue<ChangeEvent<?>> changeEventQueue, Set<String> accountIdsToSyncToTimescale) {
     this.searchEntities = searchEntities;
     this.timeScaleEntities = timeScaleEntities;
     this.wingsPersistence = wingsPersistence;
@@ -59,7 +57,6 @@ public class ChangeEventProcessorTask implements Runnable {
     this.changeEventQueue = changeEventQueue;
     this.logMetricsCounter = 0;
     this.accountIdsToSyncToTimescale = accountIdsToSyncToTimescale;
-    this.closeTimeScaleSyncProcessingOnFailure = closeTimeScaleSyncProcessingOnFailure;
   }
 
   public void run() {
@@ -76,10 +73,8 @@ public class ChangeEventProcessorTask implements Runnable {
             isRunningSuccessfully = processChange(changeEvent);
           }
         }
-        if (!closeTimeScaleSyncProcessingOnFailure || isTimeScaleRunningSuccessfully) {
-          if (changeEvent != null) {
-            isTimeScaleRunningSuccessfully = processTimeScaleChange(changeEvent);
-          }
+        if (changeEvent != null) {
+          isTimeScaleRunningSuccessfully = processTimeScaleChange(changeEvent);
         }
       }
 

@@ -59,6 +59,7 @@ import io.harness.ccm.views.service.CEViewService;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
@@ -92,6 +93,7 @@ public class ViewBillingServiceHelper {
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
   @Inject private ViewParametersHelper viewParametersHelper;
+  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
   private static final String OTHERS = "Others";
   private static final String COST_DESCRIPTION = "of %s - %s";
@@ -171,7 +173,9 @@ public class ViewBillingServiceHelper {
     }
     if (gridData != null) {
       final List<String> fields = gridData.getFields();
+      log.info("GridFields : {}", fields);
       final List<List<String>> inValues = getInValuesList(gridData, fields);
+      log.info("GridFields in values : {}", inValues);
       if (!inValues.isEmpty()) {
         final List<QLCEViewFieldInput> qlCEViewFieldInputs = viewParametersHelper.getInFieldsList(fields);
         final String nullValueField = viewParametersHelper.getNullValueField(entityGroupBy, inValues);
@@ -333,7 +337,7 @@ public class ViewBillingServiceHelper {
       String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
       String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
       forecastCostDescription = format(COST_DESCRIPTION, startInstantFormat, endInstantFormat);
-      forecastCostValue = format(COST_VALUE, currency.getSymbol(),
+      forecastCostValue = format(COST_VALUE, currency != null ? currency.getSymbol() : "$",
           viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(forecastCost)));
       statsTrend = viewsQueryHelper.getRoundedDoubleValue(((forecastCost - totalCost) / totalCost) * 100);
     } else {
@@ -374,7 +378,7 @@ public class ViewBillingServiceHelper {
         return null;
     }
     if (otherCost != null) {
-      otherCostValue = String.format(COST_VALUE, currency.getSymbol(),
+      otherCostValue = String.format(COST_VALUE, currency != null ? currency.getSymbol() : "$",
           viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(otherCost)));
       if (totalCost != 0) {
         double percentageOfTotalCost = viewsQueryHelper.getRoundedDoublePercentageValue(otherCost / totalCost);
@@ -406,16 +410,18 @@ public class ViewBillingServiceHelper {
       List<QLCEViewTimeFilter> filters, Instant trendFilterStartTime, boolean isClusterTableQuery, Currency currency) {
     Instant startInstant = Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(filters, AFTER).getValue().longValue());
     Instant endInstant = Instant.ofEpochMilli(costData.getMaxStartTime() / 1000);
+    if (isClickHouseEnabled && !isClusterTableQuery) {
+      endInstant = Instant.ofEpochMilli(costData.getMaxStartTime());
+    }
     if (costData.getMaxStartTime() == 0) {
       endInstant = Instant.ofEpochMilli(
           viewsQueryHelper.getTimeFilter(filters, QLCEViewTimeFilterOperator.BEFORE).getValue().longValue());
     }
-
     boolean isYearRequired = viewsQueryHelper.isYearRequired(startInstant, endInstant);
     String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
     String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
     String totalCostDescription = format(COST_DESCRIPTION, startInstantFormat, endInstantFormat);
-    String totalCostValue = format(COST_VALUE, currency.getSymbol(),
+    String totalCostValue = format(COST_VALUE, currency != null ? currency.getSymbol() : "$",
         viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(costData.getCost())));
 
     double forecastCost = viewsQueryHelper.getForecastCost(ViewCostData.builder()
@@ -530,7 +536,6 @@ public class ViewBillingServiceHelper {
       return viewsQueryBuilder.getTotalCountQuery(
           viewRuleList, idFilters, timeFilters, modifiedGroupBy, cloudProviderTableName);
     }
-
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams.getTimeOffsetInDays());
@@ -577,7 +582,12 @@ public class ViewBillingServiceHelper {
           ? CLUSTER_TABLE_HOURLY
           : CLUSTER_TABLE;
     }
-    return format("%s.%s.%s", tableNameSplit[0], tableNameSplit[1], tableName);
+
+    if (isClickHouseEnabled) {
+      return format("%s.%s", "ccm", tableName);
+    } else {
+      return format("%s.%s.%s", tableNameSplit[0], tableNameSplit[1], tableName);
+    }
   }
 
   // ----------------------------------------------------------------------------------------------------------------

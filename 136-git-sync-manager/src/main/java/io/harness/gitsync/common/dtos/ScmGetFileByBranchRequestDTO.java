@@ -10,6 +10,7 @@ package io.harness.gitsync.common.dtos;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,4 +28,7 @@ public class ScmGetFileByBranchRequestDTO {
   String filePath;
   String connectorRef;
   boolean useCache;
+  boolean getOnlyFileContent;
+  // If ScmConnector is not null, then we use it instead of processing connectorRef
+  ScmConnector scmConnector;
 }

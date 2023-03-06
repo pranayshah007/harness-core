@@ -30,4 +30,5 @@ public class VmImageConfig {
   String cacheGCS;
   String cacheS3;
   String iacmTerraform;
+  String sscaOrchestration;
 }

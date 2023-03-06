@@ -111,7 +111,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
         .skipCondition(SkipInfoUtils.getSkipCondition(config.getSkipCondition()))
         // We Should add default when condition as StageFailure if stepGroup is inside rollback
         .whenCondition(isStepGroupInsideRollback ? RunInfoUtils.getRunConditionForRollback(config.getWhen())
-                                                 : RunInfoUtils.getRunCondition(config.getWhen()))
+                                                 : RunInfoUtils.getRunConditionForStep(config.getWhen()))
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

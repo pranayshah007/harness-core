@@ -294,7 +294,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerMigrations(injector);
     registerResources(environment, injector);
     registerWaitEnginePublishers(injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, configuration);
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
@@ -311,7 +311,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     }
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
-    initializeCiManagerMonitoring(injector);
+    initializeCiManagerMonitoring(configuration, injector);
 
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
@@ -439,11 +439,14 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
-    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    boolean local = config.getCiExecutionServiceConfig().isLocal();
+    if (!local) {
+      environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    }
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
@@ -565,9 +568,11 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 
-  private void initializeCiManagerMonitoring(Injector injector) {
-    log.info("Initializing CI Manager Monitoring");
-    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  private void initializeCiManagerMonitoring(CIManagerConfiguration config, Injector injector) {
+    if (BooleanUtils.isTrue(config.getEnableTelemetry())) {
+      log.info("Initializing CI Manager Monitoring");
+      injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+    }
   }
 
   private void initializePluginPublisher(Injector injector) {

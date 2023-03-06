@@ -69,7 +69,9 @@ public class QueueExecutionUtils {
     return ciExecutionRepository.countByAccountIdAndBuildType(accountID, OSType.MacOS);
   }
 
-  public void deleteActiveExecutionRecord(String stageExecutionID) {
+  public CIExecutionMetadata deleteActiveExecutionRecord(String stageExecutionID) {
+    CIExecutionMetadata executionMetadata = ciExecutionRepository.findByStageExecutionId(stageExecutionID);
     ciExecutionRepository.deleteByStageExecutionId(stageExecutionID);
+    return executionMetadata;
   }
 }

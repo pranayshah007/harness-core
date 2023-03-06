@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgContentParser;
@@ -47,11 +46,10 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
           manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
     }
     String asgName = chainState.getAsgName();
-    String operationName = format("Modify scaling policies of autoscaling group %s", asgName);
-    asgSdkManager.info("Operation `%s` has started", operationName);
+    asgSdkManager.info("Modifying scaling policies of Asg %s", asgName);
     asgSdkManager.clearAllScalingPoliciesForAsg(asgName);
     asgSdkManager.attachScalingPoliciesToAsg(asgName, manifests);
-    asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
+    asgSdkManager.infoBold("Modified scaling policies of Asg %s successfully", asgName);
     return chainState;
   }
 

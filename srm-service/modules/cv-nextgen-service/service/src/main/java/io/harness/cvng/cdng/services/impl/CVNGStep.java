@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -125,6 +126,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
     String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
+    log.info("Resolved cvConfigIds {}", resolvedCVConfigInfo.getCvConfigIds());
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
@@ -248,6 +250,9 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     verificationJobInstanceBuilder.verificationStatus(activityVerificationStatus);
     verificationJobInstanceBuilder.startTime(clock.instant().minus(Duration.ofMinutes(15)));
     verificationJobInstanceBuilder.deploymentStartTime(clock.instant().minus(Duration.ofMinutes(16)));
+    Map<String, CVConfig> cvConfigMap =
+        cvConfigs.stream().collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
+    verificationJobInstanceBuilder.cvConfigMap(cvConfigMap);
     return verificationJobInstanceBuilder.build();
   }
 

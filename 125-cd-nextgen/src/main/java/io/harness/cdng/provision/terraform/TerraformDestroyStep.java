@@ -12,6 +12,7 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -88,10 +89,14 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
     TerraformDestroyStepParameters stepParametersSpec = (TerraformDestroyStepParameters) stepParameters.getSpec();
 
-    if (stepParametersSpec.getConfiguration().getType() == TerraformStepConfigurationType.INLINE) {
+    if (stepParametersSpec.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
       // Config Files connector
-      String connectorRef =
-          stepParametersSpec.configuration.spec.configFiles.store.getSpec().getConnectorReference().getValue();
+      String connectorRef = stepParametersSpec.getConfiguration()
+                                .getSpec()
+                                .configFiles.store.getSpec()
+                                .getConnectorReference()
+                                .getValue();
       IdentifierRef identifierRef =
           IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
       EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
@@ -113,31 +118,44 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     log.info("Running Obtain Inline Task for the Destroy Step");
     TerraformDestroyStepParameters parameters = (TerraformDestroyStepParameters) stepElementParameters.getSpec();
     helper.validateDestroyStepParamsInline(parameters);
-    TerraformStepConfigurationType configurationType = parameters.getConfiguration().getType();
-    switch (configurationType) {
-      case INLINE:
-        return obtainInlineTask(ambiance, parameters, stepElementParameters);
-      case INHERIT_FROM_PLAN:
-        return obtainInheritedTask(ambiance, parameters, stepElementParameters);
-      case INHERIT_FROM_APPLY:
-        return obtainLastApplyTask(ambiance, parameters, stepElementParameters);
-      default:
-        throw new InvalidRequestException(
-            String.format("Unknown configuration Type: [%s]", configurationType.getDisplayName()));
+
+    if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+            TerraformStepConfigurationType.INLINE.getDisplayName())) {
+      return obtainInlineTask(ambiance, parameters, stepElementParameters);
+    } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
+      return obtainInheritedTask(ambiance, parameters, stepElementParameters);
+    } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                   TerraformStepConfigurationType.INHERIT_FROM_APPLY.getDisplayName())) {
+      return obtainLastApplyTask(ambiance, parameters, stepElementParameters);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Unknown configuration Type: [%s]", parameters.getConfiguration().getType().getDisplayName()));
     }
   }
 
   private TaskRequest obtainInlineTask(
       Ambiance ambiance, TerraformDestroyStepParameters parameters, StepElementParameters stepElementParameters) {
     log.info("Running Obtain Inline Task for the Destroy Step");
+    boolean isTerraformCloudCli = parameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
+
+    if (isTerraformCloudCli) {
+      helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
+      helper.checkIfDelegateSupportsCloudCli(ambiance);
+    }
+
     helper.validateDestroyStepConfigFilesInline(parameters);
-    TerraformStepConfigurationParameters configuration = parameters.getConfiguration();
-    TerraformExecutionDataParameters spec = configuration.getSpec();
+    TerraformExecutionDataParameters spec = parameters.getConfiguration().getSpec();
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
+
+    if (!isTerraformCloudCli) {
+      builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.currentStateFileId(helper.getLatestFileId(entityId))
             .taskType(TFTaskType.DESTROY)
@@ -145,8 +163,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .terraformCommandUnit(TerraformCommandUnit.Destroy)
             .entityId(entityId)
             .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-                configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
-            .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
+                parameters.getConfiguration().getSpec().getConfigFiles(), stepElementParameters.getType()))
             .configFile(helper.getGitFetchFilesConfig(
                 spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
@@ -163,6 +180,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 
     TaskData taskData =

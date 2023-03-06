@@ -15,6 +15,7 @@ import static io.harness.cdng.pipeline.steptype.NGStepType.CF_CREATE_STACK;
 import static io.harness.cdng.pipeline.steptype.NGStepType.CF_DELETE_STACK;
 import static io.harness.cdng.pipeline.steptype.NGStepType.CF_ROLLBACK_STACK;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAFORM_APPLY;
+import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAFORM_CLOUD_ROLLBACK;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAFORM_CLOUD_RUN;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAFORM_DESTROY;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAFORM_PLAN;
@@ -49,7 +50,7 @@ public enum ProvisionerType {
       Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN, TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK,
           CF_DELETE_STACK, CF_ROLLBACK_STACK, AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE,
           AZURE_ROLLBACK_ARM_RESOURCE, NGStepType.SHELL_SCRIPT_PROVISIONER, TERRAGRUNT_PLAN, TERRAGRUNT_APPLY,
-          TERRAGRUNT_DESTROY, TERRAGRUNT_ROLLBACK, TERRAFORM_CLOUD_RUN);
+          TERRAGRUNT_DESTROY, TERRAGRUNT_ROLLBACK, TERRAFORM_CLOUD_RUN, TERRAFORM_CLOUD_ROLLBACK);
 
   @Getter private final String displayName;
   ProvisionerType(String displayName) {

@@ -188,4 +188,17 @@ public class PlanExecutionResourceTest extends CategoryTest {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "planExecutionId");
     verify(retryExecutionHelper, times(1)).getRetryLatestExecutionId("rootExecutionId");
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testRunPostExecutionRollback() {
+    doReturn(PlanExecution.builder().planId("planId123").build())
+        .when(pipelineExecutor)
+        .startPostExecutionRollback(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "originalPlanId");
+    ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.runPostExecutionRollback(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "originalPlanId");
+    PlanExecutionResponseDto data = response.getData();
+    assertThat(data.getPlanExecution().getPlanId()).isEqualTo("planId123");
+  }
 }

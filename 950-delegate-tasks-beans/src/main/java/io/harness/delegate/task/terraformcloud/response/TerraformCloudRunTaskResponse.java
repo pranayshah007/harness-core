@@ -10,8 +10,18 @@ package io.harness.delegate.task.terraformcloud.response;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.CDP)
-@Builder
-public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskResponse {}
+@Value
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskResponse {
+  Integer detailedExitCode;
+  String tfPlanJsonFileId;
+  String runId;
+  String tfOutput;
+  String policyChecksJsonFileId;
+}

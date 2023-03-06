@@ -82,7 +82,7 @@ public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
             .adviserObtainments(adviserObtainmentFromMetaData)
             .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
             .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+                                                : RunInfoUtils.getRunConditionForStep(stepElement.getWhen()))
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
 

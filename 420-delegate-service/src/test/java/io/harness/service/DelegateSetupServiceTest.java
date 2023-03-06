@@ -277,8 +277,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
         .extracting(DelegateGroupDetails::getGroupName)
         .containsOnly("grp1", "grp2", "grp4");
     assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getGroupVersion()).isEqualTo("22.09.76614");
-    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getAutoUpgrade())
-        .isEqualTo(AutoUpgrade.SYNCHRONIZING);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().get(0).getAutoUpgrade()).isEqualTo(AutoUpgrade.DETECTING);
     assertThat(delegateGroupListing.getDelegateGroupDetails().get(1).getAutoUpgrade()).isEqualTo(AutoUpgrade.OFF);
   }
 
@@ -913,8 +912,8 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     persistence.save(delegate);
 
     Set<String> tags = delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false).keySet();
-    assertThat(tags.size()).isEqualTo(2);
-    assertThat(tags).containsExactlyInAnyOrder("group", "custom-tag");
+    assertThat(tags.size()).isEqualTo(3);
+    assertThat(tags).containsExactlyInAnyOrder("group", "custom-tag", "host");
   }
 
   @Test

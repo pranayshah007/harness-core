@@ -184,7 +184,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
           }
         }
       }
-    } else if (isNotEmpty(delegate.getHostName())) {
+    }
+
+    if (isNotEmpty(delegate.getHostName())) {
+      // Consider hostname as selector for delegate.
       selectorTypeMap.put(delegate.getHostName().toLowerCase(), SelectorType.HOST_NAME);
     }
 
@@ -835,7 +838,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       return AutoUpgrade.ON;
     } else if (TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - delegateCreationTime)
         <= AUTO_UPGRADE_CHECK_TIME_IN_MINUTES) {
-      return AutoUpgrade.SYNCHRONIZING;
+      return AutoUpgrade.DETECTING;
     }
     return AutoUpgrade.OFF;
   }

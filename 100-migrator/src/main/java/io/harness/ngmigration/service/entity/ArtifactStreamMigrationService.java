@@ -18,6 +18,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.ArtifactStreamSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -32,7 +33,6 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +79,13 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
     if (!ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
       children = Collections.singleton(
           CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(artifactStream.getSettingId()).build());
+    } else {
+      if (null != artifactStream.getTemplateUuid()) {
+        children = Collections.singleton(
+            CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(artifactStream.getTemplateUuid()).build());
+      }
     }
+
     return DiscoveryNode.builder().children(children).entityNode(artifactStreamNode).build();
   }
 
@@ -89,13 +95,14 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   }
 
   @Override
-  public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return new ArrayList<>();
+    return null;
   }
 
   @Override
-  protected YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     return null;
   }
 

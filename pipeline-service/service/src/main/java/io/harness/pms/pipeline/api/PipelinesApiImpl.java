@@ -25,12 +25,12 @@ import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
@@ -133,7 +133,7 @@ public class PipelinesApiImpl implements PipelinesApi {
     try {
       PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline,
           false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
-          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
       pipelineEntity = pipelineGetResult.getPipelineEntity();
       validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {
@@ -149,12 +149,6 @@ public class PipelinesApiImpl implements PipelinesApi {
           PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
       pipelineGetResponseBody.setYamlErrorWrapper(
           PipelinesApiUtils.getListYAMLErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata()));
-      pipelineGetResponseBody.setValid(false);
-      return Response.status(200).entity(pipelineGetResponseBody).build();
-    } catch (NGTemplateResolveExceptionV2 ne) {
-      pipelineGetResponseBody.setPipelineYaml(ne.getReferredByYaml());
-      pipelineGetResponseBody.setGitDetails(
-          PipelinesApiUtils.getGitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()));
       pipelineGetResponseBody.setValid(false);
       return Response.status(200).entity(pipelineGetResponseBody).build();
     }
@@ -240,8 +234,8 @@ public class PipelinesApiImpl implements PipelinesApi {
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
-        String.format("/v1/orgs/%s/projects/%s/pipelines", org, project), pipelines.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, pipelines.getTotalElements(), page, limit);
     return responseBuilderWithLinks
         .entity(pipelines.getContent()
                     .stream()

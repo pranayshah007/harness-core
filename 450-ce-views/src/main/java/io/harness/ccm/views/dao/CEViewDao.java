@@ -136,6 +136,10 @@ public class CEViewDao {
         .asList();
   }
 
+  public List<CEView> list(String accountId) {
+    return hPersistence.createQuery(CEView.class).field(CEViewKeys.accountId).equal(accountId).asList();
+  }
+
   public CEView findByName(String accountId, String name) {
     return hPersistence.createQuery(CEView.class)
         .filter(CEViewKeys.accountId, accountId)
@@ -212,5 +216,14 @@ public class CEViewDao {
       return query.order(Sort.descending(sortField));
     }
     return query.order(Sort.ascending(sortField));
+  }
+
+  public List<CEView> getPerspectivesByIds(String accountId, List<String> uuids) {
+    return hPersistence.createQuery(CEView.class)
+        .field(CEViewKeys.accountId)
+        .equal(accountId)
+        .field(CEViewKeys.uuid)
+        .in(uuids)
+        .asList();
   }
 }

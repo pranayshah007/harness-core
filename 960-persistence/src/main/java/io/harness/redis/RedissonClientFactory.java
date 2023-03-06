@@ -38,7 +38,7 @@ public class RedissonClientFactory {
   private static final int DEFAULT_MIN_CONNECTION_IDLE_SIZE = 5;
 
   private static final int DEFAULT_RETRY_ATTEMPTS = 3;
-  private static final int DEFAULT_RETRY_INTERVAL = 500;
+  private static final int DEFAULT_RETRY_INTERVAL = 1500;
   private static final int NUM_OF_RETRIES = 3;
   private static final int WAIT_TIME_BETWEEN_RETRIES = 1000;
 

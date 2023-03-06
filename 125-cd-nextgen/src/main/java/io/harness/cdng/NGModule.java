@@ -21,6 +21,8 @@ import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourc
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceService;
 import io.harness.cdng.artifact.resources.azureartifacts.AzureArtifactsResourceServiceImpl;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceService;
+import io.harness.cdng.artifact.resources.bamboo.BambooResourceServiceImpl;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.custom.CustomResourceServiceImpl;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
@@ -33,6 +35,8 @@ import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesR
 import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceServiceImpl;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
+import io.harness.cdng.artifact.resources.googlecloudstorage.service.GoogleCloudStorageArtifactResourceService;
+import io.harness.cdng.artifact.resources.googlecloudstorage.service.GoogleCloudStorageArtifactResourceServiceImpl;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceService;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceServiceImpl;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
@@ -124,6 +128,7 @@ public class NGModule extends AbstractModule {
     bind(ArtifactSourceService.class).to(ArtifactSourceServiceImpl.class);
     bind(DockerResourceService.class).to(DockerResourceServiceImpl.class);
     bind(NexusResourceService.class).to(NexusResourceServiceImpl.class);
+    bind(GoogleCloudStorageArtifactResourceService.class).to(GoogleCloudStorageArtifactResourceServiceImpl.class);
     bind(ArtifactoryResourceService.class).to(ArtifactoryResourceServiceImpl.class);
     bind(GcrResourceService.class).to(GcrResourceServiceImpl.class);
     bind(EcrResourceService.class).to(EcrResourceServiceImpl.class);
@@ -152,6 +157,7 @@ public class NGModule extends AbstractModule {
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
     bind(CustomResourceService.class).to(CustomResourceServiceImpl.class);
+    bind(BambooResourceService.class).to(BambooResourceServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,

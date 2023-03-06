@@ -55,6 +55,7 @@ public class HelmDeployStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.spec.ignoreReleaseHistFailStatus",
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.description",
             "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.timeout",
-            "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.name");
+            "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.name",
+            "pipeline.stages.Deployment.spec.execution.steps.helmDeployment.when");
   }
 }

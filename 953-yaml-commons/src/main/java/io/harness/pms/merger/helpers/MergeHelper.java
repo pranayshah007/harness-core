@@ -69,6 +69,15 @@ public class MergeHelper {
         originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
   }
 
+  public String mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(String baseYaml, String runtimeInputYaml,
+      boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
+    YamlConfig baseConfig = new YamlConfig(baseYaml);
+    YamlConfig runtimeConfig = new YamlConfig(runtimeInputYaml);
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        baseConfig, runtimeConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime)
+        .getYaml();
+  }
+
   public YamlConfig mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(YamlConfig originalYamlConfig,
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
@@ -182,10 +191,17 @@ public class MergeHelper {
       }
     }
     for (FQN key : newKeys) {
+      // parent will have its key as one of the fields in acceptAllChildrenKeys. In case this parent itself is a runtime
+      // input, such as when "service" is an axis name, in that case we can ignore this part as all fields will be added
+      // anyway.
       FQN parent = key.getParent();
-      ObjectNode nodeForFQN = (ObjectNode) YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
-      if (!nodeForFQN.has(key.getFieldName())) {
-        nodeForFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
+      JsonNode jsonNodeForParentFQN = YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
+      if (jsonNodeForParentFQN instanceof TextNode) {
+        continue;
+      }
+      ObjectNode objectNodeForParentFQN = (ObjectNode) jsonNodeForParentFQN;
+      if (!objectNodeForParentFQN.has(key.getFieldName())) {
+        objectNodeForParentFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
         mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(runtimeInputYamlMap, key));
       }
     }

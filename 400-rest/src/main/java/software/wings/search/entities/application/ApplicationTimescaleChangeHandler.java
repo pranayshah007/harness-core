@@ -37,7 +37,7 @@ public class ApplicationTimescaleChangeHandler implements ChangeHandler {
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent) {
     String tableName = "cg_applications";
-    boolean debeziumEnabled = featureFlagService.isGlobalEnabled(FeatureName.DEBEZIUM_ENABLED);
+    boolean debeziumEnabled = featureFlagService.isGlobalEnabled(FeatureName.CDS_DEBEZIUM_ENABLED_CG);
     if (!debeziumEnabled) {
       switch (changeEvent.getChangeType()) {
         case INSERT:

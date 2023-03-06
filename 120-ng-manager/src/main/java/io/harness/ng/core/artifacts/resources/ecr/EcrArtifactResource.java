@@ -104,18 +104,21 @@ public class EcrArtifactResource {
       }
 
       if (isEmpty(ecrConnectorIdentifier)) {
-        ecrConnectorIdentifier = ecrArtifactConfig.getConnectorRef().getValue();
+        ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
 
+    ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+    imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
 
     // resolving region
-    region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+    region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
 
     EcrResponseDTO buildDetails =
         ecrResourceService.getBuildDetails(connectorRef, imagePath, region, orgIdentifier, projectIdentifier);
@@ -226,13 +229,18 @@ public class EcrArtifactResource {
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(region)) {
         region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
+        if (isEmpty(region)) {
+          throw new InvalidRequestException("Please input a valid region.");
+        }
       }
       if (isEmpty(ecrConnectorIdentifier)) {
-        ecrConnectorIdentifier = ecrArtifactConfig.getConnectorRef().getValue();
+        ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
-    region = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+    ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 

@@ -34,7 +34,8 @@ public class ScmBatchGetFileTaskParams implements TaskParameters, ExecutionCapab
     getFileTaskParamsPerConnectorList.forEach(getFileTaskParamsPerConnector -> {
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(
           getFileTaskParamsPerConnector.getConnectorDecryptionParams().getScmConnector());
-      executionCapabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilitiesSimpleCheck(gitConfigDTO));
+      executionCapabilities.addAll(
+          GitCapabilityHelper.fetchRequiredExecutionCapabilitiesSimpleCheck(gitConfigDTO, false));
     });
     return executionCapabilities;
   }

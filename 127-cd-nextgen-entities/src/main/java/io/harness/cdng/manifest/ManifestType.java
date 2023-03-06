@@ -29,6 +29,11 @@ public interface ManifestType {
   Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
+  Set<String> GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.GoogleCloudFunctionDefinition);
+  Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition);
+  Set<String> AWS_SAM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsSamDirectory);
+
   String K8Manifest = "K8sManifest";
   String VALUES = "Values";
   String CONFIG_FILE = "configFiles";
@@ -54,6 +59,9 @@ public interface ManifestType {
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
   String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
   String HelmRepoOverride = "HelmRepoOverride";
+  String AwsLambdaFunctionDefinition = "AwsLambdaFunctionDefinition";
+  String AwsLambdaFunctionAliasDefinition = "AwsLambdaFunctionAliasDefinition";
+  String AwsSamDirectory = "AwsSamDirectory";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
@@ -62,6 +70,8 @@ public interface ManifestType {
         ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
         ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
         ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
-        AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition));
+        AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
+        ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
+        ManifestType.AwsSamDirectory));
   }
 }

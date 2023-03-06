@@ -8,12 +8,17 @@
 package io.harness.engine.executions.plan;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.OrchestrationTestBase;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
@@ -24,9 +29,11 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 public class PlanServiceImplTest extends OrchestrationTestBase {
   @Inject PlanService planService;
 
@@ -42,10 +49,11 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestSave() {
     OffsetDateTime now = OffsetDateTime.now();
-    Plan plan = buildAnsSavePlan();
+    Plan plan = buildAndSavePlan();
     assertThat(plan.getUuid()).isNotNull();
-    assertThat(plan.getVersion()).isEqualTo(0);
-    assertThat(plan.getNodes()).hasSize(3);
+    assertThat(plan.getVersion()).isZero();
+    // As PlanNodes are stored as empty
+    assertThat(plan.getPlanNodes()).isEmpty();
     assertThat(plan.getValidUntil()).isAfterOrEqualTo(Date.from(now.plusMonths(6).toInstant()));
   }
 
@@ -54,11 +62,12 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestFetch() {
     OffsetDateTime now = OffsetDateTime.now();
-    Plan plan = buildAnsSavePlan();
+    Plan plan = buildAndSavePlan();
     Plan fetchedPlan = planService.fetchPlan(plan.getUuid());
     assertThat(fetchedPlan.getUuid()).isNotNull();
-    assertThat(fetchedPlan.getVersion()).isEqualTo(0);
-    assertThat(fetchedPlan.getNodes()).hasSize(3);
+    assertThat(fetchedPlan.getVersion()).isZero();
+    // As PlanNodes are stored as empty
+    assertThat(fetchedPlan.getPlanNodes()).isEmpty();
     assertThat(fetchedPlan.getValidUntil()).isAfterOrEqualTo(Date.from(now.plusMonths(6).toInstant()));
   }
 
@@ -66,33 +75,61 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestFetchNode() {
-    Plan plan = buildAnsSavePlan();
+    Plan plan = buildAndSavePlan();
     PlanNode fetchNode = planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID);
     assertThat(fetchNode.getUuid()).isNotNull();
     assertThat(fetchNode.getUuid()).isEqualTo(DUMMY_NODE_1_ID);
     assertThat(fetchNode.getName()).isEqualTo("Dummy Node 1");
   }
 
-  private Plan buildAnsSavePlan() {
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteNodesForGivenIds() {
+    Plan plan = buildAndSavePlan();
+    PlanNode fetchNode = planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID);
+    assertThat(fetchNode.getUuid()).isNotNull();
+    assertThat(fetchNode.getUuid()).isEqualTo(DUMMY_NODE_1_ID);
+    assertThat(fetchNode.getName()).isEqualTo("Dummy Node 1");
+
+    planService.deleteNodesForGivenIds(Set.of(DUMMY_NODE_1_ID, DUMMY_NODE_2_ID, DUMMY_NODE_3_ID));
+    assertThatThrownBy(() -> planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeletePlansForGivenIds() {
+    Plan plan = buildAndSavePlan();
+    Plan fetchPlan = planService.fetchPlan(plan.getUuid());
+    assertThat(fetchPlan).isNotNull();
+    assertThat(fetchPlan.getUuid()).isEqualTo(plan.getUuid());
+
+    planService.deletePlansForGivenIds(Set.of(plan.getUuid()));
+    assertThatThrownBy(() -> planService.fetchPlan(plan.getUuid())).isInstanceOf(InvalidRequestException.class);
+  }
+
+  private Plan buildAndSavePlan() {
     Plan plan = Plan.builder()
-                    .node(PlanNodeProto.newBuilder()
-                              .setUuid(DUMMY_NODE_1_ID)
-                              .setName("Dummy Node 1")
-                              .setStepType(DUMMY_STEP_TYPE)
-                              .setIdentifier("dummy1")
-                              .build())
-                    .node(PlanNodeProto.newBuilder()
-                              .setUuid(DUMMY_NODE_2_ID)
-                              .setName("Dummy Node 2")
-                              .setStepType(DUMMY_STEP_TYPE)
-                              .setIdentifier("dummy2")
-                              .build())
-                    .node(PlanNodeProto.newBuilder()
-                              .setUuid(DUMMY_NODE_3_ID)
-                              .setName("Dummy Node 3")
-                              .setStepType(DUMMY_STEP_TYPE)
-                              .setIdentifier("dummy3")
-                              .build())
+                    .planNode(PlanNode.fromPlanNodeProto(PlanNodeProto.newBuilder()
+                                                             .setUuid(DUMMY_NODE_1_ID)
+                                                             .setName("Dummy Node 1")
+                                                             .setStepType(DUMMY_STEP_TYPE)
+                                                             .setIdentifier("dummy1")
+                                                             .build()))
+                    .planNode(PlanNode.fromPlanNodeProto(PlanNodeProto.newBuilder()
+                                                             .setUuid(DUMMY_NODE_2_ID)
+                                                             .setName("Dummy Node 2")
+                                                             .setStepType(DUMMY_STEP_TYPE)
+                                                             .setIdentifier("dummy2")
+                                                             .build()))
+                    .planNode(PlanNode.fromPlanNodeProto(PlanNodeProto.newBuilder()
+                                                             .setUuid(DUMMY_NODE_3_ID)
+                                                             .setName("Dummy Node 3")
+                                                             .setStepType(DUMMY_STEP_TYPE)
+                                                             .setIdentifier("dummy3")
+                                                             .build()))
                     .startingNodeId(DUMMY_NODE_1_ID)
                     .build();
     return planService.save(plan);

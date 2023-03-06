@@ -29,7 +29,9 @@ import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
+import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
@@ -103,6 +105,8 @@ public interface CDOverviewDashboardService {
 
   InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String environmentId);
+  InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String environmentId, String displayName);
 
   InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
@@ -121,6 +125,9 @@ public interface CDOverviewDashboardService {
 
   ArtifactInstanceDetails getArtifactInstanceDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  OpenTaskDetails getOpenTasks(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, long startInterval);
 
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds, String infraId, String clusterId,
