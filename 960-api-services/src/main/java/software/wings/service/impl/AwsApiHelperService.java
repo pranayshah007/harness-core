@@ -179,12 +179,9 @@ public class AwsApiHelperService {
     try {
       tracker.trackECRCall("List Repositories");
       return getAmazonEcrClient(awsConfig, region).describeRepositories(describeRepositoriesRequest);
-    } catch (AmazonServiceException amazonServiceException) {
-      handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      throw new InvalidRequestException("Please input a valid AWS Connector and corresponding region.");
     }
-    return new DescribeRepositoriesResult();
   }
 
   public ListObjectsV2Result listObjectsInS3(
