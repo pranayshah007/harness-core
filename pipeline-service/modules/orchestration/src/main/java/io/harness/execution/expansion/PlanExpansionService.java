@@ -12,6 +12,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.Map;
+
 public interface PlanExpansionService {
   /**
    * Adds stepParameters to the execution json
@@ -44,11 +46,11 @@ public interface PlanExpansionService {
   /**
    * Takes in the expression and the plan execution id and resolves the expression
    *
-   * @param planExecutionId
+   * @param ambiance
    * @param expression
    * @return
    */
-  String resolveExpression(String planExecutionId, String expression);
+  Map<String, Object> resolveExpression(Ambiance ambiance, String expression);
 
   /**
    * Updates the status for given nodeExecution in Ambiance
