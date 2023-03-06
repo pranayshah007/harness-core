@@ -364,6 +364,7 @@ public class K8InitializeStepUtils {
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
     secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
     secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    secretVarMap.putAll(pluginSettingUtils.getPluginCompatibleSecretVars(stepInfo));
 
     Boolean privileged = null;
     if (CIStepInfoUtils.getPrivilegedMode(stepInfo) != null) {
