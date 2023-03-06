@@ -59,7 +59,7 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
       if (vmInstanceBillingData == null) {
         return null;
       }
-      log.debug(
+      log.info(
           "GCP: fetching custom data from cache. ComputeCost: {}, CPU Cost: {}, MemoryCost: {}, resourceId: {}, startTime: {}, endTime: {}",
           vmInstanceBillingData.getComputeCost(), vmInstanceBillingData.getCpuCost(),
           vmInstanceBillingData.getMemoryCost(), resourceId, startTime, endTime);
@@ -71,11 +71,15 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   @Override
   public void updateGcpVMBillingDataCache(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
+    log.info("ABHINAV::: updateGcpVMBillingDataCache()");
     Map<String, VMInstanceBillingData> gcpVMBillingData =
         bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
+
+    log.info("ABHINAV::: gcpVMBillingData : {}", gcpVMBillingData.size());
+
     gcpVMBillingData.forEach((resourceId, vmInstanceBillingData) -> {
       String cleanedResourceId = resourceId.substring(resourceId.lastIndexOf('/') + 1);
-      log.debug("GCP: Updated Key (resourceId) is: {}", cleanedResourceId);
+      log.info("GCP: Updated Key (resourceId) is: {}", cleanedResourceId);
 
       gcpResourceBillingCache.put(new CacheKey(cleanedResourceId, startTime, endTime), vmInstanceBillingData);
     });

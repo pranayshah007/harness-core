@@ -141,6 +141,7 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
 
   private String getGcpBillingMetaData(String accountId) {
     boolean enabled = featureFlagService.isEnabled(FeatureName.CE_GCP_CUSTOM_PRICING, accountId);
+    log.info("ABHINAV:::: CE_GCP_CUSTOM_PRICING enabled: {}", enabled);
     if (enabled) {
       CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
       if (null != ceMetadataRecord && null != ceMetadataRecord.getGcpDataPresent()

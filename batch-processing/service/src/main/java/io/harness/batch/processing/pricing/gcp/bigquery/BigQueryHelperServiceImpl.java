@@ -158,7 +158,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   private Map<String, VMInstanceBillingData> query(String formattedQuery, String cloudProviderType, String accountId) {
-    log.debug("Formatted query for {} : {}", cloudProviderType, formattedQuery);
+    log.info("ABHINAV::: Formatted query for {} : {}", cloudProviderType, formattedQuery);
     BigQuery bigQueryService = getBigQueryService();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(formattedQuery).build();
     TableResult result = null;
@@ -187,6 +187,8 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private Map<String, VMInstanceBillingData> convertToGcpInstanceBillingData(TableResult result) {
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
         convertToGcpInstanceServiceBillingData(result);
+    log.info("ABHINAV::: vmInstanceServiceBillingDataList.size: {}", vmInstanceServiceBillingDataList.size());
+    log.info("ABHINAV::: vmInstanceServiceBillingDataList: {}", vmInstanceServiceBillingDataList);
 
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
     for (VMInstanceServiceBillingData vmInstanceServiceBillingData : vmInstanceServiceBillingDataList) {
@@ -228,7 +230,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       vmInstanceBillingDataMap.put(resourceId, vmInstanceBillingData);
     }
 
-    log.debug("GCP: resource map data {} ", vmInstanceBillingDataMap);
+    log.info("GCP: resource map data {} ", vmInstanceBillingDataMap);
     return vmInstanceBillingDataMap;
   }
 

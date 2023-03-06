@@ -345,6 +345,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
 
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
+    log.info("ABHINAV:::: gcpDataSetId: {}", gcpDataSetId);
     if (gcpDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -353,13 +354,16 @@ public class InstanceBillingDataTasklet implements Tasklet {
             getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, instanceData);
         String cloudProvider =
             getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+        log.info("ABHINAV:::: resourceId: {}, cloudProvider: {}", resourceId, cloudProvider);
 
         if (null != resourceId && cloudProvider.equals(CloudProvider.GCP.name())) {
           resourceIds.add(resourceId);
         }
       });
+      log.info("ABHINAV::: resourceIds: {}", resourceIds);
 
       if (isNotEmpty(resourceIds)) {
+        log.info("ABHINAV:: resourceIds not empty");
         gcpCustomBillingService.updateGcpVMBillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
       }
