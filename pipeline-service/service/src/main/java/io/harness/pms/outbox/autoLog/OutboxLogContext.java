@@ -13,7 +13,7 @@ import io.harness.logging.AutoLogContext;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OutboxLogContext extends AutoLogContext {
-  public static final String ID = "accountId";
+  public static final String ID = "outboxEventId";
 
   public OutboxLogContext(String outboxEventId, OverrideBehavior behavior) {
     super(ID, outboxEventId, behavior);

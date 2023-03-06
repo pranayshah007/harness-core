@@ -114,6 +114,7 @@ import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
 import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
+import io.harness.pms.notification.orchestration.handlers.NodeExecutionOutboxHandler;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
@@ -499,6 +500,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     // NodeExecutionStartObserver
     nodeStartHelper.getNodeExecutionStartSubject().register(
         injector.getInstance(Key.get(StageStartNotificationHandler.class)));
+    nodeStartHelper.getNodeExecutionStartSubject().register(
+        injector.getInstance(Key.get(NodeExecutionOutboxHandler.class)));
 
     PlanStatusEventEmitterHandler planStatusEventEmitterHandler =
         injector.getInstance(Key.get(PlanStatusEventEmitterHandler.class));

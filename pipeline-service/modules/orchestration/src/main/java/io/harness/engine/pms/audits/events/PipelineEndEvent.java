@@ -16,6 +16,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +31,7 @@ public class PipelineEndEvent extends NodeExecutionEvent {
   private long startTs;
   private long endTs;
 
+  @Builder
   public PipelineEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
       Status status, Long startTs, Long endTs) {
