@@ -9,12 +9,14 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
@@ -23,6 +25,7 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
@@ -58,6 +61,8 @@ public class PipelineExecutor {
   RetryExecutionHelper retryExecutionHelper;
   PMSPipelineTemplateHelper pipelineTemplateHelper;
   PipelineTelemetryHelper pipelineTelemetryHelper;
+  PlanExecutionService planExecutionService;
+  RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   public PlanExecutionResponseDto runPipelineWithInputSetPipelineYaml(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String pipelineIdentifier,
@@ -145,6 +150,27 @@ public class PipelineExecutor {
         notifyOnlyUser, pipelineEntity, isDebug);
 
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
+  }
+
+  // todo: check if we need to take notifyOnlyUser and isDebug
+  public PlanExecution startPostExecutionRollback(
+      String accountId, String orgIdentifier, String projectIdentifier, String originalExecutionId) {
+    String executionId = generateUuid();
+    ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
+    ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
+    ExecutionMetadata executionMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(
+        originalExecutionMetadata, executionId, triggerInfo, accountId, orgIdentifier, projectIdentifier);
+
+    Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);
+    if (optPlanExecutionMetadata.isEmpty()) {
+      return null;
+    }
+    PlanExecutionMetadata originalPlanExecutionMetadata = optPlanExecutionMetadata.get();
+    PlanExecutionMetadata planExecutionMetadata =
+        rollbackModeExecutionHelper.transformPlanExecutionMetadata(originalPlanExecutionMetadata, executionId);
+    return executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, executionMetadata,
+        planExecutionMetadata, false, null, originalExecutionId, null);
   }
 
   private PlanExecutionResponseDto getPlanExecutionResponseDto(String accountId, String orgIdentifier,

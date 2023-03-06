@@ -45,6 +45,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
@@ -114,6 +115,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRespository;
   @Mock PmsFeatureFlagHelper featureFlagService;
+  @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -303,6 +305,7 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
     assertThat(execArgs.getMetadata().getHarnessVersion()).isEqualTo(PipelineVersion.V0);
+    assertThat(execArgs.getMetadata().getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
 
     PlanExecutionMetadata planExecutionMetadata = execArgs.getPlanExecutionMetadata();
     assertThat(planExecutionMetadata.getPlanExecutionId()).isEqualTo(generatedExecutionId);
@@ -756,6 +759,47 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(planCreatorMergeService, times(1))
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    verify(rollbackModeExecutionHelper, times(0)).transformPlanForRollbackMode(any(), anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartExecutionInPostExecutionRollbackMode() throws IOException {
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setHarnessVersion(PipelineVersion.V0)
+                                              .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                                              .build();
+    PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
+    String startingNodeId = "startingNodeId";
+    PlanCreationBlobResponse planCreationBlobResponse =
+        PlanCreationBlobResponse.newBuilder().setStartingNodeId(startingNodeId).build();
+    doReturn(planCreationBlobResponse)
+        .when(planCreatorMergeService)
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
+
+    PlanExecution planExecution = PlanExecution.builder().build();
+    Plan plan = PlanExecutionUtils.extractPlan(planCreationBlobResponse);
+    MockedStatic<PlanExecutionUtils> aStatic = Mockito.mockStatic(PlanExecutionUtils.class);
+    aStatic.when(() -> PlanExecutionUtils.extractPlan(planCreationBlobResponse)).thenReturn(plan);
+    ImmutableMap<String, String> abstractions = ImmutableMap.<String, String>builder()
+                                                    .put(SetupAbstractionKeys.accountId, accountId)
+                                                    .put(SetupAbstractionKeys.orgIdentifier, orgId)
+                                                    .put(SetupAbstractionKeys.projectIdentifier, projectId)
+                                                    .build();
+    doReturn(plan)
+        .when(rollbackModeExecutionHelper)
+        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList());
+    doReturn(planExecution)
+        .when(orchestrationService)
+        .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    PlanExecution createdPlanExecution = executionHelper.startExecution(
+        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, "prevId", null);
+    assertThat(createdPlanExecution).isEqualTo(planExecution);
+    verify(planCreatorMergeService, times(1))
+        .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
+    verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+    verify(rollbackModeExecutionHelper, times(1)).transformPlanForRollbackMode(plan, "prevId", Collections.emptyList());
   }
 
   @Test

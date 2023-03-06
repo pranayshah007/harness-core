@@ -29,6 +29,7 @@ import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -91,6 +92,16 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser);
     return ResponseDTO.newResponse(planExecutionResponseDto);
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  public ResponseDTO<PlanExecutionResponseDto> runPostExecutionRollback(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String planExecutionId) {
+    // pipelineIdentifier needed for access control check
+    PlanExecution planExecution =
+        pipelineExecutor.startPostExecutionRollback(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+    return ResponseDTO.newResponse(PlanExecutionResponseDto.builder().planExecution(planExecution).build());
   }
 
   @Override
