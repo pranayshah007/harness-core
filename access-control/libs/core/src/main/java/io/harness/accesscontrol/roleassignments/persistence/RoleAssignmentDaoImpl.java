@@ -64,9 +64,10 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
   }
 
   @Override
-  public PageResponse<RoleAssignment> list(PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter) {
+  public PageResponse<RoleAssignment> list(
+      PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
-    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter, true);
+    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter, hideInternal);
     Page<RoleAssignmentDBO> assignmentPage = roleAssignmentRepository.findAll(criteria, pageable);
     return PageUtils.getNGPageResponse(assignmentPage.map(RoleAssignmentDBOMapper::fromDBO));
   }

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -302,6 +303,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
+      // This is added to add validation for stored invalid yaml (duplicate yaml fields)
+      validateStoredYaml(pipelineEntity);
+
       return optionalPipelineEntity;
     }
     if (EmptyPredicate.isEmpty(pipelineEntity.getData())) {
@@ -316,6 +320,21 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity, loadFromCache);
     return optionalPipelineEntity;
+  }
+
+  // This function validate the duplicate fields in yaml and throws error if any. This method will be called during get
+  // call of inline Pipeline
+  public void validateStoredYaml(PipelineEntity pipelineEntity) {
+    try {
+      YamlUtils.readTree(pipelineEntity.getYaml(), true);
+    } catch (Exception ex) {
+      YamlSchemaErrorWrapperDTO errorWrapperDTO =
+          YamlSchemaErrorWrapperDTO.builder()
+              .schemaErrors(Collections.singletonList(YamlSchemaErrorDTO.builder().message(ex.getMessage()).build()))
+              .build();
+      throw new io.harness.yaml.validator.InvalidYamlException(
+          HarnessStringUtils.emptyIfNull(ex.getMessage()), ex, errorWrapperDTO, pipelineEntity.getData());
+    }
   }
 
   @Override

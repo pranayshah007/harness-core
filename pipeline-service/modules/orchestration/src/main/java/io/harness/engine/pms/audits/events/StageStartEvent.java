@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +27,7 @@ public class StageStartEvent extends NodeExecutionEvent {
   private long startTs;
   private String nodeExecutionId;
 
+  @Builder
   public StageStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
       String nodeExecutionId) {

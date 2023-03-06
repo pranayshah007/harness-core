@@ -41,6 +41,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/namespace:module",
         "//idp-service/src/main/java/io/harness/idp/secret:module",
         "//idp-service/src/main/java/io/harness/idp/serializer:module",
+        "//idp-service/src/main/java/io/harness/idp/settings:module",
         "//idp-service/src/main/java/io/harness/idp/status:module",
         "@maven//:ch_qos_logback_logback_access",
         "@maven//:ch_qos_logback_logback_classic",

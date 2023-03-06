@@ -281,10 +281,11 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public TaskChainResponse prepareKustomizePatchesFetchTask(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
       StepElementParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
       K8sStepPassThroughData k8sStepPassThroughData) {
-    ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
-    StoreConfig storeConfig = k8sManifestOutcome.getStore();
+    KustomizeManifestOutcome kustomizeManifestOutcome =
+        (KustomizeManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
+    StoreConfig storeConfig = kustomizeManifestOutcome.getStore();
     k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
-    if (ManifestStoreType.isInGitSubset(storeConfig.getKind())
+    if (isManifestContainingOverridePathsFromGit(storeConfig.getKind(), kustomizeManifestOutcome.getPatchesPaths())
         || shouldExecuteGitFetchTask(kustomizePatchesManifests)) {
       return prepareGitFetchPatchesTaskChainResponse(
           ambiance, stepElementParameters, kustomizePatchesManifests, k8sStepPassThroughData);
@@ -292,13 +293,13 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     KustomizePatchesManifestOutcome kustomizePatchesManifestOutcome =
         KustomizePatchesManifestOutcome.builder()
-            .identifier(k8sManifestOutcome.getIdentifier())
+            .identifier(kustomizeManifestOutcome.getIdentifier())
             .store(storeConfig)
             .build();
     LinkedList<ManifestOutcome> orderedPatchesManifests = new LinkedList<>(kustomizePatchesManifests);
     orderedPatchesManifests.addFirst(kustomizePatchesManifestOutcome);
     return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, k8sStepPassThroughData,
-        orderedPatchesManifests, k8sManifestOutcome);
+        orderedPatchesManifests, kustomizeManifestOutcome);
   }
 
   public TaskChainResponse prepareValuesFetchTask(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
@@ -440,7 +441,8 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       List<ManifestOutcome> manifestOutcomes, Ambiance ambiance, StepElementParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     List<OpenshiftParamManifestOutcome> openshiftParamManifests = getOpenshiftParamManifests(manifestOutcomes);
-    ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        (OpenshiftManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
     List<ManifestFiles> manifestFiles = new ArrayList<>();
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
 
@@ -457,7 +459,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
                                                                .localStoreFileMapContents(localStoreFileMapContents)
                                                                .manifestFiles(manifestFiles)
                                                                .build();
-    StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifestOutcome);
+    StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(openshiftManifestOutcome);
     updatedK8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
 
     if (shouldExecuteCustomFetchTask(storeConfig, manifestOutcomes)) {
@@ -465,19 +467,21 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
           storeConfig, ambiance, stepElementParameters, manifestOutcomes, updatedK8sStepPassThroughData);
     }
 
-    if (ManifestStoreType.isInGitSubset(storeConfig.getKind()) || shouldExecuteGitFetchTask(openshiftParamManifests)) {
+    if (isManifestContainingOverridePathsFromGit(storeConfig.getKind(), openshiftManifestOutcome.getParamsPaths())
+        || shouldExecuteGitFetchTask(openshiftParamManifests)) {
       return prepareOpenshiftParamFetchTask(
           ambiance, stepElementParameters, openshiftParamManifests, updatedK8sStepPassThroughData);
     }
 
-    OpenshiftParamManifestOutcome openshiftParamManifestOutcome = OpenshiftParamManifestOutcome.builder()
-                                                                      .identifier(k8sManifestOutcome.getIdentifier())
-                                                                      .store(storeConfig)
-                                                                      .build();
+    OpenshiftParamManifestOutcome openshiftParamManifestOutcome =
+        OpenshiftParamManifestOutcome.builder()
+            .identifier(openshiftManifestOutcome.getIdentifier())
+            .store(storeConfig)
+            .build();
     LinkedList<ManifestOutcome> orderedParamsManifests = new LinkedList<>(openshiftParamManifests);
     orderedParamsManifests.addFirst(openshiftParamManifestOutcome);
     return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, updatedK8sStepPassThroughData,
-        orderedParamsManifests, k8sManifestOutcome);
+        orderedParamsManifests, openshiftManifestOutcome);
   }
 
   private TaskChainResponse prepareKustomizeTemplateWithPatchesManifest(Ambiance ambiance,
@@ -697,29 +701,30 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
             .build();
     updatedK8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
+    StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifest);
 
     // in case of OpenShift Template
     if (ManifestType.OpenshiftTemplate.equals(k8sManifest.getType())) {
       List<OpenshiftParamManifestOutcome> openshiftParamManifestOutcomes = new ArrayList<>();
+      OpenshiftManifestOutcome openshiftManifestOutcome = (OpenshiftManifestOutcome) k8sManifest;
 
       for (OpenshiftParamManifestOutcome openshiftParamManifestOutcome :
           updatedK8sStepPassThroughData.getOpenShiftParamsOutcomes()) {
         openshiftParamManifestOutcomes.add(openshiftParamManifestOutcome);
       }
 
-      if (shouldExecuteGitFetchTask(openshiftParamManifestOutcomes)
-          || ManifestStoreType.isInGitSubset(k8sManifest.getStore().getKind())) {
+      if (isManifestContainingOverridePathsFromGit(storeConfig.getKind(), openshiftManifestOutcome.getParamsPaths())
+          || shouldExecuteGitFetchTask(openshiftParamManifestOutcomes)) {
         return executeOpenShiftParamsTask(
             ambiance, stepElementParameters, openshiftParamManifestOutcomes, updatedK8sStepPassThroughData);
       } else {
         LinkedList<ManifestOutcome> orderedParamsManifests = new LinkedList<>(openshiftParamManifestOutcomes);
-        orderedParamsManifests.addFirst(k8sManifest);
+        orderedParamsManifests.addFirst(openshiftManifestOutcome);
         return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, updatedK8sStepPassThroughData,
-            orderedParamsManifests, k8sManifest);
+            orderedParamsManifests, openshiftManifestOutcome);
       }
     }
 
-    StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifest);
     List<ValuesManifestOutcome> aggregatedValuesManifest =
         new ArrayList<>(updatedK8sStepPassThroughData.getValuesManifestOutcomes());
     if (ManifestType.HelmChart.equals(k8sManifest.getType())
@@ -946,5 +951,10 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     }
 
     return commandsValueMap;
+  }
+
+  private boolean isManifestContainingOverridePathsFromGit(
+      String storeType, ParameterField<List<String>> overridePaths) {
+    return ManifestStoreType.isInGitSubset(storeType) && isNotEmpty(getParameterFieldValue(overridePaths));
   }
 }

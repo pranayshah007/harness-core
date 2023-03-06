@@ -91,6 +91,8 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("allowedParallelStages") private int allowedParallelStages;
 
+  @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
+
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
   private String managerServiceSecret;
