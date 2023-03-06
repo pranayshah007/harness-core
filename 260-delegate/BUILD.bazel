@@ -358,7 +358,6 @@ java_library(
         "@maven//:guru_nidi_com_kitfox_svgSalamander",
         "@maven//:guru_nidi_graphviz_java",
         "@maven//:guru_nidi_graphviz_rough",
-        "@maven//:info_jerrinot_subzero_core",
         "@maven//:io_cloudsoft_windows_winrm4j",
         "@maven//:io_cloudsoft_windows_winrm4j_client",
         "@maven//:io_dropwizard_bundles_dropwizard_configurable_assets_bundle",
