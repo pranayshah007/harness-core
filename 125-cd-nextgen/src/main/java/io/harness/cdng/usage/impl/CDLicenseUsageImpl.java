@@ -26,18 +26,19 @@ import io.harness.aggregates.AggregateNgServiceInstanceStats;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.mapper.ActiveServiceMapper;
 import io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
-import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -151,23 +152,27 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
     return listActiveServiceDTOs(activeServiceFetchData, pageRequest, currentTsInMs);
   }
 
-  public ServiceInstancesDateUsageDTO getServiceInstancesDateUsage(
-      String accountIdentifier, ServiceInstancesDateUsageParams serviceInstancesDateUsageParams) {
+  public LicenseDateUsageDTO getLicenseDateUsage(
+      String accountIdentifier, LicenseDateUsageParams licenseDateUsageParams, CDLicenseType licenseType) {
     if (isEmpty(accountIdentifier)) {
       throw new InvalidArgumentsException(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG);
     }
-    ServiceInstancesDateUsageFetchData instanceUsageFetchData =
-        ServiceInstancesDateUsageMapper.buildServiceInstancesDateUsageFetchData(
-            accountIdentifier, serviceInstancesDateUsageParams);
+    if (licenseType == null) {
+      throw new InvalidArgumentsException("CD license type cannot be null");
+    }
 
-    log.info(
-        "Start fetching service instances date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}",
-        accountIdentifier, instanceUsageFetchData.getFromDate(), instanceUsageFetchData.getToDate(),
-        instanceUsageFetchData.getReportType());
-    Map<String, Integer> instancesUsage = licenseUsageDAL.fetchServiceInstancesDateUsage(instanceUsageFetchData);
-    return ServiceInstancesDateUsageDTO.builder()
-        .serviceInstancesUsage(instancesUsage)
-        .reportType(instanceUsageFetchData.getReportType())
+    LicenseDateUsageFetchData licenseDateUsageFetchData =
+        ServiceInstancesDateUsageMapper.buildServiceInstancesDateUsageFetchData(
+            accountIdentifier, licenseDateUsageParams, licenseType);
+    log.info("Start fetching license date usage, accountIdentifier: {}, fromDate: {}, toDate: {}, reportType: {}",
+        accountIdentifier, licenseDateUsageFetchData.getFromDate(), licenseDateUsageFetchData.getToDate(),
+        licenseDateUsageFetchData.getReportType());
+    Map<String, Integer> licenseUsage = licenseUsageDAL.fetchLicenseDateUsage(licenseDateUsageFetchData);
+
+    return LicenseDateUsageDTO.builder()
+        .licenseUsage(licenseUsage)
+        .reportType(licenseDateUsageFetchData.getReportType())
+        .licenseType(licenseType)
         .build();
   }
 

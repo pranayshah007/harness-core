@@ -27,7 +27,7 @@ public class CDLicenseUsageConstants {
   public static final String LICENSES_CONSUMED_QUERY_PROPERTY = "licensesConsumed";
   public static final String LICENSES_CONSUMED_SORT_PROPERTY = "instanceCount";
   public static final String ACTIVE_SERVICES_FILTER_PARAM_MESSAGE = "Details of the Active Services Filter";
-  public static final String SERVICE_INSTANCES_DATE_USAGE_PARAMS_MESSAGE = "Service Instances Date Usage params";
+  public static final String LICENSE_DATE_USAGE_PARAMS_MESSAGE = "License Date Usage params";
   public static final List<String> ACTIVE_SERVICES_SORT_QUERY_PROPERTIES =
       Arrays.asList(SERVICE_INSTANCES_QUERY_PROPERTY, LAST_DEPLOYED_SERVICE_PROPERTY, LICENSES_CONSUMED_QUERY_PROPERTY);
 }

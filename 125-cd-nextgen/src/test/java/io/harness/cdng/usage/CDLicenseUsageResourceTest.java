@@ -19,11 +19,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cd.CDLicenseType;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.exception.InvalidRequestException;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -131,24 +132,25 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsage() {
     Map<String, Integer> serviceInstancesUsage = getMonthlyServiceUsage();
-    when(cdLicenseUsageService.getServiceInstancesDateUsage(any(), any()))
-        .thenReturn(ServiceInstancesDateUsageDTO.builder()
-                        .serviceInstancesUsage(serviceInstancesUsage)
-                        .reportType(ServiceInstanceReportType.MONTHLY)
+    when(cdLicenseUsageService.getLicenseDateUsage(any(), any(), any()))
+        .thenReturn(LicenseDateUsageDTO.builder()
+                        .licenseUsage(serviceInstancesUsage)
+                        .reportType(LicenseDateUsageReportType.MONTHLY)
                         .build());
 
-    ServiceInstancesDateUsageDTO serviceInstancesDateUsage = cdLicenseUsageResource
-                                                                 .getServiceInstancesDateUsage(ACCOUNT_IDENTIFIER,
-                                                                     ServiceInstancesDateUsageParams.builder()
-                                                                         .fromDate("2022-01-01")
-                                                                         .toDate("2023-01-01")
-                                                                         .reportType(ServiceInstanceReportType.MONTHLY)
-                                                                         .build())
-                                                                 .getData();
+    LicenseDateUsageDTO serviceInstancesDateUsage =
+        cdLicenseUsageResource
+            .getLicenseDateUsage(ACCOUNT_IDENTIFIER, CDLicenseType.SERVICE_INSTANCES,
+                LicenseDateUsageParams.builder()
+                    .fromDate("2022-01-01")
+                    .toDate("2023-01-01")
+                    .reportType(LicenseDateUsageReportType.MONTHLY)
+                    .build())
+            .getData();
 
     assertThat(serviceInstancesDateUsage).isNotNull();
-    assertThat(serviceInstancesDateUsage.getServiceInstancesUsage().size()).isEqualTo(12);
-    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getServiceInstancesUsage();
+    assertThat(serviceInstancesDateUsage.getLicenseUsage().size()).isEqualTo(12);
+    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getLicenseUsage();
     Integer serviceInstancesJanuary = serviceInstances.get("2022-01-01");
     assertThat(serviceInstancesJanuary).isEqualTo(1);
     Integer serviceInstancesDecember = serviceInstances.get("2022-12-01");
@@ -159,12 +161,12 @@ public class CDLicenseUsageResourceTest extends CategoryTest {
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsageWithInvalidAccountIdentifier() {
-    when(cdLicenseUsageService.getServiceInstancesDateUsage(any(), any()))
+    when(cdLicenseUsageService.getLicenseDateUsage(any(), any(), any()))
         .thenThrow(new InvalidRequestException(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER)));
 
     assertThatThrownBy(()
-                           -> cdLicenseUsageResource.getServiceInstancesDateUsage(
-                               ACCOUNT_IDENTIFIER, ServiceInstancesDateUsageParams.builder().build()))
+                           -> cdLicenseUsageResource.getLicenseDateUsage(ACCOUNT_IDENTIFIER,
+                               CDLicenseType.SERVICE_INSTANCES, LicenseDateUsageParams.builder().build()))
         .hasMessage(format("Invalid account identifier, %s", ACCOUNT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class);
   }

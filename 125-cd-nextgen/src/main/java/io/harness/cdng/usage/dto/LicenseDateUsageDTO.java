@@ -10,7 +10,8 @@ package io.harness.cdng.usage.dto;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.cd.CDLicenseType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -31,8 +32,10 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(name = "ServiceInstancesDateUsage", description = "Usage of the Service Instances on monthly or daily basis.")
-public class ServiceInstancesDateUsageDTO {
-  private Map<String, Integer> serviceInstancesUsage;
-  private ServiceInstanceReportType reportType;
+@Schema(name = "LicenseDateUsageDTO",
+    description = "Usage of the Service Instances and Services licenses on monthly or daily basis.")
+public class LicenseDateUsageDTO {
+  private Map<String, Integer> licenseUsage;
+  private LicenseDateUsageReportType reportType;
+  private CDLicenseType licenseType;
 }

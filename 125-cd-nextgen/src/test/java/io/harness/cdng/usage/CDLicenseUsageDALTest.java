@@ -24,11 +24,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cd.CDLicenseType;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
-import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -400,12 +401,13 @@ public class CDLicenseUsageDALTest extends CategoryTest {
     when(callableStatement.getResultSet()).thenReturn(resultSet);
     when(resultSet.next()).thenReturn(false);
 
-    cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
-                                                         .reportType(ServiceInstanceReportType.DAILY)
-                                                         .accountIdentifier(accountIdentifier)
-                                                         .fromDate(LocalDate.of(2023, 1, 1))
-                                                         .toDate(LocalDate.of(2023, 2, 1))
-                                                         .build());
+    cdLicenseUsageDAL.fetchLicenseDateUsage(LicenseDateUsageFetchData.builder()
+                                                .reportType(LicenseDateUsageReportType.DAILY)
+                                                .accountIdentifier(accountIdentifier)
+                                                .fromDate(LocalDate.of(2023, 1, 1))
+                                                .toDate(LocalDate.of(2023, 2, 1))
+                                                .licenseType(CDLicenseType.SERVICE_INSTANCES)
+                                                .build());
 
     ArgumentCaptor<String> queryArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(dbConnection, times(1)).prepareCall(queryArgumentCaptor.capture());
@@ -418,16 +420,59 @@ public class CDLicenseUsageDALTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
+  public void testFetchActiveServiceDateUsage() throws SQLException {
+    Connection dbConnection = mock(Connection.class);
+    CallableStatement callableStatement = mock(CallableStatement.class);
+    ResultSet resultSet = mock(ResultSet.class);
+    when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
+    when(dbConnection.prepareCall(any())).thenReturn(callableStatement);
+    doReturn(true).when(callableStatement).execute();
+    when(callableStatement.getResultSet()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(false);
+
+    cdLicenseUsageDAL.fetchLicenseDateUsage(LicenseDateUsageFetchData.builder()
+                                                .reportType(LicenseDateUsageReportType.DAILY)
+                                                .accountIdentifier(accountIdentifier)
+                                                .fromDate(LocalDate.of(2023, 1, 1))
+                                                .toDate(LocalDate.of(2023, 2, 1))
+                                                .licenseType(CDLicenseType.SERVICES)
+                                                .build());
+
+    ArgumentCaptor<String> queryArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(dbConnection, times(1)).prepareCall(queryArgumentCaptor.capture());
+
+    String sqlQuery = queryArgumentCaptor.getValue();
+    assertThat(sqlQuery).isNotBlank();
+    assertThat(sqlQuery).isEqualTo("{ call get_active_services_by_date(?,?,?,?,?)}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
   public void testFetchServiceInstancesDateUsageWithInvalidAccount() {
-    assertThatThrownBy(
-        ()
-            -> cdLicenseUsageDAL.fetchServiceInstancesDateUsage(ServiceInstancesDateUsageFetchData.builder()
-                                                                    .reportType(ServiceInstanceReportType.DAILY)
-                                                                    .accountIdentifier(null)
-                                                                    .fromDate(LocalDate.of(2023, 1, 1))
-                                                                    .toDate(LocalDate.of(2023, 2, 1))
-                                                                    .build()))
+    assertThatThrownBy(()
+                           -> cdLicenseUsageDAL.fetchLicenseDateUsage(LicenseDateUsageFetchData.builder()
+                                                                          .reportType(LicenseDateUsageReportType.DAILY)
+                                                                          .accountIdentifier(null)
+                                                                          .fromDate(LocalDate.of(2023, 1, 1))
+                                                                          .toDate(LocalDate.of(2023, 2, 1))
+                                                                          .build()))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("AccountIdentifier cannot be null or empty for fetching active services");
+        .hasMessage("AccountIdentifier cannot be null or empty for fetching license date usage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testFetchLicenseUsageWithInvalidLicenseType() {
+    assertThatThrownBy(()
+                           -> cdLicenseUsageDAL.fetchLicenseDateUsage(LicenseDateUsageFetchData.builder()
+                                                                          .reportType(LicenseDateUsageReportType.DAILY)
+                                                                          .accountIdentifier(accountIdentifier)
+                                                                          .fromDate(LocalDate.of(2023, 1, 1))
+                                                                          .toDate(LocalDate.of(2023, 2, 1))
+                                                                          .build()))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("CD license type cannot be null for fetching license date usage");
   }
 }
