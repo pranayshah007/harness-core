@@ -33,6 +33,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UsageRestrictionException;
 import io.harness.exception.WingsException;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.serializer.JsonUtils;
 
@@ -41,6 +42,7 @@ import software.wings.beans.Base;
 import software.wings.beans.EntityReference;
 import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
+import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.User;
@@ -654,12 +656,14 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
           .build();
     }
 
-    PageResponse<Environment> envPageResponse =
-        environmentService.list(PageRequestBuilder.aPageRequest()
-                                    .addFilter("appId", Operator.IN, appMap.keySet().toArray(new String[0]))
-                                    .addFieldsIncluded("_id", "name", "environmentType")
-                                    .build(),
-            false, null, true);
+    PageResponse<Environment> envPageResponse = environmentService.list(
+        PageRequestBuilder.aPageRequest()
+            .addFilter(EnvironmentKeys.accountId, EQ, accountId)
+            .addFilter("appId", Operator.IN, appMap.keySet().toArray(new String[0]))
+            .addFieldsIncluded("_id", "name", "environmentType")
+            .withIndexHint(BasicDBUtils.getIndexObject(Environment.mongoIndexes(), "accountIdCreatedAtAppIdId"))
+            .build(),
+        false, null, true);
 
     Map<String, String> envMap =
         envPageResponse.getResponse().stream().collect(Collectors.toMap(Base::getUuid, Environment::getName));
@@ -833,7 +837,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     }
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
     return userHasPermissions(accountId, permissionType, entityUsageRestrictions, restrictionsFromUserPermissions,
         appIdEnvMap, scopedToAccount);
   }
@@ -854,7 +858,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
   public boolean userHasPermissionsToChangeEntity(String accountId, PermissionType permissionType,
       UsageRestrictions entityUsageRestrictions, boolean scopedToAccount) {
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
     return userHasPermissionsToChangeEntity(accountId, permissionType, entityUsageRestrictions,
         getRestrictionsAndAppEnvMapFromCache(accountId, Action.UPDATE).getUsageRestrictions(), appIdEnvMap,
         scopedToAccount);
@@ -910,7 +914,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       return false;
     }
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
     Map<String, Set<String>> appEnvMap = getAppEnvMap(usageRestrictions.getAppEnvRestrictions(), appIdEnvMap);
     Map<String, Set<String>> parentAppEnvMap = getAppEnvMap(parentRestrictions.getAppEnvRestrictions(), appIdEnvMap);
     return isUsageRestrictionsSubsetInternal(usageRestrictions, appEnvMap, parentRestrictions, parentAppEnvMap);
@@ -976,7 +980,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     validatedIfEntityScopingAllowedForUser(accountId, permissionType, restrictionsFromUserPermissions, scopedToAccount);
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
     boolean canUpdateEntity = userHasPermissionsToChangeEntity(
         accountId, permissionType, usageRestrictions, restrictionsFromUserPermissions, appIdEnvMap, scopedToAccount);
 
@@ -1048,7 +1052,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     }
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
     boolean canAddNewRestrictions = userHasPermissionsToChangeEntity(
         accountId, permissionType, newUsageRestrictions, restrictionsFromUserPermissions, appIdEnvMap, scopedToAccount);
 
@@ -1063,8 +1067,8 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, Set<String>> newAppEnvMap = newUsageRestrictions == null
         ? new HashMap<>()
-        : getAppEnvMap(
-            newUsageRestrictions.getAppEnvRestrictions(), environmentService.getAppIdEnvMap(appsByAccountId));
+        : getAppEnvMap(newUsageRestrictions.getAppEnvRestrictions(),
+            environmentService.getAppIdEnvMap(appsByAccountId, accountId));
 
     for (Entry<String, Set<String>> setupUsage : setupUsages.entrySet()) {
       String appId = setupUsage.getKey();

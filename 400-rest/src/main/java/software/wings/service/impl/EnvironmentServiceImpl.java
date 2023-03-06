@@ -61,6 +61,7 @@ import io.harness.globalcontex.EntityOperationIdentifier;
 import io.harness.globalcontex.EntityOperationIdentifier.EntityOperation;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.queue.QueuePublisher;
 import io.harness.stream.BoundedInputStream;
 import io.harness.validation.Create;
@@ -649,14 +650,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds) {
+  public Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId) {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
-    PageRequest<Environment> pageRequest = aPageRequest()
-                                               .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
-                                               .addFieldsIncluded("_id", "appId", "environmentType")
-                                               .build();
+    PageRequest<Environment> pageRequest =
+        aPageRequest()
+            .addFilter(EnvironmentKeys.accountId, EQ, accountId)
+            .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+            .addFieldsIncluded("_id", "appId", "environmentType")
+            .withIndexHint(BasicDBUtils.getIndexObject(Environment.mongoIndexes(), "accountIdCreatedAtAppIdId"))
+            .build();
 
     List<Environment> list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
 

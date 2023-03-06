@@ -159,6 +159,12 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .descSortField(InstanceKeys.createdAt)
                  .rangeField(InstanceKeys.appId)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_deletedAt_createdAt")
+                 .field(InstanceKeys.accountId)
+                 .rangeField(InstanceKeys.deletedAt)
+                 .rangeField(InstanceKeys.createdAt)
+                 .build())
         .build();
   }
 
