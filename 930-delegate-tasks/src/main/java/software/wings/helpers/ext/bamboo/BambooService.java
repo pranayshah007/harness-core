@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ListNotifyResponseData;
+import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.BambooConfig;
@@ -111,6 +112,16 @@ public interface BambooService {
    */
   String triggerPlan(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, String planKey,
       Map<String, String> parameters);
+
+  /**
+   * Triggers Project Plan
+   *
+   * @param planKey    the plankey
+   * @param parameters the parameters
+   * @return Build Result Key {projectKey}-{buildKey}-{buildNumber}
+   */
+  String triggerPlan(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, String planKey,
+      Map<String, String> parameters, LogCallback executionLogCallback);
 
   /**
    * Retrieves the bamboo build result

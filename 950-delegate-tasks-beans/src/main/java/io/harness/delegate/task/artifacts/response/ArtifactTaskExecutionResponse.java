@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.shell.ExecuteCommandResponse;
@@ -45,6 +46,7 @@ public class ArtifactTaskExecutionResponse {
   List<String> artifactPath;
   List<NexusRepositories> repositories;
   JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
+  BambooBuildTaskNGResponse bambooBuildTaskNGResponse;
   ExecuteCommandResponse executeCommandResponse;
   CommandExecutionStatus status;
   String errorMessage;

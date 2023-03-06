@@ -818,3 +818,7 @@ io.harness.cdng.provision.terraform.TerraformCloudCliPlanExecutionData
 io.harness.cdng.provision.terraform.TerraformCloudCliExecutionData
 io.harness.cdng.provision.terraform.TerraformCloudCliStepConfiguration
 io.harness.cdng.provision.terraform.TerraformCloudCliStepConfigurationParameters
+io.harness.cdng.bamboo.BambooBuildSpecParameters
+io.harness.cdng.bamboo.BambooBuildStepNode
+io.harness.cdng.pipeline.stepinfo.BambooBuildStepInfo
+io.harness.cdng.bamboo.BambooBuildOutcome

@@ -285,7 +285,10 @@ public enum NGStepType {
       StepSpecTypeConstants.AWS_SAM_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
   AWS_LAMBDA_ROLLBACK("AWS Lambda Rollback", Arrays.asList(ServiceDefinitionType.AWS_LAMBDA), "AWS Lambda",
-      StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK);
+      StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(
+      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

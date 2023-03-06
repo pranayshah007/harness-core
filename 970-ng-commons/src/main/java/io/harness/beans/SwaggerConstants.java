@@ -47,6 +47,9 @@ public interface SwaggerConstants {
   String LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.elastigroup.LoadBalancer;";
   String CLOUD_PROVIDER_CONFIGURATION_CLASSPATH = "io.harness.cdng.elastigroup.CloudProvider";
   String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
+  String BAMBOO_PARAMETER_FIELD_TYPE_ENUM_CLASSPATH = "io.harness.cdng.bamboo.BambooParameterFieldType";
+  String BAMBOO_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.bamboo.BambooParameterField;";
+
   String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
   String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";
