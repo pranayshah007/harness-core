@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
+import io.harness.engine.observers.NodeStatusUpdateObserver;
+import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
 import io.harness.logging.AutoLogContext;
@@ -28,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
+public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, NodeStatusUpdateObserver {
   public static final String PIPELINE = "PIPELINE";
   public static final String STAGE = "STAGE";
   @Inject private OutboxService outboxService;
@@ -44,10 +46,10 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
       try {
         switch (nodeGroup) {
           case PIPELINE:
-            sendPipelineExecutionEventForAudit(nodeStartInfo);
+            sendPipelineStartEventForAudit(nodeStartInfo);
             break;
           case STAGE:
-            sendStageExecutionEventForAudit(nodeStartInfo);
+            sendStageStartEventForAudit(nodeStartInfo);
             break;
           default:
             log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
@@ -68,7 +70,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     return false;
   }
 
-  private void sendStageExecutionEventForAudit(NodeStartInfo nodeStartInfo) {
+  private void sendStageStartEventForAudit(NodeStartInfo nodeStartInfo) {
     Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
     StageStartEvent stageStartEvent =
         StageStartEvent.builder()
@@ -85,7 +87,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     outboxService.save(stageStartEvent);
   }
 
-  private void sendPipelineExecutionEventForAudit(NodeStartInfo nodeStartInfo) {
+  private void sendPipelineStartEventForAudit(NodeStartInfo nodeStartInfo) {
     Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
     PipelineStartEvent pipelineStartEvent =
         PipelineStartEvent.builder()
@@ -99,4 +101,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
 
     outboxService.save(pipelineStartEvent);
   }
+
+  @Override
+  public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {}
 }
