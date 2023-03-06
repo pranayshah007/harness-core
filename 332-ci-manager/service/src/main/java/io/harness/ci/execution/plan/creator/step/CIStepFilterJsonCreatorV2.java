@@ -60,11 +60,15 @@ public class CIStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2
     RunStepInfo runStep = runStepNode.getRunStepInfo();
     if (Infrastructure.Type.KUBERNETES_DIRECT.getYamlName().equals(infra)) {
       String connectorRef = runStep.getConnectorRef().getValue();
+      String connectorExpression = runStep.getConnectorRef().getExpressionValue();
+
       String image = runStep.getImage().getValue();
-      if (Strings.isBlank(connectorRef)) {
+      String imageExpression = runStep.getImage().getExpressionValue();
+
+      if (Strings.isBlank(connectorRef) && Strings.isBlank(connectorExpression)) {
         throw new InvalidYamlException("Run step with Kubernetes infra can't have empty connector field");
       }
-      if (Strings.isBlank(image)) {
+      if (Strings.isBlank(image) && Strings.isBlank(imageExpression)) {
         throw new InvalidYamlException("Run step with Kubernetes infra can't have empty image field");
       }
     }
@@ -74,11 +78,15 @@ public class CIStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2
     RunTestsStepInfo runTestsStep = runStepNode.getRunTestsStepInfo();
     if (Infrastructure.Type.KUBERNETES_DIRECT.getYamlName().equals(infra)) {
       String connectorRef = runTestsStep.getConnectorRef().getValue();
+      String connectorExpression = runTestsStep.getConnectorRef().getExpressionValue();
+
       String image = runTestsStep.getImage().getValue();
-      if (Strings.isBlank(connectorRef)) {
+      String imageExpression = runTestsStep.getImage().getExpressionValue();
+
+      if (Strings.isBlank(connectorRef) && Strings.isBlank(connectorExpression)) {
         throw new InvalidYamlException("RunTests step with Kubernetes infra can't have empty connector field");
       }
-      if (Strings.isBlank(image)) {
+      if (Strings.isBlank(image) && Strings.isBlank(imageExpression)) {
         throw new InvalidYamlException("RunTests step with Kubernetes infra can't have empty image field");
       }
     }
