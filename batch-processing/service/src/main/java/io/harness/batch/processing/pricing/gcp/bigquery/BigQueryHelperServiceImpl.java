@@ -422,9 +422,8 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceIdSubQuery = createSubQuery(resourceIds);
     String query = BQConst.GCP_VM_BILLING_QUERY;
     String projectTableName = getGcpProjectTableName(dataSetId);
-    String formattedQuery =
-        format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime.minus(1, ChronoUnit.DAYS),
-            endTime.plus(7, ChronoUnit.DAYS), resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
+    String formattedQuery = format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime, endTime,
+        resourceIdSubQuery, GCP_DESCRIPTION_CONDITION);
     return query(formattedQuery, "GCP", null);
   }
 

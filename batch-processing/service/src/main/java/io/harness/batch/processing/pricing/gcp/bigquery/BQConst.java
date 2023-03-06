@@ -36,10 +36,11 @@ public class BQConst {
   public static final String GCP_VM_BILLING_QUERY =
       "SELECT %s as productfamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
       + "FROM `%s` "
-      + "WHERE %s "
-      + "and usage_start_time >= '%s' "
+      + "WHERE "
+      + "usage_start_time >= '%s' "
       + "and usage_end_time <= '%s' "
       + "and %s "
+      + "and %s"
       + "and service.description = 'Compute Engine' "
       + "group by gcpResourceName, gcpServiceName, productfamily";
 
