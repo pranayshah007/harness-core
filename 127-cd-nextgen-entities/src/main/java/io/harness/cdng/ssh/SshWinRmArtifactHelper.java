@@ -74,7 +74,7 @@ import javax.annotation.Nonnull;
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmArtifactHelper {
-  private static final List<String> NEXUS_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget");
+  private static final List<String> NEXUS_PACKAGE_SUPPORTED_TYPES = Arrays.asList("maven", "npm", "nuget", "raw");
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
