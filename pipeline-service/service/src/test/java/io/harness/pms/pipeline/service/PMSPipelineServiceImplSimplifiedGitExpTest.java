@@ -42,7 +42,10 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -67,6 +70,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private PMSPipelineRepository pipelineRepository;
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private PipelineAsyncValidationService pipelineAsyncValidationService;
+  @Mock private PipelineValidationService pipelineValidationService;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -76,10 +80,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
-        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
-        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService);
+    MockitoAnnotations.openMocks(this);
+    pipelineService =
+        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
+            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
+            pipelineAsyncValidationService, pipelineValidationService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
@@ -279,6 +284,61 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false))
         .isInstanceOf(InvalidYamlException.class);
     verify(pipelineServiceHelper, times(0)).resolveTemplatesAndValidatePipelineEntity(any(), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineAndAsyncValidationId() {
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .harnessVersion("V0")
+                                        .yaml(pipelineYaml)
+                                        .build();
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineRepository)
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+
+    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, "");
+    doReturn(Optional.of(PipelineValidationEvent.builder().uuid("validationUuid").build()))
+        .when(pipelineAsyncValidationService)
+        .getLatestEventByFQNAndAction(fqn, Action.CRUD);
+    PipelineGetResult pipelineGetResult = pipelineService.getPipelineAndAsyncValidationId(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, false);
+    assertThat(pipelineGetResult.getPipelineEntity().isPresent()).isTrue();
+    assertThat(pipelineGetResult.getPipelineEntity().get()).isEqualTo(pipelineEntity);
+    assertThat(pipelineGetResult.getAsyncValidationUUID()).isEqualTo("validationUuid");
+    verify(pipelineValidationService, times(1))
+        .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineAndAsyncValidationIdWithSchemaError() {
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .harnessVersion("V0")
+                                        .yaml(pipelineYaml)
+                                        .build();
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineRepository)
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+    doThrow(new InvalidYamlException("msg", null, pipelineYaml))
+        .when(pipelineValidationService)
+        .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
+    assertThatThrownBy(()
+                           -> pipelineService.getPipelineAndAsyncValidationId(
+                               accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, false))
+        .isInstanceOf(InvalidYamlException.class);
+    verify(pipelineValidationService, times(1))
+        .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
   }
 
   @Test
