@@ -34,6 +34,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.kustomize.KustomizeClient;
+import io.harness.kustomize.KustomizeClientFactory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -53,23 +54,24 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 @Singleton
 public class KustomizeTaskHelper {
-  @Inject private KustomizeClient kustomizeClient;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   private static final Pattern ACCUMULATING_RESOURCES_PATH_PATTERN =
       Pattern.compile("accumulating resources from '(.*?)'");
+  @Inject private KustomizeClientFactory kustomizeClientFactory;
 
   @Nonnull
   public List<FileData> build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeBinaryPath,
       String pluginRootDir, String kustomizeDirPath, LogCallback executionLogCallback) {
     CliResponse cliResponse;
+    // ToDo: set command-flags correctly
+    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(kustomizeBinaryPath, Collections.emptyMap());
     try {
       if (isBlank(pluginRootDir)) {
-        cliResponse =
-            kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, kustomizeBinaryPath, executionLogCallback);
+        cliResponse = kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, executionLogCallback);
 
       } else {
         cliResponse = kustomizeClient.buildWithPlugins(
-            manifestFilesDirectory, kustomizeDirPath, kustomizeBinaryPath, pluginRootDir, executionLogCallback);
+            manifestFilesDirectory, kustomizeDirPath, pluginRootDir, executionLogCallback);
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

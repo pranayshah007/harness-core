@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -25,6 +26,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.kustomize.KustomizeClient;
+import io.harness.kustomize.KustomizeClientFactory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -45,6 +47,7 @@ import org.mockito.MockitoAnnotations;
 public class KustomizeTaskHelperTest extends CategoryTest {
   @Mock KustomizeClient kustomizeClient;
   @Mock LogCallback logCallback;
+  @Mock KustomizeClientFactory kustomizeClientFactory;
 
   @InjectMocks KustomizeTaskHelper kustomizeTaskHelper;
   KustomizeTaskHelper spyKustomizeTaskHelper = spy(new KustomizeTaskHelper());
@@ -58,6 +61,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testBuild() throws InterruptedException, TimeoutException, IOException {
+    doReturn(kustomizeClient).when(kustomizeClientFactory).getClient(any(), any());
     shouldCallClientBuild();
     shouldCallClientBuildWithPlugins();
     shouldHandleTimeoutException();
@@ -71,7 +75,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     final String RANDOM = "RANDOM";
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).output(RANDOM).build();
-    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
         .isInstanceOf(HintException.class)
@@ -86,7 +90,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     final String RANDOM = "RANDOM";
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error(RANDOM).build();
-    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
         .isInstanceOf(HintException.class)
@@ -99,7 +103,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleInterrupedException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
-    doThrow(InterruptedException.class).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doThrow(InterruptedException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
         .isInstanceOf(InvalidRequestException.class)
@@ -108,7 +112,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleIOException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
-    doThrow(IOException.class).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doThrow(IOException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
         .isInstanceOf(HintException.class)
@@ -120,7 +124,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleTimeoutException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
-    doThrow(TimeoutException.class).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doThrow(TimeoutException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
         .isInstanceOf(HintException.class)
@@ -134,7 +138,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     final String RANDOM = "RANDOM";
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output(RANDOM).build();
-    doReturn(cliResponse).when(kustomizeClient).buildWithPlugins(RANDOM, RANDOM, RANDOM, RANDOM, logCallback);
+    doReturn(cliResponse).when(kustomizeClient).buildWithPlugins(RANDOM, RANDOM, RANDOM, logCallback);
 
     List<FileData> manifestFiles = kustomizeTaskHelper.build(RANDOM, RANDOM, RANDOM, RANDOM, logCallback);
     assertThat(manifestFiles).hasSize(1);
@@ -145,7 +149,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     final String RANDOM = "RANDOM";
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output(RANDOM).build();
-    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
+    doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     List<FileData> manifestFiles = kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback);
     assertThat(manifestFiles).hasSize(1);
@@ -204,7 +208,8 @@ public class KustomizeTaskHelperTest extends CategoryTest {
         "Error: accumulating resources: accumulating resources from '../../application': evalsymlink failure on '/application' : lstat /application: no such file or directory";
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error(error).build();
-    doReturn(cliResponse).when(kustomizeClient).build(error, error, error, logCallback);
+    doReturn(kustomizeClient).when(kustomizeClientFactory).getClient(any(), any());
+    doReturn(cliResponse).when(kustomizeClient).build(error, error, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(error, error, null, error, logCallback))
         .isInstanceOf(HintException.class)
