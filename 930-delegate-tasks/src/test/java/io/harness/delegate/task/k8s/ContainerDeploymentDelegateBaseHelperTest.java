@@ -79,10 +79,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
 
 @OwnedBy(CDP)
 public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
@@ -186,7 +186,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
             .build();
 
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
-    PowerMockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
     KubernetesConfig expectedKubernetesConfig =
         KubernetesConfig.builder().password(secret).shouldUseExecFormat(true).build();
     doReturn(expectedKubernetesConfig)
@@ -216,7 +216,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
             .build();
 
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
-    PowerMockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
     KubernetesConfig expectedKubernetesConfig =
         KubernetesConfig.builder().username("test".toCharArray()).shouldUseExecFormat(true).build();
@@ -357,7 +357,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
             .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().shouldUseExecFormat(true).build();
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
-    PowerMockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+    Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
     doReturn(kubernetesConfig)
         .when(gkeClusterHelper)
         .getCluster(serviceAccountKeyFileContent, false, "cluster", "default");

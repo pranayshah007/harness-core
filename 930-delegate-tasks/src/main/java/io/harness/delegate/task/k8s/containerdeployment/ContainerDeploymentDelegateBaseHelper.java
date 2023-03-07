@@ -132,13 +132,9 @@ public class ContainerDeploymentDelegateBaseHelper {
     } else if (clusterConfigDTO instanceof GcpK8sInfraDelegateConfig) {
       GcpK8sInfraDelegateConfig gcpK8sInfraDelegateConfig = (GcpK8sInfraDelegateConfig) clusterConfigDTO;
       GcpConnectorCredentialDTO gcpCredentials = gcpK8sInfraDelegateConfig.getGcpConnectorDTO().getCredential();
-      KubernetesConfig kubernetesConfig =
-          gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
-              gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
-              gcpK8sInfraDelegateConfig.getNamespace());
-      kubernetesConfig.setShouldUseExecFormat(
-          KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(GCP_AUTH_PLUGIN_BINARY, logCallback));
-      return kubernetesConfig;
+      return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
+          gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
+          gcpK8sInfraDelegateConfig.getNamespace());
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
       try (LazyAutoCloseableWorkingDirectory workingDirectory =
                new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
@@ -153,8 +149,6 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .namespace(azureK8sInfraDelegateConfig.getNamespace())
                 .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
                 .certificateWorkingDirectory(workingDirectory)
-                .shouldUseExecFormat(
-                    KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(AZURE_AUTH_PLUGIN_BINARY, logCallback))
                 .build();
         return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
       } catch (IOException ioe) {
