@@ -43,7 +43,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
     }
 
     Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
-    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXECUTION_AUDIT_EVENTS)) {
+    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_AUDIT_EVENTS)) {
       try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeStartInfo.getNodeExecution().getAmbiance())) {
         String nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
         try {
