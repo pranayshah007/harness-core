@@ -103,16 +103,21 @@ public class AcrArtifactResource {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
       AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
+
       if (isEmpty(azureConnectorIdentifier)) {
-        artifactResourceUtils.resolveParameterFieldValues(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, acrArtifactConfig.getStringParameterFields(), fqnPath,
-            gitEntityBasicInfo, serviceRef);
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
+
+      azureConnectorIdentifier =
+          artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              runtimeInputYaml, azureConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
     }
+
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
     return ResponseDTO.newResponse(
         azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier));
   }
@@ -175,18 +180,27 @@ public class AcrArtifactResource {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
       AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
-      artifactResourceUtils.resolveParameterFieldValues(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          runtimeInputYaml, acrArtifactConfig.getStringParameterFields(), fqnPath, gitEntityBasicInfo, serviceRef);
+
       if (isEmpty(azureConnectorIdentifier)) {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
       if (isEmpty(subscriptionId)) {
         subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
       }
+
+      azureConnectorIdentifier =
+          artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              runtimeInputYaml, azureConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      subscriptionId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, subscriptionId, fqnPath, gitEntityBasicInfo, serviceRef);
     }
+
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
     return ResponseDTO.newResponse(
         acrResourceService.getRegistries(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -254,9 +268,9 @@ public class AcrArtifactResource {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
       AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
-      artifactResourceUtils.resolveParameterFieldValues(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          runtimeInputYaml, acrArtifactConfig.getStringParameterFields(), fqnPath, gitEntityBasicInfo, serviceRef);
+
       if (isEmpty(azureConnectorIdentifier)) {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
@@ -266,9 +280,21 @@ public class AcrArtifactResource {
       if (isEmpty(registry)) {
         registry = acrArtifactConfig.getRegistry().getValue();
       }
+
+      azureConnectorIdentifier =
+          artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              runtimeInputYaml, azureConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      subscriptionId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, subscriptionId, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      registry = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, registry, fqnPath, gitEntityBasicInfo, serviceRef);
     }
+
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
     return ResponseDTO.newResponse(
         acrResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, subscriptionId, registry));
   }
@@ -306,9 +332,9 @@ public class AcrArtifactResource {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
       AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
-      artifactResourceUtils.resolveParameterFieldValues(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-          runtimeInputYaml, acrArtifactConfig.getStringParameterFields(), fqnPath, gitEntityBasicInfo, serviceRef);
+
       if (isEmpty(subscriptionId)) {
         subscriptionId = (String) acrArtifactConfig.getSubscriptionId().fetchFinalValue();
       }
@@ -321,6 +347,19 @@ public class AcrArtifactResource {
       if (isEmpty(azureConnectorIdentifier)) {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
+
+      azureConnectorIdentifier =
+          artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+              runtimeInputYaml, azureConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      subscriptionId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, subscriptionId, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      registry = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, registry, fqnPath, gitEntityBasicInfo, serviceRef);
+
+      repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
     }
 
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
@@ -328,6 +367,7 @@ public class AcrArtifactResource {
 
     AcrResponseDTO buildDetails = acrResourceService.getBuildDetails(
         connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier);
+
     return ResponseDTO.newResponse(buildDetails);
   }
 }
