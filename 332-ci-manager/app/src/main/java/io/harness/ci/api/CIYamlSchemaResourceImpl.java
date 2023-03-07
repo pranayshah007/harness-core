@@ -25,6 +25,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.yaml.schema.YamlSchemaResource;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
@@ -53,6 +54,7 @@ import lombok.AllArgsConstructor;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@NextGenManagerAuth
 public class CIYamlSchemaResourceImpl implements CIYamlSchemaResource, YamlSchemaResource {
   CIYamlSchemaService ciYamlSchemaService;
 
