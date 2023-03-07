@@ -5273,7 +5273,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.18",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.17.7",
+    "pro.redisson:redisson:3.17.7",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.slf4j:jcl-over-slf4j:1.7.30",
     "org.slf4j:jul-to-slf4j:1.7.30",
@@ -5531,6 +5531,7 @@ maven_install(
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/artifactory/harness-internal",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
+        "https://redisson.pro/repo/",
     ],
     version_conflict_policy = "pinned",
 )

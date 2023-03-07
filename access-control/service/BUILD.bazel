@@ -94,7 +94,7 @@ java_binary(
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_mongodb_driver_core",
-        "@maven//:org_redisson_redisson",
+        "@maven//:pro_redisson_redisson",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_commons",

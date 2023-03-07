@@ -49,7 +49,7 @@ public class RedissonClientFactory {
       if (redisConfigRedissonClientMap.containsKey(redisConfig)) {
         return redisConfigRedissonClientMap.get(redisConfig);
       }
-
+      System.out.println("Test");
       Config config = new Config();
       if (!redisConfig.isSentinel()) {
         if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
