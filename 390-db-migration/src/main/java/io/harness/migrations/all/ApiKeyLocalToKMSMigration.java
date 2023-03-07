@@ -44,17 +44,24 @@ public class ApiKeyLocalToKMSMigration implements Migration {
     try {
       while (dataRecords.hasNext()) {
         DBObject record = dataRecords.next();
+        String uuid = null;
+        ApiKeyEntry apiKeyEntry;
+        try {
+          uuid = (String) record.get("_id");
+          apiKeyEntry = ApiKeyEntry.builder()
+                            .uuid(uuid)
+                            .accountId((String) record.get("accountId"))
+                            .encryptedDataId((String) record.get("encryptedDataId"))
+                            .build();
 
-        String uuid = (String) record.get("_id");
-        ApiKeyEntry apiKeyEntry = ApiKeyEntry.builder()
-                                      .uuid(uuid)
-                                      .accountId((String) record.get("accountId"))
-                                      .encryptedDataId((String) record.get("encryptedDataId"))
-                                      .build();
+          apiKeyService.migrateToKMS(apiKeyEntry);
+        } catch (Exception ex) {
+          log.error(
+              "ApiKeyLocalToKMSMigration: Exception occurred while migrating the api key with uuid- {}", uuid, ex);
+          continue;
+        }
 
-        ApiKeyEntry migratedApiKeyEntry = apiKeyService.migrateToKMS(apiKeyEntry);
-
-        if (isNull(migratedApiKeyEntry) || isNull(migratedApiKeyEntry.getEncryptedDataId())) {
+        if (isNull(apiKeyEntry) || isNull(apiKeyEntry.getEncryptedDataId())) {
           continue;
         }
 
@@ -64,22 +71,22 @@ public class ApiKeyLocalToKMSMigration implements Migration {
         updated++;
         batched++;
 
-        if (updated != 0 && updated % 1000 == 0) {
+        if (updated != 0 && updated % batchLimit == 0) {
           bulkWriteOperation.execute();
           sleep(Duration.ofMillis(200));
           bulkWriteOperation = collection.initializeUnorderedBulkOperation();
-          dataRecords = collection.find(new BasicDBObject()).limit(batchLimit);
+          dataRecords = collection.find(new BasicDBObject()).skip(updated).limit(batchLimit);
           batched = 0;
-          log.info("Number of ApiKeys migrated is: {}", updated);
+          log.info("ApiKeyLocalToKMSMigration: Number of ApiKeys migrated is: {}", updated);
         }
       }
 
       if (batched != 0) {
         bulkWriteOperation.execute();
-        log.info("Number of ApiKeys migrated is: {}", updated);
+        log.info("ApiKeyLocalToKMSMigration: Number of ApiKeys migrated after last batch is: {}", updated);
       }
     } catch (Exception ex) {
-      log.error("Failure occurred in Api Key migration to KMS with exception", ex);
+      log.error("ApiKeyLocalToKMSMigration: Failure occurred in Api Key migration to KMS with exception", ex);
     } finally {
       dataRecords.close();
     }

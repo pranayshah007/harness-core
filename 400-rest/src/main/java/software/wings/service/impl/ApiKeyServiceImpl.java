@@ -180,7 +180,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     if (!isNull(apiKeyEntry.getEncryptedDataId())) {
       // Api key is already encrypted using KMS
-      log.info("Skipping migration for Api key with id: {} in account: {}", uuid, accountId);
+      log.info("ApiKeyLocalToKMSMigration: Skipping migration for Api key with id: {} in account: {}", uuid, accountId);
       return null;
     }
 
@@ -191,11 +191,13 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
       apiKeyEntry.setEncryptedDataId(encryptedData.getUuid());
 
-      log.info("Successfully migrated the api key: {} in account {} to KMS encryption", uuid, accountId);
+      log.info("ApiKeyLocalToKMSMigration: Successfully migrated the api key: {} in account {} to KMS encryption", uuid,
+          accountId);
       return apiKeyEntry;
     } catch (Exception ex) {
       log.error(
-          "Failure occurred while migrating the api key: {} in account {} to KMS encryption", uuid, accountId, ex);
+          "ApiKeyLocalToKMSMigration: Failure occurred while migrating the api key: {} in account {} to KMS encryption",
+          uuid, accountId, ex);
     }
     return null;
   }
