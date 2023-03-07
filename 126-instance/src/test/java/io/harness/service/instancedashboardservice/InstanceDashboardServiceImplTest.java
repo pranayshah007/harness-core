@@ -773,16 +773,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
     when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false))
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
 
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false);
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true);
 
     verify(instanceService)
         .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
-            SERVICE_IDENTIFIER, DISPLAY_NAME, false);
+            SERVICE_IDENTIFIER, DISPLAY_NAME, false, true);
     assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
   }
 
@@ -791,16 +791,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
     when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true))
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
 
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true);
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true);
 
     verify(instanceService)
         .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
-            SERVICE_IDENTIFIER, DISPLAY_NAME, true);
+            SERVICE_IDENTIFIER, DISPLAY_NAME, true, true);
     assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
   }
 

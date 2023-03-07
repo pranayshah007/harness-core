@@ -1039,7 +1039,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList =
         InstanceGroupedByEnvironmentList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1056,7 +1056,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false);
   }
 
   @Test
@@ -1092,7 +1092,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1102,13 +1102,13 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList1 =
         cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, DISPLAY_NAME_1);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, DISPLAY_NAME_1, true);
 
     assertThat(instanceGroupedOnArtifactList1).isEqualTo(instanceGroupedOnArtifactList);
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true);
   }
 
   @Test

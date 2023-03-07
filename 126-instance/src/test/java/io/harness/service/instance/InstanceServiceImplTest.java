@@ -504,15 +504,15 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
     when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true))
         .thenReturn(aggregationResults);
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
         instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true);
     assertThat(aggregationResults1).isEqualTo(aggregationResults);
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true);
   }
 
   @Test
@@ -520,14 +520,14 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
     when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true))
         .thenReturn(aggregationResults);
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
         instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true);
     assertThat(aggregationResults1).isEqualTo(aggregationResults);
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true);
   }
 }
