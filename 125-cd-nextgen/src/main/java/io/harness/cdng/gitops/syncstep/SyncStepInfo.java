@@ -59,14 +59,17 @@ public class SyncStepInfo extends SyncBaseStepInfo implements CDAbstractStepInfo
         .forceApply(forceApply)
         .syncOptions(syncOptions)
         .retryStrategy(retryStrategy)
+        .syncResources(syncResources)
         .build();
   }
 
   @Builder(builderMethodName = "infoBuilder")
   public SyncStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Boolean> prune,
       List<AgentApplicationTargets> applicationsList, ParameterField<Boolean> dryRun, ParameterField<Boolean> applyOnly,
-      ParameterField<Boolean> forceApply, SyncOptions syncOptions, SyncRetryStrategy retryStrategy) {
-    super(delegateSelectors, prune, applicationsList, dryRun, applyOnly, forceApply, syncOptions, retryStrategy);
+      ParameterField<Boolean> forceApply, SyncOptions syncOptions, SyncRetryStrategy retryStrategy,
+      SyncResources syncResources) {
+    super(delegateSelectors, prune, applicationsList, dryRun, applyOnly, forceApply, syncOptions, retryStrategy,
+        syncResources);
     this.prune = prune;
     this.applicationsList = applicationsList;
     this.dryRun = dryRun;
@@ -75,5 +78,6 @@ public class SyncStepInfo extends SyncBaseStepInfo implements CDAbstractStepInfo
     this.delegateSelectors = delegateSelectors;
     this.syncOptions = syncOptions;
     this.retryStrategy = retryStrategy;
+    this.syncResources = syncResources;
   }
 }

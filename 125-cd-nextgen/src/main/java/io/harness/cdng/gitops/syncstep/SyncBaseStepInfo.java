@@ -60,4 +60,6 @@ public class SyncBaseStepInfo {
   @JsonProperty("syncOptions") SyncOptions syncOptions;
 
   @JsonProperty("retryStrategy") SyncRetryStrategy retryStrategy;
+
+  @JsonProperty("syncResources") SyncResources syncResources;
 }
