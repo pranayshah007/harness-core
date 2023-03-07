@@ -644,7 +644,8 @@ public enum FeatureName {
       "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
   CDS_MANIFEST_LAST_STEP("Show last step of the manifest directly when user is editing manifest", HarnessTeam.CDP),
   CHAOS_SRM_EVENT(
-      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS);
+      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
+  PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {
