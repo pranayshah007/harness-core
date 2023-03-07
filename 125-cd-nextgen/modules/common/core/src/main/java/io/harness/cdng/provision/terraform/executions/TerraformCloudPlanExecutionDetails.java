@@ -1,8 +1,8 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
 package io.harness.cdng.provision.terraform.executions;
@@ -16,8 +16,6 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
-import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -38,15 +36,27 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @Builder
 @ToString
-@FieldNameConstants(innerTypeName = "TFPlanExecutionDetailsKeys")
+@FieldNameConstants(innerTypeName = "TerraformCloudPlanExecutionDetailsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NG_MANAGER)
-@Entity(value = "terraformPlanExecutionDetails", noClassnameStored = true)
-@Document("terraformPlanExecutionDetails")
-@TypeAlias("terraformPlanExecutionDetails")
+@Entity(value = "terraformCloudPlanExecutionDetails", noClassnameStored = true)
+@Document("terraformCloudPlanExecutionDetails")
+@TypeAlias("terraformCloudPlanExecutionDetails")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformPlanExecutionDetails implements PersistentEntity, UuidAware {
+public class TerraformCloudPlanExecutionDetails implements PersistentEntity, UuidAware {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_pipelineExecutionId_idx")
+                 .field(TerraformCloudPlanExecutionDetailsKeys.accountIdentifier)
+                 .field(TerraformCloudPlanExecutionDetailsKeys.orgIdentifier)
+                 .field(TerraformCloudPlanExecutionDetailsKeys.projectIdentifier)
+                 .field(TerraformCloudPlanExecutionDetailsKeys.pipelineExecutionId)
+                 .build())
+        .build();
+  }
+
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;
@@ -58,26 +68,8 @@ public class TerraformPlanExecutionDetails implements PersistentEntity, UuidAwar
   @NotNull private String stageExecutionId;
   @NotNull private String provisionerId;
   private String tfPlanJsonFieldId;
-  @NotNull private String tfPlanFileBucket;
-  private String tfHumanReadablePlanId;
-  @NotNull private String tfHumanReadablePlanFileBucket;
-  @NotNull private EncryptionConfig encryptionConfig;
-
-  /**
-   * Currently, encryptedTfPlan is storing only one element. But in future encryptedTfPlan will be broken in multiple
-   * parts and stored in vault, because one element can exceed the allowed size limit.
-   */
-  @NotNull private List<EncryptedRecordData> encryptedTfPlan;
-
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineExecutionId_idx")
-                 .field(TFPlanExecutionDetailsKeys.accountIdentifier)
-                 .field(TFPlanExecutionDetailsKeys.orgIdentifier)
-                 .field(TFPlanExecutionDetailsKeys.projectIdentifier)
-                 .field(TFPlanExecutionDetailsKeys.pipelineExecutionId)
-                 .build())
-        .build();
-  }
+  private String tfPlanFileBucket;
+  private String tfcPolicyChecksFileId;
+  private String tfcPolicyChecksFileBucket;
+  private RunDetails runDetails;
 }

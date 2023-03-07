@@ -981,6 +981,8 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
+import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
+import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
@@ -2382,6 +2384,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudRunTaskResponse.class, 680009);
     kryo.register(RollbackType.class, 680010);
     kryo.register(TerraformCloudRollbackTaskResponse.class, 680011);
+    kryo.register(TerraformCloudCleanupTaskParams.class, 680012);
+    kryo.register(TerraformCloudCleanupTaskResponse.class, 680013);
     kryo.register(BambooBuildTaskNGResponse.class, 229305);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);

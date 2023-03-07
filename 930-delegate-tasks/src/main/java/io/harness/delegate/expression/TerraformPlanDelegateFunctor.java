@@ -40,6 +40,7 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
   private static final String JSON_PLAN_SUFFIX = ".json";
   private static final String HUMAN_READABLE_PLAN_PREFIX = "tfHumanReadablePlan";
   private static final String HUMAN_READABLE_PLAN_SUFFIX = ".txt";
+  private static final String CLOUD_JSON_PLAN_PREFIX = "tfCloudPlan";
   private static final String POLICY_CHECKS = "tfcPolicyChecks";
 
   @Builder
@@ -111,6 +112,20 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
     return tfPlan;
   }
 
+  public TerraformPlan obtainCloudPlan(String fileId, int token) {
+    if (expressionFunctorToken != token) {
+      throw new FunctorException("Inappropriate usage of internal functor");
+    }
+
+    if (cache.containsKey(fileId)) {
+      return cache.get(fileId);
+    }
+
+    TerraformPlan tfPlan = downloadCloudJsonPlan(fileId);
+    cache.put(fileId, tfPlan);
+    return tfPlan;
+  }
+
   public TerraformPlan obtainPolicyChecks(String fileId, int token) {
     if (expressionFunctorToken != token) {
       throw new FunctorException("Inappropriate usage of internal functor");
@@ -144,6 +159,21 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
           format("Failed to download file '%s'", fileId), ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
+
+  private TerraformPlan downloadCloudJsonPlan(String fileId) {
+    try (InputStream inputStream =
+             delegateFileManager.downloadByFileId(FileBucket.TERRAFORM_PLAN_JSON, fileId, accountId);
+         InputStream decompressInputStream = new GZIPInputStream(inputStream)) {
+      Path outputFilePath = Files.createTempFile(CLOUD_JSON_PLAN_PREFIX, JSON_PLAN_SUFFIX);
+      Files.copy(decompressInputStream, outputFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+      return TerraformPlan.builder().jsonPlanFilePath(outputFilePath.toString()).build();
+    } catch (IOException e) {
+      throw new FunctorException(
+          format("Failed to download file '%s'", fileId), ExceptionMessageSanitizer.sanitizeException(e));
+    }
+  }
+
   private TerraformPlan downloadHumanReadablePlan(String fileId) {
     try (InputStream inputStream =
              delegateFileManager.downloadByFileId(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN, fileId, accountId);

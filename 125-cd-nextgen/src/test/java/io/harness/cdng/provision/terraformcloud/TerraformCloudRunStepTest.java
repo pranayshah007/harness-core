@@ -242,11 +242,11 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
-    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"provisionerId\">");
+    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformCloudPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
+    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -270,7 +270,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
     verify(helper, times(1)).isExportTfPlanJson(any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
+    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
@@ -293,7 +293,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
+    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 
@@ -311,11 +311,11 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
 
-    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformPlanJson.\"provisionerId\">");
+    assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformCloudPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs()).isNull();
     verify(helper, times(1)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
+    verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(0)).parseTerraformOutputs(any());
   }
 
@@ -337,7 +337,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).saveTerraformPlanExecutionDetails(any(), any(), any(), any());
+    verify(helper, times(1)).updateRunDetails(any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
 

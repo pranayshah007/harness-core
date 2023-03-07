@@ -69,6 +69,7 @@ public class TFPlanExecutionDetailsRepositoryCustomImpl implements TFPlanExecuti
     query.addCriteria(criteria);
     return mongoTemplate.find(query, TerraformPlanExecutionDetails.class);
   }
+
   public Criteria createScopeCriteria(Scope scope) {
     Criteria criteria = new Criteria();
     criteria.and(StageExecutionInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());

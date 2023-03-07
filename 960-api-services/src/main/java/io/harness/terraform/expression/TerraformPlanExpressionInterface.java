@@ -14,6 +14,7 @@ public interface TerraformPlanExpressionInterface {
   String DELEGATE_EXPRESSION = "${" + DELEGATE_FUNCTOR_NAME + ".obtainPlan(\"%s\", %d).%s()}";
   String HUMAN_READABLE_DELEGATE_EXPRESSION =
       "${" + DELEGATE_FUNCTOR_NAME + ".obtainHumanReadablePlan(\"%s\", %d).%s()}";
+  String TERRAFORM_CLOUD_PLAN_DELEGATE_EXPRESSION = "${" + DELEGATE_FUNCTOR_NAME + ".obtainCloudPlan(\"%s\", %d).%s()}";
   String POLICY_CHECKS_DELEGATE_EXPRESSION = "${" + DELEGATE_FUNCTOR_NAME + ".obtainPolicyChecks(\"%s\", %d).%s()}";
 
   String EXAMPLE_USAGE = "${" + FUNCTOR_NAME + ".jsonFilePath()}";

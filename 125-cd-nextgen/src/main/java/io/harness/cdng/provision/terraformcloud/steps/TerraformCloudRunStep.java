@@ -22,7 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.executions.RunDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudParamsMapper;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudPassThroughData;
@@ -30,12 +30,12 @@ import io.harness.cdng.provision.terraformcloud.TerraformCloudRunSpecParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunStepParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRunType;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.TerraformCloudRunOutcomeBuilder;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -96,7 +96,6 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
   @Inject private StepHelper stepHelper;
   @Inject private TerraformCloudStepHelper helper;
   @Inject private TerraformCloudParamsMapper paramsMapper;
-  @Inject private EncryptionHelper encryptionHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
@@ -213,9 +212,17 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
       String provisionerIdentifier = helper.getProvisionIdentifier(runStepParameters.getSpec());
       String policyChecksJsonFileId = terraformCloudRunTaskResponse.getPolicyChecksJsonFileId();
       String tfPlanJsonFileId = terraformCloudRunTaskResponse.getTfPlanJsonFileId();
-      helper.saveTerraformPlanExecutionDetails(
-          ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionerIdentifier);
-
+      if (runType != APPLY) {
+        RunDetails runDetails = PLAN.equals(runType)
+            ? RunDetails.builder()
+                  .runId(terraformCloudRunTaskResponse.getRunId())
+                  .connectorRef(ParameterFieldHelper.getParameterFieldValue(
+                      ((TerraformCloudPlanSpecParameters) runStepParameters.getSpec()).getConnectorRef()))
+                  .build()
+            : null;
+        helper.saveTerraformCloudPlanExecutionDetails(
+            ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionerIdentifier, runDetails);
+      }
       TerraformCloudRunOutcomeBuilder terraformCloudRunOutcomeBuilder =
           TerraformCloudRunOutcome.builder()
               .detailedExitCode(terraformCloudRunTaskResponse.getDetailedExitCode())
@@ -224,7 +231,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
                       : null)
               .jsonFilePath((helper.isExportTfPlanJson(runStepParameters.getSpec()) && tfPlanJsonFileId != null
                                 && provisionerIdentifier != null)
-                      ? TerraformPlanJsonFunctor.getExpression(provisionerIdentifier)
+                      ? TerraformCloudPlanJsonFunctor.getExpression(provisionerIdentifier)
                       : null)
               .runId(terraformCloudRunTaskResponse.getRunId());
 
@@ -236,6 +243,9 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
       if (runType == TerraformCloudRunType.APPLY || runType == TerraformCloudRunType.PLAN_AND_APPLY
           || runType == PLAN_AND_DESTROY) {
+        if (runType == TerraformCloudRunType.APPLY) {
+          helper.updateRunDetails(ambiance, terraformCloudRunTaskResponse.getRunId());
+        }
         terraformCloudRunOutcomeBuilder.outputs(
             new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())));
       }
@@ -277,9 +287,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
     TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
     terraformCloudTaskParams.setTerraformCloudConnectorDTO(terraformCloudConnector);
-    terraformCloudTaskParams.setEncryptionDetails(encryptionHelper.getEncryptionDetail(
-        terraformCloudConnector.getCredential().getSpec(), AmbianceUtils.getAccountId(ambiance),
-        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+    terraformCloudTaskParams.setEncryptionDetails(helper.getEncryptionDetail(ambiance, terraformCloudConnector));
     terraformCloudTaskParams.setEntityId(runSpec.getType() != REFRESH_STATE
             ? helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance)
             : null);

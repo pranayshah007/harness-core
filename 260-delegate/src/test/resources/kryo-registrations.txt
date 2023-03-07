@@ -2502,6 +2502,8 @@
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
 680010:io.harness.delegate.beans.terraformcloud.RollbackType
 680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
+680012:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams
+680013:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse
 873572:io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams
 873573:io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse
 873574:io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper

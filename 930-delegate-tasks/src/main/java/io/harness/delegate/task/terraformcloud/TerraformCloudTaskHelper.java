@@ -90,6 +90,7 @@ import io.jsonwebtoken.lang.Collections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -387,6 +388,10 @@ public class TerraformCloudTaskHelper {
       throw NestedExceptionUtils.hintWithExplanationException(
           format(PLEASE_CHECK_RUN, runId), COULD_NOT_GET_RUN, new TerraformCloudException(ERROR_GETTING_RUN, e));
     }
+  }
+
+  void discardRun(String url, String token, String runId, String message) throws IOException {
+    terraformCloudClient.discardRun(url, token, runId, RunActionRequest.builder().comment(message).build());
   }
 
   public void streamSentinelPolicies(

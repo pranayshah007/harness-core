@@ -72,7 +72,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformCloudTaskTest {
+public class TerraformCloudTaskNGTest {
   private static final String token = "t-o-k-e-n";
   private static final String url = "https://some.io";
   private static final String WORKSPACE = "ws-123";

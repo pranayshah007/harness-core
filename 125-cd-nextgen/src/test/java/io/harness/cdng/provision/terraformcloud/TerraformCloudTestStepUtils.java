@@ -46,6 +46,8 @@ public class TerraformCloudTestStepUtils {
         .putSetupAbstractions("accountId", "test-account")
         .putSetupAbstractions("projectIdentifier", "test-project")
         .putSetupAbstractions("orgIdentifier", "test-org")
+        .setPlanExecutionId("planExecutionId")
+        .setStageExecutionId("stageExecutionId")
         .build();
   }
 

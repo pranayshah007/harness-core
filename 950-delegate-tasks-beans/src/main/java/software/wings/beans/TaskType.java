@@ -476,7 +476,8 @@ public enum TaskType {
   AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Rollback Task NG"),
   TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
   BAMBOO_TRIGGER_JOB(TaskGroup.BAMBOO),
-  TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4");
+  TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4"),
+  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;

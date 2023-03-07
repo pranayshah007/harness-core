@@ -28,33 +28,37 @@ import com.google.inject.Inject;
 import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformCloudPolicyChecksJsonFunctor implements SdkFunctor {
-  public static final String TFC_POLICY_CHECKS_JSON = "policyChecksJson";
+public class TerraformCloudPlanJsonFunctor implements SdkFunctor {
+  public static final String TERRAFORM_CLOUD_PLAN_JSON = "terraformCloudPlanJson";
 
-  @Inject TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
+  @Inject private TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
     if (args.length == 0 || isEmpty(args[0])) {
       throw new IllegalArgumentException(
-          "Inappropriate usage of 'policyChecksJson' functor. Missing policy checks json output argument", USER);
+          "Inappropriate usage of 'terraformCloudPlanJson' functor. Missing terraform plan json output argument", USER);
     }
 
-    String tfcPolicyChecksOutputName = args[0];
+    String tfPlanJsonOutputName = args[0];
     Optional<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetails =
-        getExecutionDetailsByProvisionerId(ambiance, tfcPolicyChecksOutputName);
+        getExecutionDetailsByProvisionerId(ambiance, tfPlanJsonOutputName);
     if (terraformCloudPlanExecutionDetails.isPresent()) {
-      return String.format(TerraformPlanExpressionInterface.POLICY_CHECKS_DELEGATE_EXPRESSION,
-          terraformCloudPlanExecutionDetails.get().getTfcPolicyChecksFileId(), ambiance.getExpressionFunctorToken(),
-          "policyChecksJsonFilePath");
+      return String.format(TerraformPlanExpressionInterface.TERRAFORM_CLOUD_PLAN_DELEGATE_EXPRESSION,
+          terraformCloudPlanExecutionDetails.get().getTfPlanJsonFieldId(), ambiance.getExpressionFunctorToken(),
+          "jsonFilePath");
     } else {
       throw new InvalidRequestException(
-          "Missing output: " + tfcPolicyChecksOutputName + ". Terraform Cloud Policy Checks wasn't exported.");
+          "Missing output: " + tfPlanJsonOutputName + ". Terraform cloud plan wasn't exported.");
     }
   }
 
+  public static String getExpression(String baseFqn, String outputName) {
+    return String.format("%s%s.\"%s.%s\"%s", EXPR_START, TERRAFORM_CLOUD_PLAN_JSON, baseFqn, outputName, EXPR_END);
+  }
+
   public static String getExpression(String provisionerId) {
-    return String.format("%s%s.\"%s\"%s", EXPR_START, TFC_POLICY_CHECKS_JSON, provisionerId, EXPR_END);
+    return String.format("%s%s.\"%s\"%s", EXPR_START, TERRAFORM_CLOUD_PLAN_JSON, provisionerId, EXPR_END);
   }
 
   private Optional<TerraformCloudPlanExecutionDetails> getExecutionDetailsByProvisionerId(
