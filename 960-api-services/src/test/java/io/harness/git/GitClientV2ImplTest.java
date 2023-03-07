@@ -289,7 +289,8 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Path for manifest files is not valid. Check the path is not empty");
+        .hasMessageContaining(
+            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
 
@@ -343,7 +344,8 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Path for manifest files is not valid. Check the path is not empty");
+        .hasMessageContaining(
+            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
 
@@ -368,7 +370,8 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Path for manifest files is not valid. Check the path is not empty");
+        .hasMessageContaining(
+            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
     doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
@@ -392,7 +395,8 @@ public class GitClientV2ImplTest extends CategoryTest {
             .build();
     assertThatThrownBy(() -> gitClient.fetchFilesByPath(request))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Path for values.yaml files is not valid. Check the path is not empty");
+        .hasMessageContaining(
+            "Path for values.yaml files is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty");
     request.setFilePaths(Collections.singletonList("./"));
     assertThatThrownBy(() -> gitClient.fetchFilesByPath(request))
         .isInstanceOf(InvalidRequestException.class)

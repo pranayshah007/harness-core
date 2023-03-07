@@ -1402,7 +1402,9 @@ public class GitClientV2Impl implements GitClientV2 {
    */
   private void validateRequiredArgs(FetchFilesByPathRequest request) {
     if (isEmpty(request.getFilePaths())) {
-      throw new InvalidRequestException("Path for values.yaml files is not valid. Check the path is not empty", USER);
+      throw new InvalidRequestException(
+          "Path for values.yaml files is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty",
+          USER);
     }
     validateCommonRequiredArgs(request);
   }
@@ -1415,7 +1417,9 @@ public class GitClientV2Impl implements GitClientV2 {
    */
   private void validateRequiredArgsForManifest(FetchFilesByPathRequest request) {
     if (isEmpty(request.getFilePaths())) {
-      throw new InvalidRequestException("Path for manifest files is not valid. Check the path is not empty", USER);
+      throw new InvalidRequestException(
+          "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty",
+          USER);
     }
     validateCommonRequiredArgs(request);
   }
