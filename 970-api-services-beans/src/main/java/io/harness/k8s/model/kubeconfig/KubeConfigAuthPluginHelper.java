@@ -31,6 +31,12 @@ public class KubeConfigAuthPluginHelper {
       saveLogs(
           "Auth Provider is removed for kubernetes>=1.26. Please install %s on the delegate and add the binary in your PATH",
           logCallback);
+    } else {
+      saveLogs(
+          String.format(
+              "%s binary found. Using kubernetes client-go credential plugin mechanism to extend kubectl's authentication",
+              binaryName),
+          logCallback);
     }
     return shouldUseExecFormat;
   }
@@ -66,9 +72,9 @@ public class KubeConfigAuthPluginHelper {
 
   private static void saveLogs(String errorMsg, LogCallback logCallback) {
     if (logCallback != null) {
-      logCallback.saveExecutionLog(errorMsg, LogLevel.WARN);
+      logCallback.saveExecutionLog(errorMsg, LogLevel.INFO);
     } else {
-      log.warn(errorMsg);
+      log.info(errorMsg);
     }
   }
 }
