@@ -212,7 +212,6 @@ public class KustomizeTaskHelperTest extends CategoryTest {
             "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.")
         .hasCauseInstanceOf(ExplanationException.class)
         .hasRootCauseInstanceOf(InvalidRequestException.class)
-        .hasRootCauseMessage(
-            "Error: accumulating resources: accumulating resources from '../../application': evalsymlink failure on '/application' : lstat /application: no such file or directory");
+        .hasRootCauseMessage("Kustomize manifest resource not found ../../application inside kustomize base directory");
   }
 }
