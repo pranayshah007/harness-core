@@ -8,6 +8,17 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.terraformcloud.Relationship.WORKSPACE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.APPLY_ERROR_MESSAGE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_CONVERT_POLICIES;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.POLICY_OVERRIDE_ERROR_MESSAGE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.WORKSPACE_OR_RUN_MUST_BE_PROVIDED;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CONTACT_HARNESS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.POLICY_OVERRIDE_HINT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_TO_APPLY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.MISSING_WORKSPACE_ID;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
@@ -26,8 +37,10 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.terraformcloud.PlanType;
+import io.harness.delegate.beans.terraformcloud.RollbackType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
@@ -36,10 +49,13 @@ import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTa
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
+import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.TerraformCloudException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
 import io.harness.terraformcloud.TerraformCloudConfig;
 import io.harness.terraformcloud.model.PolicyCheckData;
@@ -47,9 +63,9 @@ import io.harness.terraformcloud.model.RunData;
 import io.harness.terraformcloud.model.RunRequest;
 import io.harness.terraformcloud.model.RunStatus;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -78,85 +94,103 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) throws IOException {
+  public DelegateResponseData run(TaskParameters parameters) {
     TerraformCloudTaskParams taskParameters = (TerraformCloudTaskParams) parameters;
 
     TerraformCloudConnectorDTO terraformCloudConnectorDTO = taskParameters.getTerraformCloudConnectorDTO();
     TerraformCloudConfig terraformCloudConfig = terraformCloudConfigMapper.mapTerraformCloudConfigWithDecryption(
         terraformCloudConnectorDTO, taskParameters.getEncryptionDetails());
 
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    CommandUnitsProgress commandUnitsProgress = taskParameters.getCommandUnitsProgress() != null
+        ? taskParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     TerraformCloudDelegateTaskResponse taskResponse;
-    switch (taskParameters.getTerraformCloudTaskType()) {
-      case VALIDATE:
-        ConnectorValidationResult connectorValidationResult =
-            terraformCloudValidationHandler.validate(terraformCloudConfig);
-        connectorValidationResult.setDelegateId(getDelegateId());
-        taskResponse =
-            TerraformCloudValidateTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
-        break;
-      case GET_ORGANIZATIONS:
-        taskResponse = TerraformCloudOrganizationsTaskResponse.builder()
-                           .organizations(terraformCloudTaskHelper.getOrganizationsMap(terraformCloudConfig))
-                           .build();
-        break;
-      case GET_WORKSPACES:
-        taskResponse = TerraformCloudWorkspacesTaskResponse.builder()
-                           .workspaces(terraformCloudTaskHelper.getWorkspacesMap(
-                               terraformCloudConfig, taskParameters.getOrganization()))
-                           .build();
-        break;
-      case RUN_REFRESH_STATE:
-        refreshState((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-            taskParameters, commandUnitsProgress);
-        taskResponse = TerraformCloudRunTaskResponse.builder().build();
-        break;
-      case RUN_PLAN_ONLY:
-      case RUN_PLAN:
-        taskResponse = plan((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-            taskParameters, commandUnitsProgress);
-        break;
-      case RUN_PLAN_AND_APPLY:
-      case RUN_PLAN_AND_DESTROY:
-        taskResponse =
-            autoApply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-                taskParameters, commandUnitsProgress);
-        break;
-      case RUN_APPLY:
-        taskResponse = apply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-            taskParameters, commandUnitsProgress);
-        break;
-      case ROLLBACK:
-        taskResponse = rollback((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-            taskParameters, commandUnitsProgress);
-        break;
-      default:
-        throw new InvalidRequestException("Terraform Cloud Task type not identified");
+    try {
+      switch (taskParameters.getTerraformCloudTaskType()) {
+        case VALIDATE:
+          ConnectorValidationResult connectorValidationResult =
+              terraformCloudValidationHandler.validate(terraformCloudConfig);
+          connectorValidationResult.setDelegateId(getDelegateId());
+          taskResponse =
+              TerraformCloudValidateTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
+          break;
+        case GET_ORGANIZATIONS:
+          taskResponse = TerraformCloudOrganizationsTaskResponse.builder()
+                             .organizations(terraformCloudTaskHelper.getOrganizationsMap(terraformCloudConfig))
+                             .build();
+          break;
+        case GET_WORKSPACES:
+          taskResponse = TerraformCloudWorkspacesTaskResponse.builder()
+                             .workspaces(terraformCloudTaskHelper.getWorkspacesMap(
+                                 terraformCloudConfig, taskParameters.getOrganization()))
+                             .build();
+          break;
+        case RUN_REFRESH_STATE:
+          refreshState((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+              taskParameters, commandUnitsProgress);
+          taskResponse = TerraformCloudRunTaskResponse.builder().build();
+          break;
+        case RUN_PLAN_ONLY:
+        case RUN_PLAN:
+          taskResponse = plan((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+              taskParameters, commandUnitsProgress);
+          break;
+        case RUN_PLAN_AND_APPLY:
+        case RUN_PLAN_AND_DESTROY:
+          taskResponse =
+              autoApply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  taskParameters, commandUnitsProgress);
+          break;
+        case RUN_APPLY:
+          taskResponse = apply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+              taskParameters, commandUnitsProgress);
+          break;
+        case ROLLBACK:
+          taskResponse =
+              rollback((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  taskParameters, commandUnitsProgress);
+          break;
+        case GET_LAST_APPLIED_RUN:
+          taskResponse =
+              getLastAppliedRun((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  taskParameters, commandUnitsProgress);
+          break;
+        default:
+          throw new InvalidRequestException("Terraform Cloud Task type not identified");
+      }
+      taskResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+      taskResponse.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      return taskResponse;
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      TaskExceptionUtils.handleExceptionCommandUnits(
+          commandUnitsProgress, unitName -> getLogCallback(unitName, commandUnitsProgress), sanitizedException);
+      log.error(format("Failed to execute Terraform Cloud Task [%s]", taskParameters.getTerraformCloudTaskType()),
+          sanitizedException);
+      throw new TaskNGDataException(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
-    taskResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
-    taskResponse.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-    return taskResponse;
   }
 
   private void refreshState(TerraformCloudApiTokenCredentials credentials, TerraformCloudTaskParams taskParameters,
-      CommandUnitsProgress commandUnitsProgress) throws IOException {
+      CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequestCreator.createRunRequest(taskParameters),
-        taskParameters.isDiscardPendingRuns(), taskParameters.getTerraformCloudTaskType(),
+        taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
     policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
   }
 
   private TerraformCloudRunTaskResponse plan(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) throws IOException {
+      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequestCreator.createRunRequest(taskParameters),
-        taskParameters.isDiscardPendingRuns(), taskParameters.getTerraformCloudTaskType(),
+        taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
     String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
@@ -180,12 +214,12 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private TerraformCloudRunTaskResponse autoApply(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) throws IOException {
+      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequestCreator.createRunRequest(taskParameters),
-        taskParameters.isDiscardPendingRuns(), taskParameters.getTerraformCloudTaskType(),
+        taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
     String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
@@ -198,13 +232,14 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   public TerraformCloudRunTaskResponse apply(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) throws IOException {
+      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback = getLogCallback(TerraformCloudCommandUnit.APPLY.getDisplayName(), commandUnitsProgress);
     String url = credentials.getUrl();
     String token = credentials.getToken();
     String runId = taskParameters.getRunId();
 
-    RunStatus status = terraformCloudTaskHelper.getRunStatus(url, token, runId);
+    RunData runData = terraformCloudTaskHelper.getRun(url, token, runId);
+    RunStatus status = runData.getAttributes().getStatus();
     if (status == RunStatus.POLICY_OVERRIDE) {
       List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
       terraformCloudTaskHelper.overridePolicy(url, token, policyCheckData, logCallback);
@@ -213,27 +248,45 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     if (status == RunStatus.POLICY_CHECKED) {
       String output = terraformCloudTaskHelper.applyRun(url, token, runId, taskParameters.getMessage(), logCallback);
       return TerraformCloudRunTaskResponse.builder().runId(runId).tfOutput(output).build();
+    } else if (!runData.getAttributes().isHasChanges()) {
+      logCallback.saveExecutionLog("Apply will not run. No changes.", INFO, CommandExecutionStatus.SUCCESS);
+      return TerraformCloudRunTaskResponse.builder().runId(runId).build();
     } else {
-      logCallback.saveExecutionLog(format("Apply can't be done when run is in status %s", status.name()),
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      // toDo custom exception will be thrown here
-      throw new InvalidRequestException(format("Apply can't be done when run is in status %s", status.name()));
+      logCallback.saveExecutionLog(format(APPLY_ERROR_MESSAGE, status.name()), ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
+          format(APPLY_ERROR_MESSAGE, status.name()), new TerraformCloudException(ERROR_TO_APPLY));
     }
   }
 
   private TerraformCloudRollbackTaskResponse rollback(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) throws IOException {
+      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
     String runId = taskParameters.getRunId();
+    String workspaceId = taskParameters.getWorkspace();
+    RollbackType rollbackType = taskParameters.getRollbackType();
 
-    RunData run = terraformCloudTaskHelper.getRun(url, token, runId);
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(), commandUnitsProgress);
+    logCallback.saveExecutionLog(
+        format("Check last applied run in workspace: %s", workspaceId), INFO, CommandExecutionStatus.RUNNING);
+    String lastAppliedRunId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspaceId);
+    if (lastAppliedRunId == null || lastAppliedRunId.equals(runId)) {
+      logCallback.saveExecutionLog(
+          "No run wasn't applied in this stage. Therefore skipping rollback.", INFO, CommandExecutionStatus.SKIPPED);
+      return TerraformCloudRollbackTaskResponse.builder().build();
+    }
 
-    RunRequest runRequest =
-        runRequestCreator.mapRunDataToRunRequest(run, taskParameters.getMessage(), taskParameters.getRollbackType());
+    RunData run =
+        terraformCloudTaskHelper.getRun(url, token, rollbackType == RollbackType.APPLY ? runId : lastAppliedRunId);
+    logCallback.saveExecutionLog(rollbackType == RollbackType.APPLY
+            ? format("Rolling back to version config version from run: %s", runId)
+            : format("There wasn't any run before execution. Destroy resources in workspace: %s", workspaceId),
+        INFO, CommandExecutionStatus.SUCCESS);
+
+    RunRequest runRequest = runRequestCreator.mapRunDataToRunRequest(run, taskParameters.getMessage(), rollbackType);
 
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequest, taskParameters.isDiscardPendingRuns(),
-        taskParameters.getTerraformCloudTaskType(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
     String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
@@ -247,7 +300,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private String policyCheckInternal(String url, String token, TerraformCloudTaskParams taskParameters, String runId,
-      CommandUnitsProgress commandUnitsProgress) throws IOException {
+      CommandUnitsProgress commandUnitsProgress) {
     List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
     terraformCloudTaskHelper.streamSentinelPolicies(url, token, policyCheckData,
         getLogCallback(TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), commandUnitsProgress));
@@ -255,14 +308,19 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     if (taskParameters.getTerraformCloudTaskType() == TerraformCloudTaskType.RUN_REFRESH_STATE) {
       return null;
     }
-    String policyChecksJsonData = new ObjectMapper().writeValueAsString(policyCheckData);
+    String policyChecksJsonData;
+    try {
+      policyChecksJsonData = new ObjectMapper().writeValueAsString(policyCheckData);
+    } catch (JsonProcessingException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CONTACT_HARNESS, COULD_NOT_CONVERT_POLICIES, e);
+    }
     return terraformCloudTaskHelper.uploadJsonFile(taskParameters.getAccountId(), getDelegateId(), getTaskId(),
         taskParameters.getEntityId(), TFC_POLICY_CHECK_FILE_NAME, policyChecksJsonData,
         FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS);
   }
 
-  private String applyInternal(String url, String token, boolean isPolicyOverride, RunData runData,
-      CommandUnitsProgress commandUnitsProgress) throws IOException {
+  private String applyInternal(
+      String url, String token, boolean isPolicyOverride, RunData runData, CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback = getLogCallback(TerraformCloudCommandUnit.APPLY.getDisplayName(), commandUnitsProgress);
     if (runData.getAttributes().getStatus() == RunStatus.POLICY_OVERRIDE) {
       if (isPolicyOverride) {
@@ -270,13 +328,39 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
             terraformCloudTaskHelper.getPolicyCheckData(url, token, runData.getId());
         terraformCloudTaskHelper.overridePolicy(url, token, policyCheckData, logCallback);
       } else {
-        logCallback.saveExecutionLog("Policy check failed and not overridden", INFO, CommandExecutionStatus.FAILURE);
-        // ToDo throw custom exception here
-        throw new InvalidRequestException("Policy check failed and not overridden");
+        logCallback.saveExecutionLog(POLICY_OVERRIDE_ERROR_MESSAGE, INFO, CommandExecutionStatus.FAILURE);
+        throw NestedExceptionUtils.hintWithExplanationException(
+            POLICY_OVERRIDE_HINT, POLICY_OVERRIDE_ERROR_MESSAGE, new TerraformCloudException(ERROR_TO_APPLY));
       }
     }
     terraformCloudTaskHelper.streamApplyLogs(url, token, runData, logCallback);
     return terraformCloudTaskHelper.getApplyOutput(url, token, runData);
+  }
+
+  private TerraformCloudDelegateTaskResponse getLastAppliedRun(
+      TerraformCloudApiTokenCredentials terraformCloudCredentials, TerraformCloudTaskParams params,
+      CommandUnitsProgress commandUnitsProgress) {
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(), commandUnitsProgress);
+    String url = terraformCloudCredentials.getUrl();
+    String token = terraformCloudCredentials.getToken();
+    String workspace;
+    if (params.getWorkspace() != null) {
+      workspace = params.getWorkspace();
+    } else if (params.getRunId() != null) {
+      RunData runData = terraformCloudTaskHelper.getRun(url, token, params.getRunId());
+      workspace = terraformCloudTaskHelper.getRelationshipId(runData, WORKSPACE);
+    } else {
+      logCallback.saveExecutionLog(WORKSPACE_OR_RUN_MUST_BE_PROVIDED, ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          PLEASE_CONTACT_HARNESS, WORKSPACE_OR_RUN_MUST_BE_PROVIDED, new TerraformCloudException(MISSING_WORKSPACE_ID));
+    }
+    logCallback.saveExecutionLog(
+        format("Fetch last applied run in workspace: %s", workspace), INFO, CommandExecutionStatus.RUNNING);
+    String lastAppliedId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspace);
+    logCallback.saveExecutionLog(
+        format("Last applied run was: %s", lastAppliedId), INFO, CommandExecutionStatus.SUCCESS);
+    return TerraformCloudRunTaskResponse.builder().lastAppliedRun(lastAppliedId).workspaceId(workspace).build();
   }
 
   @Override

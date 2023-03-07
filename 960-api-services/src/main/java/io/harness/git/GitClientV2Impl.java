@@ -150,6 +150,7 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
+  private static final String DEFAULT_FETCH_IDENTIFIER = "--default";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -1026,6 +1027,11 @@ public class GitClientV2Impl implements GitClientV2 {
 
   @Override
   public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException {
+    return fetchFilesByPath(DEFAULT_FETCH_IDENTIFIER, request);
+  }
+
+  @Override
+  public FetchFilesResult fetchFilesByPath(String identifier, FetchFilesByPathRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
     File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
@@ -1034,7 +1040,8 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String latestCommitSHA = checkoutFiles(request);
+        GitFetchMetadataLocalThread.putCommitId(identifier, latestCommitSHA);
         List<GitFile> gitFiles = getFilteredGitFiles(request);
         resetWorkingDir(request);
 

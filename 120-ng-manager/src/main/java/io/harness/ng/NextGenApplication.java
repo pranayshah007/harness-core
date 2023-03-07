@@ -49,6 +49,7 @@ import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
@@ -724,6 +725,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
     sdkFunctorMap.put(
         TerraformCloudPolicyChecksJsonFunctor.TFC_POLICY_CHECKS_JSON, TerraformCloudPolicyChecksJsonFunctor.class);
+    sdkFunctorMap.put(TerraformCloudPlanJsonFunctor.TERRAFORM_CLOUD_PLAN_JSON, TerraformCloudPlanJsonFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
     sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);

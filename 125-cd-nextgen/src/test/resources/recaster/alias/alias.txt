@@ -732,7 +732,6 @@ io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudStorageArtifactSummary
 io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome
 io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput
-io.harness.cdng.provision.terraformcloud.output.TerraformCloudConfigSweepingOutput
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters
@@ -745,6 +744,7 @@ io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanAndDestroySp
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanOnlySpec
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanSpec
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudRefreshSpec
+io.harness.cdng.provision.terraformcloud.TerraformCloudPassThroughData
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepInfo
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepNode
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepParameters

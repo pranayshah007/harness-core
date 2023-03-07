@@ -45,7 +45,7 @@ public class TerraformCloudParamsMapper {
 
   public TerraformCloudTaskParams mapRunSpecToTaskParams(TerraformCloudRunSpecParameters runSpec, Ambiance ambiance) {
     TerraformCloudRunType runType = runSpec.getType();
-    TerraformCloudTaskParamsBuilder builder = TerraformCloudTaskParams.builder();
+    TerraformCloudTaskParamsBuilder builder;
     switch (runType) {
       case REFRESH_STATE:
         TerraformCloudRefreshSpecParameters refreshSpec = (TerraformCloudRefreshSpecParameters) runSpec;
@@ -70,6 +70,8 @@ public class TerraformCloudParamsMapper {
             planAndApplySpecParameters.getWorkspace(), planAndApplySpecParameters.getDiscardPendingRuns(),
             planAndApplySpecParameters.getVariables(), null, null, planAndApplySpecParameters.getTargets())
                       .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
+        builder.policyOverride(
+            ParameterFieldHelper.getBooleanParameterFieldValue(planAndApplySpecParameters.getOverridePolicies()));
         break;
       case PLAN_AND_DESTROY:
         TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
@@ -78,6 +80,8 @@ public class TerraformCloudParamsMapper {
             planAndDestroySpecParameters.getWorkspace(), planAndDestroySpecParameters.getDiscardPendingRuns(),
             planAndDestroySpecParameters.getVariables(), null, null, planAndDestroySpecParameters.getTargets())
                       .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_DESTROY);
+        builder.policyOverride(
+            ParameterFieldHelper.getBooleanParameterFieldValue(planAndDestroySpecParameters.getOverridePolicies()));
         break;
       case PLAN:
         TerraformCloudPlanSpecParameters planSpecParameters = (TerraformCloudPlanSpecParameters) runSpec;
@@ -89,10 +93,11 @@ public class TerraformCloudParamsMapper {
         break;
       case APPLY:
         TerraformCloudApplySpecParameters applySpecParameters = (TerraformCloudApplySpecParameters) runSpec;
-        builder
-            .runId(helper.getPlanRunId(
-                ParameterFieldHelper.getParameterFieldValue(applySpecParameters.getProvisionerIdentifier()), ambiance))
-            .terraformCloudTaskType(TerraformCloudTaskType.RUN_APPLY);
+        builder = TerraformCloudTaskParams.builder()
+                      .runId(helper.getPlanRunId(
+                          ParameterFieldHelper.getParameterFieldValue(applySpecParameters.getProvisionerIdentifier()),
+                          ambiance))
+                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_APPLY);
         break;
       default:
         throw new InvalidRequestException(format("Unsupported run type: [%s]", runType));

@@ -198,4 +198,12 @@ public class EnvironmentStepsUtils {
       return environmentRef;
     }
   }
+
+  public static String inheritEnvGroupScope(String envRef, ParameterField<String> envGroupRef) {
+    if (ParameterField.isNull(envGroupRef) || StringUtils.isEmpty(envGroupRef.getValue())) {
+      return envRef;
+    }
+    Scope envGroupScope = getScopeForRef(envGroupRef.getValue());
+    return getEnvironmentRef(envRef, envGroupScope);
+  }
 }

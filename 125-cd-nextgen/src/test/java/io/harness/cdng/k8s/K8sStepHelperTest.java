@@ -3036,7 +3036,6 @@ public class K8sStepHelperTest extends CategoryTest {
   public void shouldHandleGitFetchFilesResponseFromHandleHelmValueFetchResponse() throws Exception {
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
-
     String manifestIdentifier = "manifest-identifier";
     HelmFetchFileResult valuesYamlList =
         HelmFetchFileResult.builder()
@@ -3152,7 +3151,6 @@ public class K8sStepHelperTest extends CategoryTest {
   public void shouldHandleGitFetchFilesResponse() throws Exception {
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
-
     String manifestIdentifier = "manifest-identifier";
     GitFile gitFile = GitFile.builder().fileContent("values yaml payload").filePath("folderPath/values2.yaml").build();
     FetchFilesResult dummyFetchfileResults = FetchFilesResult.builder().files(asList(gitFile)).build();
@@ -3277,7 +3275,6 @@ public class K8sStepHelperTest extends CategoryTest {
                 asList(UnitProgress.newBuilder().setUnitName("Fetch Files").setStatus(UnitStatus.RUNNING).build(),
                     UnitProgress.newBuilder().setUnitName("Some Unit").setStatus(UnitStatus.SUCCESS).build()))
             .build();
-
     K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
                                                  .manifestOutcome(K8sManifestOutcome.builder().build())
                                                  .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
@@ -3714,7 +3711,6 @@ public class K8sStepHelperTest extends CategoryTest {
   public void shouldHandleGitFetchResponse() throws Exception {
     StepElementParameters rollingStepElementParams =
         StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
-
     List<ValuesManifestOutcome> valuesManifestOutcomeList = new ArrayList<>();
     valuesManifestOutcomeList.add(ValuesManifestOutcome.builder()
                                       .identifier("abc")
@@ -3754,7 +3750,6 @@ public class K8sStepHelperTest extends CategoryTest {
   public void shouldHandleGitFetchResponseKustomizeCase() throws Exception {
     StepElementParameters rollingStepElementParams =
         StepElementParameters.builder().name("Rolling").spec(K8sRollingStepParameters.infoBuilder().build()).build();
-
     List<KustomizePatchesManifestOutcome> kustomizePatchesManifestOutcomeList = new ArrayList<>();
     kustomizePatchesManifestOutcomeList.add(KustomizePatchesManifestOutcome.builder()
                                                 .identifier("abc")
@@ -4531,6 +4526,43 @@ public class K8sStepHelperTest extends CategoryTest {
     Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags);
     assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
   }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkInternalStepExceptionCommitId() throws Exception {
+    Map<String, String> commitIdsMap = Collections.singletonMap("Service", "CommitId");
+    StepElementParameters rollingStepElementParams =
+        StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
+    UnitProgressData unitProgressData =
+        UnitProgressData.builder()
+            .unitProgresses(
+                asList(UnitProgress.newBuilder().setUnitName("Fetch Files").setStatus(UnitStatus.RUNNING).build(),
+                    UnitProgress.newBuilder().setUnitName("Some Unit").setStatus(UnitStatus.SUCCESS).build()))
+            .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(K8sManifestOutcome.builder().build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .build();
+    K8sGitFetchInfo k8sGitFetchInfo = getK8sGitFetchInfo(commitIdsMap);
+    GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
+                                            .filesFromMultipleRepo(Collections.emptyMap())
+                                            .taskStatus(TaskStatus.SUCCESS)
+                                            .unitProgressData(unitProgressData)
+                                            .fetchedCommitIdsMap(commitIdsMap)
+                                            .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("git-fetch-response", gitFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+    ArgumentCaptor<K8sExecutionPassThroughData> k8sExecutionPassThroughDataCaptor =
+        ArgumentCaptor.forClass(K8sExecutionPassThroughData.class);
+    k8sStepHelper.executeNextLink(
+        k8sStepExecutor, ambiance, rollingStepElementParams, passThroughData, responseDataSuplier);
+    when(k8sStepExecutor.executeK8sTask(any(), any(), any(), any(), any(), anyBoolean(), any()))
+        .thenReturn(TaskChainResponse.builder().chainEnd(true).build());
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(any(), any(), any(), any(), k8sExecutionPassThroughDataCaptor.capture(), anyBoolean(), any());
+    assertThat(k8sExecutionPassThroughDataCaptor.getValue().getK8sGitFetchInfo()).isEqualTo(k8sGitFetchInfo);
+  }
 
   @Test
   @Owner(developers = TARUN_UBA)
@@ -4809,5 +4841,14 @@ public class K8sStepHelperTest extends CategoryTest {
 
   private FileStoreNodeDTO getFolderStoreNode(String path, String name) {
     return FolderNodeDTO.builder().name(name).identifier("identifier").parentIdentifier("k8s").path(path).build();
+  }
+
+  private K8sGitFetchInfo getK8sGitFetchInfo(Map<String, String> commitIdsMap) {
+    K8sGitFetchInfo k8sGitFetchInfo = K8sGitFetchInfo.builder().build();
+    Map<String, K8sGitInfo> variables = new HashMap<>();
+    commitIdsMap.forEach(
+        (String keys, String values) -> { variables.put(keys, K8sGitInfo.builder().commitId(values).build()); });
+    k8sGitFetchInfo.putAll(variables);
+    return k8sGitFetchInfo;
   }
 }

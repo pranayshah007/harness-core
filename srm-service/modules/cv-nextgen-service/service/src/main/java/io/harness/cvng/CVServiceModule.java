@@ -342,12 +342,15 @@ import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.resources.VerifyStepResource;
+import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.CompositeServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
@@ -380,6 +383,7 @@ import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServ
 import io.harness.cvng.servicelevelobjective.services.impl.UserJourneyServiceImpl;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.CalenderSLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RatioServiceLevelIndicatorTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RequestServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.RollingSLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
@@ -862,14 +866,21 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.AWS_PROMETHEUS)
         .to(AwsPrometheusUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-    MapBinder<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
-        MapBinder.newMapBinder(binder(), SLIMetricType.class, ServiceLevelIndicatorUpdatableEntity.class);
-    serviceLevelIndicatorMapBinder.addBinding(SLIMetricType.RATIO)
+    MapBinder<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorUpdatableEntity.class);
+    serviceLevelIndicatorMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-    serviceLevelIndicatorMapBinder.addBinding(SLIMetricType.THRESHOLD)
+    serviceLevelIndicatorMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorUpdatableEntity.class)
         .in(Scopes.SINGLETON);
+    serviceLevelIndicatorMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .to(RequestServiceLevelIndicatorUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+
     MapBinder<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
         serviceLevelObjectiveTypeUpdatableEntityMapBinder = MapBinder.newMapBinder(
             binder(), ServiceLevelObjectiveType.class, AbstractServiceLevelObjectiveUpdatableEntity.class);
@@ -1040,12 +1051,19 @@ public class CVServiceModule extends AbstractModule {
     bind(ServiceLevelIndicatorEntityAndDTOTransformer.class);
     bind(CompositeSLOService.class).to(CompositeSLOServiceImpl.class);
     bind(DebugService.class).to(DebugServiceImpl.class).in(Singleton.class);
-    MapBinder<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMapBinder =
-        MapBinder.newMapBinder(binder(), SLIMetricType.class, ServiceLevelIndicatorTransformer.class);
-    serviceLevelIndicatorTransformerMapBinder.addBinding(SLIMetricType.RATIO)
+
+    MapBinder<String, ServiceLevelIndicatorTransformer> serviceLevelIndicatorFQDITransformerMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, ServiceLevelIndicatorTransformer.class);
+    serviceLevelIndicatorFQDITransformerMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.REQUEST, null))
+        .to(RequestServiceLevelIndicatorTransformer.class)
+        .in(Scopes.SINGLETON);
+    serviceLevelIndicatorFQDITransformerMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.RATIO))
         .to(RatioServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
-    serviceLevelIndicatorTransformerMapBinder.addBinding(SLIMetricType.THRESHOLD)
+    serviceLevelIndicatorFQDITransformerMapBinder
+        .addBinding(ServiceLevelIndicator.getEvaluationAndMetricType(SLIExecutionType.WINDOW, SLIMetricType.THRESHOLD))
         .to(ThresholdServiceLevelIndicatorTransformer.class)
         .in(Scopes.SINGLETON);
 

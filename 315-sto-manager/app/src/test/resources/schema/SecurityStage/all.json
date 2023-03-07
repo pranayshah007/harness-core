@@ -461,6 +461,9 @@
     },
     "Attestation": {
       "type": "object",
+      "required": [
+        "privateKey"
+      ],
       "properties": {
         "privateKey": {
           "type": "string"
@@ -9329,6 +9332,7 @@
         {
           "type": "object",
           "required": [
+            "attestation",
             "source",
             "tool"
           ],

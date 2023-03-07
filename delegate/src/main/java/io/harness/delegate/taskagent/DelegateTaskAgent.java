@@ -13,7 +13,6 @@ import io.harness.delegate.taskagent.client.delegate.DelegateCoreClientFactory;
 import io.harness.delegate.taskagent.servicediscovery.ServiceDiscovery;
 import io.harness.security.TokenGenerator;
 import io.harness.serializer.YamlUtils;
-import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;

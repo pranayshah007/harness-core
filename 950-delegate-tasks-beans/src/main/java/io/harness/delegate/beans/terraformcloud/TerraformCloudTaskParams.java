@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudCapabili
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -35,13 +36,10 @@ import lombok.experimental.SuperBuilder;
 public class TerraformCloudTaskParams
     extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   TerraformCloudTaskType terraformCloudTaskType;
-
   TerraformCloudConnectorDTO terraformCloudConnectorDTO;
   List<EncryptedDataDetail> encryptionDetails;
-
   String accountId;
   String entityId;
-
   String organization;
   String workspace;
   boolean discardPendingRuns;
@@ -52,9 +50,9 @@ public class TerraformCloudTaskParams
   @Expression(ALLOW_SECRETS) Map<String, String> variables;
   @Expression(DISALLOW_SECRETS) List<String> targets;
   String runId;
-
   RollbackType rollbackType;
   String message;
+  CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

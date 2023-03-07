@@ -58,16 +58,6 @@ public class EcsStepUtils extends CDStepHelper {
         gitStoreConfig, connectorDTO, manifestOutcome, gitStoreConfig.getPaths().getValue(), ambiance);
   }
 
-  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
-    Boolean isGitManifest = false;
-    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
-      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
-        isGitManifest = true;
-      }
-    }
-    return isGitManifest;
-  }
-
   public boolean isAnyS3Manifest(List<ManifestOutcome> ecsManifestsOutcomes) {
     Boolean isS3Manifest = false;
     for (ManifestOutcome manifest : ecsManifestsOutcomes) {
@@ -110,15 +100,5 @@ public class EcsStepUtils extends CDStepHelper {
               fileReference.getPath(), fileReference.getScope(), manifestIdentifier));
     }
     return manifestFile;
-  }
-
-  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
-    boolean retVal = true;
-    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
-      if (manifestOutcome.getStore() != null) {
-        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
-      }
-    }
-    return retVal;
   }
 }

@@ -316,13 +316,17 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       return;
     }
 
-    String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(
-        IdentifierRefHelper.getIdentifierRef(webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(),
-            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier()));
+    try {
+      String fullyQualifiedIdentifier = getFullyQualifiedIdentifierRefString(IdentifierRefHelper.getIdentifierRef(
+          webhook.getGit().getConnectorIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+          ngTriggerEntity.getProjectIdentifier()));
 
-    List<TriggerDetails> triggerDetailList =
-        triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
+      List<TriggerDetails> triggerDetailList =
+          triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
 
-    triggerDetailList.add(triggerDetail);
+      triggerDetailList.add(triggerDetail);
+    } catch (Exception ex) {
+      log.error(getTriggerSkipMessage(triggerDetail.getNgTriggerEntity()));
+    }
   }
 }

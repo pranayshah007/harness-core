@@ -21,6 +21,7 @@ import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
+import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig;
@@ -50,6 +51,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AzureARMConfig.class);
     set.add(TerragruntConfig.class);
     set.add(TerraformCloudConfig.class);
+    set.add(TerraformCloudPlanExecutionDetails.class);
   }
 
   @Override
@@ -68,5 +70,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
         TerraformPlanExecutionDetails.class);
     h.put("io.harness.cdng.provision.terragrunt.TerragruntConfig", TerragruntConfig.class);
     h.put("io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig", TerraformCloudConfig.class);
+    h.put("io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails",
+        TerraformCloudPlanExecutionDetails.class);
   }
 }
