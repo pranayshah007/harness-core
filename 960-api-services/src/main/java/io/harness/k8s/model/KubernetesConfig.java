@@ -9,6 +9,8 @@ package io.harness.k8s.model;
 
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 
+import io.harness.k8s.model.kubeconfig.Exec;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.Builder;
@@ -44,6 +46,7 @@ public class KubernetesConfig {
 
   private KubernetesAzureConfig azureConfig;
   private boolean shouldUseExecFormat;
+  private Exec exec;
 
   @Builder
   public KubernetesConfig(String masterUrl, char[] username, char[] password, char[] caCert, char[] clientCert,
