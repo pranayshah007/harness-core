@@ -38,6 +38,7 @@ public class GitHubPollingDelegateRequest implements GitPollingSourceDelegateReq
   ConnectorDetails connectorDetails;
 
   String webhookId;
+  String repository;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

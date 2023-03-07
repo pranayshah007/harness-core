@@ -18,10 +18,11 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitDelegateRequestUtils {
   public GitHubPollingDelegateRequest getGitHubDelegateRequest(
-      ConnectorDetails connectorDetails, String webhookId, GitPollingSourceType sourceType) {
+      ConnectorDetails connectorDetails, String webhookId, String repository, GitPollingSourceType sourceType) {
     return GitHubPollingDelegateRequest.builder()
         .connectorDetails(connectorDetails)
         .webhookId(webhookId)
+        .repository(repository)
         .sourceType(sourceType)
         .build();
   }
