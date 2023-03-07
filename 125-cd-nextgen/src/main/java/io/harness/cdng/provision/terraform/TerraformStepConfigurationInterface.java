@@ -10,10 +10,12 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 @OwnedBy(CDP)
 public interface TerraformStepConfigurationInterface {
   TerraformStepConfigurationEnumInterface getType();
   void setType(TerraformStepConfigurationEnumInterface terraformStepConfigurationType);
   TerraformExecutionDataParameters getSpec();
+  ParameterField<Boolean> getIsSkipTerraformRefresh();
 }

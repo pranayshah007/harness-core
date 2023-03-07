@@ -39,4 +39,5 @@ public class TerraformRollbackStepParameters implements SpecParameters {
   private ParameterField<String> provisionerIdentifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> skipRefreshCommand;
 }

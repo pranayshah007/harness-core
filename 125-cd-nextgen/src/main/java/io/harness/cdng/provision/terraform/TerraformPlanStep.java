@@ -7,6 +7,12 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
+
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -95,7 +101,19 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     if (isTerraformCloudCli) {
       helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-      helper.checkIfDelegateSupportsCloudCli(ambiance);
+
+      io.harness.delegate.TaskType taskTypeV3 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
+    }
+
+    ParameterField<Boolean> skipTerraformRefreshCommand =
+        planStepParameters.getConfiguration().getSkipTerraformRefresh();
+
+    if (ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand)) {
+      io.harness.delegate.TaskType taskTypeV4 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
     }
 
     List<EntityDetail> entityDetailList = new ArrayList<>();
@@ -161,6 +179,9 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
       builder.encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters));
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
     }
+    ParameterField<Boolean> skipTerraformRefreshCommand =
+        planStepParameters.getConfiguration().getSkipTerraformRefresh();
+    builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)

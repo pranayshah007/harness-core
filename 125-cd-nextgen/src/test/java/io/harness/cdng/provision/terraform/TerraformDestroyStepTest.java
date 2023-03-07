@@ -189,6 +189,8 @@ public class TerraformDestroyStepTest extends CategoryTest {
     TerraformDestroyStepParameters destroyStepParameters = TerraformStepDataGenerator.generateDestroyStepPlan(
         StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
+    destroyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
+
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -222,6 +224,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test
@@ -284,6 +287,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     assertThat(taskParameters.getEncryptionConfig()).isNull();
     assertThat(taskParameters.getWorkspace()).isNull();
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
+    assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
   }
 
   @Test
@@ -429,6 +433,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
             .provisionerIdentifier(ParameterField.createValueField("Id"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INHERIT_FROM_APPLY)
+                               .skipTerraformRefresh(ParameterField.createValueField(true))
                                .build())
             .build();
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
@@ -470,6 +475,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test

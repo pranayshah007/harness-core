@@ -214,19 +214,20 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
       }
 
-      if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-              && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
-        TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-            TerraformRefreshCommandRequest.builder()
-                .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-                .varParams(terraformExecuteStepRequest.getVarParams())
-                .targets(terraformExecuteStepRequest.getTargets())
-                .uiLogs(terraformExecuteStepRequest.getUiLogs())
-                .build();
-        terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      if (!terraformExecuteStepRequest.isSkipTerraformRefresh()) {
+        if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
+                && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+          TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+              TerraformRefreshCommandRequest.builder()
+                  .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+                  .varParams(terraformExecuteStepRequest.getVarParams())
+                  .targets(terraformExecuteStepRequest.getTargets())
+                  .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                  .build();
+          terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+        }
       }
-
       // Execute TF plan
       terraformPlanStepResponse = executeTerraformPlanCommand(terraformExecuteStepRequest);
     }
@@ -358,16 +359,18 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
       }
 
-      // Plan step always performs a refresh
-      TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-          TerraformRefreshCommandRequest.builder()
-              .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-              .varParams(terraformExecuteStepRequest.getVarParams())
-              .targets(terraformExecuteStepRequest.getTargets())
-              .uiLogs(terraformExecuteStepRequest.getUiLogs())
-              .build();
-      terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      if (!terraformExecuteStepRequest.isSkipTerraformRefresh()) {
+        // Plan step always performs a refresh
+        TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+            TerraformRefreshCommandRequest.builder()
+                .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+                .varParams(terraformExecuteStepRequest.getVarParams())
+                .targets(terraformExecuteStepRequest.getTargets())
+                .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                .build();
+        terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      }
     }
 
     return executeTerraformPlanCommand(terraformExecuteStepRequest);
@@ -397,17 +400,19 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         selectWorkspaceIfExist(terraformExecuteStepRequest, workspace);
       }
 
-      if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-              && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
-        TerraformRefreshCommandRequest terraformRefreshCommandRequest =
-            TerraformRefreshCommandRequest.builder()
-                .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
-                .varParams(terraformExecuteStepRequest.getVarParams())
-                .targets(terraformExecuteStepRequest.getTargets())
-                .uiLogs(terraformExecuteStepRequest.getUiLogs())
-                .build();
-        terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+      if (!terraformExecuteStepRequest.isSkipTerraformRefresh()) {
+        if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
+                && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+          TerraformRefreshCommandRequest terraformRefreshCommandRequest =
+              TerraformRefreshCommandRequest.builder()
+                  .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
+                  .varParams(terraformExecuteStepRequest.getVarParams())
+                  .targets(terraformExecuteStepRequest.getTargets())
+                  .uiLogs(terraformExecuteStepRequest.getUiLogs())
+                  .build();
+          terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+        }
       }
     }
 

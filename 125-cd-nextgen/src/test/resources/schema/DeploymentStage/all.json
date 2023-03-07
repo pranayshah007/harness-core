@@ -16581,6 +16581,16 @@
         "secretManagerRef": {
           "type": "string"
         },
+        "skipRefreshCommand": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "targets": {
           "oneOf": [
             {
@@ -16688,6 +16698,16 @@
             },
             "provisionerIdentifier": {
               "type": "string"
+            },
+            "skipRefreshCommand": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -16700,6 +16720,16 @@
         "type"
       ],
       "properties": {
+        "skipRefreshCommand": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "spec": {
           "$ref": "#/definitions/TerraformExecutionData"
         },

@@ -68,6 +68,7 @@ public class TerraformTaskNGParameters
   long timeoutInMillis;
   boolean useOptimizedTfPlan;
   boolean isTerraformCloudCli;
+  boolean skipTerraformRefresh;
   // For plan
   TerraformCommand terraformCommand;
 
@@ -167,6 +168,9 @@ public class TerraformTaskNGParameters
   }
 
   public TaskType getDelegateTaskType() {
+    if (this.skipTerraformRefresh) {
+      return TaskType.TERRAFORM_TASK_NG_V4;
+    }
     if (this.isTerraformCloudCli) {
       return TaskType.TERRAFORM_TASK_NG_V3;
     } else {

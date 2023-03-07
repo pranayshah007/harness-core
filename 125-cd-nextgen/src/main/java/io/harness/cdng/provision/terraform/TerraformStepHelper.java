@@ -16,8 +16,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.validation.Validator.notEmptyCheck;
 
-import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
-
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -156,6 +154,8 @@ public class TerraformStepHelper {
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
   public static final String TF_BACKEND_CONFIG_FILE = "TF_BACKEND_CONFIG_FILE";
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
+  public static final String TERRAFORM_CLOUD_CLI = "Terraform cloud CLI";
+  public static final String SKIP_REFRESH_COMMAND = "Skip Refresh Command";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
@@ -1145,15 +1145,13 @@ public class TerraformStepHelper {
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
   }
 
-  public void checkIfDelegateSupportsCloudCli(Ambiance ambiance) {
-    io.harness.delegate.TaskType taskType =
-        io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
-
+  public void checkIfTaskIsSupportedByDelegate(
+      Ambiance ambiance, io.harness.delegate.TaskType taskType, String taskLogicName) {
     AccountId accountIdentifier = AccountId.newBuilder().setId(AmbianceUtils.getAccountId(ambiance)).build();
 
     boolean taskTypeSupported = delegateServiceGrpcClient.isTaskTypeSupported(accountIdentifier, taskType);
     if (!taskTypeSupported) {
-      throw new InvalidRequestException("None of available delegates supports terraform cloud CLI integration");
+      throw new InvalidRequestException(format("None of available delegates supports %s integration", taskLogicName));
     }
   }
 

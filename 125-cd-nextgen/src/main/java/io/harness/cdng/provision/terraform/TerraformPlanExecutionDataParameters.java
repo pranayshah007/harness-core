@@ -34,4 +34,5 @@ public class TerraformPlanExecutionDataParameters {
   ParameterField<Boolean> exportTerraformPlanJson;
   ParameterField<Boolean> exportTerraformHumanReadablePlan;
   ParameterField<Boolean> isTerraformCloudCli;
+  ParameterField<Boolean> skipTerraformRefresh;
 }

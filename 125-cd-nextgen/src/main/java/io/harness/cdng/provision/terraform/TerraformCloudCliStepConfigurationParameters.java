@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
@@ -38,5 +39,11 @@ public class TerraformCloudCliStepConfigurationParameters implements TerraformSt
   @Override
   public TerraformExecutionDataParameters getSpec() {
     return spec;
+  }
+
+  @Override
+  public ParameterField<Boolean> getIsSkipTerraformRefresh() {
+    // always false for cloud CLI
+    return ParameterField.createValueField(false);
   }
 }
