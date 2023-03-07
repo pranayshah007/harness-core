@@ -80,6 +80,7 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevel
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -1086,11 +1087,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1157,11 +1159,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdValue(578.02);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1194,11 +1197,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setThresholdValue(578.02);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1231,11 +1234,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
@@ -1273,11 +1276,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     sloDTO.setSloTarget(calendarSloTarget);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
@@ -1347,11 +1351,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setThresholdType(ThresholdType.LESS_THAN);
     serviceLevelIndicatorDTO1.setIdentifier(responseSLIDTO.getIdentifier());
     serviceLevelIndicatorDTO1.setName(responseSLIDTO.getName());
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     sloDTO.setSloTarget(calendarSloTarget);
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
@@ -1418,9 +1423,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     ratioSLIMetricSpec.setMetric1("metric7");
-    serviceLevelIndicatorDTO1.getSpec().setSpec(ratioSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(ratioSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1455,9 +1461,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO1.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).getSpec();
     thresholdSLIMetricSpec.setMetric1("metric7");
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1496,7 +1502,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                         .thresholdType(ThresholdType.GREATER_THAN)
                                                         .thresholdValue(200.0)
                                                         .build();
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =
@@ -1536,8 +1542,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                     .thresholdType(ThresholdType.GREATER_THAN)
                                                     .thresholdValue(200.0)
                                                     .build();
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
-    serviceLevelIndicatorDTO1.getSpec().setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
+    ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO1.getSpec()).setSpec(thresholdSLIMetricSpec);
     ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec())
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updatedServiceLevelObjectiveResponse =

@@ -10,18 +10,18 @@ package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 
 public class ThresholdServiceLevelIndicatorTransformer
-    extends ServiceLevelIndicatorTransformer<ThresholdServiceLevelIndicator, ServiceLevelIndicatorSpec> {
+    extends ServiceLevelIndicatorTransformer<ThresholdServiceLevelIndicator, WindowBasedServiceLevelIndicatorSpec> {
   @Override
   public ThresholdServiceLevelIndicator getEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIdentifier,
       String healthSourceIdentifier, boolean isEnabled) {
     ThresholdSLIMetricSpec thresholdSLIMetricSpec =
-        (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec();
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec();
 
     return ThresholdServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
@@ -40,8 +40,8 @@ public class ThresholdServiceLevelIndicatorTransformer
   }
 
   @Override
-  protected ServiceLevelIndicatorSpec getSpec(ThresholdServiceLevelIndicator serviceLevelIndicator) {
-    return ServiceLevelIndicatorSpec.builder()
+  protected WindowBasedServiceLevelIndicatorSpec getSpec(ThresholdServiceLevelIndicator serviceLevelIndicator) {
+    return WindowBasedServiceLevelIndicatorSpec.builder()
         .type(SLIMetricType.THRESHOLD)
         .spec(ThresholdSLIMetricSpec.builder()
                   .metric1(serviceLevelIndicator.getMetric1())

@@ -17,11 +17,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.services.impl.RatioAnalyserServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.ThresholdAnalyserServiceImpl;
@@ -53,8 +53,8 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createThresholdServiceLevelIndicator();
     Map<String, Double> requestMap = new HashMap<>();
     requestMap.put("metric1", 225.0);
-    SLIState sliState = thresholdAnalyserServiceImpl.analyse(
-        requestMap, (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec());
+    SLIState sliState = thresholdAnalyserServiceImpl.analyse(requestMap,
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec());
     assertThat(SLIState.GOOD).isEqualTo(sliState);
   }
 
@@ -65,8 +65,8 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createThresholdServiceLevelIndicator();
     Map<String, Double> requestMap = new HashMap<>();
     requestMap.put("metric2", 225.0);
-    SLIState sliState = thresholdAnalyserServiceImpl.analyse(
-        requestMap, (ThresholdSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec());
+    SLIState sliState = thresholdAnalyserServiceImpl.analyse(requestMap,
+        (ThresholdSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec());
     assertThat(SLIState.NO_DATA).isEqualTo(sliState);
   }
 
@@ -78,8 +78,8 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     Map<String, Double> requestMap = new HashMap<>();
     requestMap.put("metric1", 46.0);
     requestMap.put("metric2", 50.0);
-    SLIState sliState =
-        ratioAnalyserService.analyse(requestMap, (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec());
+    SLIState sliState = ratioAnalyserService.analyse(requestMap,
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec());
     assertThat(SLIState.GOOD).isEqualTo(sliState);
   }
 
@@ -91,8 +91,8 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     Map<String, Double> requestMap = new HashMap<>();
     requestMap.put("metric1", 46.0);
     requestMap.put("metric2", 0.0);
-    SLIState sliState =
-        ratioAnalyserService.analyse(requestMap, (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec());
+    SLIState sliState = ratioAnalyserService.analyse(requestMap,
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec());
     assertThat(SLIState.NO_DATA).isEqualTo(sliState);
   }
 
@@ -104,8 +104,8 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     Map<String, Double> requestMap = new HashMap<>();
     requestMap.put("metric1", 4.0);
     requestMap.put("metric2", 50.0);
-    SLIState sliState =
-        ratioAnalyserService.analyse(requestMap, (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec());
+    SLIState sliState = ratioAnalyserService.analyse(requestMap,
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec());
     assertThat(SLIState.GOOD).isEqualTo(sliState);
   }
 
@@ -113,7 +113,7 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.GOOD)
@@ -130,7 +130,7 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.BAD)
@@ -147,7 +147,7 @@ public class SLIAnalyserServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("metric1")

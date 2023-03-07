@@ -16,6 +16,7 @@ import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
@@ -81,8 +82,8 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         sliMetricAnalysisTransformer.getSLIAnalyseRequest(timeSeriesRecordDTOS);
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
-    List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(
-        sliAnalyseRequest, serviceLevelIndicatorDTO.getSpec().getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(sliAnalyseRequest,
+        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
     List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
     sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(
         sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());

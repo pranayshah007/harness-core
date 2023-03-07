@@ -46,6 +46,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -57,7 +58,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorServic
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.persistence.HPersistence;
@@ -92,13 +92,12 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorService {
   private static final int INTERVAL_HOURS = 12;
   @Inject private HPersistence hPersistence;
-  @Inject private Map<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
+  @Inject private Map<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
   @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private HealthSourceService healthSourceService;
   @Inject private OnboardingService onboardingService;
   @Inject private MetricPackService metricPackService;
-  @Inject private Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
   @Inject private SLIDataProcessorService sliDataProcessorService;
   @Inject private Clock clock;
@@ -122,10 +121,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                                         .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                         .build());
 
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
-            .getEntity(projectParams, serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef(), monitoredService.isEnabled());
+    ServiceLevelIndicator serviceLevelIndicator = convertDTOToEntity(projectParams, serviceLevelIndicatorDTO,
+        monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), monitoredService.isEnabled());
 
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
                                                 .toDataCollectionInfo(cvConfigs, serviceLevelIndicator);
@@ -144,8 +141,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                        .timeStamp(Instant.ofEpochMilli(timeSeriesRecord.getTimestamp()))
                        .build(),
                 Collectors.toList())));
-    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(
-        sliAnalyseRequest, serviceLevelIndicatorDTO.getSpec().getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(sliAnalyseRequest,
+        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
     sliAnalyseResponses.sort(Comparator.comparing(SLIAnalyseResponse::getTimeStamp));
     final SLIAnalyseResponse initialSLIResponse = sliAnalyseResponses.get(0);
 
@@ -262,16 +259,16 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    serviceLevelIndicatorDTO.setName(
-        serviceLevelObjectiveIdentifier + "_" + serviceLevelIndicatorDTO.getSpec().getSpec().getMetricName());
-    serviceLevelIndicatorDTO.setIdentifier(
-        serviceLevelObjectiveIdentifier + "_" + serviceLevelIndicatorDTO.getSpec().getSpec().getMetricName());
+    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
   }
 
   @Override
   public List<ServiceLevelIndicatorDTO> get(ProjectParams projectParams, List<String> serviceLevelIndicators) {
     List<ServiceLevelIndicator> serviceLevelIndicatorList = getEntities(projectParams, serviceLevelIndicators);
-    return serviceLevelIndicatorList.stream().map(this::sliEntityToDTO).collect(Collectors.toList());
+    return serviceLevelIndicatorList.stream().map(this::convertEntityToDTO).collect(Collectors.toList());
   }
 
   @Override
@@ -359,7 +356,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       TimePeriod timePeriod, TimePeriod currentTimePeriod, String serviceLevelObjectiveIdentifier) {
     UpdatableEntity<ServiceLevelIndicator, ServiceLevelIndicator> updatableEntity =
-        serviceLevelIndicatorMapBinder.get(serviceLevelIndicatorDTO.getSpec().getType());
+        serviceLevelIndicatorEntityAndDTOTransformer.getUpdatableEntity(serviceLevelIndicatorDTO);
     ServiceLevelIndicator serviceLevelIndicator =
         getServiceLevelIndicator(projectParams, serviceLevelIndicatorDTO.getIdentifier());
     UpdateOperations<ServiceLevelIndicator> updateOperations =
@@ -438,6 +435,10 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator, healthSourceIndicator, isEnabled);
   }
 
+  private ServiceLevelIndicatorDTO convertEntityToDTO(ServiceLevelIndicator serviceLevelIndicator) {
+    return serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
+  }
+
   @Override
   public ServiceLevelIndicator getServiceLevelIndicator(ProjectParams projectParams, String identifier) {
     return hPersistence.createQuery(ServiceLevelIndicator.class)
@@ -477,10 +478,6 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
             .filter(ServiceLevelIndicatorKeys.monitoredServiceIdentifier, monitoredServiceIdentifier)
             .project(ServiceLevelIndicatorKeys.identifier, true);
     return query.asList().stream().map(ServiceLevelIndicator::getIdentifier).collect(Collectors.toList());
-  }
-
-  private ServiceLevelIndicatorDTO sliEntityToDTO(ServiceLevelIndicator serviceLevelIndicator) {
-    return serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
   }
 
   private Map<String, MetricGraph> getMetricGraphs(
