@@ -217,6 +217,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.Mark;
@@ -1097,7 +1098,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
    * @return
    */
   private void validateYaml(String yamlString) throws ScannerException {
-    Yaml yamlObj = new Yaml(new SafeConstructor());
+    Yaml yamlObj = new Yaml(new SafeConstructor(new LoaderOptions()));
 
     // We just load the yaml to see if its well formed.
     LinkedHashMap<String, Object> load = (LinkedHashMap<String, Object>) yamlObj.load(yamlString);

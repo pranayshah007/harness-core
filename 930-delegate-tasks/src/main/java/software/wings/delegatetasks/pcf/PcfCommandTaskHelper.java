@@ -100,6 +100,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.representer.Representer;
@@ -123,7 +124,7 @@ public class PcfCommandTaskHelper {
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(FlowStyle.BLOCK);
     options.setExplicitStart(true);
-    yaml = new Yaml(new SafeConstructor(), new Representer(), options);
+    yaml = new Yaml(new SafeConstructor(new LoaderOptions()), new Representer(new DumperOptions()), options);
   }
 
   public static final String DELIMITER = "__";

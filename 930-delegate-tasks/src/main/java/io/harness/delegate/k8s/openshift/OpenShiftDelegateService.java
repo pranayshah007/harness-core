@@ -33,6 +33,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.representer.Representer;
@@ -72,7 +73,7 @@ public class OpenShiftDelegateService {
     StringBuilder resultYaml = new StringBuilder();
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-    Yaml yaml = new Yaml(new SafeConstructor(), new Representer(), options);
+    Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()), new Representer(new DumperOptions()), options);
 
     Object obj = yaml.load(processedTemplateFile);
     if (obj instanceof Map) {
