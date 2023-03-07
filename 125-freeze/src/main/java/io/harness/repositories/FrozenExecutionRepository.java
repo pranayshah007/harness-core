@@ -13,4 +13,5 @@ import io.harness.freeze.entity.FrozenExecution;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
-public interface FrozenExecutionRepository extends CrudRepository<FrozenExecution, String> {}
+public interface FrozenExecutionRepository
+    extends CrudRepository<FrozenExecution, String>, FrozenExecutionRepositoryCustom {}

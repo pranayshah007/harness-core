@@ -35,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -97,6 +98,13 @@ public class NGFreezeDtoMapper {
         .type(freezeConfigEntity.getType())
         .lastUpdatedAt(freezeConfigEntity.getLastUpdatedAt())
         .build();
+  }
+
+  public List<FreezeSummaryResponseDTO> prepareFreezeResponseSummaryDto(
+      List<FreezeConfigEntity> freezeConfigEntityList) {
+    return freezeConfigEntityList.stream()
+        .map(NGFreezeDtoMapper::prepareFreezeResponseSummaryDto)
+        .collect(Collectors.toList());
   }
 
   public FreezeSummaryResponseDTO prepareFreezeResponseSummaryDto(FreezeConfigEntity freezeConfigEntity) {

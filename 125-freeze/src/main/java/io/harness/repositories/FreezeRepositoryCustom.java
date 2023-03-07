@@ -10,6 +10,7 @@ package io.harness.repositories;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.entity.FreezeConfigEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,8 @@ public interface FreezeRepositoryCustom {
 
   Optional<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String freezeId);
+  List<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> freezeIdList);
   Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus);
 }
