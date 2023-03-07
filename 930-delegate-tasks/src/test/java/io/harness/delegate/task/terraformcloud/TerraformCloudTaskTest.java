@@ -37,6 +37,7 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.terraformcloud.PlanType;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
@@ -44,7 +45,6 @@ import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskRes
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.terraformcloud.TerraformCloudApiTokenCredentials;
@@ -201,7 +201,7 @@ public class TerraformCloudTaskTest {
     RunData runData = new RunData();
     runData.setId("run-123");
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
-    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), anyBoolean(), any(), any());
+    doReturn(runData).when(terraformCloudTaskHelper).createRun(any(), any(), any(), anyBoolean(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_REFRESH_STATE);
     on(task).set("runRequestCreator", runRequestCreator);
@@ -211,7 +211,7 @@ public class TerraformCloudTaskTest {
 
     assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
     verify(terraformCloudTaskHelper, times(1))
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isRefreshOnly());
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isAutoApply());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
@@ -233,7 +233,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     doReturn("policyCheckJsonId")
         .when(terraformCloudTaskHelper)
@@ -268,7 +268,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     doReturn("policyCheckJsonId")
@@ -301,7 +301,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     doReturn("policyCheckJsonId")
@@ -323,10 +323,10 @@ public class TerraformCloudTaskTest {
     verify(terraformCloudTaskHelper, times(1)).overridePolicy(any(), any(), any(), any());
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test(expected = TaskNGDataException.class)
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testRunPlanAndApplyTaskTypeWhenPolicyCantOverride() throws IOException {
+  public void testRunPlanAndApplyTaskTypeWhenPolicyCantOverride() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
     TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
     RunData runData = new RunData();
@@ -336,7 +336,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     doReturn("policyCheckJsonId")
@@ -366,7 +366,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
     doReturn("policyCheckJsonId")
@@ -409,7 +409,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("jsonPlan").when(terraformCloudTaskHelper).getJsonPlan(any(), any(), any());
     doReturn("jsonId").when(terraformCloudTaskHelper).uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
     doReturn(new ArrayList<>()).when(terraformCloudTaskHelper).getPolicyCheckData(any(), any(), any());
@@ -494,7 +494,7 @@ public class TerraformCloudTaskTest {
     ArgumentCaptor<RunRequest> runRequestArgumentCaptor = ArgumentCaptor.forClass(RunRequest.class);
     doReturn(runData)
         .when(terraformCloudTaskHelper)
-        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any(), any());
+        .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     doReturn("output").when(terraformCloudTaskHelper).getApplyOutput(any(), any(), any());
     doReturn(getRollbackRunData()).when(terraformCloudTaskHelper).getRun(any(), any(), any());
     doReturn("relationshipId").when(terraformCloudTaskHelper).getRelationshipId(any(), any());
@@ -530,7 +530,7 @@ public class TerraformCloudTaskTest {
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
     assertThat(delegateResponseData).isInstanceOf(TerraformCloudRollbackTaskResponse.class);
-    verify(terraformCloudTaskHelper, times(0)).createRun(any(), any(), any(), anyBoolean(), any(), any());
+    verify(terraformCloudTaskHelper, times(0)).createRun(any(), any(), any(), anyBoolean(), any());
     verify(terraformCloudTaskHelper, times(0)).streamApplyLogs(any(), any(), any(), any());
   }
 

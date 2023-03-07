@@ -267,8 +267,7 @@ public class TerraformCloudTaskHelperTest {
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_REFRESH_STATE, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, false, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
@@ -286,8 +285,7 @@ public class TerraformCloudTaskHelperTest {
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_PLAN_AND_APPLY, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, false, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
@@ -300,18 +298,17 @@ public class TerraformCloudTaskHelperTest {
   @Category(UnitTests.class)
   public void testCreateRunPlanWithForceExecuteRun() throws IOException {
     RunRequest runRequest = RunRequest.builder().build();
-    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
+    doReturn(getCreateRunResponse(RunStatus.PENDING)).when(terraformCloudClient).createRun(any(), any(), any());
     doReturn(getCreateRunResponse(RunStatus.PENDING)).when(terraformCloudClient).getRun(any(), any(), any());
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, true, TerraformCloudTaskType.RUN_PLAN, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, true, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
     verify(terraformCloudClient, times(1)).getPlan(any(), any(), any());
-    verify(terraformCloudClient, times(2)).getRun(any(), any(), any());
+    verify(terraformCloudClient, times(1)).getRun(any(), any(), any());
     verify(terraformCloudClient, times(1)).forceExecuteRun(any(), any(), any());
   }
 
@@ -396,7 +393,7 @@ public class TerraformCloudTaskHelperTest {
   private TerraformCloudResponse getApplyResponse() {
     ApplyData applyData = new ApplyData();
     applyData.setRelationships(new HashMap<>());
-    applyData.setAttributes(ApplyData.Attributes.builder().status("finished").build());
+    applyData.setAttributes(ApplyData.Attributes.builder().status(ApplyData.Attributes.Status.FINISHED).build());
     Relationship relationshipCv = new Relationship();
     relationshipCv.setData(Collections.singletonList(ResourceLinkage.builder().id("cv-123").build()));
     applyData.getRelationships().put("state-versions", relationshipCv);

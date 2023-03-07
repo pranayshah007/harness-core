@@ -9,6 +9,50 @@ package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
+import static io.harness.delegate.task.terraformcloud.Relationship.APPLY;
+import static io.harness.delegate.task.terraformcloud.Relationship.PLAN;
+import static io.harness.delegate.task.terraformcloud.Relationship.STATE_VERSION;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.APPLY_UNREACHABLE_ERROR;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_APPLY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_CREATE_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_FIND_RELATIONSHIP;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_FORCE_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_APPLY_LOGS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_APPLY_OUTPUT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_LAST_APPLIED;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_ORG;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_PLAN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_PLAN_JSON;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_POLICY_DATA;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_POLICY_OUTPUT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_WORKSPACE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_OVERRIDE_POLICY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_UPLOAD_FILE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RELATIONSHIP_DATA_EMPTY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_POLICY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_TFC_CONFIG;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CONTACT_HARNESS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.CANT_PROCESS_TFC_RESPONSE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLYING;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_CREATING_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_DISCARD_PENDING_RUNS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_APPLIED_POLICIES;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_APPLY_OUTPUT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_JSON_PLAN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_ORG;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_POLICY_DATA;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_POLICY_OUTPUT;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_WORKSPACE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_OVERRIDE_POLICY;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_APPLY_LOGS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_PLAN_LOGS;
+import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.FINISHED;
+import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.UNREACHABLE;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -19,8 +63,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.TerraformCloudException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -46,7 +90,6 @@ import io.jsonwebtoken.lang.Collections;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -69,13 +112,12 @@ import org.apache.commons.io.FileUtils;
 @Slf4j
 @Singleton
 public class TerraformCloudTaskHelper {
-  // toDo Exception handling
-
+  private static final String OUTPUT_FORMAT = "\"%s\" : { \"value\" : %s, \"sensitive\" : %s }";
   private static final int CHUNK_SIZE = 100000;
   @Inject TerraformCloudClient terraformCloudClient;
   @Inject DelegateFileManagerBase delegateFileManager;
 
-  public Map<String, String> getOrganizationsMap(TerraformCloudConfig terraformCloudConfig) throws IOException {
+  public Map<String, String> getOrganizationsMap(TerraformCloudConfig terraformCloudConfig) {
     TerraformCloudApiTokenCredentials credentials =
         (TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials();
 
@@ -88,8 +130,7 @@ public class TerraformCloudTaskHelper {
     return organizations;
   }
 
-  public Map<String, String> getWorkspacesMap(TerraformCloudConfig terraformCloudConfig, String organization)
-      throws IOException {
+  public Map<String, String> getWorkspacesMap(TerraformCloudConfig terraformCloudConfig, String organization) {
     TerraformCloudApiTokenCredentials credentials =
         (TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials();
     List<WorkspaceData> workspacesData = getAllWorkspaces(credentials, organization);
@@ -102,33 +143,43 @@ public class TerraformCloudTaskHelper {
     return workspaces;
   }
 
-  public List<WorkspaceData> getAllWorkspaces(TerraformCloudApiTokenCredentials credentials, String organization)
-      throws IOException {
+  public List<WorkspaceData> getAllWorkspaces(TerraformCloudApiTokenCredentials credentials, String organization) {
     int pageNumber = 1;
-    TerraformCloudResponse<List<WorkspaceData>> response;
     List<WorkspaceData> workspacesData = new ArrayList<>();
-    do {
-      response =
-          terraformCloudClient.listWorkspaces(credentials.getUrl(), credentials.getToken(), organization, pageNumber);
-      workspacesData.addAll(response.getData());
-      pageNumber++;
-    } while (response.getLinks().hasNonNull("next"));
+    try {
+      TerraformCloudResponse<List<WorkspaceData>> response;
+      do {
+        response =
+            terraformCloudClient.listWorkspaces(credentials.getUrl(), credentials.getToken(), organization, pageNumber);
+        workspacesData.addAll(response.getData());
+        pageNumber++;
+      } while (response.getLinks().hasNonNull("next"));
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
+          format(COULD_NOT_GET_WORKSPACE, credentials.getUrl(), organization),
+          new TerraformCloudException(ERROR_GETTING_WORKSPACE, e));
+    }
     return workspacesData;
   }
 
-  public List<OrganizationData> getAllOrganizations(TerraformCloudApiTokenCredentials credentials) throws IOException {
+  public List<OrganizationData> getAllOrganizations(TerraformCloudApiTokenCredentials credentials) {
     int pageNumber = 1;
     List<OrganizationData> organizationsData = new ArrayList<>();
-    TerraformCloudResponse<List<OrganizationData>> response;
-    do {
-      response = terraformCloudClient.listOrganizations(credentials.getUrl(), credentials.getToken(), pageNumber);
-      organizationsData.addAll(response.getData());
-      pageNumber++;
-    } while (response.getLinks().hasNonNull("next"));
+    try {
+      TerraformCloudResponse<List<OrganizationData>> response;
+      do {
+        response = terraformCloudClient.listOrganizations(credentials.getUrl(), credentials.getToken(), pageNumber);
+        organizationsData.addAll(response.getData());
+        pageNumber++;
+      } while (response.getLinks().hasNonNull("next"));
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
+          format(COULD_NOT_GET_ORG, credentials.getUrl()), new TerraformCloudException(ERROR_GETTING_ORG, e));
+    }
     return organizationsData;
   }
 
-  public void streamLogs(LogCallback logCallback, String logReadUrl) throws IOException {
+  public void streamLogs(LogCallback logCallback, String logReadUrl) {
     int lastIndex = 0;
     boolean isEndOfText = false;
     String incompleteLine = "";
@@ -170,130 +221,176 @@ public class TerraformCloudTaskHelper {
     return string.endsWith(String.valueOf((char) 3));
   }
 
-  RunData createRun(String url, String token, RunRequest runRequest, boolean forceExecute,
-      TerraformCloudTaskType terraformCloudTaskType, LogCallback logCallback) throws IOException {
-    RunData runData = terraformCloudClient.createRun(url, token, runRequest).getData();
-    String runId = runData.getId();
-    if (forceExecute && getRunStatus(url, token, runId) == RunStatus.PENDING) {
-      terraformCloudClient.forceExecuteRun(url, token, runId);
+  RunData createRun(String url, String token, RunRequest runRequest, boolean forceExecute, LogCallback logCallback) {
+    String runId;
+    RunData runData;
+    try {
+      runData = terraformCloudClient.createRun(url, token, runRequest).getData();
+      runId = runData.getId();
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          PLEASE_CHECK_TFC_CONFIG, COULD_NOT_CREATE_RUN, new TerraformCloudException(ERROR_CREATING_RUN, e));
     }
 
-    String planId = getRelationshipId(runData, "plan");
-    PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
-    // stream plan logs
-    streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
-    logCallback.saveExecutionLog("Plan finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-
+    if (forceExecute && runData.getAttributes().getStatus() == RunStatus.PENDING) {
+      try {
+        terraformCloudClient.forceExecuteRun(url, token, runId);
+      } catch (Exception e) {
+        throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
+            format(COULD_NOT_FORCE_RUN, runId), new TerraformCloudException(ERROR_DISCARD_PENDING_RUNS, e));
+      }
+    }
+    String planId = getRelationshipId(runData, PLAN);
+    try {
+      PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
+      // stream plan logs
+      streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
+      logCallback.saveExecutionLog("Plan finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
+          format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
+    }
     return getRun(url, token, runId);
   }
 
-  public void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) throws IOException {
-    // stream apply logs
-    String applyId = getRelationshipId(runData, "apply");
-    ApplyData apply = terraformCloudClient.getApply(url, token, applyId).getData();
-    if (!apply.getAttributes().getStatus().equals("unreachable")) {
-      logCallback.saveExecutionLog(
-          format("Apply %s execution...", runData.getId()), LogLevel.INFO, CommandExecutionStatus.RUNNING);
-      streamLogs(logCallback, apply.getAttributes().getLogReadUrl());
-      logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else if (!runData.getAttributes().isHasChanges()) {
-      logCallback.saveExecutionLog("Apply will not run. No changes.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      logCallback.saveExecutionLog(format("Apply for run id: %s is unreachable", runData.getId()), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
+  public void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) {
+    String applyId = getRelationshipId(runData, APPLY);
+    try {
+      ApplyData apply = terraformCloudClient.getApply(url, token, applyId).getData();
+      if (apply.getAttributes().getStatus() != UNREACHABLE) {
+        logCallback.saveExecutionLog(
+            format("Apply %s execution...", runData.getId()), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+        streamLogs(logCallback, apply.getAttributes().getLogReadUrl());
+        logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      } else if (!runData.getAttributes().isHasChanges()) {
+        logCallback.saveExecutionLog("Apply will not run. No changes.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      } else {
+        logCallback.saveExecutionLog(
+            format(APPLY_UNREACHABLE_ERROR, runData.getId()), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+        throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_PLAN,
+            format(APPLY_UNREACHABLE_ERROR, runData.getId()), new TerraformCloudException(ERROR_APPLYING));
+      }
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
+          format(COULD_NOT_GET_APPLY_LOGS, applyId), new TerraformCloudException(ERROR_STREAMING_APPLY_LOGS, e));
     }
   }
 
   public String uploadJsonFile(String accountId, String delegateId, String taskId, String entityId, String fileName,
-      String content, FileBucket fileBucket) throws IOException {
-    final DelegateFile delegateFile = aDelegateFile()
-                                          .withAccountId(accountId)
-                                          .withDelegateId(delegateId)
-                                          .withTaskId(taskId)
-                                          .withEntityId(entityId)
-                                          .withBucket(fileBucket)
-                                          .withFileName(fileName)
-                                          .build();
+      String content, FileBucket fileBucket) {
+    try {
+      final DelegateFile delegateFile = aDelegateFile()
+                                            .withAccountId(accountId)
+                                            .withDelegateId(delegateId)
+                                            .withTaskId(taskId)
+                                            .withEntityId(entityId)
+                                            .withBucket(fileBucket)
+                                            .withFileName(fileName)
+                                            .build();
 
-    File file = Files.createTempFile("compressedTfPlan", ".gz").toFile();
-    try (FileOutputStream output = new FileOutputStream(file);
-         Writer writer = new OutputStreamWriter(new GZIPOutputStream(output), StandardCharsets.UTF_8)) {
-      writer.write(content);
+      File file = Files.createTempFile("compressedTfPlan", ".gz").toFile();
+      try (FileOutputStream output = new FileOutputStream(file);
+           Writer writer = new OutputStreamWriter(new GZIPOutputStream(output), StandardCharsets.UTF_8)) {
+        writer.write(content);
+      }
+      try (InputStream fileStream = new FileInputStream(file)) {
+        delegateFileManager.upload(delegateFile, fileStream);
+      } finally {
+        FileUtils.deleteQuietly(file);
+      }
+      return delegateFile.getFileId();
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          PLEASE_CONTACT_HARNESS, format(COULD_NOT_UPLOAD_FILE, fileName, fileBucket.name()), e);
     }
-    try (InputStream fileStream = new FileInputStream(file)) {
-      delegateFileManager.upload(delegateFile, fileStream);
-    } finally {
-      FileUtils.deleteQuietly(file);
-    }
-    return delegateFile.getFileId();
   }
 
-  String getRelationshipId(Data data, String relationshipName) {
-    // toDo custom exceptions
+  String getRelationshipId(Data data, Relationship relationship) {
     return data.getRelationships()
         .entrySet()
         .stream()
-        .filter(entry -> entry.getKey().equals(relationshipName))
+        .filter(entry -> entry.getKey().equals(relationship.getRelationshipName()))
         .findFirst()
         .orElseThrow(()
-                         -> new InvalidRequestException(
-                             format("Terraform Cloud response invalid. Cant find relationship: %s", relationshipName)))
+                         -> NestedExceptionUtils.hintWithExplanationException(PLEASE_CONTACT_HARNESS,
+                             format(COULD_NOT_FIND_RELATIONSHIP, relationship.getRelationshipName()),
+                             new TerraformCloudException(CANT_PROCESS_TFC_RESPONSE)))
         .getValue()
         .getData()
         .stream()
         .findFirst()
         .orElseThrow(()
-                         -> new InvalidRequestException(format(
-                             "Terraform Cloud response invalid. Relationship: %s data is empty", relationshipName)))
+                         -> NestedExceptionUtils.hintWithExplanationException(PLEASE_CONTACT_HARNESS,
+                             format(RELATIONSHIP_DATA_EMPTY, relationship.getRelationshipName()),
+                             new TerraformCloudException(CANT_PROCESS_TFC_RESPONSE)))
         .getId();
   }
 
-  String getApplyOutput(String url, String token, RunData runData) throws IOException {
-    ApplyData applyData = terraformCloudClient.getApply(url, token, getRelationshipId(runData, "apply")).getData();
-    if (applyData.getAttributes().getStatus().equals("finished")) {
-      String svId = getRelationshipId(applyData, "state-versions");
+  String getApplyOutput(String url, String token, RunData runData) {
+    try {
+      ApplyData applyData = terraformCloudClient.getApply(url, token, getRelationshipId(runData, APPLY)).getData();
+      if (applyData.getAttributes().getStatus() == FINISHED) {
+        String svId = getRelationshipId(applyData, STATE_VERSION);
 
-      int pageNumber = 1;
-      TerraformCloudResponse<List<StateVersionOutputData>> response;
-      List<StateVersionOutputData> stateVersionOutputData = new ArrayList<>();
-      do {
-        response = terraformCloudClient.getStateVersionOutputs(url, token, svId, pageNumber);
-        stateVersionOutputData.addAll(response.getData());
-        pageNumber++;
-      } while (response.getLinks().hasNonNull("next"));
+        int pageNumber = 1;
+        TerraformCloudResponse<List<StateVersionOutputData>> response;
+        List<StateVersionOutputData> stateVersionOutputData = new ArrayList<>();
+        do {
+          response = terraformCloudClient.getStateVersionOutputs(url, token, svId, pageNumber);
+          stateVersionOutputData.addAll(response.getData());
+          pageNumber++;
+        } while (response.getLinks().hasNonNull("next"));
 
-      return format("{ %s }",
-          stateVersionOutputData.stream()
-              .map(out
-                  -> format("\"%s\" : { \"value\" : %s, \"sensitive\" : %s }", out.getAttributes().getName(),
-                      out.getAttributes().getValue(), out.getAttributes().isSensitive()))
-              .collect(Collectors.joining(",")));
+        return format("{ %s }",
+            stateVersionOutputData.stream()
+                .map(out
+                    -> format(OUTPUT_FORMAT, out.getAttributes().getName(), out.getAttributes().getValue(),
+                        out.getAttributes().isSensitive()))
+                .collect(Collectors.joining(",")));
+      }
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
+          COULD_NOT_GET_APPLY_OUTPUT, new TerraformCloudException(ERROR_GETTING_APPLY_OUTPUT, e));
     }
     return null;
   }
 
-  public String getJsonPlan(String url, String token, RunData runData) throws IOException {
-    return terraformCloudClient.getPlanJsonOutput(url, token, getRelationshipId(runData, "plan"));
+  public String getJsonPlan(String url, String token, RunData runData) {
+    try {
+      return terraformCloudClient.getPlanJsonOutput(url, token, getRelationshipId(runData, PLAN));
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
+          COULD_NOT_GET_PLAN_JSON, new TerraformCloudException(ERROR_GETTING_JSON_PLAN, e));
+    }
   }
 
-  public RunStatus getRunStatus(String url, String token, String runId) throws IOException {
+  public RunStatus getRunStatus(String url, String token, String runId) {
     return getRun(url, token, runId).getAttributes().getStatus();
   }
 
-  public String applyRun(String url, String token, String runId, String message, LogCallback logCallback)
-      throws IOException {
-    terraformCloudClient.applyRun(url, token, runId, RunActionRequest.builder().comment(message).build());
-    RunData runData = getRun(url, token, runId);
-    streamApplyLogs(url, token, runData, logCallback);
-    return getApplyOutput(url, token, runData);
+  public String applyRun(String url, String token, String runId, String message, LogCallback logCallback) {
+    try {
+      terraformCloudClient.applyRun(url, token, runId, RunActionRequest.builder().comment(message).build());
+      RunData runData = getRun(url, token, runId);
+      streamApplyLogs(url, token, runData, logCallback);
+      return getApplyOutput(url, token, runData);
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(PLEASE_CHECK_RUN, runId), COULD_NOT_APPLY, new TerraformCloudException(ERROR_APPLY, e));
+    }
   }
 
-  public RunData getRun(String url, String token, String runId) throws IOException {
-    return terraformCloudClient.getRun(url, token, runId).getData();
+  public RunData getRun(String url, String token, String runId) {
+    try {
+      return terraformCloudClient.getRun(url, token, runId).getData();
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(PLEASE_CHECK_RUN, runId), COULD_NOT_GET_RUN, new TerraformCloudException(ERROR_GETTING_RUN, e));
+    }
   }
 
   public void streamSentinelPolicies(
-      String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback) throws IOException {
+      String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback) {
     if (policyCheckData.isEmpty()) {
       logCallback.saveExecutionLog("No policy available", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } else {
@@ -304,7 +401,13 @@ public class TerraformCloudTaskHelper {
         if (status.equals("hard_failed") || status.equals("soft_failed") || status.equals("advisory_failed")) {
           failed = true;
         }
-        String policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
+        String policyCheckOutput;
+        try {
+          policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_POLICY, policyCheck.getId()),
+              COULD_NOT_GET_POLICY_OUTPUT, new TerraformCloudException(ERROR_GETTING_POLICY_OUTPUT, e));
+        }
         Arrays.stream(policyCheckOutput.split("\n"))
             .forEach(raw -> logCallback.saveExecutionLog(raw, LogLevel.INFO, CommandExecutionStatus.RUNNING));
       }
@@ -313,34 +416,49 @@ public class TerraformCloudTaskHelper {
     }
   }
 
-  public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) throws IOException {
+  public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) {
     int pageNumber = 1;
-    TerraformCloudResponse<List<PolicyCheckData>> response;
     List<PolicyCheckData> policyCheckData = new ArrayList<>();
+    TerraformCloudResponse<List<PolicyCheckData>> response;
     do {
-      response = terraformCloudClient.listPolicyChecks(url, token, runId, pageNumber);
+      try {
+        response = terraformCloudClient.listPolicyChecks(url, token, runId, pageNumber);
+      } catch (Exception e) {
+        throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
+            COULD_NOT_GET_POLICY_DATA, new TerraformCloudException(ERROR_GETTING_POLICY_DATA, e));
+      }
       policyCheckData.addAll(response.getData());
       pageNumber++;
     } while (response.getLinks().hasNonNull("next"));
     return policyCheckData;
   }
 
-  public void overridePolicy(String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback)
-      throws IOException {
+  public void overridePolicy(String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback) {
     for (PolicyCheckData policyCheck : policyCheckData) {
       if (policyCheck.getAttributes().getActions().isOverridable()) {
         String policyCheckId = policyCheck.getId();
         logCallback.saveExecutionLog(
             format("Overriding policy check: %s", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
-        terraformCloudClient.overridePolicyChecks(url, token, policyCheckId);
+        try {
+          terraformCloudClient.overridePolicyChecks(url, token, policyCheckId);
+        } catch (Exception e) {
+          throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_POLICY, policyCheckId),
+              COULD_NOT_OVERRIDE_POLICY, new TerraformCloudException(ERROR_OVERRIDE_POLICY, e));
+        }
         logCallback.saveExecutionLog(
             format("Policy check: %s is overridden", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
       }
     }
   }
 
-  public String getLastAppliedRunId(String url, String token, String workspace) throws IOException {
-    List<RunData> appliedRuns = terraformCloudClient.getAppliedRuns(url, token, workspace).getData();
-    return Collections.isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
+  public String getLastAppliedRunId(String url, String token, String workspace) {
+    try {
+      List<RunData> appliedRuns = terraformCloudClient.getAppliedRuns(url, token, workspace).getData();
+      return Collections.isEmpty(appliedRuns) ? null : appliedRuns.get(0).getId();
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
+          format(COULD_NOT_GET_LAST_APPLIED, workspace),
+          new TerraformCloudException(ERROR_GETTING_APPLIED_POLICIES, e));
+    }
   }
 }
