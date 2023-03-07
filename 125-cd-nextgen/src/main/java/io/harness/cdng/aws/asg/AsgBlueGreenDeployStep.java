@@ -17,6 +17,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -120,6 +121,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     AsgBlueGreenExecutionPassThroughData asgBlueGreenExecutionPassThroughData =
         (AsgBlueGreenExecutionPassThroughData) executionPassThroughData;
 
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
+        (AsgBlueGreenDeployStepParameters) stepElementParameters.getSpec();
+
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest =
@@ -133,6 +137,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
             .firstDeployment(asgBlueGreenExecutionPassThroughData.isFirstDeployment())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
+            .useAlreadyRunningInstances(ParameterFieldHelper.getBooleanParameterFieldValue(
+                asgBlueGreenDeployStepParameters.getUseAlreadyRunningInstances()))
             .amiImageId(amiImageId)
             .build();
 

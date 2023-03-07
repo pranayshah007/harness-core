@@ -60,6 +60,7 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
                                            .prodListenerRuleArn(ParameterField.createValueField(PLEASE_FIX_ME))
                                            .stageListener(ParameterField.createValueField(PLEASE_FIX_ME))
                                            .stageListenerRuleArn(ParameterField.createValueField(PLEASE_FIX_ME))
+                                           .useAlreadyRunningInstances(ParameterField.createValueField(false))
                                            .build());
     return node;
   }

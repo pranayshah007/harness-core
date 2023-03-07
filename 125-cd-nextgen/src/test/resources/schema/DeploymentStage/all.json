@@ -905,6 +905,18 @@
             },
             "stageListenerRuleArn": {
               "type": "string"
+            },
+            "useAlreadyRunningInstances": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
