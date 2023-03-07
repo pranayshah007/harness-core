@@ -97,11 +97,11 @@ public class FullyQualifiedIdentifierHelperTest extends CategoryTest {
     ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(
         ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("ref1", "org.ref2", "account.ref3"));
     assertThat(scopeWiseIds).isNotNull();
-    assertThat(scopeWiseIds.getAccountIds()).hasSize(1);
-    assertThat(scopeWiseIds.getAccountIds()).contains("ref3");
-    assertThat(scopeWiseIds.getOrgIds()).hasSize(1);
-    assertThat(scopeWiseIds.getOrgIds()).contains("ref2");
-    assertThat(scopeWiseIds.getProjectIds()).hasSize(1);
-    assertThat(scopeWiseIds.getProjectIds()).contains("ref1");
+    assertThat(scopeWiseIds.getAccountScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getAccountScopedIds()).contains("ref3");
+    assertThat(scopeWiseIds.getOrgScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getOrgScopedIds()).contains("ref2");
+    assertThat(scopeWiseIds.getProjectScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getProjectScopedIds()).contains("ref1");
   }
 }

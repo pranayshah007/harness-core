@@ -149,6 +149,10 @@ public class FullyQualifiedIdentifierHelper {
         }
       }
     }
-    return ScopeWiseIds.builder().accountIds(accountIds).orgIds(orgIds).projectIds(projectIds).build();
+    return ScopeWiseIds.builder()
+        .accountScopedIds(accountIds)
+        .orgScopedIds(orgIds)
+        .projectScopedIds(projectIds)
+        .build();
   }
 }

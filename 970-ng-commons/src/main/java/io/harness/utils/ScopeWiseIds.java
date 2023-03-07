@@ -14,7 +14,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ScopeWiseIds {
-  List<String> projectIds;
-  List<String> orgIds;
-  List<String> accountIds;
+  List<String> projectScopedIds;
+  List<String> orgScopedIds;
+  List<String> accountScopedIds;
 }
