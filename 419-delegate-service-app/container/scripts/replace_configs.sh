@@ -27,6 +27,9 @@ if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
+  export MANAGER_SERVICE_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+
 # REDIS replace configs
 # This doesn't contain atmosphere library and eventsFramework related changes. Add them later as required
 if [[ "" != "$REDIS_URL" ]]; then

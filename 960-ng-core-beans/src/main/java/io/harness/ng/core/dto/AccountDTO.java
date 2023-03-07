@@ -72,11 +72,16 @@ public class AccountDTO {
   @VariableExpression(skipVariableExpression = true)
   long createdAt;
 
+  @Schema(description = "Specifies delegate ring version for account")
+  @VariableExpression(skipVariableExpression = true)
+  private String ringName;
+
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,
       AuthenticationMechanism authenticationMechanism, ServiceAccountConfig serviceAccountConfig,
-      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt) {
+      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt,
+      String ringName) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
@@ -88,6 +93,7 @@ public class AccountDTO {
     this.serviceAccountConfig = serviceAccountConfig;
     this.isProductLed = isProductLed;
     this.isTwoFactorAdminEnforced = isTwoFactorAdminEnforced;
+    this.ringName = ringName;
     this.createdAt = createdAt;
   }
 }

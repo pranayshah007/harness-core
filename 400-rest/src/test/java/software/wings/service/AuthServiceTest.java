@@ -69,6 +69,7 @@ import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.usermembership.remote.UserMembershipClient;
 
 import software.wings.WingsBaseTest;

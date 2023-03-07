@@ -14,11 +14,11 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static java.util.Collections.emptyList;
 
 import io.harness.delegate.beans.SupportedDelegateVersion;
-import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
 import io.harness.security.annotations.PublicApi;
+import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
