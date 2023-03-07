@@ -236,7 +236,6 @@ es.moki.ratelimitj:ratelimitj-inmemory:jar:0.6.0
 guru.nidi.com.kitfox:svgSalamander:jar:1.1.3
 guru.nidi:graphviz-java:jar:0.16.3
 guru.nidi:graphviz-rough:jar:0.16.3
-info.jerrinot:subzero-core:jar:0.7
 io.cloudsoft.windows:winrm4j-client:jar:0.9.0-SNAPSHOT
 io.cloudsoft.windows:winrm4j:jar:0.9.0-SNAPSHOT
 io.dropwizard-bundles:dropwizard-configurable-assets-bundle:jar:1.3.5

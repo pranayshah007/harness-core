@@ -873,6 +873,25 @@ public class CDStepHelper {
     return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
   }
 
+  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
+    boolean retVal = true;
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      if (manifestOutcome.getStore() != null) {
+        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      }
+    }
+    return retVal;
+  }
+
+  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
+      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public List<String> fetchFilesContentFromLocalStore(
       Ambiance ambiance, ManifestOutcome manifestOutcome, LogCallback logCallback) {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();

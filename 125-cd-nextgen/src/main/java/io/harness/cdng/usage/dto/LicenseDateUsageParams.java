@@ -9,7 +9,7 @@ package io.harness.cdng.usage.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,10 +29,10 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ApiModel("ServiceInstancesDateUsageParams")
-@Schema(name = "ServiceInstancesDateUsageParams", description = "Service Instances date usage params")
-public class ServiceInstancesDateUsageParams {
+@ApiModel("LicenseDateUsageParams")
+@Schema(name = "LicenseDateUsageParams", description = "License date usage params")
+public class LicenseDateUsageParams {
   private String fromDate;
   private String toDate;
-  private ServiceInstanceReportType reportType;
+  private LicenseDateUsageReportType reportType;
 }

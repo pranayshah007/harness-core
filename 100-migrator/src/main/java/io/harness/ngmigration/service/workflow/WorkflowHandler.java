@@ -195,7 +195,7 @@ public abstract class WorkflowHandler {
     }
 
     return ParameterField.createFieldWithDefaultValue(
-        true, true, INPUT_EXPRESSION, variable.getValue(), validator, true);
+        true, false, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
   public List<StageElementWrapperConfig> asStages(

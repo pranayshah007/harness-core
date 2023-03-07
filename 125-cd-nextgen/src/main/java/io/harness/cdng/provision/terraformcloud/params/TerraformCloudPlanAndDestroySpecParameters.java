@@ -30,6 +30,7 @@ public class TerraformCloudPlanAndDestroySpecParameters implements TerraformClou
   ParameterField<String> organization;
   ParameterField<String> workspace;
   ParameterField<Boolean> discardPendingRuns;
+  ParameterField<Boolean> overridePolicies;
   Map<String, Object> variables;
   ParameterField<List<String>> targets;
 

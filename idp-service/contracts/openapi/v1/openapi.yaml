@@ -277,6 +277,24 @@ paths:
         name: namespace
         in: path
         required: true
+  '/v1/provision-idp/{accountIdentifier}':
+    post:
+      summary: Provision IDP
+      operationId: provision-idp
+      responses:
+        '200':
+          $ref: '#/components/responses/NamespaceResponse'
+      tags:
+        - Provision
+      description: Provision IDP for given account
+      security:
+        - x-api-key: [ ]
+    parameters:
+      - schema:
+          type: string
+        name: accountIdentifier
+        in: path
+        required: true
 components:
   schemas:
     EnvironmentSecret:

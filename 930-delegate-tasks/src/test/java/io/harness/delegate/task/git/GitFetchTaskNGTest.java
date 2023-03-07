@@ -136,8 +136,8 @@ public class GitFetchTaskNGTest {
   public void testTaskRun() throws IOException {
     doReturn(fetchFilesResult)
         .when(ngGitService)
-        .fetchFilesByPath(
-            any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
+        .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
+            any(GitConfigDTO.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
     when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
@@ -151,8 +151,8 @@ public class GitFetchTaskNGTest {
   public void testFetchFilesFromRepoWithNonExistentFile() throws IOException {
     doThrow(new InvalidRequestException(TEST_INPUT_ID, new NoSuchFileException(TEST_INPUT_ID)))
         .when(ngGitService)
-        .fetchFilesByPath(
-            any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
+        .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
+            any(GitConfigDTO.class));
     when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
     GitFetchResponse response = gitFetchTaskNG.run(taskParameters);
@@ -165,8 +165,8 @@ public class GitFetchTaskNGTest {
   public void testFetchFilesFromRepoWithException() throws IOException {
     doThrow(new InvalidRequestException(TEST_INPUT_ID))
         .when(ngGitService)
-        .fetchFilesByPath(
-            any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
+        .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
+            any(GitConfigDTO.class));
     when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
     assertThatThrownBy(() -> gitFetchTaskNG.run(taskParameters))

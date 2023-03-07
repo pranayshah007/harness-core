@@ -236,7 +236,8 @@ public class TerraformCloudStepHelper {
     return outputs;
   }
 
-  public void saveTerraformCloudConfig(TerraformCloudRunSpecParameters spec, String runId, Ambiance ambiance) {
+  public void saveTerraformCloudConfig(
+      TerraformCloudRunSpecParameters spec, String workspaceId, String lastSuccessfulRun, Ambiance ambiance) {
     String connectorRef;
     String provisionIdentifier = getProvisionIdentifier(spec);
     TerraformCloudRunType type = spec.getType();
@@ -255,27 +256,15 @@ public class TerraformCloudStepHelper {
     } else {
       throw new InvalidRequestException(format("Can't save Terraform Cloud Config for type: [%s]", type));
     }
-    terraformCloudConfigDAL.saveTerraformCloudConfig(
-        TerraformCloudConfig.builder()
-            .accountId(AmbianceUtils.getAccountId(ambiance))
-            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
-            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-            .entityId(generateFullIdentifier(provisionIdentifier, ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId())
-            .connectorRef(connectorRef)
-            .runId(runId)
-            .build());
-  }
-
-  public void saveTerraformCloudConfig(TerraformCloudConfig rollbackConfig, Ambiance ambiance) {
     terraformCloudConfigDAL.saveTerraformCloudConfig(TerraformCloudConfig.builder()
                                                          .accountId(AmbianceUtils.getAccountId(ambiance))
                                                          .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
                                                          .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-                                                         .entityId(rollbackConfig.getEntityId())
-                                                         .pipelineExecutionId(ambiance.getPlanExecutionId())
-                                                         .connectorRef(rollbackConfig.getConnectorRef())
-                                                         .runId(rollbackConfig.getRunId())
+                                                         .provisionerIdentifier(provisionIdentifier)
+                                                         .stageExecutionId(ambiance.getStageExecutionId())
+                                                         .connectorRef(connectorRef)
+                                                         .lastSuccessfulRun(lastSuccessfulRun)
+                                                         .workspaceId(workspaceId)
                                                          .build());
   }
 }

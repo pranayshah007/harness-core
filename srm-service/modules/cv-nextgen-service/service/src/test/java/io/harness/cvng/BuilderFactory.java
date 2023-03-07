@@ -210,6 +210,7 @@ import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
@@ -218,7 +219,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO.ServiceLevelIndicatorDTOBuilder;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -233,14 +233,18 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMet
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorBuilder;
+import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorBuilder;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
+import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob.AutoVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
@@ -1407,7 +1411,8 @@ public class BuilderFactory {
   public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
         .sliMissingDataType(SLIMissingDataType.GOOD)
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .type(SLIExecutionType.WINDOW)
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .thresholdType(ThresholdType.GREATER_THAN)
@@ -1432,11 +1437,38 @@ public class BuilderFactory {
         .monitoredServiceIdentifier("monitoredServiceIdentifier");
   }
 
+  public ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorBuilder thresholdServiceLevelIndicatorBuilder() {
+    return ThresholdServiceLevelIndicator.builder()
+        .sliMissingDataType(SLIMissingDataType.GOOD)
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .metric1("metric1")
+        .thresholdValue(80.0)
+        .thresholdType(ThresholdType.GREATER_THAN)
+        .healthSourceIdentifier("healthSourceIdentifier")
+        .monitoredServiceIdentifier("monitoredServiceIdentifier");
+  }
+
+  public RequestServiceLevelIndicator.RequestServiceLevelIndicatorBuilder requestServiceLevelIndicatorBuilder() {
+    return RequestServiceLevelIndicator.builder()
+        .sliMissingDataType(SLIMissingDataType.GOOD)
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .eventType(RatioSLIMetricEventType.GOOD)
+        .metric1("metric1")
+        .metric2("metric2")
+        .healthSourceIdentifier("healthSourceIdentifier")
+        .monitoredServiceIdentifier("monitoredServiceIdentifier");
+  }
+
   public ServiceLevelIndicatorDTOBuilder getThresholdServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
+        .type(SLIExecutionType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
         .sliMissingDataType(SLIMissingDataType.GOOD)
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("Calls per Minute")
@@ -1448,9 +1480,10 @@ public class BuilderFactory {
 
   public ServiceLevelIndicatorDTOBuilder getRatioServiceLevelIndicatorDTOBuilder() {
     return ServiceLevelIndicatorDTO.builder()
+        .type(SLIExecutionType.WINDOW)
         .healthSourceRef("healthSourceIdentifier")
         .sliMissingDataType(SLIMissingDataType.GOOD)
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .metric1("Errors per Minute")
@@ -1459,6 +1492,18 @@ public class BuilderFactory {
                             .thresholdValue(100.0)
                             .thresholdType(ThresholdType.GREATER_THAN_EQUAL_TO)
                             .build())
+                  .build());
+  }
+
+  public ServiceLevelIndicatorDTOBuilder getRequestServiceLevelIndicatorDTOBuilder() {
+    return ServiceLevelIndicatorDTO.builder()
+        .name("name")
+        .identifier("identifier")
+        .type(SLIExecutionType.REQUEST)
+        .spec(RequestBasedServiceLevelIndicatorSpec.builder()
+                  .metric1("Errors per Minute")
+                  .metric2("Calls per Minute")
+                  .eventType(RatioSLIMetricEventType.GOOD)
                   .build());
   }
 
@@ -1473,6 +1518,14 @@ public class BuilderFactory {
     return RatioSLIMetricSpec.builder()
         .thresholdType(ThresholdType.GREATER_THAN)
         .thresholdValue(20.0)
+        .eventType(RatioSLIMetricEventType.GOOD)
+        .metric1("metric1")
+        .metric2("metric2");
+  }
+
+  public RequestBasedServiceLevelIndicatorSpec.RequestBasedServiceLevelIndicatorSpecBuilder
+  getRequestBasedServiceLevelIndicatorSpecBuilder() {
+    return RequestBasedServiceLevelIndicatorSpec.builder()
         .eventType(RatioSLIMetricEventType.GOOD)
         .metric1("metric1")
         .metric2("metric2");

@@ -29,15 +29,17 @@ public class TerraformCloudRollbackStepParameters implements SpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   ParameterField<String> provisionerIdentifier;
   ParameterField<Boolean> discardPendingRuns;
+  ParameterField<Boolean> overridePolicies;
   ParameterField<String> message;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformCloudRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> provisionerIdentifier, ParameterField<Boolean> discardPendingRuns,
-      ParameterField<String> message) {
+      ParameterField<Boolean> overridePolicies, ParameterField<String> message) {
     this.delegateSelectors = delegateSelectors;
     this.provisionerIdentifier = provisionerIdentifier;
     this.discardPendingRuns = discardPendingRuns;
+    this.overridePolicies = overridePolicies;
     this.message = message;
   }
 }

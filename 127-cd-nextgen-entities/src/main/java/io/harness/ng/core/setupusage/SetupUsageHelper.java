@@ -31,9 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class SetupUsageHelper {
   @Inject @Named(SETUP_USAGE) private Producer producer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
@@ -64,13 +66,15 @@ public class SetupUsageHelper {
                                                            .addAllReferredEntities(entityDetailProtoDTOs)
                                                            .setDeleteOldReferredByRecords(true)
                                                            .build();
-      producer.send(
+      String messageId = producer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", entity.getAccountId(),
                   EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
+      log.info("Emitted service event with id {} for entityreference {} and accountId {}", messageId,
+          entityReferenceDTO, entity.getAccountId());
     }
   }
 
@@ -112,13 +116,15 @@ public class SetupUsageHelper {
               .addAllReferredEntityWithSetupUsageDetail(entityDetailWithSetupUsageDetailProtoDTOs)
               .build();
 
-      producer.send(
+      String messageId = producer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", accountId,
                   EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
+      log.info("Emitted infra event with id {} for entityreference {} and accountId {}", messageId, entityReferenceDTO,
+          accountId);
     }
   }
 
@@ -136,12 +142,14 @@ public class SetupUsageHelper {
                                                          .setDeleteOldReferredByRecords(true)
                                                          .build();
     // Send Events for all referredEntitiesType to delete them
-    producer.send(
+    String messageId = producer.send(
         Message.newBuilder()
             .putAllMetadata(ImmutableMap.of("accountId", entity.getAccountId(), EventsFrameworkMetadataConstants.ACTION,
                 EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
             .setData(entityReferenceDTO.toByteString())
             .build());
+    log.info("Emitted delete service event with id {} for entityreference {} and accountId {}", messageId,
+        entityReferenceDTO, entity.getAccountId());
   }
 
   public void deleteInfraSetupUsages(EntityDetailProtoDTO entityDetail, String accountId) {
@@ -151,10 +159,13 @@ public class SetupUsageHelper {
                                                          .setDeleteOldReferredByRecords(true)
                                                          .build();
     // Send Events for all referredEntitiesType to delete them
-    producer.send(Message.newBuilder()
-                      .putAllMetadata(ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.ACTION,
-                          EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
-                      .setData(entityReferenceDTO.toByteString())
-                      .build());
+    String messageId = producer.send(
+        Message.newBuilder()
+            .putAllMetadata(ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.ACTION,
+                EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+            .setData(entityReferenceDTO.toByteString())
+            .build());
+    log.info("Emitted delete infra setup usage event with id {} for entityreference {} and accountId {}", messageId,
+        entityReferenceDTO, accountId);
   }
 }

@@ -10,7 +10,8 @@ package io.harness.cdng.usage.pojos;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.cd.CDLicenseType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 
 import java.time.LocalDate;
 import javax.validation.constraints.NotBlank;
@@ -27,9 +28,10 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ServiceInstancesDateUsageFetchData {
+public class LicenseDateUsageFetchData {
   @NotBlank String accountIdentifier;
   @NotBlank private LocalDate fromDate;
   @NotBlank private LocalDate toDate;
-  private ServiceInstanceReportType reportType = ServiceInstanceReportType.DAILY;
+  @NotBlank private CDLicenseType licenseType;
+  private LicenseDateUsageReportType reportType = LicenseDateUsageReportType.DAILY;
 }

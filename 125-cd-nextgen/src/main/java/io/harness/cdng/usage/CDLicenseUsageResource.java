@@ -9,8 +9,10 @@ package io.harness.cdng.usage;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.LICENSE_TYPE_KEY;
+import static io.harness.NGCommonEntityConstants.LICENSE_TYPE_PARAM_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_DATE_USAGE_PARAMS_MESSAGE;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.LICENSE_DATE_USAGE_PARAMS_MESSAGE;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGCommonEntityConstants;
@@ -19,8 +21,9 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cd.CDLicenseType;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -121,23 +124,21 @@ public class CDLicenseUsageResource {
   }
 
   @POST
-  @Path("si-date")
-  @ApiOperation(value = "Get Service Instances date usage in CD Module", nickname = "getServiceInstancesDateUsage")
+  @Path("date")
+  @ApiOperation(value = "Get license date usage in CD Module", nickname = "getLicenseDateUsage")
   @Hidden
-  @Operation(operationId = "getServiceInstancesDateUsage",
-      summary = "Get Service Instances usage by dates in requested date range",
+  @Operation(operationId = "getLicenseDateUsage", summary = "Get license usage by dates in requested date range",
       responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns service instances usage per dates")
-      })
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns license usage per dates") })
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
-  public ResponseDTO<ServiceInstancesDateUsageDTO>
-  getServiceInstancesDateUsage(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                                   ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Valid @RequestBody(
-          description = SERVICE_INSTANCES_DATE_USAGE_PARAMS_MESSAGE) ServiceInstancesDateUsageParams dateUsageParams) {
+  public ResponseDTO<LicenseDateUsageDTO>
+  getLicenseDateUsage(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                          ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = LICENSE_TYPE_PARAM_MESSAGE) @NotNull @QueryParam(
+          LICENSE_TYPE_KEY) CDLicenseType licenseType,
+      @Valid @RequestBody(description = LICENSE_DATE_USAGE_PARAMS_MESSAGE) LicenseDateUsageParams dateUsageParams) {
     return ResponseDTO.newResponse(
-        cdLicenseUsageService.getServiceInstancesDateUsage(accountIdentifier, dateUsageParams));
+        cdLicenseUsageService.getLicenseDateUsage(accountIdentifier, dateUsageParams, licenseType));
   }
 
   private Pageable getPageRequest(int page, int size, List<String> sort) {

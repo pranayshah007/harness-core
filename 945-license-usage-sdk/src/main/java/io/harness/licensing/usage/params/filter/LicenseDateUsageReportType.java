@@ -7,4 +7,4 @@
 
 package io.harness.licensing.usage.params.filter;
 
-public enum ServiceInstanceReportType { DAILY, MONTHLY }
+public enum LicenseDateUsageReportType { DAILY, MONTHLY }

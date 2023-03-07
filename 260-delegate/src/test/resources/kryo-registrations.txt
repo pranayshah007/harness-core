@@ -1980,6 +1980,7 @@
 150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
 150028:io.harness.delegatetasks.NGVaultTokenLookupTaskResponse
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
+229305:io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig
 400103:software.wings.beans.CustomArtifactServerConfig

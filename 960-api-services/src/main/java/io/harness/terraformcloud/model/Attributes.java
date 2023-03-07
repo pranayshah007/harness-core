@@ -33,5 +33,6 @@ public class Attributes {
   @JsonProperty("empty_apply") private boolean emptyApply;
   @JsonProperty("auto-apply") private boolean autoApply;
   @JsonProperty("target-addrs") private List<String> targets;
+  @JsonProperty("has-changes") private boolean hasChanges;
   List<Variable> variables;
 }

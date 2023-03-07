@@ -79,12 +79,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @ChangeDataCapture(table = "pipeline_execution_summary_ci", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntity")
+@ChangeDataCapture(table = "pipeline_execution_summary", dataStore = "pms-harness", fields = {},
+    handler = "PipelineExecutionSummaryEntityAllStages")
 @ChangeDataCapture(table = "pipeline_execution_summary_cd", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityCD")
 @ChangeDataCapture(table = "service_infra_info", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
 @ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityCIStage")
+@ChangeDataCapture(table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "TagsInfoNGCD")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;

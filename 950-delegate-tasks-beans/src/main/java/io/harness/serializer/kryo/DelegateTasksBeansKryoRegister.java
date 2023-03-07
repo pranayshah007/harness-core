@@ -616,6 +616,7 @@ import io.harness.delegate.task.azure.response.AzureVMSSSetupTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSSwitchRoutesResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskResponse;
+import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.delegate.task.ci.CIBuildPushParameters;
 import io.harness.delegate.task.ci.CIBuildPushParameters.CIBuildPushTaskType;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
@@ -2381,6 +2382,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudRunTaskResponse.class, 680009);
     kryo.register(RollbackType.class, 680010);
     kryo.register(TerraformCloudRollbackTaskResponse.class, 680011);
+    kryo.register(BambooBuildTaskNGResponse.class, 229305);
 
     kryo.register(AwsSamInstallationCapability.class, 10000401);
     kryo.register(AwsLambdaDeployRequest.class, 10000502);

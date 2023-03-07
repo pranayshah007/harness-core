@@ -194,10 +194,10 @@ public class ClusterServiceImpl implements ClusterService {
     List<Cluster> entities = new ArrayList<>();
     ScopeWiseIds scopeWiseIds =
         FullyQualifiedIdentifierHelper.getScopeWiseIds(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
-    entities.addAll(
-        getAllClusters(page, size, accountIdentifier, orgIdentifier, projectIdentifier, scopeWiseIds.getProjectIds()));
-    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, scopeWiseIds.getOrgIds()));
-    entities.addAll(getAllClusters(page, size, accountIdentifier, null, null, scopeWiseIds.getAccountIds()));
+    entities.addAll(getAllClusters(
+        page, size, accountIdentifier, orgIdentifier, projectIdentifier, scopeWiseIds.getProjectScopedIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, scopeWiseIds.getOrgScopedIds()));
+    entities.addAll(getAllClusters(page, size, accountIdentifier, null, null, scopeWiseIds.getAccountScopedIds()));
 
     return entities;
   }

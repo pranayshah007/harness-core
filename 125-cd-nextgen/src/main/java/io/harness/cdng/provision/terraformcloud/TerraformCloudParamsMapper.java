@@ -70,6 +70,8 @@ public class TerraformCloudParamsMapper {
             planAndApplySpecParameters.getWorkspace(), planAndApplySpecParameters.getDiscardPendingRuns(),
             planAndApplySpecParameters.getVariables(), null, null, planAndApplySpecParameters.getTargets())
                       .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
+        builder.policyOverride(
+            ParameterFieldHelper.getBooleanParameterFieldValue(planAndApplySpecParameters.getOverridePolicies()));
         break;
       case PLAN_AND_DESTROY:
         TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
@@ -78,6 +80,8 @@ public class TerraformCloudParamsMapper {
             planAndDestroySpecParameters.getWorkspace(), planAndDestroySpecParameters.getDiscardPendingRuns(),
             planAndDestroySpecParameters.getVariables(), null, null, planAndDestroySpecParameters.getTargets())
                       .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_DESTROY);
+        builder.policyOverride(
+            ParameterFieldHelper.getBooleanParameterFieldValue(planAndDestroySpecParameters.getOverridePolicies()));
         break;
       case PLAN:
         TerraformCloudPlanSpecParameters planSpecParameters = (TerraformCloudPlanSpecParameters) runSpec;

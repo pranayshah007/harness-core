@@ -163,17 +163,26 @@ public class NotificationHelper {
     if (freezeInfoConfig != null) {
       String orgId = freezeInfoConfig.getOrgIdentifier();
       String projectId = freezeInfoConfig.getProjectIdentifier();
+      return getManualFreezeUrl(baseUrl, accountId, orgId, projectId, freezeInfoConfig.getIdentifier());
+    }
+    return freezeUrl;
+  }
+
+  public String getManualFreezeUrl(
+      String baseUrl, String accountId, String orgId, String projectId, String identifier) {
+    String freezeUrl = "";
+    if (accountId != null) {
       if (orgId != null) {
         if (projectId != null) {
           freezeUrl = String.format("%s/account/%s/cd/orgs/%s/projects/%s/setup/freeze-window-studio/window/%s",
-              baseUrl, accountId, orgId, projectId, freezeInfoConfig.getIdentifier());
+              baseUrl, accountId, orgId, projectId, identifier);
         } else {
           freezeUrl = String.format("%s/account/%s/settings/organizations/%s/setup/freeze-window-studio/window/%s",
-              baseUrl, accountId, orgId, freezeInfoConfig.getIdentifier());
+              baseUrl, accountId, orgId, identifier);
         }
       } else {
-        freezeUrl = String.format("%s/account/%s/settings/freeze-window-studio/window/%s", baseUrl, accountId,
-            freezeInfoConfig.getIdentifier());
+        freezeUrl =
+            String.format("%s/account/%s/settings/freeze-window-studio/window/%s", baseUrl, accountId, identifier);
       }
     }
     return freezeUrl;
@@ -184,6 +193,14 @@ public class NotificationHelper {
     if (freezeInfoConfig != null) {
       String orgId = freezeInfoConfig.getOrgIdentifier();
       String projectId = freezeInfoConfig.getProjectIdentifier();
+      return getGlobalFreezeUrl(baseUrl, accountId, orgId, projectId);
+    }
+    return freezeUrl;
+  }
+
+  public String getGlobalFreezeUrl(String baseUrl, String accountId, String orgId, String projectId) {
+    String freezeUrl = "";
+    if (accountId != null) {
       if (orgId != null) {
         if (projectId != null) {
           freezeUrl = String.format(

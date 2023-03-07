@@ -447,7 +447,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    registerNotificationTemplates(injector);
+    if (!appConfig.isDisableFreezeNotificationTemplate()) {
+      registerNotificationTemplates(injector);
+    }
     registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);

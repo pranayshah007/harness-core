@@ -21,6 +21,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.services.AccountService;
+import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.PermissionTypes;
@@ -30,6 +31,7 @@ import io.harness.freeze.beans.response.FreezeDetailedResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.response.FrozenExecutionDetails;
 import io.harness.freeze.beans.response.GlobalFreezeBannerDetailsResponseDTO;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
@@ -125,6 +127,7 @@ public class FreezeCRUDResource {
   private final NotificationHelper notificationHelper;
   private static final String DEPLOYMENTFREEZE = "DEPLOYMENTFREEZE";
   @Inject private AccountService accountService;
+  @Inject NgExpressionHelper ngExpressionHelper;
 
   @POST
   @ApiOperation(value = "Creates a Freeze", nickname = "createFreeze")
@@ -388,6 +391,28 @@ public class FreezeCRUDResource {
             .activeOrUpcomingGlobalFreezes(activeOrUpcomingGlobalFreezes)
             .build();
     return ResponseDTO.newResponse(globalFreezeBannerDetailsResponseDTO);
+  }
+
+  @GET
+  @Path("/getFrozenExecutionDetails")
+  @ApiOperation(value = "Get list of freeze acted on a frozen execution", nickname = "getFrozenExecutionDetails")
+  @Operation(operationId = "getFrozenExecutionDetails", summary = "Get list of freeze acted on a frozen execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns list of freeze acted on a frozen execution")
+      })
+  public ResponseDTO<FrozenExecutionDetails>
+  getFrozenExecutionDetails(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                            @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @NotNull @QueryParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
+    String baseUrl = ngExpressionHelper.getBaseUrl(accountId);
+    return ResponseDTO.newResponse(
+        freezeCRUDService.getFrozenExecutionDetails(accountId, orgId, projectId, planExecutionId, baseUrl));
   }
 
   @POST
