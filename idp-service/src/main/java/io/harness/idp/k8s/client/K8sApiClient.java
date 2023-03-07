@@ -54,7 +54,7 @@ public class K8sApiClient implements K8sClient {
 
   @Override
   public V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace) {
-    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
+    KubernetesConfig kubernetesConfig = getKubernetesConfig();
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     V1Secret secret = getSecret(coreV1Api, namespace, secretName);
@@ -71,7 +71,7 @@ public class K8sApiClient implements K8sClient {
   @Override
   public V1ConfigMap updateConfigMapData(
       String namespace, String configMapName, Map<String, String> data, boolean replace) {
-    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
+    KubernetesConfig kubernetesConfig = getKubernetesConfig();
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     V1ConfigMap configMap = getConfigMap(coreV1Api, namespace, configMapName);
@@ -87,7 +87,7 @@ public class K8sApiClient implements K8sClient {
 
   @Override
   public void removeSecretData(String namespace, String secretName, List<String> envNames) {
-    KubernetesConfig kubernetesConfig = getKubernetesConfig(namespace);
+    KubernetesConfig kubernetesConfig = getKubernetesConfig();
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     V1Secret secret = getSecret(coreV1Api, namespace, secretName);
@@ -180,10 +180,7 @@ public class K8sApiClient implements K8sClient {
   }
 
   @Override
-  public KubernetesConfig getKubernetesConfig(String namespace) {
-    if (StringUtils.isBlank(namespace)) {
-      throw new InvalidRequestException("Empty namespace");
-    }
+  public KubernetesConfig getKubernetesConfig() {
     if (StringUtils.isBlank(backstageMasterUrl)) {
       throw new ClusterCredentialsNotFoundException("Master URL not found");
     }

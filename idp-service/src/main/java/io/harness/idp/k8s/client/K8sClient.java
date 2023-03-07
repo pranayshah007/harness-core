@@ -18,5 +18,5 @@ public interface K8sClient {
   V1Secret updateSecretData(String namespace, String secretName, Map<String, byte[]> data, boolean replace);
   V1ConfigMap updateConfigMapData(String namespace, String configMapName, Map<String, String> data, boolean replace);
   void removeSecretData(String namespace, String backstageSecret, List<String> envNames);
-  KubernetesConfig getKubernetesConfig(String namespace);
+  KubernetesConfig getKubernetesConfig();
 }

@@ -7,6 +7,11 @@
 
 package io.harness.idp.status.k8s;
 
+import static io.harness.exception.WingsException.USER;
+
+import static java.lang.String.format;
+
+import io.harness.exception.InvalidRequestException;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.k8s.KubernetesHelperService;
@@ -14,6 +19,7 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -40,7 +46,7 @@ public class PodHealthCheck implements HealthCheck {
     StatusInfo statusInfo = new StatusInfo();
     try {
       String namespace = getNamespaceForAccountId(accountId);
-      ApiClient apiClient = kubernetesHelperService.getApiClient(k8sClient.getKubernetesConfig(namespace));
+      ApiClient apiClient = kubernetesHelperService.getApiClient(k8sClient.getKubernetesConfig());
       CoreV1Api api = new CoreV1Api(apiClient);
       // TODO: Implement logic for pod restart scenarios
       V1PodList podList =
@@ -60,10 +66,10 @@ public class PodHealthCheck implements HealthCheck {
           statusInfo.setReason(getPodMessage(pod));
         }
       }
-    } catch (Exception e) {
-      String err = "Could not check for pod status, " + e.getMessage();
+    } catch (ApiException e) {
+      String err = format("Could not check for pod status. Code: %s, message: %s", e.getCode(), e.getMessage());
       log.error(err, e);
-      statusInfo.setReason(err);
+      throw new InvalidRequestException(err, e, USER);
     }
     return Optional.of(statusInfo);
   }
