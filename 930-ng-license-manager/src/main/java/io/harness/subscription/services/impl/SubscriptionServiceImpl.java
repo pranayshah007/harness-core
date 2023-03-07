@@ -19,7 +19,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
 import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
@@ -235,13 +234,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         "Subscription Creation Initiated", null, accountIdentifier, subscriptionRequest.getModuleType().toString());
 
     isSelfServiceEnable();
-
-    List<ModuleLicense> moduleLicenses =
-        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
-    if (moduleLicenses.stream().anyMatch(
-            moduleLicense -> moduleLicense.isActive() && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
-      throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
-    }
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
