@@ -27,10 +27,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.pipeline.ExecutorInfoDTO;
-import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.*;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -43,6 +40,7 @@ import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
 import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
@@ -377,6 +375,21 @@ public class PipelinesApiUtils {
         .build();
   }
 
+  public static GitEntityInfo populateGitMoveDetails(GitMoveDetails gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .commitMsg(gitDetails.getCommitMessage())
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
+        .baseBranch(gitDetails.getBaseBranch())
+        .connectorRef(gitDetails.getConnectorRef())
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
+
   public static GitEntityInfo populateGitUpdateDetails(GitUpdateDetails gitDetails) {
     if (gitDetails == null) {
       return GitEntityInfo.builder().build();
@@ -476,5 +489,31 @@ public class PipelinesApiUtils {
                    .denyMessages(policy.getDenyMessagesList())
                    .status(GovernanceStatus.fromValue(policy.getStatus().toUpperCase())))
         .collect(Collectors.toList());
+  }
+
+  public static MoveConfigOperationDTO buildMoveConfigOperationDTO(GitMoveDetails gitDetails,
+      io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType moveConfigOperationType) {
+    return MoveConfigOperationDTO.builder()
+        .repoName(gitDetails.getRepoName())
+        .branch(gitDetails.getBranchName())
+        .moveConfigOperationType(getMoveConfigType(moveConfigOperationType))
+        .connectorRef(gitDetails.getConnectorRef())
+        .baseBranch(gitDetails.getBaseBranch())
+        .commitMessage(gitDetails.getCommitMessage())
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
+        .filePath(gitDetails.getFilePath())
+        .build();
+  }
+
+  public static io.harness.pms.pipeline.MoveConfigOperationType getMoveConfigType(
+      io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType moveConfigOperationType) {
+    switch (moveConfigOperationType) {
+      case INLINE_TO_REMOTE:
+        return io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+      case REMOTE_TO_INLINE:
+        return io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
+      default:
+        throw new InvalidRequestException("Invalid move config type provided.");
+    }
   }
 }

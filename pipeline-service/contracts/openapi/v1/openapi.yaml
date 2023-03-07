@@ -468,6 +468,27 @@ paths:
       tags:
         - Inputs
       x-internal: false
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/move-config':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    post:
+      summary: Move Pipeline YAML from inline to remote or remote to inline
+      operationId: moveConfig
+      description: Creates a remote entity by fetching pipeline YAML from Harness or an inline entity by fetching pipeline YAML from a remote repository.
+      responses:
+        '200':
+          $ref: '#/components/responses/PipelineMoveConfigResponseBody'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/PipelineMoveConfigRequestBody'
+      tags:
+        - Pipelines
+      x-internal: false
 components:
   schemas:
     GitDetails:
@@ -1827,6 +1848,67 @@ components:
         stage_node_id:
           type: string
           description: node id of parent pipeline stage
+    PipelineMoveConfigRequestBody:
+      title: PipelineMoveConfigRequestBody
+      x-stoplight:
+        id: ed578c29cb9dc
+      type: object
+      description: 'Request body for moving a pipeline configuration'
+      properties:
+        git_details:
+          $ref: '#/components/schemas/GitMoveDetails'
+        pipeline_identifier:
+          type: string
+        move_config_operation_type:
+          $ref: '#/components/schemas/MoveConfigOperationType'
+    PipelineMoveConfigResponseBody:
+      title: PipelineMoveConfigResponseBody
+      x-stoplight:
+        id: e4ec161edc199
+      type: object
+      description: 'Response body for configuration to move a pipeline'
+      properties:
+        pipeline_identifier:
+          type: string
+    MoveConfigOperationType:
+      type: string
+      enum:
+        - INLINE_TO_REMOTE
+        - REMOTE_TO_INLINE
+      description: Operation type to move the configuration
+    GitMoveDetails:
+      title: Move Git Details
+      x-stoplight:
+        id: 4rhd7gzvl7yoe
+      type: object
+      description: Parameters related to moving an entity for Git Experience.
+      x-examples:
+        example-create-git:
+          branch_name: branch
+          file_path: /folder/file.json
+          commit_message: Added Harness Git Experience
+          base_branch: old_branch
+          connector_ref: git_connector
+          repo_name: example_repository
+      properties:
+        branch_name:
+          type: string
+          description: Name of the branch. When moving an inline pipeline or a remote pipeline, this branch is where the remote entity is created or fetched.
+        file_path:
+          type: string
+          description: File path of the entity in the repository.
+        commit_message:
+          type: string
+          description: Merge commit message.
+        base_branch:
+          type: string
+          description: Default branch name. This checks out the branch titled branch_name
+        connector_ref:
+          type: string
+          description: Harness connector id used for entity CRUD operations
+        repo_name:
+          type: string
+          description: Name of the repository.
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2407,6 +2489,12 @@ components:
                       prompt: false
                       required: true
                       type: string
+    PipelineMoveConfigResponseBody:
+      description: Response body for moving a pipeline configuration.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineMoveConfigResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -2907,3 +2995,8 @@ components:
                   parent_entity_repo_name: example_repository
       description: Input Set update request body
       required: true
+    PipelineMoveConfigRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineMoveConfigRequestBody'
