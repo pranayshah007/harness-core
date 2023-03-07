@@ -8,7 +8,6 @@
 package io.harness.ssca.execution.creator.plan;
 
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
-import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.PipelineVersion;

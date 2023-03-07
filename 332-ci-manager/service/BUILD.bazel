@@ -12,7 +12,7 @@ shared_dependencies = [
     "//323-sto-utilities:module",
     "//332-iacm-common:module",
     "//332-ci-manager/contracts:module",
-    "//332-ssca:module",
+    "//332-ssca/ci:module",
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
     "//890-sm-core:module",
