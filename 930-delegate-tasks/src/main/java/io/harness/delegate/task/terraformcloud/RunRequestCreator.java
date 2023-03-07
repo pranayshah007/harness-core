@@ -8,6 +8,8 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terraformcloud.Relationship.CONFIG_VERSION;
+import static io.harness.delegate.task.terraformcloud.Relationship.WORKSPACE;
 
 import static java.lang.String.format;
 
@@ -27,7 +29,6 @@ import io.harness.terraformcloud.model.RunRequest;
 import io.harness.terraformcloud.model.SingleRelationship;
 import io.harness.terraformcloud.model.Variable;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
@@ -41,14 +42,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class RunRequestCreator {
-  private static final String WORKSPACE = "workspace";
   private static final String WORKSPACES = "workspaces";
-  private static final String CONFIG_VERSION = "configuration-version";
   private static final String CONFIG_VERSIONS = "configuration-versions";
 
   @Inject private TerraformCloudTaskHelper helper;
 
-  public RunRequest createRunRequest(TerraformCloudTaskParams terraformCloudTaskParams) throws JsonProcessingException {
+  public RunRequest createRunRequest(TerraformCloudTaskParams terraformCloudTaskParams) {
     CreateRunData createRunData = new CreateRunData();
     TerraformCloudTaskType terraformCloudTaskType = terraformCloudTaskParams.getTerraformCloudTaskType();
     AttributesBuilder builder = Attributes.builder();
@@ -84,7 +83,7 @@ public class RunRequestCreator {
     }
     builder.message(terraformCloudTaskParams.getMessage()).variables(getVariables(terraformCloudTaskParams));
     createRunData.setAttributes(builder.build());
-    createRunData.setRelationships(Collections.singletonMap(WORKSPACE,
+    createRunData.setRelationships(Collections.singletonMap(WORKSPACE.getRelationshipName(),
         SingleRelationship.builder()
             .data(ResourceLinkage.builder().id(terraformCloudTaskParams.getWorkspace()).type(WORKSPACES).build())
             .build()));
@@ -103,11 +102,11 @@ public class RunRequestCreator {
             .targets(runData.getAttributes().getTargets())
             .build());
     Map<String, SingleRelationship> relationships = new HashMap<>();
-    relationships.put(WORKSPACE,
+    relationships.put(WORKSPACE.getRelationshipName(),
         SingleRelationship.builder()
             .data(ResourceLinkage.builder().id(helper.getRelationshipId(runData, WORKSPACE)).type(WORKSPACES).build())
             .build());
-    relationships.put(CONFIG_VERSION,
+    relationships.put(CONFIG_VERSION.getRelationshipName(),
         SingleRelationship.builder()
             .data(ResourceLinkage.builder()
                       .id(helper.getRelationshipId(runData, CONFIG_VERSION))
