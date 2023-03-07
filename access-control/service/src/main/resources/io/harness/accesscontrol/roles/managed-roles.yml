@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 47
+version: 48
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -136,6 +136,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
@@ -338,6 +339,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
@@ -556,6 +558,7 @@ roles:
         - chaos_chaosexperiment_view
         - chaos_chaosexperiment_edit
         - chaos_chaosexperiment_delete
+        - chaos_chaosexperiment_execute
         - chaos_chaosgameday_view
         - chaos_chaosgameday_edit
         - chaos_chaosgameday_delete
