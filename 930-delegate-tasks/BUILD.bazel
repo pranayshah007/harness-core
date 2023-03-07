@@ -42,6 +42,7 @@ java_library(
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//931-delegate-annotations/src/java/software/wings/delegatetasks:module",
         "//931-encryption-service/src/java/io/harness/encryptors/clients:module",
+        "//931-encryption-service/src/java/software/wings/service/impl/security:module",
         "//931-encryption-service/src/java/software/wings/service/intfc/security:module",
         "//931-secret-providers/src/java/io/harness/mappers:module",
         "//931-secret-providers/src/java/io/harness/serializer/kryo:module",

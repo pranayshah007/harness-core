@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Deserialize task data from mounted volume
  */
-@Slf4j
 @UtilityClass
+@Slf4j
 public class TaskPackageReader {
   public static DelegateTaskPackage readTask(String taskDataPath, KryoSerializer kryoSerializer) {
     try {

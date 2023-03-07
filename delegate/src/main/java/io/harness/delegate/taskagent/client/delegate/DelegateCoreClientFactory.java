@@ -25,7 +25,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 
 // FixMe: This add deps to 980-commons & 920-delegate-beans which we don't want - create task specific tokens and auth
