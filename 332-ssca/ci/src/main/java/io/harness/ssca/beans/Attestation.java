@@ -7,11 +7,13 @@
 
 package io.harness.ssca.beans;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class Attestation {
-  private String privateKey;
+  @NotNull @NotBlank private String privateKey;
 }

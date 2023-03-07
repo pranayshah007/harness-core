@@ -60,7 +60,7 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep {
 
   @NotNull SbomSource source;
 
-  Attestation attestation;
+  @NotNull Attestation attestation;
 
   @Override
   public TypeInfo getNonYamlInfo() {
