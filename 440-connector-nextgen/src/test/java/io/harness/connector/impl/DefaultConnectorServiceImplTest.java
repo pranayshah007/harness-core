@@ -120,6 +120,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String name = "name";
   KubernetesClusterConfig connector;
   String accountIdentifier = "accountIdentifier";
+  String orgIdentifier = "orgIdentifier";
   String passwordIdentifier = "passwordIdentifier";
   @Rule public ExpectedException expectedEx = ExpectedException.none();
   SecretRefData passwordSecretRef;
@@ -765,5 +766,29 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorResponseDTOOptional.get().getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponseDTOOptional.get().getConnector().getOrgIdentifier()).isEqualTo(null);
     assertThat(connectorResponseDTOOptional.get().getConnector().getProjectIdentifier()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.UTKARSH_CHOUBEY)
+  @Category({UnitTests.class})
+  public void testGetConnectorByRefWithIncorrectScope() {
+    createConnector(identifier, name);
+    assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, null, null, identifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level connector cannot be used at account level. Ref: [identifier]");
+
+    assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, orgIdentifier, null, identifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The project level connector cannot be used at org level. Ref: [identifier]");
+
+    assertThatThrownBy(() -> connectorService.getByRef(accountIdentifier, null, null, "org." + identifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("The org level connector cannot be used at account level. Ref: [org.identifier]");
+
+    Optional<ConnectorResponseDTO> connectorResponseDTOOptional =
+        connectorService.getByRef(accountIdentifier, null, null, "account." + identifier);
+    assertThat(connectorResponseDTOOptional.isPresent()).isTrue();
+    assertThat(connectorResponseDTOOptional.get().getConnector().getName()).isEqualTo(name);
+    assertThat(connectorResponseDTOOptional.get().getConnector().getIdentifier()).isEqualTo(identifier);
   }
 }
