@@ -24,6 +24,8 @@ import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.DockerRegistryToken;
 import io.harness.artifacts.docker.HarborRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.artifacts.docker.beans.QuayImageTag;
+import io.harness.artifacts.docker.beans.QuayImageTagResponse;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.beans.ArtifactMetaInfo;
@@ -287,12 +289,56 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       if (!dockerConfig.hasCredentials()) {
         return dockerPublicRegistryProcessor.verifyBuildNumber(dockerConfig, imageName, tag);
       }
+
+      if (dockerConfig.getDockerRegistryUrl().contains("quay.io/")) {
+        return getBuildNumberFromQuay(dockerConfig, imageName, tag);
+      }
+
       return getBuildNumber(dockerConfig, imageName, tag);
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
           "The tag provided for the image may be incorrect.",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
+  }
+
+  private BuildDetailsInternal getBuildNumberFromQuay(DockerInternalConfig dockerConfig, String imageName, String tag) {
+    try {
+      DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
+      final Response<QuayImageTagResponse> response = registryRestClient.getImageTagFromQuay(imageName, tag).execute();
+
+      QuayImageTagResponse body = response.body();
+      if (body == null || isEmpty(body.getTags())) {
+        log.warn("There are no tags available for the imageName {}", imageName);
+        return null;
+      }
+
+      final QuayImageTag quayImageTag = body.getTags().get(0);
+      final String quayTag = quayImageTag.getName();
+
+      String tagUrl = dockerConfig.getDockerRegistryUrl().endsWith("/")
+          ? dockerConfig.getDockerRegistryUrl() + imageName + "/tags/"
+          : dockerConfig.getDockerRegistryUrl() + "/" + imageName + "/tags/";
+
+      String domainName = Http.getDomainWithPort(dockerConfig.getDockerRegistryUrl());
+
+      Map<String, String> metadata = new HashMap<>();
+      metadata.put(ArtifactMetadataKeys.IMAGE,
+          (domainName == null || domainName.endsWith("/") ? domainName : domainName.concat("/")) + imageName + ":"
+              + quayTag);
+      metadata.put(ArtifactMetadataKeys.TAG, quayTag);
+
+      return BuildDetailsInternal.builder()
+          .number(quayTag)
+          .buildUrl(tagUrl + quayTag)
+          .uiDisplayName("Tag# " + quayTag)
+          .metadata(metadata)
+          .build();
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   private boolean checkImageName(DockerInternalConfig dockerConfig, String imageName) {

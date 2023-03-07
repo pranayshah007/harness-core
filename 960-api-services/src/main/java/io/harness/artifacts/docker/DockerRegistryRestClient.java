@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerPublicImageTagResponse;
+import io.harness.artifacts.docker.beans.QuayImageTagResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -69,4 +70,9 @@ public interface DockerRegistryRestClient {
   Call<DockerPublicImageTagResponse.Result> getPublicImageTag(
       @Path(value = "imageName", encoded = true) String imageName,
       @Path(value = "tagNumber", encoded = true) String tagNumber);
+
+  // https://quay.io/api/v1/repository/${imageName}/tag/?specificTag=${tag}
+  @GET("/api/v1/repository/{imageName}/tag")
+  Call<QuayImageTagResponse> getImageTagFromQuay(
+      @Path(value = "imageName", encoded = true) String imageName, @Query("specificTag") String tag);
 }
