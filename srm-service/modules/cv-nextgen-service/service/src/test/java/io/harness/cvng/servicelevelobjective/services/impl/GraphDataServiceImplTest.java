@@ -11,10 +11,12 @@ import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
@@ -32,6 +34,7 @@ import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -292,6 +295,19 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetGraphData_withSkipData() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 15;
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(
+        SKIP_DATA, GOOD, BAD, SKIP_DATA, SKIP_DATA, SKIP_DATA, BAD, SKIP_DATA, SKIP_DATA, GOOD, BAD, SKIP_DATA);
+    List<Double> expectedSLITrend =
+        Lists.newArrayList(100.0, 100.0, 66.66, 75.0, 80.0, 83.33, 71.42, 75.0, 77.77, 80.0, 72.72, 75.0);
+    List<Double> expectedBurndown =
+        Lists.newArrayList(100.0, 100.0, 99.0, 99.0, 99.0, 99.0, 98.0, 98.0, 98.0, 98.0, 97.0, 97.0);
+    testGraphCalculation(sliStates, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 97, 0, 0);
+  }
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_customTimePerMinute() {
@@ -433,7 +449,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
       long customMinutesStart, long customMinutesEnd) {
     Instant startTime =
         DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
-    createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(GOOD, NO_DATA, BAD, GOOD));
+    createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(SKIP_DATA, NO_DATA, BAD, GOOD));
     createData(startTime, sliStates);
 
     Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
