@@ -43,6 +43,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.exception.runtime.JGitRuntimeException;
@@ -1402,9 +1403,10 @@ public class GitClientV2Impl implements GitClientV2 {
    */
   private void validateRequiredArgs(FetchFilesByPathRequest request) {
     if (isEmpty(request.getFilePaths())) {
-      throw new InvalidRequestException(
-          "Path for values.yaml files is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty",
-          USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check in the values.yaml setup in the manifest configuration to make sure it's not empty",
+          "Values.yaml file paths is empty or null",
+          new InvalidRequestException("Path for values.yaml files is not valid", USER));
     }
     validateCommonRequiredArgs(request);
   }
@@ -1417,9 +1419,10 @@ public class GitClientV2Impl implements GitClientV2 {
    */
   private void validateRequiredArgsForManifest(FetchFilesByPathRequest request) {
     if (isEmpty(request.getFilePaths())) {
-      throw new InvalidRequestException(
-          "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty",
-          USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check in the file/folder path setup in the manifest configuration to make sure it's not empty",
+          "File/Folder paths is empty or null",
+          new InvalidRequestException("Path for manifest files is not valid", USER));
     }
     validateCommonRequiredArgs(request);
   }
@@ -1484,7 +1487,9 @@ public class GitClientV2Impl implements GitClientV2 {
 
   private void validateCommonRequiredArgs(FetchFilesByPathRequest request) {
     if (isEmpty(request.getBranch()) && isEmpty(request.getCommitId())) {
-      throw new InvalidRequestException("No refs provided to checkout", USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check in the Branch/CommitId setup in the manifest configuration to make sure it's not empty",
+          "Branch/CommitId is empty or null", new InvalidRequestException("No refs provided to checkout", USER));
     }
   }
 }

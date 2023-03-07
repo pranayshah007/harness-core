@@ -38,6 +38,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.exception.runtime.JGitRuntimeException;
@@ -288,9 +289,11 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .destinationDirectory("./")
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessageContaining(
-            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
+            "Check in the file/folder path setup in the manifest configuration to make sure it's not empty")
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("Path for manifest files is not valid");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
 
@@ -343,9 +346,11 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .destinationDirectory("./")
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessageContaining(
-            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
+            "Check in the file/folder path setup in the manifest configuration to make sure it's not empty")
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("Path for manifest files is not valid");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
 
@@ -369,9 +374,11 @@ public class GitClientV2ImplTest extends CategoryTest {
                                        .destinationDirectory("./")
                                        .build();
     assertThatThrownBy(() -> gitClient.downloadFiles(request))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessageContaining(
-            "Path for manifest files is not valid. Check in the file/folder path setup in the manifest configuration to make sure it's not empty");
+            "Check in the file/folder path setup in the manifest configuration to make sure it's not empty")
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("Path for manifest files is not valid");
     request.setFilePaths(Collections.singletonList("./"));
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
     doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
@@ -394,13 +401,18 @@ public class GitClientV2ImplTest extends CategoryTest {
             .accountId("ACCOUNT_ID")
             .build();
     assertThatThrownBy(() -> gitClient.fetchFilesByPath(request))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessageContaining(
-            "Path for values.yaml files is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty");
+            "Check in the values.yaml setup in the manifest configuration to make sure it's not empty")
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("Path for values.yaml files is not valid");
     request.setFilePaths(Collections.singletonList("./"));
     assertThatThrownBy(() -> gitClient.fetchFilesByPath(request))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("No refs provided to checkout");
+        .isInstanceOf(HintException.class)
+        .hasMessageContaining(
+            "Check in the Branch/CommitId setup in the manifest configuration to make sure it's not empty")
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("No refs provided to checkout");
     request.setBranch("master");
     doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
 
