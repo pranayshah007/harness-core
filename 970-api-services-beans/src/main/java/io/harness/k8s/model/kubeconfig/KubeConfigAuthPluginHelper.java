@@ -30,13 +30,13 @@ public class KubeConfigAuthPluginHelper {
     if (!shouldUseExecFormat) {
       saveLogs(
           "Auth Provider is removed for kubernetes>=1.26. Please install %s on the delegate and add the binary in your PATH",
-          logCallback);
+          logCallback, LogLevel.WARN);
     } else {
       saveLogs(
           String.format(
               "%s binary found. Using kubernetes client-go credential plugin mechanism to extend kubectl's authentication",
               binaryName),
-          logCallback);
+          logCallback, LogLevel.INFO);
     }
     return shouldUseExecFormat;
   }
@@ -47,8 +47,8 @@ public class KubeConfigAuthPluginHelper {
     } catch (Exception e) {
       if (logCallback != null) {
         saveLogs(String.format(
-                     "Failed executing command: %s %n %s", command, ExceptionMessageSanitizer.sanitizeException(e)),
-            logCallback);
+                     "Unable to execute command: %s %n %s", command, ExceptionMessageSanitizer.sanitizeException(e)),
+            logCallback, LogLevel.WARN);
       }
       return false;
     }
@@ -64,17 +64,22 @@ public class KubeConfigAuthPluginHelper {
 
     final ProcessResult result = processExecutor.execute();
     if (result.getExitValue() != 0) {
-      saveLogs(String.format("Failed executing command: %s %n %s", command, result.outputUTF8()), logCallback);
+      saveLogs(String.format("Unable to execute command: %s %n %s", command, result.outputUTF8()), logCallback,
+          LogLevel.WARN);
       return false;
     }
     return true;
   }
 
-  private static void saveLogs(String errorMsg, LogCallback logCallback) {
+  private static void saveLogs(String errorMsg, LogCallback logCallback, LogLevel logLevel) {
     if (logCallback != null) {
-      logCallback.saveExecutionLog(errorMsg, LogLevel.INFO);
+      logCallback.saveExecutionLog(errorMsg, logLevel);
     } else {
-      log.info(errorMsg);
+      if (logLevel == LogLevel.INFO) {
+        log.info(errorMsg);
+      } else {
+        log.warn(errorMsg);
+      }
     }
   }
 }
