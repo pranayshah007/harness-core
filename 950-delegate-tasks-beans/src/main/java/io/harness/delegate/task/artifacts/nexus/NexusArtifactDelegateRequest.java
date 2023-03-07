@@ -59,14 +59,25 @@ public class NexusArtifactDelegateRequest implements ArtifactSourceDelegateReque
   String groupId;
   /** Artifact Name.*/
   String artifactName;
-  /** Artifact Maven extension.*/
+  /**
+   * Artifact Maven extension.
+   */
   String extension;
-  /** Artifact Maven classifier.*/
+  /**
+   * Artifact Maven classifier.
+   */
   String classifier;
-  /** Artifact packageName.*/
+  /**
+   * Artifact packageName.
+   */
   String packageName;
-  /** Artifact Raw group.*/
+  /**
+   * Artifact Raw group.
+   */
   String group;
+
+  /*Max number of builds/versions/tags to fetch*/
+  int maxBuilds;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -10,7 +10,6 @@ package io.harness.delegate.task.artifacts.nexus;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.NexusRequestResponseMapper;
@@ -42,17 +41,18 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     BuildDetailsInternal lastSuccessfulBuild;
     NexusRequest nexusConfig = NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest);
     if (isRegex(attributesRequest)) {
-      lastSuccessfulBuild = nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig,
-          attributesRequest.getRepositoryName(), attributesRequest.getRepositoryPort(),
-          attributesRequest.getArtifactPath(), attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex(),
-          attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
-          attributesRequest.getClassifier(), attributesRequest.getPackageName(), attributesRequest.getGroup());
+      lastSuccessfulBuild =
+          nexusRegistryService.getLastSuccessfulBuildFromRegex(nexusConfig, attributesRequest.getRepositoryName(),
+              attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
+              attributesRequest.getRepositoryFormat(), attributesRequest.getTagRegex(), attributesRequest.getGroupId(),
+              attributesRequest.getArtifactName(), attributesRequest.getExtension(), attributesRequest.getClassifier(),
+              attributesRequest.getPackageName(), attributesRequest.getGroup(), attributesRequest.getMaxBuilds());
     } else {
       lastSuccessfulBuild = nexusRegistryService.verifyBuildNumber(nexusConfig, attributesRequest.getRepositoryName(),
           attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
           attributesRequest.getRepositoryFormat(), attributesRequest.getTag(), attributesRequest.getGroupId(),
           attributesRequest.getArtifactName(), attributesRequest.getExtension(), attributesRequest.getClassifier(),
-          attributesRequest.getPackageName(), attributesRequest.getGroup());
+          attributesRequest.getPackageName(), attributesRequest.getGroup(), attributesRequest.getMaxBuilds());
     }
 
     NexusArtifactDelegateResponse nexusArtifactDelegateResponse =
@@ -65,12 +65,11 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
     List<BuildDetailsInternal> builds = nexusRegistryService.getBuilds(
         NexusRequestResponseMapper.toNexusInternalConfig(attributesRequest), attributesRequest.getRepositoryName(),
         attributesRequest.getRepositoryPort(), attributesRequest.getArtifactPath(),
-        attributesRequest.getRepositoryFormat(), NexusRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT,
-        attributesRequest.getGroupId(), attributesRequest.getArtifactName(), attributesRequest.getExtension(),
-        attributesRequest.getClassifier(), attributesRequest.getPackageName(), attributesRequest.getGroup());
+        attributesRequest.getRepositoryFormat(), attributesRequest.getGroupId(), attributesRequest.getArtifactName(),
+        attributesRequest.getExtension(), attributesRequest.getClassifier(), attributesRequest.getPackageName(),
+        attributesRequest.getGroup(), attributesRequest.getMaxBuilds());
     List<NexusArtifactDelegateResponse> nexusArtifactDelegateResponseList =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
             .map(build -> NexusRequestResponseMapper.toNexusResponse(build, attributesRequest))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(nexusArtifactDelegateResponseList);
