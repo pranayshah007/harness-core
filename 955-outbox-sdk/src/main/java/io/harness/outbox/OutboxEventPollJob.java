@@ -66,10 +66,6 @@ public class OutboxEventPollJob implements Runnable {
       }
     } catch (Exception exception) {
       log.error("Unexpected error occurred during the execution of OutboxPollJob", exception);
-    } catch (Throwable e) {
-      log.error(
-          "[InsideThrowable]:Unexpected error occurred during the execution of OutboxPollJob and OutboxPollJobThread died",
-          e);
     }
   }
 
