@@ -7,6 +7,7 @@
 
 package io.harness.ng.overview.service;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
@@ -19,6 +20,7 @@ import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.utils.IdentifierRefHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -495,10 +497,13 @@ public class DashboardServiceHelper {
   public void constructEnvironmentNameAndTypeMap(List<Environment> environments, Map<String, String> envIdToNameMap,
       Map<String, EnvironmentType> envIdToEnvTypeMap) {
     for (Environment environment : environments) {
-      final String envId = environment.getIdentifier();
+      String envId = environment.getIdentifier();
       if (envId == null) {
         continue;
       }
+      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(
+          envId, environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier());
+      envId = identifierRef.buildScopedIdentifier();
       final String envName = environment.getName();
       final EnvironmentType environmentType = environment.getType();
       envIdToNameMap.put(envId, envName);
