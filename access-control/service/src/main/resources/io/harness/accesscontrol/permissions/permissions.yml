@@ -1346,6 +1346,12 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ccm_cloudAssetGovernanceRule_execute
+    name: Enforce a CCM Governance  Rule
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: ccm_cloudAssetGovernanceRuleSet_edit
     name: Edit a CCM Governance  Rule Set
     status: ACTIVE
