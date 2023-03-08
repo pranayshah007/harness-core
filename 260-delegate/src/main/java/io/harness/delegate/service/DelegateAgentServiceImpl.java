@@ -1689,7 +1689,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
             getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));
-      } else if (log.isDebugEnabled()) {
+      } else {
         log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
             getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
       }
@@ -1708,7 +1708,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
-      log.debug("Sending heartbeat...");
+      log.info("Sending heartbeat...");
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
