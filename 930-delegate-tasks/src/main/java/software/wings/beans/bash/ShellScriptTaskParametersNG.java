@@ -26,10 +26,9 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ShellScriptParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
+public class ShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
   private final String commandUnit = "Execute";
   private final ScriptType scriptType = BASH;
-  private final String activityId;
   private final String executionId;
   private final List<String> outputVars;
   private final List<String> secretOutputVars;

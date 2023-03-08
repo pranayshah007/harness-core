@@ -17,7 +17,7 @@ import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.core.beans.TaskInput;
 import io.harness.rule.Owner;
 
-import software.wings.beans.bash.ShellScriptParameters;
+import software.wings.beans.bash.ShellScriptTaskParametersNG;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -61,7 +61,7 @@ public class K8STaskRunnerTest {
 
   private static TaskData createDummyTaskData() {
     final Map<String, String> vars = ImmutableMap.of("key1", "va1", "key2", "val2");
-    final var shellScriptParameters = new ShellScriptParameters("actId", "execUd", List.of("Some", "vars"),
+    final var shellScriptParameters = new ShellScriptTaskParametersNG("execUd", List.of("Some", "vars"),
         List.of("secret"), "my super \n script", 1000, "accId", "appId", "/root/not", vars);
     final var objects = new Object[] {shellScriptParameters};
     return TaskData.builder().parameters(objects).build();

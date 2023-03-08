@@ -4,11 +4,6 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-if [ ! -w . ]; then
-  echo "Missing required write permissions for running user $(id -run) or group $(id -rgn) on delegate home directory $PWD. Shutting down."
-  exit 1
-fi
-
 # 0. Proxy setup
 source ./proxy_setup.sh
 

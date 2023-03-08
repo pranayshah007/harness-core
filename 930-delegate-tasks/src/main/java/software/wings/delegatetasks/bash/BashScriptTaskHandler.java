@@ -11,7 +11,7 @@ import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
-import software.wings.beans.bash.ShellScriptParameters;
+import software.wings.beans.bash.ShellScriptTaskParametersNG;
 import software.wings.core.executors.bash.BashExecutorFactory;
 
 import com.google.inject.Inject;
@@ -21,11 +21,11 @@ import lombok.RequiredArgsConstructor;
 public class BashScriptTaskHandler {
   private final BashExecutorFactory shellExecutorFactory;
 
-  public ExecuteCommandResponse handle(final ShellScriptParameters parameters) {
+  public ExecuteCommandResponse handle(final ShellScriptTaskParametersNG parameters) {
     final ShellExecutorConfig executorConfig = ShellExecutorConfig.builder()
                                                    .accountId(parameters.getAccountId())
                                                    .appId(parameters.getAppId())
-                                                   .executionId(parameters.getActivityId())
+                                                   .executionId(parameters.getExecutionId())
                                                    .commandUnitName(parameters.getCommandUnit())
                                                    .workingDirectory(parameters.getWorkingDirectory())
                                                    .environment(parameters.getEnvironmentVariables())

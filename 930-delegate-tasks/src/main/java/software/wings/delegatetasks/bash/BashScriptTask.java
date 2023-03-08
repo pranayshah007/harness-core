@@ -15,14 +15,13 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.bash.ShellScriptParameters;
+import software.wings.beans.bash.ShellScriptTaskParametersNG;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 
 @Slf4j
 public class BashScriptTask extends AbstractDelegateRunnableTask {
@@ -35,16 +34,15 @@ public class BashScriptTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(Object[] parameters) {
-    throw new NotImplementedException("Use the other API");
+    throw new UnsupportedOperationException("Use the other API");
   }
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException {
-    final ShellScriptParameters scriptParameters = (ShellScriptParameters) parameters;
+    final ShellScriptTaskParametersNG scriptParameters = (ShellScriptTaskParametersNG) parameters;
 
-    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
-        scriptParameters.getAccountId(), scriptParameters.getAppId(), scriptParameters.getWorkingDirectory(),
-        scriptParameters.getActivityId());
+    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}",
+        scriptParameters.getAccountId(), scriptParameters.getAppId(), scriptParameters.getWorkingDirectory());
 
     final var executeCommandResponse = bashScriptTaskHandler.handle(scriptParameters);
 
