@@ -47,6 +47,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - SonarScan: `trigger ss`
 - GitLeaks: `trigger gitleaks`
 - Trigger all Checks: `trigger smartchecks`
+- Go Build: `trigger gobuild`
 </details>
 
 ## PR check failures and solutions
