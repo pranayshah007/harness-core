@@ -17,6 +17,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
@@ -122,10 +123,14 @@ public class RollbackModeExecutionHelper {
 
     // step 4
     for (Node planNode : createdPlan.getPlanNodes()) {
-      if (EmptyPredicate.isNotEmpty(planNode.getAdvisorObtainmentsForRollbackMode())) {
+      if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
+        continue;
+      }
+      List<AdviserObtainment> adviserObtainments =
+          planNode.getAdvisorObtainmentsForExecutionMode().get(ExecutionMode.POST_EXECUTION_ROLLBACK);
+      if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
-        planNodeIDToUpdatedPlanNodes.put(
-            planNode.getUuid(), updatedNode.withAdviserObtainments(planNode.getAdvisorObtainmentsForRollbackMode()));
+        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments));
       }
     }
 

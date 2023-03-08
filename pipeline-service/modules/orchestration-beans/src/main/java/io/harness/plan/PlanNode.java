@@ -10,9 +10,11 @@ package io.harness.plan;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
@@ -21,7 +23,9 @@ import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Singular;
@@ -52,7 +56,7 @@ public class PlanNode implements Node {
 
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
-  List<AdviserObtainment> advisorObtainmentsForRollbackMode;
+  Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<TimeoutObtainment> timeoutObtainments;
 
@@ -76,31 +80,36 @@ public class PlanNode implements Node {
     if (planNodeProto == null) {
       return null;
     }
-    PlanNode planNode =
-        PlanNode.builder()
-            .uuid(planNodeProto.getUuid())
-            .name(planNodeProto.getName())
-            .stageFqn(planNodeProto.getStageFqn())
-            .stepType(planNodeProto.getStepType())
-            .identifier(planNodeProto.getIdentifier())
-            .group(planNodeProto.getGroup())
-            .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
-            .refObjects(planNodeProto.getRebObjectsList())
-            .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
-            .advisorObtainmentsForRollbackMode(planNodeProto.getAdviserObtainmentsForRollbackModeList())
-            .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
-            .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
-            .skipCondition(planNodeProto.getSkipCondition())
-            .whenCondition(planNodeProto.getWhenCondition())
-            .skipExpressionChain(planNodeProto.getSkipExpressionChain())
-            .skipGraphType(planNodeProto.getSkipType())
-            .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
-            .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
-            .serviceName(planNodeProto.getServiceName())
-            .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
-            .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
-            .build();
-    return planNode;
+    Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(planNodeProto.getAdviserObtainmentsForRollbackModeList())) {
+      advisorObtainmentsForExecutionMode.put(
+          ExecutionMode.POST_EXECUTION_ROLLBACK, planNodeProto.getAdviserObtainmentsForRollbackModeList());
+      advisorObtainmentsForExecutionMode.put(
+          ExecutionMode.PIPELINE_ROLLBACK, planNodeProto.getAdviserObtainmentsForRollbackModeList());
+    }
+    return PlanNode.builder()
+        .uuid(planNodeProto.getUuid())
+        .name(planNodeProto.getName())
+        .stageFqn(planNodeProto.getStageFqn())
+        .stepType(planNodeProto.getStepType())
+        .identifier(planNodeProto.getIdentifier())
+        .group(planNodeProto.getGroup())
+        .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
+        .refObjects(planNodeProto.getRebObjectsList())
+        .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
+        .advisorObtainmentsForExecutionMode(advisorObtainmentsForExecutionMode)
+        .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
+        .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
+        .skipCondition(planNodeProto.getSkipCondition())
+        .whenCondition(planNodeProto.getWhenCondition())
+        .skipExpressionChain(planNodeProto.getSkipExpressionChain())
+        .skipGraphType(planNodeProto.getSkipType())
+        .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
+        .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
+        .serviceName(planNodeProto.getServiceName())
+        .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
+        .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
+        .build();
   }
 
   @Override
