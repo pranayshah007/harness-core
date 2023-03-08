@@ -19,6 +19,7 @@ import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
+import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
@@ -59,6 +60,7 @@ import io.harness.exception.InvalidRequestException;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -425,6 +427,22 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getViewByState(String accountId, ViewState viewState) {
     return ceViewDao.findByAccountIdAndState(accountId, viewState);
+  }
+
+  @Override
+  public List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids) {
+    List<LinkedPerspectives> perspectiveListMessageList = new ArrayList<>();
+    for (String businessMappingUuid : businessMappingUuids) {
+      List<CEView> ceViewList = ceViewDao.findByAccountIdAndBusinessMapping(accountId, businessMappingUuid);
+      LinkedPerspectives.LinkedPerspectivesBuilder perspectiveListMessageBuilder =
+          LinkedPerspectives.builder().costCategoryId(businessMappingUuid);
+      if (!Lists.isNullOrEmpty(ceViewList)) {
+        perspectiveListMessageBuilder.perspectiveIdAndName(
+            ceViewList.stream().collect(Collectors.toMap(CEView::getUuid, CEView::getName)));
+      }
+      perspectiveListMessageList.add(perspectiveListMessageBuilder.build());
+    }
+    return perspectiveListMessageList;
   }
 
   private ViewIdCondition getDefaultViewIdCondition(String fieldId, String fieldName, ViewFieldIdentifier identifier) {

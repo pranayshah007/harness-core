@@ -27,9 +27,12 @@ import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
 import io.harness.ccm.views.businessMapping.entities.SharingStrategy;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
+import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.service.CEViewService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -56,12 +59,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RunWith(MockitoJUnitRunner.class)
 public class BusinessMappingResourceTest extends CategoryTest {
   @Mock private BusinessMappingService businessMappingService;
+  @Mock private CEViewService ceViewService;
   @Mock private OutboxService outboxService;
   @Mock private TransactionTemplate transactionTemplate;
   @Mock private CCMRbacHelper rbacHelper;
   @InjectMocks private BusinessMappingResource businessMappingResource;
   private BusinessMapping businessMapping;
   private BusinessMapping costCategoryDTO;
+  private LinkedPerspectives linkedPerspectives;
 
   @Captor private ArgumentCaptor<CostCategoryCreateEvent> costCategoryCreateEventArgumentCaptor;
   @Captor private ArgumentCaptor<CostCategoryUpdateEvent> costCategoryUpdateEventArgumentCaptor;
@@ -70,6 +75,7 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Before
   public void setUp() {
     businessMapping = BusinessMappingHelper.getBusinessMapping(UUID.randomUUID().toString());
+    linkedPerspectives = LinkedPerspectives.builder().build();
     costCategoryDTO = businessMapping.toDTO();
   }
 
@@ -150,14 +156,17 @@ public class BusinessMappingResourceTest extends CategoryTest {
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    final RestResponse<String> response =
+    when(ceViewService.getViewsByBusinessMapping(
+             BusinessMappingHelper.TEST_ACCOUNT_ID, Collections.singletonList(BusinessMappingHelper.TEST_ID)))
+        .thenReturn(Collections.singletonList(linkedPerspectives));
+    final RestResponse<CostCategoryDeleteDTO> response =
         businessMappingResource.delete(BusinessMappingHelper.TEST_ACCOUNT_ID, BusinessMappingHelper.TEST_ID);
     verify(businessMappingService).delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(costCategoryDeleteEventArgumentCaptor.capture());
     CostCategoryDeleteEvent costCategoryDeleteEvent = costCategoryDeleteEventArgumentCaptor.getValue();
     assertThat(costCategoryDTO).isEqualTo(costCategoryDeleteEvent.getCostCategoryDTO());
-    assertThat(response.getResource()).isEqualTo("Successfully deleted the Business Mapping");
+    assertThat(response.getResource().isDeleted()).isEqualTo(true);
   }
 
   static final class BusinessMappingHelper {
