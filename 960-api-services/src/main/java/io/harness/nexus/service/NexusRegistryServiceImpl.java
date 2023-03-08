@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
-import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.expression.RegexFunctor;
@@ -34,22 +32,20 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class NexusRegistryServiceImpl implements NexusRegistryService {
-  private static final int MAX_NUMBER_OF_BUILDS = 250;
   @Inject NexusClientImpl nexusClient;
 
   @Override
   public List<BuildDetailsInternal> getBuilds(NexusRequest nexusConfig, String repositoryName, String port,
-      String artifactName, String repositoryFormat, int maxNumberOfBuilds, String groupId, String artifactId,
-      String extension, String classifier, String packageName, String group) {
+      String artifactName, String repositoryFormat, String groupId, String artifactId, String extension,
+      String classifier, String packageName, String group, int maxBuilds) {
     List<BuildDetailsInternal> buildDetails;
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
-      buildDetails =
-          nexusClient.getArtifactsVersions(nexusConfig, repositoryName, port, artifactName, repositoryFormat);
-      buildDetails.sort(new BuildDetailsInternalComparatorAscending());
+      buildDetails = nexusClient.getDockerArtifactVersions(
+          nexusConfig, repositoryName, port, artifactName, repositoryFormat, maxBuilds);
       return buildDetails;
     } else if (RepositoryFormat.maven.name().equalsIgnoreCase(repositoryFormat)) {
-      buildDetails =
-          nexusClient.getArtifactsVersions(nexusConfig, repositoryName, groupId, artifactId, extension, classifier);
+      buildDetails = nexusClient.getArtifactsVersions(
+          nexusConfig, repositoryName, groupId, artifactId, extension, classifier, maxBuilds);
       return buildDetails;
     } else if (RepositoryFormat.npm.name().equalsIgnoreCase(repositoryFormat)
         || RepositoryFormat.nuget.name().equalsIgnoreCase(repositoryFormat)) {
@@ -71,7 +67,6 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       List<BuildDetailsInternal> buildDetails;
       buildDetails = nexusClient.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
-      buildDetails.sort(new BuildDetailsInternalComparatorAscending());
       return buildDetails;
     }
     throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
@@ -83,7 +78,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tagRegex, String groupId, String artifactId,
-      String extension, String classifier, String packageName, String group) {
+      String extension, String classifier, String packageName, String group, int maxBuilds) {
     try {
       Pattern.compile(tagRegex);
     } catch (PatternSyntaxException e) {
@@ -94,10 +89,9 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     }
 
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
+        groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream()
                  .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
-                 .sorted(new BuildDetailsInternalComparatorDescending())
                  .collect(Collectors.toList());
 
     if (builds.isEmpty()) {
@@ -115,12 +109,12 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   @Override
   public BuildDetailsInternal verifyBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName, String group) {
+      String classifier, String packageName, String group, int maxBuilds) {
     if (RepositoryFormat.docker.name().equalsIgnoreCase(repositoryFormat)) {
       return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     } else {
       return getBuildNumber(nexusConfig, repository, port, artifactName, repositoryFormat, tag, groupId, artifactId,
-          extension, classifier, packageName, group);
+          extension, classifier, packageName, group, maxBuilds);
     }
   }
 
@@ -136,9 +130,9 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
 
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag, String groupId, String artifactId, String extension,
-      String classifier, String packageName, String group) {
+      String classifier, String packageName, String group, int maxBuilds) {
     List<BuildDetailsInternal> builds = getBuilds(nexusConfig, repository, port, artifactName, repositoryFormat,
-        MAX_NUMBER_OF_BUILDS, groupId, artifactId, extension, classifier, packageName, group);
+        groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
     if (builds.size() == 1) {
