@@ -51,6 +51,7 @@ import io.harness.event.OrchestrationEndGraphHandler;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.event.OrchestrationStartEventHandler;
 import io.harness.event.PipelineExecutionSummaryDeleteObserver;
+import io.harness.event.PipelineResourceRestraintInstanceDeleteObserver;
 import io.harness.event.PlanExecutionMetadataDeleteObserver;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
@@ -524,6 +525,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     // Register PlanExecutionDeleteObserver
     planExecutionService.getPlanExecutionDeleteObserverSubject().register(
         injector.getInstance(Key.get(PipelineExecutionSummaryDeleteObserver.class)));
+    // Register ResourceRestraintInstanceDeleteObserver
+    planExecutionService.getPlanExecutionDeleteObserverSubject().register(
+        injector.getInstance(Key.get(PipelineResourceRestraintInstanceDeleteObserver.class)));
 
     PlanExecutionStrategy planExecutionStrategy = injector.getInstance(Key.get(PlanExecutionStrategy.class));
     // StartObservers
