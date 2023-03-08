@@ -26,7 +26,5 @@ import lombok.Value;
 @Schema(name = "MoveConfigResponse", description = "Tells us if the move config was successful or not")
 @OwnedBy(PL)
 public class MoveConfigResponse {
-  @Hidden
-  @Schema(description = "Contains the pipelineIdentifier of the successfully moved config.")
-  String pipelineIdentifier;
+  @Schema(description = "Contains the pipelineIdentifier of the successfully moved config.") String pipelineIdentifier;
 }
