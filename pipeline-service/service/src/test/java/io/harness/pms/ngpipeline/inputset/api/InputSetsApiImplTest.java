@@ -30,9 +30,13 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
+import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -64,6 +68,9 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   private static final String org = randomAlphabetic(10);
   private static final String project = randomAlphabetic(10);
   private static final String pipeline = randomAlphabetic(10);
+  private static String branch = randomAlphabetic(10);
+  private static String repo = randomAlphabetic(10);
+  private static String connectorRef = randomAlphabetic(10);
   private static final String inputSet = "input1";
   private static final String inputSetName = "this name";
   private String inputSetYaml;
@@ -231,5 +238,28 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     InputSetResponseBody responseBody = content.get(0);
     assertThat(responseBody.getIdentifier()).isEqualTo(inputSet);
     assertThat(responseBody.getName()).isEqualTo(inputSetName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfig() {
+    GitMoveDetails gitMoveDetails = new GitMoveDetails();
+    gitMoveDetails.setBranchName(branch);
+    gitMoveDetails.setRepoName(repo);
+    gitMoveDetails.setConnectorRef(connectorRef);
+
+    InputSetMoveConfigRequestBody inputSetMoveConfigRequestBody = new InputSetMoveConfigRequestBody();
+    inputSetMoveConfigRequestBody.setGitDetails(gitMoveDetails);
+    inputSetMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE);
+    inputSetMoveConfigRequestBody.setPipelineIdentifier(pipeline);
+    inputSetMoveConfigRequestBody.setInputSetIdentifier(inputSet);
+    doReturn(InputSetEntity.builder().identifier(inputSet).build())
+        .when(pmsInputSetService)
+        .moveConfig(any(), any(), any(), any(), any());
+    Response response =
+        inputSetsApiImpl.inputSetMoveConfig(org, project, inputSet, inputSetMoveConfigRequestBody, account);
+    InputSetMoveConfigResponseBody responseBody = (InputSetMoveConfigResponseBody) response.getEntity();
+    assertEquals(inputSet, responseBody.getInputSetIdentifier());
   }
 }

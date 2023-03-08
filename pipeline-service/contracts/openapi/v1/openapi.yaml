@@ -489,6 +489,27 @@ paths:
       tags:
         - Pipelines
       x-internal: false
+  '/v1/orgs/{org}/projects/{project}/input-sets/{input-set}/move-config':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/InputSetParam'
+    post:
+      summary: Move InputSet YAML from inline to remote or remote to inline
+      operationId: inputSetMoveConfig
+      description: Creates a remote entity by fetching the input set YAML from Harness or an inline entity by fetching input set YAML from a remote repository.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/InputSetMoveConfigRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/InputSetMoveConfigResponseBody'
+      tags:
+        - Input Sets
+      x-internal: true
 components:
   schemas:
     GitDetails:
@@ -1909,6 +1930,30 @@ components:
         repo_name:
           type: string
           description: Name of the repository.
+    InputSetMoveConfigRequestBody:
+      title: InputSetMoveConfigRequestBody
+      x-stoplight:
+        id: gf4xlhs210icv
+      type: object
+      description: 'Request body for moving an input set configuration.'
+      properties:
+        git_details:
+          $ref: '#/components/schemas/GitMoveDetails'
+        pipeline_identifier:
+          type: string
+        input_set_identifier:
+          type: string
+        move_config_operation_type:
+          $ref: '#/components/schemas/MoveConfigOperationType'
+    InputSetMoveConfigResponseBody:
+      title: InputSetMoveConfigResponseBody
+      x-stoplight:
+        id: yk5yx84ss2dtu
+      type: object
+      properties:
+        input_set_identifier:
+          type: string
+      description: 'Response body for moving an input set configuration.'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2495,6 +2540,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PipelineMoveConfigResponseBody'
+    InputSetMoveConfigResponseBody:
+      description: Response body for moving an input set configuration.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetMoveConfigResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -3000,3 +3051,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PipelineMoveConfigRequestBody'
+    InputSetMoveConfigRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputSetMoveConfigRequestBody'
