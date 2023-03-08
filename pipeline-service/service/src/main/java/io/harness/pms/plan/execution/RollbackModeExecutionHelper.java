@@ -117,23 +117,8 @@ public class RollbackModeExecutionHelper {
    */
   public Plan transformPlanForRollbackMode(
       Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve) {
-    Map<String, Node> planNodeIDToUpdatedPlanNodes = new HashMap<>(); // step 1
-
-    // step 2
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesForPlanExecutionID(previousExecutionId);
-
-    // step 3
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      Node planNode = nodeExecution.getNode();
-      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE
-          || EmptyPredicate.isEmpty(planNode.getStageFqn())
-          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
-        continue;
-      }
-      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
-      planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), identityPlanNode);
-    }
+    // steps 1, 2, and 3
+    Map<String, Node> planNodeIDToUpdatedPlanNodes = buildIdentityNodes(previousExecutionId);
 
     // step 4
     for (Node planNode : createdPlan.getPlanNodes()) {
@@ -163,5 +148,22 @@ public class RollbackModeExecutionHelper {
         .valid(createdPlan.isValid())
         .errorResponse(createdPlan.getErrorResponse())
         .build();
+  }
+
+  Map<String, Node> buildIdentityNodes(String previousExecutionId) {
+    Map<String, Node> planNodeIDToUpdatedNodes = new HashMap<>();
+    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesForPlanExecutionID(previousExecutionId);
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      Node planNode = nodeExecution.getNode();
+      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE
+          || EmptyPredicate.isEmpty(planNode.getStageFqn())
+          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
+        continue;
+      }
+      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
+          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
+      planNodeIDToUpdatedNodes.put(planNode.getUuid(), identityPlanNode);
+    }
+    return planNodeIDToUpdatedNodes;
   }
 }
