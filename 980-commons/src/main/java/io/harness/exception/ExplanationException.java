@@ -28,7 +28,7 @@ public class ExplanationException extends WingsException {
   public static String EXPLANATION_INVALID_CROSS_ACCOUNT_ROLE_ARN_EXTERNAL_ID_PERMISSIONS_KEY =
       "\nCross account role ARN or External Id is invalid or User / IAM Role on delegate / IRSA role doesn't have permission to perform sts:AssumeRole. \nAssumed Cross account role may not have permissions to describe regions.";
   public static String EXPLANATION_AWS_AM_ROLE_CHECK =
-      "IAM role on delegate ec2 doesn't exist or doesn't have required permissions to describe regions.";
+      "IAM role on delegate ec2 doesn't exist or AWS access credentials configured are incorrect or doesn't have required permissions to describe regions.";
   public static String EXPLANATION_LITE_ENGINE_CHECK = "Delegate is not able to connect to the created build farm";
   public static String EXPLANATION_AWS_CLIENT_UNKNOWN_ISSUE = "Seems to encounter unknown AWS client issue";
   public static String EXPLANATION_UNEXPECTED_ERROR = "Unexpected error while handling task";
