@@ -799,12 +799,19 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       Preconditions.checkState(
           logAnalysisRadarChartListDTOList.size() <= 1, "clusterId filter should result in one or zero cluster");
     }
+    // remove clusters with 0 count
+    logAnalysisRadarChartListDTOList =
+        logAnalysisRadarChartListDTOList.stream()
+            .filter(logAnalysisRadarChartListDTO -> logAnalysisRadarChartListDTO.getCount() != 0)
+            .collect(Collectors.toList());
     return logAnalysisRadarChartListDTOList;
   }
 
   private List<ClusterHostFrequencyData> getFilteredControlClusterHostFrequencies(
       List<ClusterHostFrequencyData> controlClusterHostFrequencies, List<String> hostNames) {
     List<ClusterHostFrequencyData> filteredClusterHostFrequencyData = new ArrayList<>();
+    if (controlClusterHostFrequencies == null)
+      return filteredClusterHostFrequencyData;
     for (ClusterHostFrequencyData clusterHostFrequencyData : controlClusterHostFrequencies) {
       List<HostFrequencyData> hostFrequencyDataList =
           getFilteredHostFrequencyDataList(clusterHostFrequencyData.getFrequencyData(), hostNames);
@@ -830,6 +837,8 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   private List<HostFrequencyData> getFilteredHostFrequencyDataList(
       List<HostFrequencyData> frequencyDataList, List<String> hostNames) {
     List<HostFrequencyData> filteredHostNames = new ArrayList<>();
+    if (frequencyDataList == null)
+      return filteredHostNames;
     for (HostFrequencyData hostFrequencyData : frequencyDataList) {
       if (hostNames.contains(hostFrequencyData.getHost())) {
         filteredHostNames.add(hostFrequencyData);
