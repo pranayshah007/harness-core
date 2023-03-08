@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SOCKET_HTTP_STATE_TIMEOUT;
+import static io.harness.beans.FeatureName.SPG_HTTP_BODY_FILE;
 import static io.harness.beans.FeatureName.SPG_HTTP_STEP_CERTIFICATE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -136,6 +137,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Getter @Setter private Boolean isJsonFile = false;
   @Getter @Setter private String appId;
   @Getter @Setter private String configFileId;
+
+  @Getter @Setter private String jsonFilePath;
   @Attributes(title = "Assertion") private String assertion;
   @Getter @Setter @Attributes(title = "Use Delegate Proxy") private boolean useProxy;
   @Getter @Setter @Attributes(title = "Tags") private List<String> tags;
@@ -242,11 +245,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
    * @param body the body
    */
   public void setBody(String body) {
-    if (isJsonFile) {
-      this.body = getFileContent(appId, configFileId);
-    } else {
-      this.body = trim(body);
-    }
+    this.body = trim(body);
   }
 
   /**
@@ -304,7 +303,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   }
 
   protected String getFinalBody(ExecutionContext context) throws UnsupportedEncodingException {
-    if (isJsonFile) {
+    if (isJsonFile && featureFlagService.isEnabled(SPG_HTTP_BODY_FILE, context.getAccountId()) && isNotEmpty(appId)
+        && isNotEmpty(configFileId)) {
       return new String(
           configService.getFileContent(appId, configService.get(appId, configFileId)), StandardCharsets.UTF_8);
     }
@@ -445,6 +445,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
 
     HttpTaskParameters httpTaskParameters = builder.method(finalMethod)
                                                 .body(finalBody)
+                                                .isJsonFile(isJsonFile)
+                                                .jsonFilePath(jsonFilePath)
                                                 .url(finalUrl)
                                                 .headers(finalHeaders)
                                                 .socketTimeoutMillis(taskSocketTimeout)

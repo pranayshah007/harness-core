@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_HTTP_BODY_FILE;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DINESH;
@@ -276,6 +277,7 @@ public class HttpStateTest extends WingsBaseTest {
     ConfigFile configFile = ConfigFile.builder().build();
     FieldUtils.writeField(httpState, "stateExecutionService", stateExecutionService, true);
     when(configService.get(anyString(), any())).thenReturn(configFile);
+    when(featureFlagService.isEnabled(SPG_HTTP_BODY_FILE, context.getAccountId())).thenReturn(true);
     when(configService.getFileContent(anyString(), any())).thenReturn(new byte[10]);
     httpState.execute(context);
     verify(configService).getFileContent(anyString(), any());
