@@ -13,11 +13,11 @@ import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 
 import com.google.common.collect.Sets;
@@ -48,24 +48,19 @@ public class BackgroundStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Backgrou
         .name(stepElement.getName())
         .failureStrategies(stepElement.getFailureStrategies())
         .timeout(stepElement.getTimeout())
-        .backgroundStepInfo(
-            BackgroundStepInfo.builder()
-                .command(backgroundStepInfoV1.getRun())
-                .image(backgroundStepInfoV1.getImage())
-                .envVariables(backgroundStepInfoV1.getEnvs())
-                .resources(backgroundStepInfoV1.getResources())
-                .retry(backgroundStepInfoV1.getRetry())
-                .shell(backgroundStepInfoV1.getShell() == null
-                        ? ParameterField.ofNull()
-                        : ParameterField.createValueField(backgroundStepInfoV1.getShell().toShellType()))
-                .imagePullPolicy(backgroundStepInfoV1.getPull() == null
-                        ? ParameterField.ofNull()
-                        : ParameterField.createValueField(backgroundStepInfoV1.getPull().toImagePullPolicy()))
-                .runAsUser(backgroundStepInfoV1.getUser())
-                .privileged(backgroundStepInfoV1.getPrivileged())
-                .entrypoint(backgroundStepInfoV1.getEntrypointList())
-                .ports(backgroundStepInfoV1.getPorts())
-                .build())
+        .backgroundStepInfo(BackgroundStepInfo.builder()
+                                .command(backgroundStepInfoV1.getRun())
+                                .image(backgroundStepInfoV1.getImage())
+                                .envVariables(backgroundStepInfoV1.getEnvs())
+                                .resources(backgroundStepInfoV1.getResources())
+                                .retry(backgroundStepInfoV1.getRetry())
+                                .shell(CIPlanCreatorUtils.getShell(backgroundStepInfoV1.getShell()))
+                                .imagePullPolicy(CIPlanCreatorUtils.getImagePullPolicy(backgroundStepInfoV1.getPull()))
+                                .runAsUser(backgroundStepInfoV1.getUser())
+                                .privileged(backgroundStepInfoV1.getPrivileged())
+                                .entrypoint(backgroundStepInfoV1.getEntrypointList())
+                                .ports(backgroundStepInfoV1.getPorts())
+                                .build())
         .build();
   }
 
