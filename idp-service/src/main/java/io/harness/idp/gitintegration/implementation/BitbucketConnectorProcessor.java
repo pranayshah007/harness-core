@@ -7,7 +7,6 @@
 
 package io.harness.idp.gitintegration.implementation;
 
-import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -15,6 +14,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswo
 import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.GitIntegrationConstants;
+import io.harness.idp.gitintegration.GitIntegrationUtil;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
@@ -60,17 +60,8 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
-    tokenEnvironmentSecret.secretIdentifier(pwdSecretIdentifier);
-    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.BITBUCKET_TOKEN);
-    DecryptedSecretValue pwdDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
-        accountIdentifier, orgIdentifier, projectIdentifier, pwdSecretIdentifier);
-    if (pwdDecryptedSecretValue == null) {
-      throw new InvalidRequestException(String.format(
-          "Password Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
-    }
-    tokenEnvironmentSecret.setDecryptedValue(pwdDecryptedSecretValue.getDecryptedValue());
-    resultList.add(tokenEnvironmentSecret);
+    resultList.add(GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
+        projectIdentifier, pwdSecretIdentifier, connectorIdentifier, GitIntegrationConstants.BITBUCKET_TOKEN));
     return resultList;
   }
 }

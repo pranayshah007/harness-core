@@ -7,7 +7,6 @@
 
 package io.harness.idp.gitintegration.implementation;
 
-import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -17,6 +16,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.GitIntegrationConstants;
+import io.harness.idp.gitintegration.GitIntegrationUtil;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
@@ -55,18 +55,9 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
       resultList.add(appIDEnvironmentSecret);
 
       String privateRefKeySecretIdentifier = apiAccessSpec.getPrivateKeyRef().getIdentifier();
-      EnvironmentSecret privateRefEnvironmentSecret = new EnvironmentSecret();
-      privateRefEnvironmentSecret.secretIdentifier(apiAccessSpec.getPrivateKeyRef().getIdentifier());
-      privateRefEnvironmentSecret.envName(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF);
-      DecryptedSecretValue privateKeyRefDecryptedValue = ngSecretService.getDecryptedSecretValue(
-          accountIdentifier, orgIdentifier, projectIdentifier, privateRefKeySecretIdentifier);
-      if (privateKeyRefDecryptedValue == null) {
-        throw new InvalidRequestException(
-            String.format("Private Key Ref Secret not found for identifier : [%s] ", connectorIdentifier));
-      }
-      privateRefEnvironmentSecret.setDecryptedValue(privateKeyRefDecryptedValue.getDecryptedValue());
-
-      resultList.add(privateRefEnvironmentSecret);
+      resultList.add(
+          GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier, projectIdentifier,
+              privateRefKeySecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF));
     }
 
     GithubHttpCredentialsOutcomeDTO outcome =
@@ -83,17 +74,8 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
     }
 
-    EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
-    tokenEnvironmentSecret.secretIdentifier(tokenSecretIdentifier);
-    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.GITHUB_TOKEN);
-    DecryptedSecretValue tokenDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
-        accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
-    if (tokenDecryptedSecretValue == null) {
-      throw new InvalidRequestException(
-          String.format("Token Secret not found for identifier : [%s] ", connectorIdentifier));
-    }
-    tokenEnvironmentSecret.setDecryptedValue(tokenDecryptedSecretValue.getDecryptedValue());
-    resultList.add(tokenEnvironmentSecret);
+    resultList.add(GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
+        projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
     return resultList;
   }
 }
