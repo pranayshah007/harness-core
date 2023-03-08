@@ -61,6 +61,7 @@ public class ApiKeyLocalToKMSMigration implements Migration {
           continue;
         }
 
+        updated++;
         if (isNull(apiKeyEntry) || isNull(apiKeyEntry.getEncryptedDataId())) {
           continue;
         }
@@ -68,7 +69,6 @@ public class ApiKeyLocalToKMSMigration implements Migration {
         bulkWriteOperation.find(new BasicDBObject("_id", uuid))
             .updateOne(
                 new BasicDBObject("$set", new BasicDBObject("encryptedDataId", apiKeyEntry.getEncryptedDataId())));
-        updated++;
         batched++;
 
         if (updated != 0 && updated % batchLimit == 0) {
