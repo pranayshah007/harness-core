@@ -15,7 +15,6 @@ import io.harness.nexus.model.DockerImageTagResponse;
 import io.harness.nexus.model.Nexus3AssetResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
 import io.harness.nexus.model.Nexus3Repository;
-import io.harness.nexus.model.Nexus3TokenResponse;
 import io.harness.nexus.model.RepositoryRequest;
 import io.harness.nexus.model.RepositoryResponse;
 
@@ -68,15 +67,6 @@ public interface NexusThreeRestClient {
   Call<List<Nexus3Repository>> listRepositories();
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/components")
-  Call<Nexus3ComponentResponse> listComponents(
-      @Header("Authorization") String authorization, @Query("repository") String repository);
-
-  @Headers("Accept: application/json")
-  @GET("service/rest/v1/components")
-  Call<Nexus3ComponentResponse> listComponents(@Query("repository") String repository);
-
-  @Headers("Accept: application/json")
   @GET("service/rest/v1/search")
   Call<Nexus3ComponentResponse> search(@Header("Authorization") String authorization,
       @Query("repository") String repository, @Query("continuationToken") String continuationToken);
@@ -87,12 +77,12 @@ public interface NexusThreeRestClient {
       @Query("repository") String repository, @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> search(@Query("repository") String repository, @Query("name") String imageName,
       @Query("format") String repoFormat, @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> search(@Header("Authorization") String authorization,
       @Query("repository") String repository, @Query("name") String imageName, @Query("format") String repoFormat,
       @Query("continuationToken") String continuationToken);
@@ -110,24 +100,24 @@ public interface NexusThreeRestClient {
       @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> getPackageVersions(@Header("Authorization") String authorization,
       @Query("repository") String repository, @Query("name") String packageName,
       @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> getGroupVersions(@Header("Authorization") String authorization,
       @Query("repository") String repository, @Query("group") String group,
       @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> getGroupVersions(@Query("repository") String repository, @Query("group") String group,
       @Query("continuationToken") String continuationToken);
 
   @Headers("Accept: application/json")
-  @GET("service/rest/v1/search")
+  @GET("service/rest/v1/search?sort=version&direction=desc")
   Call<Nexus3ComponentResponse> getPackageVersions(@Query("repository") String repository,
       @Query("name") String packageName, @Query("continuationToken") String continuationToken);
 
@@ -204,6 +194,4 @@ public interface NexusThreeRestClient {
       @Query("maven.groupId") String groupId, @Query("maven.artifactId") String artifactId,
       @Query("version") String version, @Query("maven.extension") String extension,
       @Query("maven.classifier") String classifier);
-
-  @Headers("Accept: application/json") @GET("v2/token") Call<Nexus3TokenResponse> getAnonymousAccessToken();
 }

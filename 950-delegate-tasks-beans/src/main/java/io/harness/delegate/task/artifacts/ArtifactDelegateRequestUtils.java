@@ -165,6 +165,7 @@ public class ArtifactDelegateRequestUtils {
         .classifier(classifier)
         .packageName(packageName)
         .group(group)
+        .maxBuilds(Integer.MAX_VALUE)
         .build();
   }
 
