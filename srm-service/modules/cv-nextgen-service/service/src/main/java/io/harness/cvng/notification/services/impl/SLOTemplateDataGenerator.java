@@ -23,6 +23,11 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
     extends NotificationRuleTemplateDataGenerator<T> {
   public static final String MONITORED_SERVICE_URL = "MONITORED_SERVICE_URL";
 
+  private static final String MONITORED_SERVICE_URL_FORMAT =
+      "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&notificationTime=%s";
+
+  private static final String SLO_URL_FORMAT =
+      "%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?tab=Details&sloType=Simple&notificationTime=%s";
   @Override
   public String getEntityName() {
     return SLO_NAME;
@@ -31,18 +36,15 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
   @Override
   public String getUrl(
       String baseUrl, ProjectParams projectParams, String identifier, NotificationRuleType type, Long endTime) {
-    return String.format("%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?endTime=%s&duration=FOUR_HOURS", baseUrl,
-        projectParams.getAccountIdentifier(), MODULE_NAME, projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), identifier, endTime);
+    return String.format(SLO_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier, endTime);
   }
 
   public String getMonitoredServiceUrl(String baseUrl, ProjectParams projectParams, String monitoredServiceIdentifier) {
     Instant currentInstant = this.clock.instant();
     Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
-    return String.format(
-        "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&endTime=%s&duration=FOUR_HOURS",
-        baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME, projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), monitoredServiceIdentifier, endTime);
+    return String.format(MONITORED_SERVICE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), monitoredServiceIdentifier, endTime);
   }
 
   @Override
