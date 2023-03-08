@@ -2774,13 +2774,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         return res[0];
       }
     }
-    return null;
+    return displayName;
   }
 
   private String getDisplayNameFromArtifact(String artifactPath, String buildId) {
-    if (EmptyPredicate.isEmpty(buildId)) {
-      return null;
-    }
     if (EmptyPredicate.isEmpty(artifactPath)) {
       return buildId;
     }
@@ -2800,7 +2797,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     DashboardServiceHelper.constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
@@ -2829,7 +2826,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructArtifactToLastDeploymentMap(artifactDeploymentDetails, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
