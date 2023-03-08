@@ -633,60 +633,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
-
-        RequestBuilder requestBuilder = prepareRequestBuilder();
-
-        Options clientOptions = client.newOptionsBuilder()
-                                    .runtime(asyncHttpClient, true)
-                                    .reconnect(true)
-                                    .reconnectAttempts(Integer.MAX_VALUE)
-                                    .pauseBeforeReconnectInSeconds(5)
-                                    .build();
-        socket = client.create(clientOptions);
-        socket
-            .on(Event.MESSAGE,
-                new Function<String>() { // Do not change this, wasync doesn't like lambdas
-                  @Override
-                  public void on(String message) {
-                    handleMessageSubmit(message);
-                  }
-                })
-            .on(Event.ERROR,
-                new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
-                  @Override
-                  public void on(Exception e) {
-                    log.error("Exception on websocket", e);
-                    handleError(e);
-                  }
-                })
-            .on(Event.OPEN,
-                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
-                  @Override
-                  public void on(Object o) {
-                    handleOpen(o);
-                  }
-                })
-            .on(Event.CLOSE,
-                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
-                  @Override
-                  public void on(Object o) {
-                    handleClose(o);
-                  }
-                })
-            .on(new Function<IOException>() {
-              @Override
-              public void on(IOException ioe) {
-                log.error("Error occured while starting Delegate", ioe);
-              }
-            })
-            .on(new Function<TransportNotSupported>() {
-              public void on(TransportNotSupported ex) {
-                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
-              }
-            });
-
-        socket.open(requestBuilder.build());
-
+        openSocket();
         startHeartbeat(builder, socket);
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
@@ -717,6 +664,61 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
+  }
+
+  private void openSocket() {
+    RequestBuilder requestBuilder = prepareRequestBuilder();
+
+    Options clientOptions = client.newOptionsBuilder()
+                                .runtime(asyncHttpClient, true)
+                                .reconnect(true)
+                                .reconnectAttempts(Integer.MAX_VALUE)
+                                .pauseBeforeReconnectInSeconds(5)
+                                .build();
+    socket = client.create(clientOptions);
+    socket
+        .on(Event.MESSAGE,
+            new Function<String>() { // Do not change this, wasync doesn't like lambdas
+              @Override
+              public void on(String message) {
+                handleMessageSubmit(message);
+              }
+            })
+        .on(Event.ERROR,
+            new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
+              @Override
+              public void on(Exception e) {
+                log.error("Exception on websocket", e);
+                handleError(e);
+              }
+            })
+        .on(Event.OPEN,
+            new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+              @Override
+              public void on(Object o) {
+                handleOpen(o);
+              }
+            })
+        .on(Event.CLOSE,
+            new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+              @Override
+              public void on(Object o) {
+                handleClose(o);
+              }
+            })
+        .on(new Function<IOException>() {
+          @Override
+          public void on(IOException ioe) {
+            log.error("Error occured while starting Delegate", ioe);
+          }
+        })
+        .on(new Function<TransportNotSupported>() {
+          public void on(TransportNotSupported ex) {
+            log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
+          }
+        });
+
+    socket.open(requestBuilder.build());
   }
 
   private String getDelegateConfig() {
@@ -915,7 +917,21 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
+      long now = clock.millis();
+      boolean heartbeatExpired = ((now - lastHeartbeatSentAt.get()) > HEARTBEAT_TIMEOUT)
+          || ((now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_TIMEOUT);
+      if (heartbeatExpired) {
+        log.error(
+            "Reconnecting delegate - web socket connection: heartbeatExpired:[{}], lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}]",
+            heartbeatExpired, lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get());
+        closeAndReconnectSocket();
+      }
     }
+  }
+
+  private void closeAndReconnectSocket() {
+    finalizeSocket();
+    openSocket();
   }
 
   private void stopGrpcService() {
