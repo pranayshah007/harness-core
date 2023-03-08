@@ -102,6 +102,7 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       return acquireLock(name, timeout);
     } catch (WingsException exception) {
+      log.error("[RedisPersistentLocker]: Exception during locking", exception);
       return null;
     }
   }
