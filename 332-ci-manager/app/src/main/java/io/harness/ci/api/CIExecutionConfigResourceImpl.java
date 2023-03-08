@@ -17,7 +17,6 @@ import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.execution.DeprecatedImageInfo;
 import io.harness.cimanager.executionconfig.api.CIExecutionConfigResource;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -25,7 +24,6 @@ import lombok.AllArgsConstructor;
 
 @OwnedBy(CI)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@NextGenManagerAuth
 public class CIExecutionConfigResourceImpl implements CIExecutionConfigResource {
   @Inject CIExecutionConfigService configService;
 
