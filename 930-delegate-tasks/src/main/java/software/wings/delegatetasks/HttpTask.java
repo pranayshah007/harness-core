@@ -19,6 +19,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.http.HttpTaskParameters;
+import io.harness.exception.InvalidRequestException;
 import io.harness.http.HttpService;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
@@ -28,6 +29,9 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -48,16 +52,33 @@ public class HttpTask extends AbstractDelegateRunnableTask {
   @Override
   public HttpStateExecutionResponse run(TaskParameters parameters) throws IOException {
     HttpTaskParameters httpTaskParameters = (HttpTaskParameters) parameters;
-
+    String resolvedBody = null;
     if (httpTaskParameters.getCertificate() != null) {
       encryptionService.decrypt(
           httpTaskParameters.getCertificate(), httpTaskParameters.getEncryptedDataDetails(), false);
     }
 
+    if (httpTaskParameters.isJsonFile() && null != httpTaskParameters.getJsonFilePath()
+        && !httpTaskParameters.getJsonFilePath().isEmpty()) {
+      try {
+        resolvedBody =
+            Files.readString(Paths.get(httpTaskParameters.getJsonFilePath()).toAbsolutePath(), StandardCharsets.UTF_8);
+      } catch (Exception e) {
+        log.error(
+            "Error while reading contents from the file at path: {}, The Path where the delegate looked for the file was at {}",
+            httpTaskParameters.getJsonFilePath(), Paths.get(httpTaskParameters.getJsonFilePath()).toAbsolutePath());
+      }
+      if (resolvedBody == null) {
+        throw new InvalidRequestException(String.format(
+            "Error while reading contents from the file at path: %s, The Path where the delegate looked for the file was at %s",
+            httpTaskParameters.getJsonFilePath(), Paths.get(httpTaskParameters.getJsonFilePath()).toAbsolutePath()));
+      }
+    }
+
     HttpInternalResponse httpInternalResponse =
         httpService.executeUrl(HttpInternalConfig.builder()
                                    .method(httpTaskParameters.getMethod())
-                                   .body(httpTaskParameters.getBody())
+                                   .body(resolvedBody == null ? httpTaskParameters.getBody() : resolvedBody)
                                    .headers(httpTaskParameters.getHeaders())
                                    .socketTimeoutMillis(httpTaskParameters.getSocketTimeoutMillis())
                                    .url(httpTaskParameters.getUrl())

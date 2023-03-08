@@ -32,6 +32,8 @@ public class HttpTaskParameters implements TaskParameters, ExecutionCapabilityDe
   @Expression(ALLOW_SECRETS) String url;
   @Expression(ALLOW_SECRETS) String header;
   @Expression(ALLOW_SECRETS) String body;
+  boolean isJsonFile;
+  @Expression(ALLOW_SECRETS) String jsonFilePath;
   @Expression(ALLOW_SECRETS) List<KeyValuePair> headers;
   int socketTimeoutMillis;
   boolean useProxy;
