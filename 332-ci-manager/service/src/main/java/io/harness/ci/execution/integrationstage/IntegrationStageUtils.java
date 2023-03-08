@@ -436,9 +436,7 @@ public class IntegrationStageUtils {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
       if (connectionType == GitConnectionType.PROJECT) {
-        if (url.contains(AZURE_REPO_BASE_URL)) {
-          gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
-        }
+        gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
       } else {
         gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
             StringUtils.stripStart(repoName, PATH_SEPARATOR));

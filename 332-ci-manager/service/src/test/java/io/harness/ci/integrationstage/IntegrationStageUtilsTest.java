@@ -233,4 +233,13 @@ public class IntegrationStageUtilsTest {
     buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
     assertThat(buildTimeMultiplier).isEqualTo(1.0);
   }
+
+  @Test
+  @Category(UnitTests.class)
+  public void shouldNotFailForAzureOnPremUrl() {
+    String accountUrl = "https://tfs.azureonprem.com/Org/Project/";
+    String actualUrl =
+        IntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
+    assertThat(actualUrl).isEqualTo(accountUrl + "_git/repo");
+  }
 }
