@@ -50,8 +50,6 @@ import io.harness.exception.WingsException;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
 import io.harness.helpers.EncryptDecryptHelperImpl;
-import io.harness.kustomize.KustomizeClient;
-import io.harness.kustomize.KustomizeClientImpl;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.manifest.CustomManifestService;
 import io.harness.manifest.CustomManifestServiceImpl;
@@ -233,7 +231,6 @@ public class WingsTestModule extends AbstractModule {
     bind(AwsEcsHelperServiceDelegate.class).to(AwsEcsHelperServiceDelegateImpl.class);
     bind(AwsS3HelperServiceDelegate.class).to(AwsS3HelperServiceDelegateImpl.class);
     bind(GitService.class).to(GitServiceImpl.class);
-    bind(KustomizeClient.class).to(KustomizeClientImpl.class);
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
     bind(CfCliClient.class).to(CfCliClientImpl.class);
     bind(CfSdkClient.class).to(CfSdkClientImpl.class);

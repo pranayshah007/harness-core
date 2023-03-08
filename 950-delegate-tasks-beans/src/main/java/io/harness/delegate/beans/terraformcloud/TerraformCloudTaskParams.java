@@ -36,13 +36,10 @@ import lombok.experimental.SuperBuilder;
 public class TerraformCloudTaskParams
     extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   TerraformCloudTaskType terraformCloudTaskType;
-
   TerraformCloudConnectorDTO terraformCloudConnectorDTO;
   List<EncryptedDataDetail> encryptionDetails;
-
   String accountId;
   String entityId;
-
   String organization;
   String workspace;
   boolean discardPendingRuns;
@@ -53,10 +50,8 @@ public class TerraformCloudTaskParams
   @Expression(ALLOW_SECRETS) Map<String, String> variables;
   @Expression(DISALLOW_SECRETS) List<String> targets;
   String runId;
-
   RollbackType rollbackType;
   String message;
-
   CommandUnitsProgress commandUnitsProgress;
 
   @Override

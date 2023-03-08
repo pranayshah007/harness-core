@@ -7,9 +7,10 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -45,6 +46,7 @@ import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.WorkflowPhase;
@@ -58,8 +60,10 @@ import software.wings.sm.states.ApprovalState;
 
 import com.google.common.collect.Lists;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -88,7 +92,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
   }
 
   public AbstractStepNode getSpec(PipelineStageElement pipelineStageElement) {
-    Map<String, Object> properties = CollectionUtils.emptyIfNull(pipelineStageElement.getProperties());
+    Map<String, Object> properties = emptyIfNull(pipelineStageElement.getProperties());
     ApprovalState state = new ApprovalState(pipelineStageElement.getName());
     state.parseProperties(properties);
     return getSpec(state);
@@ -128,7 +132,19 @@ public class ApprovalStepMapperImpl extends StepMapper {
     ApprovalState state1 = (ApprovalState) getState(stepYaml1);
     ApprovalState state2 = (ApprovalState) getState(stepYaml2);
     // As long as the types match we can call them similar. Because it is easy to create step templates & customize
-    return state1.getApprovalStateType() == state2.getApprovalStateType();
+
+    if (state1.getApprovalStateType() != state2.getApprovalStateType()) {
+      return false;
+    }
+    if (state1.getApprovalStateType() == ApprovalState.ApprovalStateType.USER_GROUP) {
+      Set<NameValuePair> variables1 = new HashSet<>(emptyIfNull(state1.getVariables()));
+      Set<NameValuePair> variables2 = new HashSet<>(emptyIfNull(state2.getVariables()));
+      if (variables1.equals(variables2)) {
+        return true;
+      }
+      return false;
+    }
+    return true;
   }
 
   @Override

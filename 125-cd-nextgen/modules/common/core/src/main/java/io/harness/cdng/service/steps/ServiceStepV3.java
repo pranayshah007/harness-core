@@ -274,7 +274,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             ex);
       }
       List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
-      envToEnvVariables.put(inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
+      envToEnvVariables.put(
+          EnvironmentStepsUtils.inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
           NGVariablesUtils.getMapOfVariables(variables));
       if (variables != null) {
         secretNGVariables.addAll(
@@ -294,7 +295,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           secretNGVariables.addAll(
               svcOverrideVariables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
         }
-        envToSvcVariables.put(inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
+        envToSvcVariables.put(
+            EnvironmentStepsUtils.inheritEnvGroupScope(environment.fetchRef(), parameters.getEnvGroupRef()),
             NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
       }
     }
@@ -331,14 +333,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       return envRef;
     }
     return envId;
-  }
-
-  private String inheritEnvGroupScope(String envRef, ParameterField<String> envGroupRef) {
-    if (ParameterField.isNull(envGroupRef) || StringUtils.isEmpty(envGroupRef.getValue())) {
-      return envRef;
-    }
-    Scope envGroupScope = EnvironmentStepsUtils.getScopeForRef(envGroupRef.getValue());
-    return EnvironmentStepsUtils.getEnvironmentRef(envRef, envGroupScope);
   }
 
   private List<ParameterField<String>> inferEnvRefScopeFromEnvGroup(

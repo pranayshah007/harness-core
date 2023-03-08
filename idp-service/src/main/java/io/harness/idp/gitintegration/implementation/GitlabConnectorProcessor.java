@@ -7,7 +7,6 @@
 
 package io.harness.idp.gitintegration.implementation;
 
-import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -15,6 +14,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.gitintegration.GitIntegrationConstants;
+import io.harness.idp.gitintegration.GitIntegrationUtil;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
@@ -59,17 +59,8 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
-    tokenEnvironmentSecret.secretIdentifier(tokenSecretIdentifier);
-    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.GITLAB_TOKEN);
-    DecryptedSecretValue tokenDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
-        accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
-    if (tokenDecryptedSecretValue == null) {
-      throw new InvalidRequestException(String.format(
-          "Token Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
-    }
-    tokenEnvironmentSecret.setDecryptedValue(tokenDecryptedSecretValue.getDecryptedValue());
-    resultList.add(tokenEnvironmentSecret);
+    resultList.add(GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
+        projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITLAB_TOKEN));
     return resultList;
   }
 }

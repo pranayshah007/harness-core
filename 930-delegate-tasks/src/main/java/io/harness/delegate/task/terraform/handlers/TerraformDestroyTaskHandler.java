@@ -162,6 +162,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
               .isTerraformCloudCli(taskParameters.isTerraformCloudCli())
+              .skipTerraformRefresh(taskParameters.isSkipTerraformRefresh())
               .build();
 
       TerraformStepResponse terraformStepResponse =

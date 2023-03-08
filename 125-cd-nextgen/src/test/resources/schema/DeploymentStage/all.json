@@ -905,6 +905,18 @@
             },
             "stageListenerRuleArn": {
               "type": "string"
+            },
+            "useAlreadyRunningInstances": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -6755,7 +6767,8 @@
           ]
         },
         "flag": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -14865,7 +14878,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -14916,7 +14929,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -14948,7 +14961,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -15017,7 +15030,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -15354,7 +15367,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -16206,39 +16219,6 @@
     "TerraformCloudRunExecutionSpec": {
       "type": "object",
       "discriminator": "runType",
-      "properties": {
-        "specParams": {
-          "$ref": "#/definitions/TerraformCloudRunSpecParameters"
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "RefreshState",
-            "PlanOnly",
-            "PlanAndApply",
-            "PlanAndDestroy",
-            "Plan",
-            "Apply"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "TerraformCloudRunSpecParameters": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "RefreshState",
-            "PlanOnly",
-            "PlanAndApply",
-            "PlanAndDestroy",
-            "Plan",
-            "Apply"
-          ]
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformCloudRunStepInfo": {
@@ -16568,6 +16548,16 @@
         "secretManagerRef": {
           "type": "string"
         },
+        "skipRefreshCommand": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "targets": {
           "oneOf": [
             {
@@ -16675,6 +16665,16 @@
             },
             "provisionerIdentifier": {
               "type": "string"
+            },
+            "skipRefreshCommand": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -16687,6 +16687,16 @@
         "type"
       ],
       "properties": {
+        "skipRefreshCommand": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "spec": {
           "$ref": "#/definitions/TerraformExecutionData"
         },

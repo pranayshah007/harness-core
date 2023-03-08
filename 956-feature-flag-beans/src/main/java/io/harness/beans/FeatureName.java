@@ -98,9 +98,15 @@ public enum FeatureName {
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
+  FFM_5256_FF_MFE_Environment_Listing("Enable Feature Flag MFE Environment listing page", HarnessTeam.CF),
+  FFM_6666_FF_MFE_Target_Group_Detail("Enable Feature Flag MFE Target Group Detail page", HarnessTeam.CF),
+  FFM_5939_MFE_TARGET_GROUPS_LISTING("Enable Feature Flag MFE Target Groups listing page", HarnessTeam.CF),
+  FFM_6665_FF_MFE_Target_Detail("Enable Feature Flag MFE Target Detail page", HarnessTeam.CF),
+  FFM_5951_FF_MFE_Targets_Listing("Enable Feature Flag MFE Targets listing page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
   FFM_6683_ALL_ENVIRONMENTS_FLAGS,
+  FFM_4737_JIRA_INTEGRATION("Enable the Jira Integration feature", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -643,7 +649,8 @@ public enum FeatureName {
       "Allow migration of secrets from local to gcpKms in ng prod3", HarnessTeam.PL),
   CDS_MANIFEST_LAST_STEP("Show last step of the manifest directly when user is editing manifest", HarnessTeam.CDP),
   CHAOS_SRM_EVENT(
-      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS);
+      "Enables chaos events to be displayed as change source events in SRM monitored services.", HarnessTeam.CHAOS),
+  PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {

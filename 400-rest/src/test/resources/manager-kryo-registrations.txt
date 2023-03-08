@@ -2905,6 +2905,8 @@
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
 680010:io.harness.delegate.beans.terraformcloud.RollbackType
 680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
+680012:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams
+680013:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse
 873572:io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams
 873573:io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse
 873574:io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper
@@ -3099,6 +3101,7 @@
 10000302:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
+10000305:io.harness.exception.TerraformCloudException
 
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
 

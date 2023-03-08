@@ -15,9 +15,8 @@ import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
-import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
-import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
+import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -32,7 +31,7 @@ import java.util.Optional;
 public class TerraformCloudPolicyChecksJsonFunctor implements SdkFunctor {
   public static final String TFC_POLICY_CHECKS_JSON = "policyChecksJson";
 
-  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
+  @Inject TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
@@ -42,11 +41,11 @@ public class TerraformCloudPolicyChecksJsonFunctor implements SdkFunctor {
     }
 
     String tfcPolicyChecksOutputName = args[0];
-    Optional<TerraformPlanExecutionDetails> tfPlanExecutionDetail =
+    Optional<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetails =
         getExecutionDetailsByProvisionerId(ambiance, tfcPolicyChecksOutputName);
-    if (tfPlanExecutionDetail.isPresent()) {
+    if (terraformCloudPlanExecutionDetails.isPresent()) {
       return String.format(TerraformPlanExpressionInterface.POLICY_CHECKS_DELEGATE_EXPRESSION,
-          tfPlanExecutionDetail.get().getTfcPolicyChecksFileId(), ambiance.getExpressionFunctorToken(),
+          terraformCloudPlanExecutionDetails.get().getTfcPolicyChecksFileId(), ambiance.getExpressionFunctorToken(),
           "policyChecksJsonFilePath");
     } else {
       throw new InvalidRequestException(
@@ -58,22 +57,17 @@ public class TerraformCloudPolicyChecksJsonFunctor implements SdkFunctor {
     return String.format("%s%s.\"%s\"%s", EXPR_START, TFC_POLICY_CHECKS_JSON, provisionerId, EXPR_END);
   }
 
-  private Optional<TerraformPlanExecutionDetails> getExecutionDetailsByProvisionerId(
+  private Optional<TerraformCloudPlanExecutionDetails> getExecutionDetailsByProvisionerId(
       Ambiance ambiance, String provisionerId) {
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
 
-    return terraformPlanExectionDetailsService
-        .listAllPipelineTFPlanExecutionDetails(TFPlanExecutionDetailsKey.builder()
-                                                   .scope(Scope.builder()
-                                                              .accountIdentifier(accountId)
-                                                              .orgIdentifier(orgId)
-                                                              .projectIdentifier(projectId)
-                                                              .build())
-                                                   .pipelineExecutionId(planExecutionId)
-                                                   .build())
+    return terraformCloudPlanExecutionDetailsService
+        .listAllPipelineTFCloudPlanExecutionDetails(
+            Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+            planExecutionId)
         .stream()
         .filter(executionDetail -> executionDetail.getProvisionerId().equals(provisionerId))
         .findFirst();

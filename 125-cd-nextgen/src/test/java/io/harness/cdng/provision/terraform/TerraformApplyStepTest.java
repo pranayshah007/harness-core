@@ -203,6 +203,8 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformApplyStepParameters applyStepParameters =
         TerraformStepDataGenerator.generateApplyStepPlan(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
+    applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
+
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -235,6 +237,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test
@@ -296,6 +299,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     assertThat(taskParameters.getEncryptionConfig()).isNull();
     assertThat(taskParameters.getWorkspace()).isNull();
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
+    assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
   }
 
   @Test

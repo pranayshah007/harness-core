@@ -8,11 +8,15 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters.TerraformStepConfigurationParametersBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -30,11 +34,13 @@ public class TerraformStepConfiguration {
 
   @NotNull @JsonProperty("type") TerraformStepConfigurationType terraformStepConfigurationType;
   @JsonProperty("spec") TerraformExecutionData terraformExecutionData;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRefreshCommand;
 
   public TerraformStepConfigurationParameters toStepParameters() {
     TerraformStepConfigurationParametersBuilder builder = TerraformStepConfigurationParameters.builder();
     validateParams();
     builder.type(terraformStepConfigurationType);
+    builder.skipTerraformRefresh(skipRefreshCommand);
     if (terraformExecutionData != null) {
       builder.spec(terraformExecutionData.toStepParameters());
     }

@@ -6,11 +6,11 @@
  */
 
 package io.harness.ngtriggers.eventmapper.filters.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
@@ -52,19 +53,24 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.slf4j.Logger;
 
 @OwnedBy(PIPELINE)
 public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Mock private NGTriggerService ngTriggerService;
   @Mock private GitProviderDataObtainmentManager dataObtainmentManager;
   @Inject @InjectMocks private GitWebhookTriggerRepoFilter filter;
+  @Mock private Logger logger;
   private static List<TriggerDetails> triggerDetailsList;
   private static List<TriggerDetails> triggerDetailsList1;
   private static List<ConnectorResponseDTO> connectors;
@@ -243,8 +249,11 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   }
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws IOException, IllegalAccessException {
     initMocks(this);
+    final Field f = FieldUtils.getField(GitWebhookTriggerRepoFilter.class, "log", true);
+    FieldUtils.removeFinalModifier(f);
+    f.set(null, logger);
   }
 
   @Test
@@ -515,5 +524,38 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     HashSet<String> urls = filter.getUrls(repository5, "AZURE_REPO");
     assertThat(urls).containsExactlyInAnyOrder(
         "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGenerateConnectorFQNFromTriggerConfig() {
+    Map<String, List<TriggerDetails>> triggerToConnectorMap = null;
+
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .accountId("acc")
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .metadata(
+                        NGTriggerMetadata.builder()
+                            .webhook(
+                                WebhookMetadata.builder().type("GITHUB").git(GitMetadata.builder().build()).build())
+                            .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
+                    .build())
+            .build();
+
+    filter.generateConnectorFQNFromTriggerConfig(triggerDetails, triggerToConnectorMap);
+    verify(logger).error(eq(
+        "TRIGGER_ERROR_LOG: Exception while evaluating Trigger: acc:org:proj:null:null, Filter: GitWebhookTriggerRepoFilter, Skipping this one."));
   }
 }

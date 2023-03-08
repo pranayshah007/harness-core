@@ -22,4 +22,6 @@ public class GitIntegrationConstants {
   public static final String GITLAB_CONNECTOR_TYPE = "Gitlab";
   public static final String BITBUCKET_TOKEN = "BITBUCKET_TOKEN";
   public static final String BITBUCKET_CONNECTOR_TYPE = "Bitbucket";
+  public static final String AZURE_REPO_CONNECTOR_TYPE = "AzureRepo";
+  public static final String AZURE_REPO_TOKEN = "AZURE_REPO_TOKEN";
 }

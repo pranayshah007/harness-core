@@ -7,6 +7,7 @@
 
 package io.harness.kustomize;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -38,7 +39,10 @@ import org.zeroturnaround.exec.ProcessResult;
 public class KustomizeClientImplTest extends CategoryTest {
   @Mock private CliHelper cliHelper;
   @Mock LogCallback logCallback;
-  @InjectMocks private KustomizeClientImpl kustomizeClientImpl;
+  @InjectMocks private KustomizeClientFactory kustomizeClientFactory;
+  @InjectMocks private KustomizeClientImpl kustomizeClientImpl = getKustomizeClient("");
+  @InjectMocks private KustomizeClientImpl kustomizeClientV3 = getKustomizeClient("3.5.4");
+  @InjectMocks private KustomizeClientImpl kustomizeClientV4_0_1 = getKustomizeClient("4.0.1");
   private static final String KUSTOMIZE_VERSION_COMMAND = "KUSTOMIZE_BINARY_PATH version";
 
   @Before
@@ -54,12 +58,12 @@ public class KustomizeClientImplTest extends CategoryTest {
     CliResponse cliResponse = CliResponse.builder().build();
     doReturn(cliResponse)
         .when(cliHelper)
-        .executeCliCommand("KUSTOMIZE_BINARY_PATH build KUSTOMIZE_DIR_PATH",
+        .executeCliCommand("KUSTOMIZE_BINARY_PATH build  KUSTOMIZE_DIR_PATH",
             io.harness.kustomize.KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(),
             "MANIFEST_FILES_DIRECTORY", logCallback);
 
-    CliResponse actualResponse = kustomizeClientImpl.build(
-        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "KUSTOMIZE_BINARY_PATH", logCallback);
+    CliResponse actualResponse =
+        kustomizeClientImpl.build("MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", logCallback);
 
     assertThat(actualResponse).isEqualTo(cliResponse);
   }
@@ -77,12 +81,12 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins  KUSTOMIZE_DIR_PATH",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
-    CliResponse actualResponse = kustomizeClientImpl.buildWithPlugins(
-        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "KUSTOMIZE_BINARY_PATH", "PLUGIN_PATH", logCallback);
+    CliResponse actualResponse = kustomizeClientV3.buildWithPlugins(
+        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "PLUGIN_PATH", logCallback);
 
     assertThat(actualResponse).isEqualTo(cliResponse);
   }
@@ -100,12 +104,12 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable-alpha-plugins KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable-alpha-plugins  KUSTOMIZE_DIR_PATH",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
-    CliResponse actualResponse = kustomizeClientImpl.buildWithPlugins(
-        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "KUSTOMIZE_BINARY_PATH", "PLUGIN_PATH", logCallback);
+    CliResponse actualResponse = kustomizeClientV4_0_1.buildWithPlugins(
+        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "PLUGIN_PATH", logCallback);
 
     assertThat(actualResponse).isEqualTo(cliResponse);
   }
@@ -123,12 +127,12 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins  KUSTOMIZE_DIR_PATH",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
     CliResponse actualResponse = kustomizeClientImpl.buildWithPlugins(
-        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "KUSTOMIZE_BINARY_PATH", "PLUGIN_PATH", logCallback);
+        "MANIFEST_FILES_DIRECTORY", "KUSTOMIZE_DIR_PATH", "PLUGIN_PATH", logCallback);
 
     assertThat(actualResponse).isEqualTo(cliResponse);
   }
@@ -138,8 +142,18 @@ public class KustomizeClientImplTest extends CategoryTest {
         .when(cliHelper)
         .executeCommand(command);
 
-    Version result = kustomizeClientImpl.getVersion(command);
+    Version result = kustomizeClientFactory.getVersion(command);
 
     assertThat(result).isEqualByComparingTo(expectedVersion);
+  }
+
+  private KustomizeClientImpl getKustomizeClient(String version) {
+    if (isEmpty(version)) {
+      version = "0.0.1";
+    }
+    return KustomizeClientImpl.builder()
+        .kustomizeBinaryPath("KUSTOMIZE_BINARY_PATH")
+        .version(Version.parse(version))
+        .build();
   }
 }

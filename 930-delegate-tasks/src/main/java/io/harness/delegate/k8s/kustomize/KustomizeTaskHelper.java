@@ -21,6 +21,7 @@ import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_IO_EXCE
 import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_IO_EXPLANATION;
 import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_TIMEOUT_EXCEPTION_HINT;
 import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_TIMEOUT_EXPLANATION;
+import static io.harness.kustomize.KustomizeExceptionConstants.RESOURCE_NOT_FOUND;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -33,6 +34,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.kustomize.KustomizeClient;
+import io.harness.kustomize.KustomizeClientFactory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -43,6 +45,8 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
@@ -50,21 +54,24 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 @Singleton
 public class KustomizeTaskHelper {
-  @Inject private KustomizeClient kustomizeClient;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  private static final Pattern ACCUMULATING_RESOURCES_PATH_PATTERN =
+      Pattern.compile("accumulating resources from '(.*?)'");
+  @Inject private KustomizeClientFactory kustomizeClientFactory;
 
   @Nonnull
   public List<FileData> build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeBinaryPath,
       String pluginRootDir, String kustomizeDirPath, LogCallback executionLogCallback) {
     CliResponse cliResponse;
+    // ToDo: set command-flags correctly
+    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(kustomizeBinaryPath, Collections.emptyMap());
     try {
       if (isBlank(pluginRootDir)) {
-        cliResponse =
-            kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, kustomizeBinaryPath, executionLogCallback);
+        cliResponse = kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, executionLogCallback);
 
       } else {
         cliResponse = kustomizeClient.buildWithPlugins(
-            manifestFilesDirectory, kustomizeDirPath, kustomizeBinaryPath, pluginRootDir, executionLogCallback);
+            manifestFilesDirectory, kustomizeDirPath, pluginRootDir, executionLogCallback);
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -91,7 +98,9 @@ public class KustomizeTaskHelper {
       if (isNotEmpty(cliErrorMessage) && cliErrorMessage.contains(EVALSYMLINK_FAILURE)
           && cliErrorMessage.contains(ACCUMULATING_RESOURCES)) {
         throw NestedExceptionUtils.hintWithExplanationException(EVALSYMLINK_ERROR_HINT, EVALSYMLINK_ERROR_EXPLANATION,
-            new InvalidRequestException(cliErrorMessage, WingsException.USER));
+            new InvalidRequestException(
+                RESOURCE_NOT_FOUND.replace("${RESOURCE_PATH}", getMissingResourcePath(cliErrorMessage)),
+                WingsException.USER));
       }
 
       throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_BUILD_FAILED_HINT,
@@ -117,5 +126,10 @@ public class KustomizeTaskHelper {
     }
     String kustomizeDirPath = filesToApply.get(0);
     return build(manifestFilesDirectory, kustomizeBinaryPath, pluginRootDir, kustomizeDirPath, executionLogCallback);
+  }
+
+  private String getMissingResourcePath(String errorMessage) {
+    Matcher matcher = ACCUMULATING_RESOURCES_PATH_PATTERN.matcher(errorMessage);
+    return matcher.find() ? matcher.group(1) : errorMessage;
   }
 }

@@ -137,12 +137,6 @@ public class NexusThreeClientImpl {
     return NexusHelper.getRetrofit(nexusConfig, JacksonConverterFactory.create()).create(NexusThreeRestClient.class);
   }
 
-  public NexusThreeRestClient getNexusThreeClient(NexusRequest nexusConfig, String artifactoDownloadUrl) {
-    return NexusHelper
-        .getRetrofit(artifactoDownloadUrl, nexusConfig.isCertValidationRequired(), JacksonConverterFactory.create())
-        .create(NexusThreeRestClient.class);
-  }
-
   public boolean isServerValid(NexusRequest nexusConfig) throws IOException {
     log.info("Validate if nexus is running by retrieving repositories");
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
@@ -203,7 +197,8 @@ public class NexusThreeClientImpl {
           new NexusRegistryException(e.getMessage()));
     }
 
-    log.info("Retrieving artifact versions(tags)");
+    log.info("Retrieving artifact versions(tags) - repositoryFormat - {} artifactName - {} repository - {}",
+        repositoryFormat, artifactName, repository);
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     final Call<Nexus3ComponentResponse> request;
     if (nexusConfig.isHasCredentials()) {
@@ -215,8 +210,8 @@ public class NexusThreeClientImpl {
     }
 
     Response<Nexus3ComponentResponse> response = executeRequest(request);
-    List<BuildDetailsInternal> result = processComponentResponse(
-        request, response, nexusConfig, repositoryKey, port, artifactPath, repositoryFormat, null);
+    List<BuildDetailsInternal> result =
+        processComponentResponse(request, response, nexusConfig, repositoryKey, port, artifactPath, null);
 
     if (isEmpty(result)) {
       throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact configuration.",
@@ -388,7 +383,7 @@ public class NexusThreeClientImpl {
   }
 
   public List<BuildDetailsInternal> getVersions(NexusRequest nexusConfig, String repoId, String groupId,
-      String artifactName, String extension, String classifier) {
+      String artifactName, String extension, String classifier, int maxBuilds) {
     try {
       log.info("Retrieving versions for repoId {} groupId {} and artifactName {}", repoId, groupId, artifactName);
       List<String> versions = new ArrayList<>();
@@ -398,9 +393,7 @@ public class NexusThreeClientImpl {
       Response<Nexus3ComponentResponse> response;
       boolean hasMoreResults = true;
       String continuationToken = null;
-      int page = 0;
-      while (hasMoreResults && page < MAX_PAGES) {
-        page++;
+      while (hasMoreResults && versions.size() < maxBuilds) {
         hasMoreResults = false;
         if (nexusConfig.isHasCredentials()) {
           response = nexusThreeRestClient
@@ -535,8 +528,8 @@ public class NexusThreeClientImpl {
     }
 
     Response<Nexus3ComponentResponse> response = executeRequest(request);
-    List<BuildDetailsInternal> result = processComponentResponse(
-        request, response, nexusConfig, repositoryKey, port, artifactPath, repositoryFormat, tag);
+    List<BuildDetailsInternal> result =
+        processComponentResponse(request, response, nexusConfig, repositoryKey, port, artifactPath, tag);
 
     if (isEmpty(result)) {
       throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact configuration.",
@@ -562,8 +555,7 @@ public class NexusThreeClientImpl {
   }
 
   private List<BuildDetailsInternal> processComponentResponse(Call request, Response<Nexus3ComponentResponse> response,
-      NexusRequest nexusConfig, String repository, String port, String artifactName, String repositoryFormat,
-      String tag) {
+      NexusRequest nexusConfig, String repository, String port, String artifactName, String tag) {
     List<BuildDetailsInternal> components = new ArrayList<>();
     if (isRequestSuccessful(request, response)) {
       if (isNotEmpty(response.body().getItems())) {
@@ -651,8 +643,7 @@ public class NexusThreeClientImpl {
             "Failed to fetch the names for package [" + groupName + "]", WingsException.USER);
       }
     } while (!StringUtils.isBlank(continuationToken));
-    names = names.stream().sorted(new AlphanumComparator()).collect(toList());
-    log.info("After sorting alphanumerically names coming from nexus server {}", names);
+    log.info("Names coming from nexus server {}", names);
 
     return names.stream()
         .map(name -> {

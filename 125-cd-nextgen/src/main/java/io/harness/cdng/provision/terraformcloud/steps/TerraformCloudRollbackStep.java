@@ -197,8 +197,8 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
       String runId = terraformCloudRunTaskResponse.getRunId();
       String provisionerIdentifier = ParameterFieldHelper.getParameterFieldValue(
           ((TerraformCloudRollbackStepParameters) stepElementParameters.getSpec()).getProvisionerIdentifier());
-      helper.saveTerraformPlanExecutionDetails(
-          ambiance, null, terraformCloudRunTaskResponse.getPolicyChecksJsonFileId(), provisionerIdentifier);
+      helper.saveTerraformCloudPlanExecutionDetails(
+          ambiance, null, terraformCloudRunTaskResponse.getPolicyChecksJsonFileId(), provisionerIdentifier, null);
       stepResponseBuilder.stepOutcome(
           StepOutcome.builder()
               .name(OUTCOME_NAME)

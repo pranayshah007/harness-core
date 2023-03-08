@@ -11,12 +11,8 @@ if [[ -v "{hostname}" ]]; then
    export HOSTNAME=$(hostname)
 fi
 
-if [[ -z "$JVM_MIN_MEMORY" ]]; then
-   export MIN_MEMORY=2096m
-fi
-
-if [[ -z "$JVM_MAX_MEMORY" ]]; then
-   export MAX_MEMORY=2096m
+if [[ -z "$MEMORY" ]]; then
+   export MEMORY=4096m
 fi
 
 if [[ -z "$COMMAND" ]]; then
@@ -31,7 +27,7 @@ fi
 
 export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
 
-export JAVA_OPTS="-Xms${MIN_MEMORY} -Xmx${MAX_MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS"
+export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS"
 
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then

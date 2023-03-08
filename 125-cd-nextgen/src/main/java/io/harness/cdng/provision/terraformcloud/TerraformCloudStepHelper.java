@@ -1,10 +1,8 @@
 /*
-
  * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
-
  */
 
 package io.harness.cdng.provision.terraformcloud;
@@ -19,15 +17,24 @@ import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLA
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_ONLY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
-import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.fileservice.FileServiceClientFactory;
+import io.harness.cdng.pipeline.executions.TerraformCloudCleanupTaskNotifyCallback;
+import io.harness.cdng.provision.terraform.executions.RunDetails;
+import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.executions.TerraformCloudPlanExecutionDetails.TerraformCloudPlanExecutionDetailsKeys;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfigDAL;
+import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
 import io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters;
@@ -36,10 +43,12 @@ import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanOnlySpe
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -49,15 +58,23 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.waiter.WaitNotifyEngine;
+
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -69,8 +86,12 @@ import org.apache.commons.io.IOUtils;
 public class TerraformCloudStepHelper {
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
-  @Inject public TerraformCloudConfigDAL terraformCloudConfigDAL;
+  @Inject private TerraformCloudPlanExecutionDetailsService terraformCloudPlanExecutionDetailsService;
+  @Inject private TerraformCloudConfigDAL terraformCloudConfigDAL;
+  @Inject private FileServiceClientFactory fileService;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private EncryptionHelper encryptionHelper;
 
   public String generateFullIdentifier(String provisionerIdentifier, Ambiance ambiance) {
     if (Pattern.matches(NGRegexValidatorConstants.IDENTIFIER_PATTERN, provisionerIdentifier)) {
@@ -177,29 +198,131 @@ public class TerraformCloudStepHelper {
     }
   }
 
-  public void saveTerraformPlanExecutionDetails(
-      Ambiance ambiance, String planFileJsonId, String policyCheckFileJsonId, String provisionerIdentifier) {
-    String planExecutionId = ambiance.getPlanExecutionId();
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String stageExecutionId = ambiance.getStageExecutionId();
-
-    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
-        TerraformPlanExecutionDetails.builder()
-            .accountIdentifier(accountId)
-            .orgIdentifier(orgId)
-            .projectIdentifier(projectId)
-            .pipelineExecutionId(planExecutionId)
-            .stageExecutionId(stageExecutionId)
+  public void saveTerraformCloudPlanExecutionDetails(Ambiance ambiance, String planFileJsonId,
+      String policyCheckFileJsonId, String provisionerIdentifier, RunDetails runDetails) {
+    TerraformCloudPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformCloudPlanExecutionDetails.builder()
+            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .stageExecutionId(ambiance.getStageExecutionId())
             .provisionerId(provisionerIdentifier)
             .tfPlanJsonFieldId(planFileJsonId)
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
             .tfcPolicyChecksFileId(policyCheckFileJsonId)
             .tfcPolicyChecksFileBucket(FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS.name())
+            .runDetails(runDetails)
             .build();
 
-    terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
+    terraformCloudPlanExecutionDetailsService.save(terraformPlanExecutionDetails);
+  }
+
+  public void updateRunDetails(Ambiance ambiance, String runId) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(TerraformCloudPlanExecutionDetailsKeys.runDetails, null);
+
+    terraformCloudPlanExecutionDetailsService.updateTerraformCloudPlanExecutionDetails(
+        Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+        planExecutionId, runId, updates);
+  }
+
+  public void cleanupTfPlanJson(List<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetailsList) {
+    for (TerraformCloudPlanExecutionDetails terraformCloudPlanExecutionDetails :
+        terraformCloudPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformCloudPlanExecutionDetails.getTfPlanJsonFieldId())
+          && isNotEmpty(terraformCloudPlanExecutionDetails.getTfPlanFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformCloudPlanExecutionDetails.getTfPlanFileBucket());
+        try {
+          log.info("Remove terraform cloud plan json file [{}] from bucket [{}] for provisioner [{}]",
+              terraformCloudPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket,
+              terraformCloudPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformCloudPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform cloud plan json file [{}] for provisioner [{}]",
+              terraformCloudPlanExecutionDetails.getTfPlanJsonFieldId(),
+              terraformCloudPlanExecutionDetails.getProvisionerId(), e);
+        }
+      }
+    }
+  }
+
+  public void cleanupPolicyCheckJson(List<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetailsList) {
+    for (TerraformCloudPlanExecutionDetails terraformCloudPlanExecutionDetails :
+        terraformCloudPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileId())
+          && isNotEmpty(terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileBucket());
+        try {
+          log.info("Remove terraform policy check json file [{}] from bucket [{}] for provisioner [{}]",
+              terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileId(), fileBucket,
+              terraformCloudPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform policy check json file [{}] for provisioner [{}]",
+              terraformCloudPlanExecutionDetails.getTfcPolicyChecksFileId(),
+              terraformCloudPlanExecutionDetails.getProvisionerId(), e);
+        }
+      }
+    }
+  }
+
+  public List<EncryptedDataDetail> getEncryptionDetail(
+      Ambiance ambiance, TerraformCloudConnectorDTO terraformCloudConnector) {
+    return encryptionHelper.getEncryptionDetail(terraformCloudConnector.getCredential().getSpec(),
+        AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
+  }
+
+  public void cleanupTerraformCloudRuns(
+      List<TerraformCloudPlanExecutionDetails> terraformCloudPlanExecutionDetailsList, Ambiance ambiance) {
+    for (TerraformCloudPlanExecutionDetails terraformCloudPlanExecutionDetails :
+        terraformCloudPlanExecutionDetailsList) {
+      if (terraformCloudPlanExecutionDetails.getRunDetails() != null) {
+        try {
+          runCleanupTerraformCloudTask(ambiance, terraformCloudPlanExecutionDetails.getRunDetails());
+        } catch (Exception e) {
+          log.error(String.format(
+              "Failed to do cleanup for accountId: %s, organization: %s, project: %s, execution: %s, runId: %s",
+              terraformCloudPlanExecutionDetails.getAccountIdentifier(),
+              terraformCloudPlanExecutionDetails.getOrgIdentifier(),
+              terraformCloudPlanExecutionDetails.getProjectIdentifier(),
+              terraformCloudPlanExecutionDetails.getPipelineExecutionId(),
+              terraformCloudPlanExecutionDetails.getRunDetails().getRunId()));
+        }
+      }
+    }
+  }
+
+  private void runCleanupTerraformCloudTask(Ambiance ambiance, RunDetails runDetails) {
+    TerraformCloudConnectorDTO terraformCloudConnector =
+        (TerraformCloudConnectorDTO) cdStepHelper.getConnector(runDetails.getConnectorRef(), ambiance)
+            .getConnectorConfig();
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .taskParameters(TerraformCloudCleanupTaskParams.builder()
+                                .terraformCloudConnectorDTO(terraformCloudConnector)
+                                .encryptionDetails(getEncryptionDetail(ambiance, terraformCloudConnector))
+                                .runId(runDetails.getRunId())
+                                .build())
+            .taskType(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG.name())
+            .executionTimeout(Duration.ofMinutes(10))
+            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .logStreamingAbstractions(new LinkedHashMap<>() {
+              { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
+            })
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    log.info("Task Successfully queued with taskId: {}", taskId);
+    waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformCloudCleanupTaskNotifyCallback(), taskId);
   }
 
   private TerraformCloudPlanOutput getSavedTerraformCloudOutput(

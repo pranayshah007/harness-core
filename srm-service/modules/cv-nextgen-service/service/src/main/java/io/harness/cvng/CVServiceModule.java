@@ -426,6 +426,7 @@ import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxDao;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -515,6 +516,8 @@ public class CVServiceModule extends AbstractModule {
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
         verificationConfiguration.getNgManagerServiceConfig().getManagerServiceSecret(),
         AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
+    install(new OpaClientModule(verificationConfiguration.getOpaClientConfig(),
+        verificationConfiguration.getPolicyManagerSecret(), CV_NEXT_GEN.getServiceId()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);

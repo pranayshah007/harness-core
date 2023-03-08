@@ -426,6 +426,7 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.terraformcloud.TerraformCloudCleanupTaskNG;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntApplyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
@@ -491,8 +492,6 @@ import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
 import io.harness.k8s.config.K8sGlobalConfigService;
-import io.harness.kustomize.KustomizeClient;
-import io.harness.kustomize.KustomizeClientImpl;
 import io.harness.manifest.CustomManifestService;
 import io.harness.manifest.CustomManifestServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;
@@ -1205,7 +1204,6 @@ public class DelegateModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(HelmClient.class).to(HelmClientImpl.class);
     bind(TerragruntClient.class).to(TerragruntClientImpl.class);
-    bind(KustomizeClient.class).to(KustomizeClientImpl.class);
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
     bind(HelmDeployService.class).to(HelmDeployServiceImpl.class);
     bind(ContainerDeploymentDelegateHelper.class);
@@ -2014,6 +2012,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V2).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V3).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2036,6 +2035,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =

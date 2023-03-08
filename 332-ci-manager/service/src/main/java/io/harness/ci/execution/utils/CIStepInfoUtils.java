@@ -79,7 +79,7 @@ public class CIStepInfoUtils {
       case SECURITY:
         return ((SecurityStepInfo) step).getImagePullPolicy();
       default:
-        return null;
+        return new ParameterField<>();
     }
   }
 
