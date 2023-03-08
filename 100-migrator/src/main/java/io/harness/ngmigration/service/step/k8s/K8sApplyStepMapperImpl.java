@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step.k8s;
 
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
+import io.harness.data.structure.CompareUtils;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -67,7 +68,11 @@ public class K8sApplyStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return true;
+    K8sApplyState state1 = (K8sApplyState) getState(stepYaml1);
+    K8sApplyState state2 = (K8sApplyState) getState(stepYaml2);
+    return StringUtils.compare(state1.getFilePaths(), state2.getFilePaths()) == 0
+        && state1.isInheritManifests() == state2.isInheritManifests()
+        && StringUtils.compare(state1.getInlineStepOverride(), state2.getInlineStepOverride()) == 0
+        && CompareUtils.compareObjects(state1.getRemoteStepOverride(), state2.getRemoteStepOverride());
   }
 }
