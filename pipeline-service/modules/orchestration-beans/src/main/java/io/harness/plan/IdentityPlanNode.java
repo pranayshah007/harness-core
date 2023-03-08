@@ -42,6 +42,7 @@ public class IdentityPlanNode implements Node {
   String serviceName;
   String executionInputTemplate;
 
+  // if present, the advisor response from the previous execution will be ignored and these advisors be be used
   @With List<AdviserObtainment> adviserObtainments;
 
   @Override
