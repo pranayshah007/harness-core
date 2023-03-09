@@ -37,11 +37,10 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
   @Inject ArtifactoryClientImpl artifactoryClient;
 
   @Override
-  public List<BuildDetailsInternal> getBuilds(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
-      String artifactName, String repositoryFormat, int maxNumberOfBuilds) {
+  public List<BuildDetailsInternal> getBuilds(
+      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactName, String repositoryFormat) {
     if (RepositoryFormat.docker.name().equals(repositoryFormat)) {
-      return artifactoryClient.getArtifactsDetails(
-          artifactoryConfig, repositoryName, artifactName, repositoryFormat, maxNumberOfBuilds);
+      return artifactoryClient.getArtifactsDetails(artifactoryConfig, repositoryName, artifactName, repositoryFormat);
     }
     throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact YAML configuration.",
         String.format("RepositoryFormat [%s] is an invalid value.", repositoryFormat),
@@ -52,8 +51,7 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactName, String repositoryFormat, String tagRegex) {
-    List<BuildDetailsInternal> builds =
-        getBuilds(artifactoryConfig, repositoryName, artifactName, repositoryFormat, MAX_NO_OF_TAGS_PER_ARTIFACT);
+    List<BuildDetailsInternal> builds = getBuilds(artifactoryConfig, repositoryName, artifactName, repositoryFormat);
 
     Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
 
@@ -89,8 +87,7 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
 
   private BuildDetailsInternal getBuildNumber(ArtifactoryConfigRequest artifactoryConfig, String repository,
       String artifactName, String repositoryFormat, String tag) {
-    List<BuildDetailsInternal> builds =
-        getBuilds(artifactoryConfig, repository, artifactName, repositoryFormat, MAX_NO_OF_TAGS_PER_ARTIFACT);
+    List<BuildDetailsInternal> builds = getBuilds(artifactoryConfig, repository, artifactName, repositoryFormat);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
     if (builds.size() == 0) {
