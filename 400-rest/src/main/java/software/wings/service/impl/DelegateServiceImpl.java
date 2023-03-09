@@ -4481,7 +4481,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateTokenGlobalContextData != null) {
       return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
     }
-    log.warn("Delegate token name not found in Global Context Data. Please verify manually.");
+    // Global context thread is not the best way to save token name. There has been issues in past due to racing between
+    // threads
+    log.debug("Delegate token name not found in Global Context Data. Please verify manually.");
     return Optional.empty();
   }
 
