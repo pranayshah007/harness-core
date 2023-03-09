@@ -153,9 +153,8 @@ public class StagesPlanCreatorTest extends CategoryTest {
     GraphLayoutResponse layoutNodeInfo = stagesPlanCreator.getLayoutNodeInfo(context, stagesConfig);
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isEqualTo(approvalStageUuid);
-    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(2);
+    assertThat(layoutNodeInfo.getLayoutNodes()).hasSize(1);
     assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid)).isTrue();
-    assertThat(layoutNodeInfo.getLayoutNodes().containsKey(approvalStageUuid + "_rollbackStage")).isTrue();
 
     GraphLayoutNode stageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid);
     assertThat(stageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid);
@@ -168,12 +167,5 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(edgeLayoutList).isNotNull();
     assertThat(edgeLayoutList.getNextIdsList()).hasSize(1);
     assertThat(edgeLayoutList.getNextIds(0)).isEqualTo(parallelStagesUuid);
-
-    GraphLayoutNode rollbackStageLayoutNode = layoutNodeInfo.getLayoutNodes().get(approvalStageUuid + "_rollbackStage");
-    assertThat(rollbackStageLayoutNode.getNodeUUID()).isEqualTo(approvalStageUuid + "_rollbackStage");
-    assertThat(rollbackStageLayoutNode.getNodeType()).isEqualTo("Approval");
-    assertThat(rollbackStageLayoutNode.getName()).isEqualTo("a1-1 (Rollback Stage)");
-    assertThat(rollbackStageLayoutNode.getNodeGroup()).isEqualTo("STAGE");
-    assertThat(rollbackStageLayoutNode.getNodeIdentifier()).isEqualTo(approvalStageUuid + "_rollbackStage");
   }
 }
