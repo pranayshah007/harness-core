@@ -851,6 +851,9 @@ public class AzureAsyncTaskHelper {
       case MANAGED_IDENTITY_USER_ASSIGNED:
         args.add(KUBECFG_ARGS_CLIENT_ID);
         args.add(azureConfig.getClientId());
+        args.add(KUBECFG_ARGS_LOGIN);
+        args.add(KUBECFG_ARGS_MSI);
+        break;
 
       case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
         args.add(KUBECFG_ARGS_LOGIN);

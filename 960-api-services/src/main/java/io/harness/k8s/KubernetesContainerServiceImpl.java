@@ -89,7 +89,6 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.k8s.model.kubeconfig.Exec;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.logging.LogCallback;
@@ -2373,7 +2372,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private String generateExecFormatKubeconfig(String execFormat, KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
-        isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
+        isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + String.valueOf(config.getCaCert()) : "";
     String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
     String exec;
     try {
@@ -2388,7 +2387,6 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     } catch (JsonProcessingException ex) {
       throw new InvalidRequestException("Unable to convert Exec to yaml", ex);
     }
-
     return execFormat.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
         .replace("${CERTIFICATE_AUTHORITY_DATA}", certificateAuthorityData)
