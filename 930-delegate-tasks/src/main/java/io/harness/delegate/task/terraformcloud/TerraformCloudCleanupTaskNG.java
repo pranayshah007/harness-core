@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformCloudCleanupTaskNG extends AbstractDelegateRunnableTask {
-  static final String IS_DISCARDABLE = "is-discardable";
   static final String DISCARD_MESSAGE = "No Harness Apply step executed, discarding run...";
   private static final String TF_CLEANUP_FAILURE = "Failed to discard run: %s";
   @Inject private TerraformCloudConfigMapper terraformCloudConfigMapper;
@@ -69,7 +68,7 @@ public class TerraformCloudCleanupTaskNG extends AbstractDelegateRunnableTask {
           (TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials();
       RunData initialRunData = terraformCloudTaskHelper.getRun(
           credentials.getUrl(), credentials.getToken(), terraformCleanupParams.getRunId());
-      if (initialRunData.getAttributes().getActions().get(IS_DISCARDABLE)) {
+      if (initialRunData.getAttributes().getActions().isDiscardable()) {
         terraformCloudTaskHelper.discardRun(
             credentials.getUrl(), credentials.getToken(), terraformCleanupParams.getRunId(), DISCARD_MESSAGE);
         RunData runData = terraformCloudTaskHelper.getRun(

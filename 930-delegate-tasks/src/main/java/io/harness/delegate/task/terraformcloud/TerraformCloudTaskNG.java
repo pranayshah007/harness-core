@@ -20,8 +20,10 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.MISSING_WORKSPACE_ID;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
@@ -239,22 +241,27 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String runId = taskParameters.getRunId();
 
     RunData runData = terraformCloudTaskHelper.getRun(url, token, runId);
-    RunStatus status = runData.getAttributes().getStatus();
-    if (status == RunStatus.POLICY_OVERRIDE) {
+    if (runData.getAttributes().getStatus() == RunStatus.POLICY_OVERRIDE) {
       List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
       terraformCloudTaskHelper.overridePolicy(url, token, policyCheckData, logCallback);
-      status = terraformCloudTaskHelper.getRunStatus(url, token, runId);
+      runData = terraformCloudTaskHelper.getRun(url, token, runId);
+      while (runData.getAttributes().getStatus() != RunStatus.POLICY_CHECKED) {
+        sleep(ofSeconds(2));
+        runData = terraformCloudTaskHelper.getRun(url, token, runId);
+      }
     }
-    if (status == RunStatus.POLICY_CHECKED) {
+    if (runData.getAttributes().getActions().isConfirmable()) {
       String output = terraformCloudTaskHelper.applyRun(url, token, runId, taskParameters.getMessage(), logCallback);
       return TerraformCloudRunTaskResponse.builder().runId(runId).tfOutput(output).build();
     } else if (!runData.getAttributes().isHasChanges()) {
       logCallback.saveExecutionLog("Apply will not run. No changes.", INFO, CommandExecutionStatus.SUCCESS);
       return TerraformCloudRunTaskResponse.builder().runId(runId).build();
     } else {
-      logCallback.saveExecutionLog(format(APPLY_ERROR_MESSAGE, status.name()), ERROR, CommandExecutionStatus.FAILURE);
+      logCallback.saveExecutionLog(format(APPLY_ERROR_MESSAGE, runData.getAttributes().getStatus().name()), ERROR,
+          CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
-          format(APPLY_ERROR_MESSAGE, status.name()), new TerraformCloudException(ERROR_TO_APPLY));
+          format(APPLY_ERROR_MESSAGE, runData.getAttributes().getStatus().name()),
+          new TerraformCloudException(ERROR_TO_APPLY));
     }
   }
 
@@ -301,9 +308,14 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
 
   private String policyCheckInternal(String url, String token, TerraformCloudTaskParams taskParameters, String runId,
       CommandUnitsProgress commandUnitsProgress) {
+    LogCallback logCallback =
+        getLogCallback(TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), commandUnitsProgress);
     List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
-    terraformCloudTaskHelper.streamSentinelPolicies(url, token, policyCheckData,
-        getLogCallback(TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), commandUnitsProgress));
+    if (policyCheckData.isEmpty()) {
+      logCallback.saveExecutionLog("No policy available", INFO, CommandExecutionStatus.SUCCESS);
+      return null;
+    }
+    terraformCloudTaskHelper.streamSentinelPolicies(url, token, runId, logCallback);
 
     if (taskParameters.getTerraformCloudTaskType() == TerraformCloudTaskType.RUN_REFRESH_STATE) {
       return null;
