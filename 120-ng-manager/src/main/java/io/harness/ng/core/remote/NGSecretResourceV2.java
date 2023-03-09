@@ -78,6 +78,7 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validator;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -298,10 +299,12 @@ public class NGSecretResourceV2 {
               + " accessible at the scope. For eg if set as true, at the Project scope we will get"
               + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
       @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
-      @Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100 ") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
@@ -326,10 +329,12 @@ public class NGSecretResourceV2 {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       String projectIdentifier, @Body SecretResourceFilterDTO secretResourceFilterDTO,
-      @Parameter(description = "Page number of navigation. The default value of 0") @QueryParam(
+      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
+      @Parameter(
+          description =
+              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,

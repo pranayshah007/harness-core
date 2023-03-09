@@ -2040,7 +2040,8 @@ components:
       schema:
         type: integer
         default: 30
-      description: 'Pagination: Number of items to return'
+        maximum: 1000
+      description: 'Number of items to return per page.'
     SearchTerm:
       name: search_term
       in: query

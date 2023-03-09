@@ -35,6 +35,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SortOrder;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
@@ -51,6 +52,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
@@ -88,6 +90,7 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.stream.BoundedInputStream;
+import io.harness.utils.PageUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -108,6 +111,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
@@ -396,12 +400,17 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       criteria.and(SecretKeys.identifier).in(identifiers);
     }
 
-    List<Secret> allMatchingSecrets = ngSecretService.list(criteria).getContent();
-    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(SECRET_RESOURCE_TYPE, null), SECRET_VIEW_PERMISSION)) {
+      SortOrder order =
+          SortOrder.Builder.aSortOrder().withField(SecretKeys.createdAt, SortOrder.OrderType.DESC).build();
+      PageRequest pageRequest = PageRequest.builder().pageSize(size).pageIndex(page).sortOrders(List.of(order)).build();
+      return ngSecretService.list(criteria, PageUtils.getPageRequest(pageRequest)).map(this::getResponseWrapper);
+    } else {
+      List<Secret> allMatchingSecrets = ngSecretService.list(criteria, Pageable.unpaged()).getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
+      return ngSecretService.getPaginatedResult(allMatchingSecrets, page, size).map(this::getResponseWrapper);
     }
-    return ngSecretService.getPaginatedResult(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
   @VisibleForTesting
