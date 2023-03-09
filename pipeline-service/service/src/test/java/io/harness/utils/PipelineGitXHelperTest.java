@@ -13,8 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
 import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
+import io.harness.gitx.ThreadOperationContext;
+import io.harness.gitx.USER_FLOW;
+import io.harness.manage.GlobalContextManager;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -38,5 +42,17 @@ public class PipelineGitXHelperTest {
 
     assertFalse(
         PipelineGitXHelper.shouldRetryWithFallBackBranch(new ScmConflictException(scmBadRequest), branch, branch));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGetFileContentOnly() {
+    assertFalse(PipelineGitXHelper.isExecutionFlow());
+
+    GlobalContextManager.set(new GlobalContext());
+    GlobalContextManager.upsertGlobalContextRecord(
+        ThreadOperationContext.builder().userFlow(USER_FLOW.EXECUTION).build());
+    assertTrue(PipelineGitXHelper.isExecutionFlow());
   }
 }
