@@ -394,6 +394,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
       executionLogCallback.saveExecutionLog("\nVersioning resources.");
       k8sTaskHelperBase.addRevisionNumber(resources, currentReleaseNumber);
     }
+
+    if (useDeclarativeRollback) {
+      executionLogCallback.saveExecutionLog(
+          format("Adding stage color [%s] as a suffix to Configmap and Secret names.", stageColor));
+      k8sTaskHelperBase.addSuffixToConfigmapsAndSecrets(resources, stageColor, executionLogCallback);
+    }
+
     managedWorkload = getManagedWorkload(resources);
     managedWorkload.appendSuffixInName('-' + stageColor);
     managedWorkload.addLabelsInPodSpec(

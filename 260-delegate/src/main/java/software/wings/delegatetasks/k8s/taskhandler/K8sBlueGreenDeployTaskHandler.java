@@ -25,6 +25,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.addRevisionNumber;
+import static io.harness.k8s.manifest.VersionUtils.addSuffixToConfigmapsAndSecrets;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
@@ -416,6 +417,15 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
         addRevisionNumber(k8sBlueGreenHandlerConfig.getResources(), currentReleaseNumber);
       }
+
+      if (useDeclarativeRollback) {
+        executionLogCallback.saveExecutionLog(
+            format("Adding stage color [%s] as a suffix to Configmap and Secret names.",
+                k8sBlueGreenHandlerConfig.getStageColor()));
+        addSuffixToConfigmapsAndSecrets(
+            k8sBlueGreenHandlerConfig.getResources(), k8sBlueGreenHandlerConfig.getStageColor(), executionLogCallback);
+      }
+
       KubernetesResource managedWorkload = getManagedWorkload(k8sBlueGreenHandlerConfig.getResources());
       managedWorkload.appendSuffixInName('-' + k8sBlueGreenHandlerConfig.getStageColor());
       managedWorkload.addLabelsInPodSpec(ImmutableMap.of(HarnessLabels.releaseName,

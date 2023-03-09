@@ -26,6 +26,7 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -282,6 +283,9 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doReturn(Arrays.asList(K8sPod.builder().build()))
         .when(k8sCanaryBaseHandler)
         .getAllPods(k8sCanaryHandlerConfig, releaseName, timeoutIntervalInMillis);
+    doAnswer(invocation -> invocation.getArgument(0))
+        .when(k8sCanaryBaseHandler)
+        .appendSecretAndConfigMapNamesToCanaryWorkloads(anyString(), anyList());
 
     K8sDeployResponse k8sDeployResponse =
         spyRequestHandler.executeTask(canaryDeployRequest, delegateTaskParams, iLogStreamingTaskClient, null);

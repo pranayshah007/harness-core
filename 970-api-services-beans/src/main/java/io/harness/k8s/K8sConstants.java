@@ -186,7 +186,8 @@ public interface K8sConstants {
    */
   String HARNESS_KUBE_CONFIG_PATH = "HARNESS_KUBE_CONFIG_PATH";
 
-  String CANARY_WORKLOAD_SUFFIX_NAME = "-canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME = "canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR = "-" + CANARY_WORKLOAD_SUFFIX_NAME;
 
   String KUBECFG_EXEC = "exec";
   String KUBECFG_API_VERSION = "apiVersion";
