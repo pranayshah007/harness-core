@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.RAGHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.VerificationApplication;
 import io.harness.cvng.migration.beans.SRMCoreSchema;
@@ -36,6 +37,7 @@ public class CVNGMorphiaRegistrarTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testMorphiaRegistrar() {
     Set<Class> excludedClasses =
         Sets.newHashSet(PersistentIterable.class, PersistentRegularIterable.class, SRMCoreSchema.class);
