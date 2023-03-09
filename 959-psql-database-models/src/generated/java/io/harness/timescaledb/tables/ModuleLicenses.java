@@ -20,7 +20,6 @@ import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row12;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -122,6 +121,138 @@ public class ModuleLicenses extends TableImpl<ModuleLicensesRecord> {
   public final TableField<ModuleLicensesRecord, Long> LAST_UPDATED_AT =
       createField(DSL.name("last_updated_at"), SQLDataType.BIGINT, this, "");
 
+  /**
+   * The column <code>public.module_licenses.chaos_total_experiment_runs</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CHAOS_TOTAL_EXPERIMENT_RUNS =
+      createField(DSL.name("chaos_total_experiment_runs"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.chaos_total_infrastructures</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CHAOS_TOTAL_INFRASTRUCTURES =
+      createField(DSL.name("chaos_total_infrastructures"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.cd_license_type</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CD_LICENSE_TYPE =
+      createField(DSL.name("cd_license_type"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.cd_workloads</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CD_WORKLOADS =
+      createField(DSL.name("cd_workloads"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.cd_service_instances</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CD_SERVICE_INSTANCES =
+      createField(DSL.name("cd_service_instances"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.ce_spend_limit</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CE_SPEND_LIMIT =
+      createField(DSL.name("ce_spend_limit"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.cf_number_of_users</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CF_NUMBER_OF_USERS =
+      createField(DSL.name("cf_number_of_users"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.cf_number_of_client_maus</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CF_NUMBER_OF_CLIENT_MAUS =
+      createField(DSL.name("cf_number_of_client_maus"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.ci_number_of_committers</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CI_NUMBER_OF_COMMITTERS =
+      createField(DSL.name("ci_number_of_committers"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.ci_cache_allowance</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CI_CACHE_ALLOWANCE =
+      createField(DSL.name("ci_cache_allowance"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.ci_hosting_credits</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> CI_HOSTING_CREDITS =
+      createField(DSL.name("ci_hosting_credits"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.srm_number_of_services</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> SRM_NUMBER_OF_SERVICES =
+      createField(DSL.name("srm_number_of_services"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.sto_number_of_developers</code>.
+   */
+  public final TableField<ModuleLicensesRecord, Long> STO_NUMBER_OF_DEVELOPERS =
+      createField(DSL.name("sto_number_of_developers"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.module_licenses.status</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> STATUS =
+      createField(DSL.name("status"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.created_by_uuid</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CREATED_BY_UUID =
+      createField(DSL.name("created_by_uuid"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.created_by_name</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CREATED_BY_NAME =
+      createField(DSL.name("created_by_name"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.created_by_email</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CREATED_BY_EMAIL =
+      createField(DSL.name("created_by_email"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.created_by_external_user_id</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> CREATED_BY_EXTERNAL_USER_ID =
+      createField(DSL.name("created_by_external_user_id"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.last_updated_by_uuid</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> LAST_UPDATED_BY_UUID =
+      createField(DSL.name("last_updated_by_uuid"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.last_updated_by_name</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> LAST_UPDATED_BY_NAME =
+      createField(DSL.name("last_updated_by_name"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.last_updated_by_email</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> LAST_UPDATED_BY_EMAIL =
+      createField(DSL.name("last_updated_by_email"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.module_licenses.last_updated_by_external_user_id</code>.
+   */
+  public final TableField<ModuleLicensesRecord, String> LAST_UPDATED_BY_EXTERNAL_USER_ID =
+      createField(DSL.name("last_updated_by_external_user_id"), SQLDataType.CLOB, this, "");
+
   private ModuleLicenses(Name alias, Table<ModuleLicensesRecord> aliased) {
     this(alias, aliased, null);
   }
@@ -194,14 +325,5 @@ public class ModuleLicenses extends TableImpl<ModuleLicensesRecord> {
   @Override
   public ModuleLicenses rename(Name name) {
     return new ModuleLicenses(name, null);
-  }
-
-  // -------------------------------------------------------------------------
-  // Row12 type methods
-  // -------------------------------------------------------------------------
-
-  @Override
-  public Row12<String, String, String, String, String, Long, Long, Boolean, Boolean, Boolean, Long, Long> fieldsRow() {
-    return (Row12) super.fieldsRow();
   }
 }

@@ -18,6 +18,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PR_EVENT_S
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
+import static io.harness.eventsframework.EventsFrameworkConstants.MODULE_LICENSES_REDIS_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE;
@@ -243,6 +244,12 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Consumer.class)
           .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD))
           .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getTopic(),
+              NG_MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(MODULE_LICENSES_REDIS_EVENT_CONSUMER))
+          .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getModuleLicensesStreaming().getTopic(),
               NG_MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
               debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
               redisConfig.getEnvNamespace()));

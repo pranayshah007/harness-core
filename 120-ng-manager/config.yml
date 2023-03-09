@@ -408,7 +408,7 @@ enableDashboardTimescale: false
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: "postgres"
+  timescaledbUsername: ""
   timescaledbPassword: ""
   connectTimeout: 10
   socketTimeout: 30
@@ -480,6 +480,10 @@ pmsPlanCreatorServicePoolConfig:
 debeziumConsumersConfigs:
   planExecutionsSummaryStreaming:
     topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+  moduleLicensesStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_ngMongo.ng-harness.moduleLicenses}
     threads: ${DEBEZIUM_CONSUMER_THREADS:-2}
     batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
