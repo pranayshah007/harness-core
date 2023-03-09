@@ -47,6 +47,7 @@ import static software.wings.common.NotificationMessageResolver.NotificationMess
 import static software.wings.sm.ExecutionEventAdvice.ExecutionEventAdviceBuilder.anExecutionEventAdvice;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
+import static software.wings.sm.StateMachineExecutor.TEMPLATE_VARIABLE_ENTRY;
 import static software.wings.sm.StateType.ENV_ROLLBACK_STATE;
 import static software.wings.sm.StateType.ENV_STATE;
 import static software.wings.sm.StateType.PHASE;
@@ -1419,9 +1420,11 @@ public class StateMachineExecutorTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldMapEntries() {
+    when(featureFlagService.isNotEnabled(SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, ACCOUNT_ID)).thenReturn(true);
+
     List<Map<String, String>> templateVariables = new ArrayList<>();
-    templateVariables.add(
-        Map.of("className", "software.wings.beans.Variable", "name", "BENDER_BRANCH_NAME", "value", "master"));
+    templateVariables.add(Map.of("className", "software.wings.beans.Variable", "name", "BENDER_BRANCH_NAME",
+        "description", "any-value", "value", "master"));
     templateVariables.add(
         Map.of("className", "software.wings.beans.Variable", "name", "SWITCH_CLOUD", "value", "true"));
 
@@ -1439,8 +1442,10 @@ public class StateMachineExecutorTest extends WingsBaseTest {
     assertThat(target.getTemplateVariables()).hasSize(2);
     assertThat(target.getTemplateVariables().get(0).getName()).isEqualTo("BENDER_BRANCH_NAME");
     assertThat(target.getTemplateVariables().get(0).getValue()).isEqualTo("master");
+    assertThat(target.getTemplateVariables().get(0).getDescription()).isEqualTo("any-value");
     assertThat(target.getTemplateVariables().get(1).getName()).isEqualTo("SWITCH_CLOUD");
     assertThat(target.getTemplateVariables().get(1).getValue()).isEqualTo("true");
+    assertThat(target.getTemplateVariables().get(1).getDescription()).isEqualTo("");
   }
 
   @Test
@@ -1479,5 +1484,81 @@ public class StateMachineExecutorTest extends WingsBaseTest {
 
       stateMachineExecutor.mapEntries(source, target, ACCOUNT_ID);
     }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeEntryNotRequiredField() {
+    Map<String, Object> result = stateMachineExecutor.sanitizeEntry(Map.entry("fieldName", 1410));
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get("fieldName")).isEqualTo(1410);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeEntryTemplateVariables() {
+    Map<String, Object> result = stateMachineExecutor.sanitizeEntry(Map.entry(TEMPLATE_VARIABLE_ENTRY, 1410));
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(TEMPLATE_VARIABLE_ENTRY)).isEqualTo(1410);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeTemplateVariablesHandleClassCast() {
+    assertThat(stateMachineExecutor.sanitizeTemplateVariables(Map.entry(TEMPLATE_VARIABLE_ENTRY, List.of("A", "B"))))
+        .isNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeTemplateVariablesHandleNullValue() {
+    Map<String, Object> source = Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, null);
+    assertThat(stateMachineExecutor.sanitizeTemplateVariables(source.entrySet().iterator().next())).isNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeTemplateVariablesHandleNoDescriptionField() {
+    List<Map<String, String>> templateVariables = new ArrayList<>();
+    templateVariables.add(
+        Map.of("className", "software.wings.beans.Variable", "name", "BENDER_BRANCH_NAME", "value", "master"));
+    templateVariables.add(
+        Map.of("className", "software.wings.beans.Variable", "name", "SWITCH_CLOUD", "value", "true"));
+    assertThat(stateMachineExecutor.sanitizeTemplateVariables(Map.entry(TEMPLATE_VARIABLE_ENTRY, templateVariables)))
+        .isNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSanitizeTemplateVariablesHandleWhenAtLeastOneDescriptionFieldIsFound() {
+    List<Map<String, String>> templateVariables = new ArrayList<>();
+    templateVariables.add(Map.of("className", "software.wings.beans.Variable", "name", "BENDER_BRANCH_NAME",
+        "description", "any-content", "value", "master"));
+    templateVariables.add(
+        Map.of("className", "software.wings.beans.Variable", "name", "SWITCH_CLOUD", "value", "true"));
+    final Map<String, Object> result =
+        stateMachineExecutor.sanitizeTemplateVariables(Map.entry(TEMPLATE_VARIABLE_ENTRY, templateVariables));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(TEMPLATE_VARIABLE_ENTRY)).isInstanceOf(List.class);
+
+    @SuppressWarnings("unchecked")
+    final List<Map<String, String>> content = (List<Map<String, String>>) result.get(TEMPLATE_VARIABLE_ENTRY);
+    assertThat(content).hasSize(2);
+    //
+    assertThat(content.get(0).get("className")).isEqualTo("software.wings.beans.Variable");
+    assertThat(content.get(0).get("name")).isEqualTo("BENDER_BRANCH_NAME");
+    assertThat(content.get(0).get("value")).isEqualTo("master");
+    assertThat(content.get(0).get("description")).isEqualTo("any-content");
+    //
+    assertThat(content.get(1).get("className")).isEqualTo("software.wings.beans.Variable");
+    assertThat(content.get(1).get("name")).isEqualTo("SWITCH_CLOUD");
+    assertThat(content.get(1).get("value")).isEqualTo("true");
+    assertThat(content.get(1).get("description")).isEqualTo("");
   }
 }
