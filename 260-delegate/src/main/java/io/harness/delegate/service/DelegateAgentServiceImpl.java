@@ -267,7 +267,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int POLL_INTERVAL_SECONDS = 3;
   private static final long UPGRADE_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
-  private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(8);
+  private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
   private static final long FROZEN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long WATCHER_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   private static final long WATCHER_VERSION_MATCH_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
@@ -634,7 +634,60 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
-        openSocketConnection();
+
+        RequestBuilder requestBuilder = prepareRequestBuilder();
+
+        Options clientOptions = client.newOptionsBuilder()
+                                    .runtime(asyncHttpClient, true)
+                                    .reconnect(true)
+                                    .reconnectAttempts(Integer.MAX_VALUE)
+                                    .pauseBeforeReconnectInSeconds(5)
+                                    .build();
+        socket = client.create(clientOptions);
+        socket
+            .on(Event.MESSAGE,
+                new Function<String>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(String message) {
+                    handleMessageSubmit(message);
+                  }
+                })
+            .on(Event.ERROR,
+                new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(Exception e) {
+                    log.error("Exception on websocket", e);
+                    handleError(e);
+                  }
+                })
+            .on(Event.OPEN,
+                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(Object o) {
+                    handleOpen(o);
+                  }
+                })
+            .on(Event.CLOSE,
+                new Function<Object>() { // Do not change this, wasync doesn't like lambdas
+                  @Override
+                  public void on(Object o) {
+                    handleClose(o);
+                  }
+                })
+            .on(new Function<IOException>() {
+              @Override
+              public void on(IOException ioe) {
+                log.error("Error occured while starting Delegate", ioe);
+              }
+            })
+            .on(new Function<TransportNotSupported>() {
+              public void on(TransportNotSupported ex) {
+                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
+              }
+            });
+
+        socket.open(requestBuilder.build());
+
         startHeartbeat(builder, socket);
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
@@ -662,67 +715,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
         }
       }
-    } catch (Exception e) {
-      log.error("Exception while starting/running delegate", e);
-    }
-  }
-
-  private void openSocketConnection() {
-    try {
-      RequestBuilder requestBuilder = prepareRequestBuilder();
-
-      Options clientOptions = client.newOptionsBuilder()
-                                  .runtime(asyncHttpClient, true)
-                                  .reconnect(true)
-                                  .reconnectAttempts(Integer.MAX_VALUE)
-                                  .pauseBeforeReconnectInSeconds(5)
-                                  .build();
-      socket = client.create(clientOptions);
-      socket
-          .on(Event.MESSAGE,
-              new Function<String>() { // Do not change this, wasync doesn't like lambdas
-                @Override
-                public void on(String message) {
-                  handleMessageSubmit(message);
-                }
-              })
-          .on(Event.ERROR,
-              new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
-                @Override
-                public void on(Exception e) {
-                  log.error("Exception on websocket", e);
-                  handleError(e);
-                }
-              })
-          .on(Event.OPEN,
-              new Function<Object>() { // Do not change this, wasync doesn't like lambdas
-                @Override
-                public void on(Object o) {
-                  handleOpen(o);
-                }
-              })
-          .on(Event.CLOSE,
-              new Function<Object>() { // Do not change this, wasync doesn't like lambdas
-                @Override
-                public void on(Object o) {
-                  handleClose(o);
-                }
-              })
-          .on(new Function<IOException>() {
-            @Override
-            public void on(IOException ioe) {
-              log.error("Error occured while starting Delegate", ioe);
-            }
-          })
-          .on(new Function<TransportNotSupported>() {
-            public void on(TransportNotSupported ex) {
-              log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
-            }
-          });
-
-      socket.open(requestBuilder.build());
     } catch (RuntimeException | IOException e) {
-      log.error("Exception while opening web socket connection delegate", e);
+      log.error("Exception while starting/running delegate", e);
     }
   }
 
@@ -922,21 +916,26 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
-      long now = clock.millis();
-      boolean heartbeatExpired = ((now - lastHeartbeatSentAt.get()) > HEARTBEAT_SOCKET_TIMEOUT)
-          || ((now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT);
-      if (heartbeatExpired) {
-        log.error(
-            "Reconnecting delegate - web socket connection: heartbeatExpired:[{}], lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}]",
-            heartbeatExpired, lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get());
-        closeAndReconnectSocket();
-      }
     }
   }
 
   private void closeAndReconnectSocket() {
-    finalizeSocket();
-    openSocketConnection();
+    try {
+      finalizeSocket();
+      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+        log.error("Unable to close socket");
+        closingSocket.set(false);
+        return;
+      }
+      RequestBuilder requestBuilder = prepareRequestBuilder();
+      socket.open(requestBuilder.build());
+      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+        log.info("Socket reopened, status {}", socket.status());
+        closingSocket.set(false);
+      }
+    } catch (RuntimeException | IOException e) {
+      log.error("Exception while opening web socket connection delegate", e);
+    }
   }
 
   private void stopGrpcService() {
@@ -1706,7 +1705,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
-
+    long now = clock.millis();
+    boolean heartbeatReceivedTimeExpired =
+        lastHeartbeatReceivedAt.get() != 0 && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();
+    if (heartbeatReceivedTimeExpired) {
+      log.error("Reconnecting delegate - web socket connection: lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}]",
+          lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get());
+      closeAndReconnectSocket();
+    }
     if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
       log.info("Sending heartbeat...");
 
