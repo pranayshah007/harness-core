@@ -134,7 +134,7 @@ public class DockerRegistryUtils {
     return res.getLeft();
   }
 
-  private static ImmutablePair<Map<String, String>, String> getSingleTagLabels(DockerInternalConfig dockerConfig,
+  public static ImmutablePair<Map<String, String>, String> getSingleTagLabels(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
       String imageName, String tag) throws IOException {
     Response<DockerImageManifestResponse> response =
