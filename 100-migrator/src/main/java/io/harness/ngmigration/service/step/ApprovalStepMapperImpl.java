@@ -57,6 +57,7 @@ import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.approval.ShellScriptApprovalParams;
 import software.wings.sm.State;
 import software.wings.sm.states.ApprovalState;
+import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.google.common.collect.Lists;
 import java.util.Collections;
@@ -136,13 +137,10 @@ public class ApprovalStepMapperImpl extends StepMapper {
     if (state1.getApprovalStateType() != state2.getApprovalStateType()) {
       return false;
     }
-    if (state1.getApprovalStateType() == ApprovalState.ApprovalStateType.USER_GROUP) {
+    if (state1.getApprovalStateType() == ApprovalStateType.USER_GROUP) {
       Set<NameValuePair> variables1 = new HashSet<>(emptyIfNull(state1.getVariables()));
       Set<NameValuePair> variables2 = new HashSet<>(emptyIfNull(state2.getVariables()));
-      if (variables1.equals(variables2)) {
-        return true;
-      }
-      return false;
+      return variables1.equals(variables2);
     }
     return true;
   }
