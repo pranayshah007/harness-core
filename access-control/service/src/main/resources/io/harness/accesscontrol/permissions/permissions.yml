@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 49
+version: 50
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -210,14 +210,14 @@ permissions:
       - account
       - organization
       - project
-  - identifier: core_pipeline_list_view
-      name: View Pipelines List
-      status: ACTIVE
-      includeInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
+  - identifier: core_pipeline_listView
+    name: View Pipelines List
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_pipeline_edit
     name: Create or Edit Pipeline
     status: ACTIVE

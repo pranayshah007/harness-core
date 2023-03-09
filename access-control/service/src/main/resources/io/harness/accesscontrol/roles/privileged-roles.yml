@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 18
+version: 19
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -13,7 +13,7 @@ roles:
       - core_delegate_view
       - core_delegateconfiguration_view
       - core_pipeline_view
-      - core_pipeline_list_view
+      - core_pipeline_listView
       - core_service_view
       - core_environment_view
       - core_environmentgroup_view
