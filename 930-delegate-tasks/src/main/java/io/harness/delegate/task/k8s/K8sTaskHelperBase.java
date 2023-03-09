@@ -2973,6 +2973,7 @@ public class K8sTaskHelperBase {
 
     for (String chartFile : chartFiles) {
       if (K8sTaskHelperBase.isValidManifestFile(chartFile)) {
+        chartFile = StringUtils.stripStart(chartFile, "/");
         try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
              LogOutputStream logErrorStream =
                  K8sTaskHelperBase.getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
