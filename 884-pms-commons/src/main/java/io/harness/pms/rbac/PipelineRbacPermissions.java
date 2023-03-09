@@ -17,4 +17,5 @@ public interface PipelineRbacPermissions {
   String PIPELINE_VIEW = "core_pipeline_view";
   String PIPELINE_DELETE = "core_pipeline_delete";
   String PIPELINE_EXECUTE = "core_pipeline_execute";
+  String PIPELINE_LIST_VIEW = "core_pipeline_list_view";
 }

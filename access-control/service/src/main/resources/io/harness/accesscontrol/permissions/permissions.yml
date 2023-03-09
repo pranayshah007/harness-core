@@ -210,6 +210,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_pipeline_list_view
+      name: View Pipelines List
+      status: ACTIVE
+      includeInAllRoles: false
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
   - identifier: core_pipeline_edit
     name: Create or Edit Pipeline
     status: ACTIVE

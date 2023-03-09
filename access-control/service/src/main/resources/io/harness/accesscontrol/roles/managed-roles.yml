@@ -25,6 +25,7 @@ roles:
         - core_delegateconfiguration_edit
         - core_delegateconfiguration_delete
         - core_pipeline_view
+        - core_pipeline_list_view
         - core_pipeline_edit
         - core_pipeline_delete
         - core_pipeline_execute
@@ -158,6 +159,7 @@ roles:
         - core_delegate_view
         - core_delegateconfiguration_view
         - core_pipeline_view
+        - core_pipeline_list_view
         - core_service_view
         - core_environment_view
         - core_environmentgroup_view
@@ -268,6 +270,7 @@ roles:
         - core_pipeline_delete
         - core_pipeline_execute
         - core_pipeline_view
+        - core_pipeline_list_view
         - chi_monitoredservice_view
         - chi_monitoredservice_edit
         - chi_monitoredservice_delete
@@ -374,6 +377,7 @@ roles:
         - core_governancePolicySets_view
         - core_project_view
         - core_pipeline_view
+        - core_pipeline_list_view
         - chi_monitoredservice_view
         - chi_slo_view
         - chi_downtime_view
@@ -489,6 +493,7 @@ roles:
         - core_pipeline_delete
         - core_pipeline_execute
         - core_pipeline_view
+        - core_pipeline_list_view
         - chi_monitoredservice_view
         - chi_monitoredservice_edit
         - chi_monitoredservice_delete
@@ -630,6 +635,7 @@ roles:
         - core_project_view
         - core_organization_view
         - core_pipeline_view
+        - core_pipeline_list_view
         - chi_monitoredservice_view
         - chi_slo_view
         - chi_downtime_view
@@ -681,6 +687,7 @@ roles:
         - core_connector_view
         - core_connector_access
         - core_pipeline_view
+        - core_pipeline_list_view
         - core_pipeline_execute
         - core_service_view
         - core_service_access
