@@ -127,24 +127,11 @@ public class RollbackModeExecutionHelper {
         buildIdentityNodes(previousExecutionId, createdPlan.getPlanNodes());
 
     // step 4
-    for (Node planNode : createdPlan.getPlanNodes()) {
-      if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
-        continue;
-      }
-      List<AdviserObtainment> adviserObtainments =
-          planNode.getAdvisorObtainmentsForExecutionMode().get(ExecutionMode.POST_EXECUTION_ROLLBACK);
-      if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
-        IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
-        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments));
-      }
-    }
+    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes);
 
     // steps 5 and 6
-    for (Node planNode : createdPlan.getPlanNodes()) {
-      if (nodeIDsToPreserve.contains(planNode.getUuid()) || isStageOrAncestorOfSomeStage(planNode)) {
-        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), planNode);
-      }
-    }
+    addPreservedPlanNodes(createdPlan, nodeIDsToPreserve, planNodeIDToUpdatedPlanNodes);
+
     return Plan.builder()
         .uuid(createdPlan.getUuid())
         .planNodes(planNodeIDToUpdatedPlanNodes.values())
@@ -155,11 +142,6 @@ public class RollbackModeExecutionHelper {
         .valid(createdPlan.isValid())
         .errorResponse(createdPlan.getErrorResponse())
         .build();
-  }
-
-  boolean isStageOrAncestorOfSomeStage(Node planNode) {
-    StepCategory stepCategory = planNode.getStepCategory();
-    return Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory);
   }
 
   Map<String, Node> buildIdentityNodes(String previousExecutionId, List<Node> createdPlanNodes) {
@@ -186,5 +168,33 @@ public class RollbackModeExecutionHelper {
     List<String> requiredFields =
         Arrays.asList(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
     return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(previousExecutionId, stageFQNs, requiredFields);
+  }
+
+  void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes) {
+    for (Node planNode : createdPlan.getPlanNodes()) {
+      if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
+        continue;
+      }
+      List<AdviserObtainment> adviserObtainments =
+          planNode.getAdvisorObtainmentsForExecutionMode().get(ExecutionMode.POST_EXECUTION_ROLLBACK);
+      if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
+        IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
+        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments));
+      }
+    }
+  }
+
+  void addPreservedPlanNodes(
+      Plan createdPlan, List<String> nodeIDsToPreserve, Map<String, Node> planNodeIDToUpdatedPlanNodes) {
+    for (Node planNode : createdPlan.getPlanNodes()) {
+      if (nodeIDsToPreserve.contains(planNode.getUuid()) || isStageOrAncestorOfSomeStage(planNode)) {
+        planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), planNode);
+      }
+    }
+  }
+
+  boolean isStageOrAncestorOfSomeStage(Node planNode) {
+    StepCategory stepCategory = planNode.getStepCategory();
+    return Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory);
   }
 }
