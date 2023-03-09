@@ -10,6 +10,7 @@ package io.harness.delegate.beans.azure;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureHostConnectionType;
+import io.harness.azure.model.AzureKubeconfigFormat;
 import io.harness.azure.model.AzureOSType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
@@ -39,5 +40,5 @@ public class AzureConfigContext {
   private AzureOSType azureOSType;
   private AzureHostConnectionType azureHostConnectionType;
   private Map<String, String> tags;
-  private boolean shouldUseExecFormat;
+  private AzureKubeconfigFormat azureKubeconfigFormat;
 }

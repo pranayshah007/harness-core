@@ -13,6 +13,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
+import static io.harness.k8s.model.KubernetesClusterAuthType.AZURE_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.k8s.model.KubernetesClusterAuthType.USER_PASSWORD;
@@ -23,6 +24,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -54,8 +56,11 @@ import io.harness.container.ContainerInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
+import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;
+import io.harness.k8s.model.kubeconfig.Exec;
+import io.harness.k8s.model.kubeconfig.InteractiveMode;
 import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.rule.Owner;
 
@@ -137,6 +142,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1604,6 +1610,75 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     } catch (InvalidRequestException e) {
     }
     verify(k8sApiClient, times(3)).execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetConfigFileForAzureExecFormat() {
+    String expected = "apiVersion: v1\n"
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: masterUrl\n"
+        + "    \n"
+        + "    certificate-authority-data: caCert\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: CLUSTER_USER\n"
+        + "    namespace: namespace\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: CLUSTER_USER\n"
+        + "  user:\n"
+        + "    token: TOKEN\n"
+        + "    exec:\n"
+        + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
+        + "      args:\n"
+        + "      - args1\n"
+        + "      - args2\n"
+        + "      command: command\n"
+        + "      env: null\n"
+        + "      interactiveMode: Never\n"
+        + "      provideClusterInfo: false\n"
+        + "      installHint: hint";
+
+    KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()
+                                                      .clusterName("CLUSTER_NAME")
+                                                      .currentContext("CURRENT_CONTEXT")
+                                                      .clusterUser("CLUSTER_USER")
+                                                      .environment("ENVIRONMENT")
+                                                      .tenantId("TENANT_ID")
+                                                      .apiServerId("APISERVER_ID")
+                                                      .clientId("CLIENT_ID")
+                                                      .aadIdToken("TOKEN")
+                                                      .build();
+
+    Exec exec = Exec.builder()
+                    .apiVersion("client.authentication.k8s.io/v1beta1")
+                    .command("command")
+                    .args(Arrays.asList("args1", "args2"))
+                    .env(null)
+                    .provideClusterInfo(false)
+                    .installHint("hint")
+                    .interactiveMode(InteractiveMode.NEVER)
+                    .build();
+
+    KubernetesConfig kubeConfig = KubernetesConfig.builder()
+                                      .authType(AZURE_OAUTH)
+                                      .namespace("namespace")
+                                      .masterUrl("masterUrl")
+                                      .caCert("caCert".toCharArray())
+                                      .clientKey("CLIENT_KEY".toCharArray())
+                                      .azureConfig(kubernetesAzureConfig)
+                                      .exec(exec)
+                                      .build();
+    String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
+    assertThat(expected).isEqualTo(configFileContent);
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"

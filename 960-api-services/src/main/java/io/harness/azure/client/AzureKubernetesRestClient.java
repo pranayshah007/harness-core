@@ -19,12 +19,13 @@ import retrofit2.http.Path;
 public interface AzureKubernetesRestClient {
   @POST("subscriptions/{" + AzureConstants.SUBSCRIPTION + "}/resourceGroups/{" + AzureConstants.RESOURCE_GROUP
       + "}/providers/Microsoft.ContainerService/managedClusters/{" + AzureConstants.AKS_CLUSTER_NAME
-      + "}/listClusterUserCredential?api-version=2022-02-01&format=azure")
+      + "}/listClusterUserCredential?api-version=2022-02-01&format={" + AzureConstants.FORMAT + "}")
   Call<AksClusterCredentials>
   listClusterUserCredential(@Header("Authorization") String accessToken,
       @Path(value = AzureConstants.SUBSCRIPTION) String subscription,
       @Path(value = AzureConstants.RESOURCE_GROUP) String resourceGroup,
-      @Path(value = AzureConstants.AKS_CLUSTER_NAME) String aksClusterName);
+      @Path(value = AzureConstants.AKS_CLUSTER_NAME) String aksClusterName,
+      @Path(value = AzureConstants.FORMAT) String format);
 
   @POST("subscriptions/{" + AzureConstants.SUBSCRIPTION + "}/resourceGroups/{" + AzureConstants.RESOURCE_GROUP
       + "}/providers/Microsoft.ContainerService/managedClusters/{" + AzureConstants.AKS_CLUSTER_NAME
