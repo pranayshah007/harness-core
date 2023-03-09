@@ -63,23 +63,41 @@ logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
 
-accessControlClient:
-  enableAccessControl: true
-  accessControlServiceConfig:
-    baseUrl: http://localhost:9006/api/
-    connectTimeOutSeconds: 15
-    readTimeOutSeconds: 15
-  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-
 ngManagerServiceHttpClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+backstageHttpClientConfig:
+  baseUrl: http://localhost:7007/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+ngManagerServiceSecret: ""
+backstageServiceSecret: ""
 idpServiceSecret: ""
 jwtAuthSecret: ""
 jwtIdentityServiceSecret: ""
+
+onboardingModuleConfig:
+  tmpPathForCatalogInfoYamlStore: /tmp
+  catalogInfoLocationDefaultPath: /.harness-idp-entities
+  backstageLocationEntityAllHarnessEntitiesName: "all-harness-entities"
+  backstageLocationEntityAllHarnessEntitiesDesc: "Collection of all harness entities - organizations, projects, services and sample entities"
+  sampleEntities:
+    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/one.yaml
+    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/two.yaml
+    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/three.yaml
+    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/four.yaml
+    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/five.yaml
+
+accessControlClient:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: ""
 
 backstageSaToken: ""
 backstageSaCaCrt: ""

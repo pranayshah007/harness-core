@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.config.beans.entity.AppConfig;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
+import io.harness.idp.onboarding.entities.CatalogConnector;
 import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity;
 import io.harness.idp.settings.beans.entity.BackstagePermissionsEntity;
 import io.harness.idp.status.beans.StatusInfoEntity;
@@ -28,6 +29,7 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(StatusInfoEntity.class);
     set.add(NamespaceEntity.class);
     set.add(BackstagePermissionsEntity.class);
+    set.add(CatalogConnector.class);
   }
 
   @Override

@@ -29,14 +29,15 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.idp.gitintegration.GitIntegrationConstants;
 import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.math3.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -115,12 +116,12 @@ public class GitIntegrationServiceImplTest {
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
-    List<EnvironmentSecret> response =
+    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
         githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
-    assertEquals(DECRYPTED_SECRET_VALUE, response.get(0).getDecryptedValue());
-    assertEquals(TOKEN_SECRET_IDENTIFIER, response.get(0).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.get(0).getEnvName());
+    assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(0).getDecryptedValue());
+    assertEquals(TOKEN_SECRET_IDENTIFIER, response.getSecond().get(0).getSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.getSecond().get(0).getEnvName());
     mockRestStatic.close();
   }
 
@@ -183,18 +184,18 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValuePrivateRef)
         .thenReturn(decryptedSecretValueToken);
 
-    List<EnvironmentSecret> response =
+    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
         githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
-    assertEquals(GITHUB_APP_APPLICATION_ID, response.get(0).getDecryptedValue());
-    assertEquals(null, response.get(0).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_ID, response.get(0).getEnvName());
-    assertEquals(GITHUB_APP_PRIVATE_KEY_DECRYPTED_VALUE, response.get(1).getDecryptedValue());
-    assertEquals(GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER, response.get(1).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF, response.get(1).getEnvName());
-    assertEquals(DECRYPTED_SECRET_VALUE, response.get(2).getDecryptedValue());
-    assertEquals(TOKEN_SECRET_IDENTIFIER, response.get(2).getSecretIdentifier());
-    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.get(2).getEnvName());
+    assertEquals(GITHUB_APP_APPLICATION_ID, response.getSecond().get(0).getDecryptedValue());
+    assertEquals(null, response.getSecond().get(0).getSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_APP_ID, response.getSecond().get(0).getEnvName());
+    assertEquals(GITHUB_APP_PRIVATE_KEY_DECRYPTED_VALUE, response.getSecond().get(1).getDecryptedValue());
+    assertEquals(GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER, response.getSecond().get(1).getSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_APP_PRIVATE_KEY_REF, response.getSecond().get(1).getEnvName());
+    assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(2).getDecryptedValue());
+    assertEquals(TOKEN_SECRET_IDENTIFIER, response.getSecond().get(2).getSecretIdentifier());
+    assertEquals(GitIntegrationConstants.GITHUB_TOKEN, response.getSecond().get(2).getEnvName());
     mockRestStatic.close();
   }
 }
