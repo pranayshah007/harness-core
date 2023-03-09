@@ -267,7 +267,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int POLL_INTERVAL_SECONDS = 3;
   private static final long UPGRADE_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
-  private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+  private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
   private static final long FROZEN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long WATCHER_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   private static final long WATCHER_VERSION_MATCH_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
