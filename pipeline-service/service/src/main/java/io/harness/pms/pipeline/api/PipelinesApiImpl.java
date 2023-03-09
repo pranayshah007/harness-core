@@ -212,7 +212,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_LIST_VIEW)
   public Response listPipelines(@OrgIdentifier String org, @ProjectIdentifier String project,
       @AccountIdentifier String account, Integer page, Integer limit, String searchTerm, String sort, String order,
       String module, String filterId, List<String> pipelineIds, String name, String description, List<String> tags,
