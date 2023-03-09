@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl.sidekickexecutors;
 
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,6 +133,68 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
                 MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
             .asList();
     assertThat(monitoringSourcePerpetualTasksAfterDeletion).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testExecute_deleteMonitoringSourcePerpetualTasksIfRecreatedWithDifferentConnectorId() {
+    monitoringSourcePerpetualTaskService.createTask(builderFactory.getContext().getAccountId(),
+        cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier(), cvConfig.getConnectorIdentifier(),
+        cvConfig.getFullyQualifiedIdentifier(), false);
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasksBeforeDeletion =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class)
+            .filter(
+                MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
+            .asList();
+    assertThat(monitoringSourcePerpetualTasksBeforeDeletion).hasSize(2);
+    hPersistence.delete(CVConfig.class, cvConfig.getUuid());
+    CVConfig cvConfig2 = builderFactory.splunkCVConfigBuilder().connectorIdentifier("connector2").build();
+    cvConfigService.save(cvConfig2);
+    monitoringSourcePerpetualTaskService.createTask(builderFactory.getContext().getAccountId(),
+        cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier(), "connector2",
+        cvConfig.getFullyQualifiedIdentifier(), false);
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasksAfterDifferentConnectorCreated =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class)
+            .filter(
+                MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
+            .asList();
+    assertThat(monitoringSourcePerpetualTasksAfterDifferentConnectorCreated).hasSize(4);
+    sideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
+                                 .verificationTaskId(verificationTaskId)
+                                 .cvConfig(cvConfig)
+                                 .build());
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasksAfterDeletion =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class)
+            .filter(
+                MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
+            .asList();
+    assertThat(monitoringSourcePerpetualTasksAfterDeletion).hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testExecute_NodeleteMonitoringSourcePerpetualTasksIfRecreated() {
+    monitoringSourcePerpetualTaskService.createTask(builderFactory.getContext().getAccountId(),
+        cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier(), cvConfig.getConnectorIdentifier(),
+        cvConfig.getFullyQualifiedIdentifier(), false);
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasksBeforeDeletion =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class)
+            .filter(
+                MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
+            .asList();
+    assertThat(monitoringSourcePerpetualTasksBeforeDeletion).hasSize(2);
+    sideKickExecutor.execute(VerificationTaskCleanupSideKickData.builder()
+                                 .verificationTaskId(verificationTaskId)
+                                 .cvConfig(cvConfig)
+                                 .build());
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasksAfterDeletion =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class)
+            .filter(
+                MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, cvConfig.getFullyQualifiedIdentifier())
+            .asList();
+    assertThat(monitoringSourcePerpetualTasksAfterDeletion).hasSize(2);
   }
 
   @Test

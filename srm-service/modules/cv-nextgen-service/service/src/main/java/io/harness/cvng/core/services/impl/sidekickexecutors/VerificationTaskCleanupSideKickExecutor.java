@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton
@@ -85,10 +86,12 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
                  .getTaskInfo()
                  .getTaskType()
                  .equals(VerificationTask.TaskType.LIVE_MONITORING)
-          && cvConfigService
-                 .list(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier(),
-                     cvConfig.getFullyQualifiedIdentifier())
-                 .isEmpty()) {
+          && CollectionUtils
+                 .emptyIfNull(cvConfigService.list(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(),
+                     cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier()))
+                 .stream()
+                 .noneMatch(
+                     cvConfigInDB -> cvConfigInDB.getConnectorIdentifier().equals(cvConfig.getConnectorIdentifier()))) {
         deleteMonitoringSourcePerpetualTasks(cvConfig);
       }
       // we want to add 6 hours to the end time since we anticipate some in-progress analyses that might come in while
@@ -130,6 +133,6 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
 
   private void deleteMonitoringSourcePerpetualTasks(CVConfig cvConfig) {
     monitoringSourcePerpetualTaskService.deleteTask(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(),
-        cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier());
+        cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier(), cvConfig.getConnectorIdentifier());
   }
 }
