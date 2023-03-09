@@ -151,11 +151,6 @@ public class ContainerStepPlanCreator extends ChildrenPlanCreator<ContainerStepN
   }
 
   @Override
-  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
-    return super.getExecutionInputTemplateAndModifyYamlField(yamlField);
-  }
-
-  @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V0);
   }
