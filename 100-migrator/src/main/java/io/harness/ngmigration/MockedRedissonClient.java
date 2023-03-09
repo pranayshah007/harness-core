@@ -10,6 +10,8 @@ package io.harness.ngmigration;
 import java.util.concurrent.TimeUnit;
 import org.redisson.api.BatchOptions;
 import org.redisson.api.ClusterNodesGroup;
+import org.redisson.api.ClusteredLocalCachedMapOptions;
+import org.redisson.api.ClusteredMapOptions;
 import org.redisson.api.ExecutorOptions;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.LockOptions.BackOff;
@@ -22,11 +24,22 @@ import org.redisson.api.RBatch;
 import org.redisson.api.RBinaryStream;
 import org.redisson.api.RBitSet;
 import org.redisson.api.RBlockingDeque;
+import org.redisson.api.RBlockingFairDeque;
+import org.redisson.api.RBlockingFairQueue;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBoundedBlockingQueue;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
+import org.redisson.api.RClusteredBitSet;
+import org.redisson.api.RClusteredBloomFilter;
+import org.redisson.api.RClusteredLocalCachedMap;
+import org.redisson.api.RClusteredLocalCachedMapCache;
+import org.redisson.api.RClusteredMap;
+import org.redisson.api.RClusteredMapCache;
+import org.redisson.api.RClusteredSet;
+import org.redisson.api.RClusteredSetCache;
+import org.redisson.api.RClusteredTopic;
 import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RDelayedQueue;
 import org.redisson.api.RDeque;
@@ -43,6 +56,7 @@ import org.redisson.api.RListMultimap;
 import org.redisson.api.RListMultimapCache;
 import org.redisson.api.RLiveObjectService;
 import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RLocalCachedMapCache;
 import org.redisson.api.RLock;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RMap;
@@ -74,6 +88,7 @@ import org.redisson.api.RTimeSeries;
 import org.redisson.api.RTopic;
 import org.redisson.api.RTransaction;
 import org.redisson.api.RTransferQueue;
+import org.redisson.api.RXAResource;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.RedissonReactiveClient;
 import org.redisson.api.RedissonRxClient;
@@ -132,6 +147,16 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public <V> RSetCache<V> getSetCache(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <V> RClusteredSetCache<V> getClusteredSetCache(String s) {
+    return null;
+  }
+
+  @Override
+  public <V> RClusteredSetCache<V> getClusteredSetCache(String s, Codec codec) {
     return null;
   }
 
@@ -221,6 +246,30 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
+  public <K, V> RLocalCachedMapCache<K, V> getLocalCachedMapCache(
+      String s, LocalCachedMapOptions<K, V> localCachedMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RLocalCachedMapCache<K, V> getLocalCachedMapCache(
+      String s, Codec codec, LocalCachedMapOptions<K, V> localCachedMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredLocalCachedMapCache<K, V> getClusteredLocalCachedMapCache(
+      String s, LocalCachedMapOptions<K, V> localCachedMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredLocalCachedMapCache<K, V> getClusteredLocalCachedMapCache(
+      String s, Codec codec, LocalCachedMapOptions<K, V> localCachedMapOptions) {
+    return null;
+  }
+
+  @Override
   public <K, V> RLocalCachedMap<K, V> getLocalCachedMap(String s, LocalCachedMapOptions<K, V> localCachedMapOptions) {
     return null;
   }
@@ -228,6 +277,18 @@ public class MockedRedissonClient implements RedissonClient {
   @Override
   public <K, V> RLocalCachedMap<K, V> getLocalCachedMap(
       String s, Codec codec, LocalCachedMapOptions<K, V> localCachedMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredLocalCachedMap<K, V> getClusteredLocalCachedMap(
+      String s, ClusteredLocalCachedMapOptions<K, V> clusteredLocalCachedMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredLocalCachedMap<K, V> getClusteredLocalCachedMap(
+      String s, Codec codec, ClusteredLocalCachedMapOptions<K, V> clusteredLocalCachedMapOptions) {
     return null;
   }
 
@@ -248,6 +309,47 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public <K, V> RMap<K, V> getMap(String s, Codec codec, MapOptions<K, V> mapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMap<K, V> getClusteredMap(String s) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMap<K, V> getClusteredMap(String s, ClusteredMapOptions<K, V> clusteredMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMap<K, V> getClusteredMap(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMap<K, V> getClusteredMap(
+      String s, Codec codec, ClusteredMapOptions<K, V> clusteredMapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMapCache<K, V> getClusteredMapCache(String s) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMapCache<K, V> getClusteredMapCache(String s, MapOptions<K, V> mapOptions) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMapCache<K, V> getClusteredMapCache(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <K, V> RClusteredMapCache<K, V> getClusteredMapCache(String s, Codec codec, MapOptions<K, V> mapOptions) {
     return null;
   }
 
@@ -327,6 +429,16 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
+  public <V> RClusteredSet<V> getClusteredSet(String s) {
+    return null;
+  }
+
+  @Override
+  public <V> RClusteredSet<V> getClusteredSet(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
   public <V> RSortedSet<V> getSortedSet(String s) {
     return null;
   }
@@ -372,6 +484,16 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
+  public RClusteredTopic getClusteredTopic(String s) {
+    return null;
+  }
+
+  @Override
+  public RClusteredTopic getClusteredTopic(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
   public RReliableTopic getReliableTopic(String s) {
     return null;
   }
@@ -388,6 +510,26 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public RPatternTopic getPatternTopic(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <V> RBlockingFairQueue<V> getBlockingFairQueue(String s) {
+    return null;
+  }
+
+  @Override
+  public <V> RBlockingFairQueue<V> getBlockingFairQueue(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <V> RBlockingFairDeque<V> getBlockingFairDeque(String s) {
+    return null;
+  }
+
+  @Override
+  public <V> RBlockingFairDeque<V> getBlockingFairDeque(String s, Codec codec) {
     return null;
   }
 
@@ -537,12 +679,37 @@ public class MockedRedissonClient implements RedissonClient {
   }
 
   @Override
+  public RBitSet getRoaringModuleBitSet(String s) {
+    return null;
+  }
+
+  @Override
+  public RClusteredBitSet getClusteredBitSet(String s) {
+    return null;
+  }
+
+  @Override
+  public RClusteredBitSet getClusteredRoaringModuleBitSet(String s) {
+    return null;
+  }
+
+  @Override
   public <V> RBloomFilter<V> getBloomFilter(String s) {
     return null;
   }
 
   @Override
   public <V> RBloomFilter<V> getBloomFilter(String s, Codec codec) {
+    return null;
+  }
+
+  @Override
+  public <V> RClusteredBloomFilter<V> getClusteredBloomFilter(String s) {
+    return null;
+  }
+
+  @Override
+  public <V> RClusteredBloomFilter<V> getClusteredBloomFilter(String s, Codec codec) {
     return null;
   }
 
@@ -613,6 +780,11 @@ public class MockedRedissonClient implements RedissonClient {
 
   @Override
   public RTransaction createTransaction(TransactionOptions transactionOptions) {
+    return null;
+  }
+
+  @Override
+  public RXAResource getXAResource() {
     return null;
   }
 
