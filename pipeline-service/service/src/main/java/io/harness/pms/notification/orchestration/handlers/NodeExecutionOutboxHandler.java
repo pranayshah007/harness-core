@@ -17,6 +17,7 @@ import io.harness.engine.pms.audits.events.PipelineAbortEvent;
 import io.harness.engine.pms.audits.events.PipelineEndEvent;
 import io.harness.engine.pms.audits.events.PipelinePauseEvent;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
+import io.harness.engine.pms.audits.events.PipelineTimeoutEvent;
 import io.harness.engine.pms.audits.events.StageEndEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
 import io.harness.logging.AutoLogContext;
@@ -97,13 +98,50 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
           case PAUSED:
             sendPipelinePauseEventForAudit(nodeUpdateInfo);
             break;
+          case EXPIRED:
+            sendPipelineTimeoutEventForAudit(nodeUpdateInfo);
+            break;
           default:
-            log.info("Currently Audits are not supported for NodeGroup of type: {}", status);
+            log.info("Currently Audits are not supported for status: {}", status.name());
         }
       } catch (Exception ex) {
-        log.error("Unexpected error occurred during handling of nodeGroup: {}", status, ex);
+        log.error("Unexpected error occurred during handling of nodeExecutionEvent with status: {}", status.name(), ex);
       }
     }
+  }
+
+  private void sendNodeEndEventsForAudit(NodeUpdateInfo nodeUpdateInfo) {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeUpdateInfo.getNodeExecution().getAmbiance())) {
+      String nodeGroup = nodeUpdateInfo.getNodeExecution().getGroup();
+      try {
+        switch (nodeGroup) {
+          case PIPELINE:
+            sendPipelineEndEventForAudit(nodeUpdateInfo);
+            break;
+          case STAGE:
+            sendStageEndEventForAudit(nodeUpdateInfo);
+            break;
+          default:
+            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
+        }
+      } catch (Exception ex) {
+        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
+      }
+    }
+  }
+
+  private void sendPipelineTimeoutEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
+    Ambiance ambiance = nodeUpdateInfo.getNodeExecution().getAmbiance();
+    PipelineTimeoutEvent pipelineTimeoutEvent =
+        PipelineTimeoutEvent.builder()
+            .accountIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId))
+            .orgIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier))
+            .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
+            .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .build();
+
+    outboxService.save(pipelineTimeoutEvent);
   }
 
   private void sendPipelinePauseEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
@@ -136,25 +174,6 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
             .build();
 
     outboxService.save(pipelineAbortEvent);
-  }
-
-  private boolean validatePresenceOfNodeGroupInNodeStartInfo(NodeStartInfo nodeStartInfo) {
-    if (nodeStartInfo != null && nodeStartInfo.getNodeExecution() != null
-        && nodeStartInfo.getNodeExecution().getGroup() != null) {
-      return true;
-    }
-
-    log.error("Required fields to send an outBoxEvent are not populated in nodeStartInfo!");
-    return false;
-  }
-
-  private boolean validatePresenceOfNodeGroupInNodeUpdateInfo(NodeUpdateInfo nodeUpdateInfo) {
-    if (nodeUpdateInfo != null && nodeUpdateInfo.getNodeExecution().getGroup() != null) {
-      return true;
-    }
-
-    log.error("Required fields to send an outBoxEvent are not populated in nodeUpdateInfo!");
-    return false;
   }
 
   private void sendStageStartEventForAudit(NodeStartInfo nodeStartInfo) {
@@ -196,26 +215,6 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
     outboxService.save(pipelineStartEvent);
   }
 
-  private void sendNodeEndEventsForAudit(NodeUpdateInfo nodeUpdateInfo) {
-    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeUpdateInfo.getNodeExecution().getAmbiance())) {
-      String nodeGroup = nodeUpdateInfo.getNodeExecution().getGroup();
-      try {
-        switch (nodeGroup) {
-          case PIPELINE:
-            sendPipelineEndEventForAudit(nodeUpdateInfo);
-            break;
-          case STAGE:
-            sendStageEndEventForAudit(nodeUpdateInfo);
-            break;
-          default:
-            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
-        }
-      } catch (Exception ex) {
-        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
-      }
-    }
-  }
-
   private void sendStageEndEventForAudit(NodeUpdateInfo nodeUpdateInfo) {
     Ambiance ambiance = nodeUpdateInfo.getNodeExecution().getAmbiance();
     StageEndEvent stageEndEvent =
@@ -228,15 +227,11 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
             .stageType(ambiance.getMetadata().getModuleType())
             .planExecutionId(nodeUpdateInfo.getNodeExecution().getAmbiance().getPlanExecutionId())
             .nodeExecutionId(nodeUpdateInfo.getNodeExecution().getUuid())
-            .startTs(nodeUpdateInfo.getNodeExecution().getStartTs())
-            .endTs(nodeUpdateInfo.getNodeExecution().getEndTs())
+            .endTs(nodeUpdateInfo.getUpdatedTs())
             .status(nodeUpdateInfo.getStatus().name())
             .build();
     if (nodeUpdateInfo.getNodeExecution().getStartTs() != null) {
       stageEndEvent.setStartTs(nodeUpdateInfo.getNodeExecution().getStartTs());
-    }
-    if (nodeUpdateInfo.getNodeExecution().getEndTs() != null) {
-      stageEndEvent.setStartTs(nodeUpdateInfo.getNodeExecution().getEndTs());
     }
 
     outboxService.save(stageEndEvent);
@@ -251,8 +246,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
             .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
             .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
-            .startTs(nodeUpdateInfo.getNodeExecution().getStartTs())
-            .endTs(nodeUpdateInfo.getNodeExecution().getEndTs())
+            .endTs(nodeUpdateInfo.getUpdatedTs())
             .triggerType(ambiance.getMetadata().getTriggerInfo().getTriggerType().name())
             .triggeredBy(AmbianceUtils.getEmail(ambiance))
             .status(nodeUpdateInfo.getStatus().name())
@@ -260,10 +254,26 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
     if (nodeUpdateInfo.getNodeExecution().getStartTs() != null) {
       pipelineEndEvent.setStartTs(nodeUpdateInfo.getNodeExecution().getStartTs());
     }
-    if (nodeUpdateInfo.getNodeExecution().getEndTs() != null) {
-      pipelineEndEvent.setStartTs(nodeUpdateInfo.getNodeExecution().getEndTs());
-    }
 
     outboxService.save(pipelineEndEvent);
+  }
+
+  private boolean validatePresenceOfNodeGroupInNodeStartInfo(NodeStartInfo nodeStartInfo) {
+    if (nodeStartInfo != null && nodeStartInfo.getNodeExecution() != null
+        && nodeStartInfo.getNodeExecution().getGroup() != null) {
+      return true;
+    }
+
+    log.error("Required fields to send an outBoxEvent are not populated in nodeStartInfo!");
+    return false;
+  }
+
+  private boolean validatePresenceOfNodeGroupInNodeUpdateInfo(NodeUpdateInfo nodeUpdateInfo) {
+    if (nodeUpdateInfo != null && nodeUpdateInfo.getNodeExecution().getGroup() != null) {
+      return true;
+    }
+
+    log.error("Required fields to send an outBoxEvent are not populated in nodeUpdateInfo!");
+    return false;
   }
 }
