@@ -25,6 +25,7 @@ import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
@@ -566,12 +567,12 @@ public class UserServiceImplTest extends WingsBaseTest {
     map.put("sort[0][direction]", Arrays.asList("ASC"));
     map.put("sort[0][field]", Arrays.asList("name"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true);
-    assertThat(userList.get(2).getName()).isEqualTo("pqr");
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 1, 30, false, true, false);
+    assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
     map.put("sort[0][field]", Arrays.asList("email"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true, false);
     assertThat(userList.get(2).getName()).isEqualTo("eFg");
   }
 
@@ -587,11 +588,11 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(2);
   }
 
@@ -624,10 +625,10 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     map.put("sort[0][direction]", Arrays.asList("DESC"));
     map.put("sort[0][field]", Arrays.asList("email"));
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
     assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(0);
   }
 
@@ -641,10 +642,19 @@ public class UserServiceImplTest extends WingsBaseTest {
                      .uuid(UUIDGenerator.generateUuid())
                      .accounts(Collections.singletonList(account))
                      .email("aBc@harness.io")
-                     .name("pqr")
+                     .name("pqr1")
                      .build();
     user1.setDisabled(false);
     wingsPersistence.save(user1);
+
+    User user2 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("aBc@harness.io")
+                     .name("pqr2")
+                     .build();
+    user2.setDisabled(true);
+    wingsPersistence.save(user2);
 
     PageRequest pageRequest = mock(PageRequest.class);
     MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
@@ -652,9 +662,48 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(1);
-    assertThat(userList.get(0).getName()).isEqualTo("pqr");
+    assertThat(userList.get(0).getName()).isEqualTo("pqr1");
+    assertThat(userList.get(0).isDisabled()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldSearchUsersDisabled() {
+    Account account = anAccount().withUuid("ACCOUNT_ID").build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("abc1@harness.io")
+                     .name("user-1")
+                     .build();
+    user1.setDisabled(true);
+    wingsPersistence.save(user1);
+
+    User user2 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("abc2@harness.io")
+                     .name("user-2")
+                     .build();
+    user2.setDisabled(false);
+    wingsPersistence.save(user2);
+
+    PageRequest pageRequest = mock(PageRequest.class);
+    MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+    UriInfo uriInfo = mock(UriInfo.class);
+    when(pageRequest.getUriInfo()).thenReturn(uriInfo);
+    when(uriInfo.getQueryParameters(true)).thenReturn(map);
+
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, true);
+    assertThat(userList.size()).isEqualTo(2);
+    assertThat(userList.get(0).getName()).isEqualTo("user-1");
+    assertThat(userList.get(0).getDisabled()).isEqualTo(true);
+    assertThat(userList.get(1).getName()).isEqualTo("user-2");
+    assertThat(userList.get(1).getDisabled()).isEqualTo(false);
   }
 
   @Test
@@ -755,7 +804,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false);
     assertThat(userList.size()).isEqualTo(0);
   }
 

@@ -8,6 +8,7 @@
 package io.harness.delegate.service.impl;
 
 import io.harness.delegate.beans.DelegateRing;
+import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.AccountDataProvider;
 
@@ -27,7 +28,7 @@ public class AccountDataProviderImpl implements AccountDataProvider {
   @Override
   public DelegateRing getDelegateRing(String accountId) {
     return persistence.createQuery(DelegateRing.class)
-        .filter(DelegateRing.DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
+        .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
         .get();
   }
 }

@@ -217,7 +217,8 @@ public class UserResource {
   @AuthRule(permissionType = USER_PERMISSION_READ)
   public RestResponse<PageResponse<PublicUser>> list(@BeanParam PageRequest<User> pageRequest,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
-      @QueryParam("details") @DefaultValue("true") boolean loadUserGroups) {
+      @QueryParam("details") @DefaultValue("true") boolean loadUserGroups,
+      @QueryParam("showDisabled") @DefaultValue("false") boolean showDisabledUsers) {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
     if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
       String baseLimit = LARGE_PAGE_SIZE_LIMIT;
@@ -228,7 +229,8 @@ public class UserResource {
     }
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList = userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true);
+    List<User> userList =
+        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers);
 
     PageResponse<PublicUser> pageResponse = aPageResponse()
                                                 .withOffset(offset.toString())

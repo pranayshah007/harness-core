@@ -15,7 +15,8 @@
       "isUserLocked": null,
       "isPasswordExpired": null,
       "isImportedFromIdentityProvider": null,
-      "externalUserId":null
+      "externalUserId":null,
+      "isDisabled": null
     },
     "using": "WEB_UI"
   },
