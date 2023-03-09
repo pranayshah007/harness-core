@@ -111,9 +111,10 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
         CommandStepInfo.infoBuilder().commandUnits(Collections.singletonList(commandUnitWrapper)).build());
 
     // with repeat.times
-    StrategyConfig strategy = StrategyConfig.builder()
-                                  .repeat(HarnessForConfig.builder().times(ParameterField.createValueField(1)).build())
-                                  .build();
+    ParameterField<StrategyConfig> strategy = ParameterField.createValueField(
+        StrategyConfig.builder()
+            .repeat(HarnessForConfig.builder().times(ParameterField.createValueField(1)).build())
+            .build());
     commandStepNode.setStrategy(strategy);
 
     assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
@@ -121,7 +122,7 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
         .hasMessage(errMsg);
 
     // without repeat
-    strategy = StrategyConfig.builder().build();
+    strategy = ParameterField.createValueField(StrategyConfig.builder().build());
     commandStepNode.setStrategy(strategy);
 
     assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))
@@ -129,7 +130,8 @@ public class CDPMSCommandStepFilterJsonCreatorTest extends CDNGTestBase {
         .hasMessage(errMsg);
 
     // without repeat.items
-    strategy = StrategyConfig.builder().repeat(HarnessForConfig.builder().build()).build();
+    strategy =
+        ParameterField.createValueField(StrategyConfig.builder().repeat(HarnessForConfig.builder().build()).build());
     commandStepNode.setStrategy(strategy);
 
     assertThatThrownBy(() -> cdpmsCommandStepFilterJsonCreator.handleNode(context, commandStepNode))

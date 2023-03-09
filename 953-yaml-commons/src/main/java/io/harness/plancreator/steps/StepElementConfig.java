@@ -73,7 +73,10 @@ public class StepElementConfig {
   @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -419,12 +419,12 @@ public abstract class WorkflowHandler {
           StepWhenCondition.builder().condition(wrapNot(skipCondition)).stageStatus(SUCCESS).build()));
     }
     if (addLoopingStrategy && stepMapper.loopingSupported()) {
-      stepNode.setStrategy(
+      stepNode.setStrategy(ParameterField.createValueField(
           StrategyConfig.builder()
               .repeat(HarnessForConfig.builder()
                           .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
                           .build())
-              .build());
+              .build()));
     }
     return JsonPipelineUtils.asTree(stepNode);
   }

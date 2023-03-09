@@ -70,7 +70,11 @@ public abstract class AbstractStepNode {
   @ApiModelProperty(hidden = true)
   ParameterField<List<String>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @VariableExpression(skipVariableExpression = true)
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
   @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
 
   @JsonIgnore public abstract String getType();

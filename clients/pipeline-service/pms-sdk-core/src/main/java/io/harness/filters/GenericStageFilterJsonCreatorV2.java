@@ -8,6 +8,7 @@
 package io.harness.filters;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -64,8 +65,8 @@ public abstract class GenericStageFilterJsonCreatorV2<T extends AbstractStageNod
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, T stageNode) {
     FilterCreationResponseBuilder creationResponse = FilterCreationResponse.builder();
-    if (stageNode.getStrategy() != null) {
-      StrategyValidationUtils.validateStrategyNode(stageNode.getStrategy());
+    if (isNotNull(stageNode.getStrategy()) && stageNode.getStrategy().getValue() != null) {
+      StrategyValidationUtils.validateStrategyNode(stageNode.getStrategy().getValue());
     }
 
     YamlField variablesField =

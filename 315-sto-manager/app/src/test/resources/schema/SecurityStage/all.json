@@ -48,7 +48,16 @@
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
     },
     "strategy": {
-      "$ref": "#/definitions/StrategyConfig"
+      "oneOf": [
+        {
+          "$ref": "#/definitions/StrategyConfig"
+        },
+        {
+          "type": "string",
+          "pattern": "^<\\+input>$",
+          "minLength": 1
+        }
+      ]
     },
     "tags": {
       "type": "object",
@@ -8678,7 +8687,16 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "tags": {
           "type": "object",
@@ -9432,7 +9450,16 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "timeout": {
           "type": "string",
@@ -10520,7 +10547,16 @@
           "minItems": 1
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
