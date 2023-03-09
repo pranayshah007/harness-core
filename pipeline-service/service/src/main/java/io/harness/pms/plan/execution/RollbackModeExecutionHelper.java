@@ -13,6 +13,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
@@ -33,9 +34,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,19 +110,21 @@ public class RollbackModeExecutionHelper {
 
   /**
    * Step1: Initialise a map from planNodeIDs to Plan Nodes
-   * Step2: fetch all node executions of previous execution
+   * Step2: fetch all node executions of previous execution that are the descendants of any stage
    * Step3: create identity plan nodes for all node executions that are the descendants of any stage, and add them to
    * the map
-   * Step4: Go through `createdPlan`. If any Plan node has AdvisorObtainmentsForRollbackMode, add them to the
-   * corresponding Identity Plan Node in the initialised map
+   * Step4: Go through `createdPlan`. If any Plan node has AdvisorObtainments for POST_EXECUTION_ROLLBACK Mode, add them
+   * to the corresponding Identity Plan Node in the initialised map
    * Step5: From `createdPlan`, pick out all nodes that are not a descendants of some stage, and add them to the
-   * initialised map. Step6: For all IDs in `nodeIDsToPreserve`, remove the Identity Plan Nodes in the map, and put the
+   * initialised map.
+   * Step6: For all IDs in `nodeIDsToPreserve`, remove the Identity Plan Nodes in the map, and put the
    * Plan nodes from `createdPlan`
    */
   public Plan transformPlanForRollbackMode(
       Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve) {
     // steps 1, 2, and 3
-    Map<String, Node> planNodeIDToUpdatedPlanNodes = buildIdentityNodes(previousExecutionId);
+    Map<String, Node> planNodeIDToUpdatedPlanNodes =
+        buildIdentityNodes(previousExecutionId, createdPlan.getPlanNodes());
 
     // step 4
     for (Node planNode : createdPlan.getPlanNodes()) {
@@ -136,10 +141,7 @@ public class RollbackModeExecutionHelper {
 
     // steps 5 and 6
     for (Node planNode : createdPlan.getPlanNodes()) {
-      if (nodeIDsToPreserve.contains(planNode.getUuid())
-          || planNode.getStepType().getStepCategory() == StepCategory.STAGE
-          || EmptyPredicate.isEmpty(planNode.getStageFqn())
-          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
+      if (nodeIDsToPreserve.contains(planNode.getUuid()) || isStageOrAncestorOfSomeStage(planNode)) {
         planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), planNode);
       }
     }
@@ -155,14 +157,18 @@ public class RollbackModeExecutionHelper {
         .build();
   }
 
-  Map<String, Node> buildIdentityNodes(String previousExecutionId) {
+  boolean isStageOrAncestorOfSomeStage(Node planNode) {
+    StepCategory stepCategory = planNode.getStepCategory();
+    return Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory);
+  }
+
+  Map<String, Node> buildIdentityNodes(String previousExecutionId, List<Node> createdPlanNodes) {
     Map<String, Node> planNodeIDToUpdatedNodes = new HashMap<>();
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodesForPlanExecutionID(previousExecutionId);
+
+    List<NodeExecution> nodeExecutions = getNodeExecutionsWithOnlyRequiredFields(previousExecutionId, createdPlanNodes);
     for (NodeExecution nodeExecution : nodeExecutions) {
       Node planNode = nodeExecution.getNode();
-      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE
-          || EmptyPredicate.isEmpty(planNode.getStageFqn())
-          || !planNode.getStageFqn().matches("pipeline\\.stages\\..+")) {
+      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE) {
         continue;
       }
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
@@ -170,5 +176,15 @@ public class RollbackModeExecutionHelper {
       planNodeIDToUpdatedNodes.put(planNode.getUuid(), identityPlanNode);
     }
     return planNodeIDToUpdatedNodes;
+  }
+
+  List<NodeExecution> getNodeExecutionsWithOnlyRequiredFields(String previousExecutionId, List<Node> createdPlanNodes) {
+    List<String> stageFQNs = createdPlanNodes.stream()
+                                 .filter(n -> n.getStepCategory() == StepCategory.STAGE)
+                                 .map(Node::getStageFqn)
+                                 .collect(Collectors.toList());
+    List<String> requiredFields =
+        Arrays.asList(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
+    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(previousExecutionId, stageFQNs, requiredFields);
   }
 }
