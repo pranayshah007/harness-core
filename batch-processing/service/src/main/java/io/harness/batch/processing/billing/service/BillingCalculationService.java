@@ -96,7 +96,7 @@ public class BillingCalculationService {
   }
 
   private PricingData getUpdatedPricingData(InstanceData instanceData, PricingData pricingData) {
-    if (ImmutableList.of(PricingSource.PUBLIC_API, PricingSource.HARDCODED).contains(pricingData.getPricingSource())) {
+    if (PricingSource.CUR_REPORT != pricingData.getPricingSource()) {
       Double conversionFactor = currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
           instanceData.getAccountId(), getCloudServiceProvider(instanceData), Currency.USD);
       pricingData = updatePricingData(pricingData, conversionFactor);

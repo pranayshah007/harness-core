@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
@@ -24,6 +25,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.context.GlobalContext;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
@@ -32,6 +34,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitx.ThreadOperationContext;
+import io.harness.gitx.USER_FLOW;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
@@ -51,7 +56,9 @@ import io.harness.pms.stages.StageExecutionResponse;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -85,6 +92,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final RetryExecutionHelper retryExecutionHelper;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
@@ -94,6 +102,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser);
     return ResponseDTO.newResponse(planExecutionResponseDto);

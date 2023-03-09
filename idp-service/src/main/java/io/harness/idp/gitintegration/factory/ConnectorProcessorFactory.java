@@ -7,6 +7,8 @@
 
 package io.harness.idp.gitintegration.factory;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
 import io.harness.idp.gitintegration.implementation.AzureRepoConnectorProcessor;
@@ -14,8 +16,9 @@ import io.harness.idp.gitintegration.implementation.BitbucketConnectorProcessor;
 import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.implementation.GitlabConnectorProcessor;
 
-import javax.inject.Inject;
+import com.google.inject.Inject;
 
+@OwnedBy(HarnessTeam.IDP)
 public class ConnectorProcessorFactory {
   @Inject GithubConnectorProcessor githubConnectorProcessor;
   @Inject GitlabConnectorProcessor gitlabConnectorProcessor;

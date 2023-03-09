@@ -261,6 +261,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Attestation": {
+      "type": "object",
+      "required": [
+        "privateKey"
+      ],
+      "properties": {
+        "privateKey": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BarrierInfoConfig": {
       "type": "object",
       "required": [
@@ -430,6 +442,41 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CdSscaOrchestrationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "attestation",
+            "infrastructure",
+            "source",
+            "tool"
+          ],
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/Attestation"
+            },
+            "infrastructure": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ContainerK8sInfra"
+                }
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "tool": {
+              "$ref": "#/definitions/SbomOrchestrationTool"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Clause": {
@@ -1720,6 +1767,25 @@
               "enum": [
                 "Ignore"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ImageSbomSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomSourceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -3325,6 +3391,80 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomOrchestrationSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SbomOrchestrationTool": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Syft"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Syft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SyftSbomOrchestration"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "image"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "image"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ImageSbomSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -4407,6 +4547,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CdSscaOrchestration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CdSscaOrchestrationStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Container"
               }
             }
@@ -4906,6 +5062,25 @@
             },
             "value": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SyftSbomOrchestration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomOrchestrationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "spdx-json"
+              ]
             }
           }
         }

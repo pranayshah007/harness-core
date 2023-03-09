@@ -16,7 +16,6 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_APPLY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_CREATE_RUN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_FIND_RELATIONSHIP;
-import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_FORCE_RUN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_APPLY_LOGS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_APPLY_OUTPUT;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_LAST_APPLIED;
@@ -39,7 +38,6 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_APPLYING;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_CREATING_RUN;
-import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_DISCARD_PENDING_RUNS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_APPLIED_POLICIES;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_APPLY_OUTPUT;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_GETTING_JSON_PLAN;
@@ -51,6 +49,10 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_OVERRIDE_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_APPLY_LOGS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_PLAN_LOGS;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
+import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.CANCELED;
+import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.ERRORED;
 import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.FINISHED;
 import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.UNREACHABLE;
 import static io.harness.threading.Morpheus.sleep;
@@ -100,8 +102,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import lombok.extern.slf4j.Slf4j;
@@ -226,19 +230,21 @@ public class TerraformCloudTaskHelper {
     String runId;
     RunData runData;
     try {
+      logCallback.saveExecutionLog("Creating run...", INFO, CommandExecutionStatus.RUNNING);
       runData = terraformCloudClient.createRun(url, token, runRequest).getData();
       runId = runData.getId();
+      logCallback.saveExecutionLog(format("Run: %s has been created", runId), INFO, CommandExecutionStatus.RUNNING);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           PLEASE_CHECK_TFC_CONFIG, COULD_NOT_CREATE_RUN, new TerraformCloudException(ERROR_CREATING_RUN, e));
     }
 
-    if (forceExecute && runData.getAttributes().getStatus() == RunStatus.PENDING) {
+    if (forceExecute && getRunStatus(url, token, runId) == RunStatus.PENDING) {
       try {
         terraformCloudClient.forceExecuteRun(url, token, runId);
       } catch (Exception e) {
-        throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
-            format(COULD_NOT_FORCE_RUN, runId), new TerraformCloudException(ERROR_DISCARD_PENDING_RUNS, e));
+        logCallback.saveExecutionLog("Failed to discard pending runs. Run might already moved from pending state", WARN,
+            CommandExecutionStatus.RUNNING);
       }
     }
     String planId = getRelationshipId(runData, PLAN);
@@ -246,7 +252,7 @@ public class TerraformCloudTaskHelper {
       PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
       // stream plan logs
       streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
-      logCallback.saveExecutionLog("Plan finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
           format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
@@ -258,18 +264,20 @@ public class TerraformCloudTaskHelper {
     String applyId = getRelationshipId(runData, APPLY);
     try {
       ApplyData apply = terraformCloudClient.getApply(url, token, applyId).getData();
-      if (apply.getAttributes().getStatus() != UNREACHABLE) {
+      ApplyData.Attributes.Status status = apply.getAttributes().getStatus();
+      if (status != UNREACHABLE && status != CANCELED && status != ERRORED) {
         logCallback.saveExecutionLog(
-            format("Apply %s execution...", runData.getId()), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+            format("Apply %s execution...", runData.getId()), INFO, CommandExecutionStatus.RUNNING);
         streamLogs(logCallback, apply.getAttributes().getLogReadUrl());
-        logCallback.saveExecutionLog("Apply finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        logCallback.saveExecutionLog("Apply finished", INFO, CommandExecutionStatus.SUCCESS);
       } else if (!runData.getAttributes().isHasChanges()) {
-        logCallback.saveExecutionLog("Apply will not run. No changes.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        logCallback.saveExecutionLog("Apply will not run. No changes.", INFO, CommandExecutionStatus.SUCCESS);
       } else {
-        logCallback.saveExecutionLog(
-            format(APPLY_UNREACHABLE_ERROR, runData.getId()), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(format(APPLY_UNREACHABLE_ERROR, runData.getId(), status.name()), LogLevel.ERROR,
+            CommandExecutionStatus.FAILURE);
         throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_PLAN,
-            format(APPLY_UNREACHABLE_ERROR, runData.getId()), new TerraformCloudException(ERROR_APPLYING));
+            format(APPLY_UNREACHABLE_ERROR, runData.getId(), status.name()),
+            new TerraformCloudException(ERROR_APPLYING));
       }
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runData.getId()),
@@ -394,31 +402,39 @@ public class TerraformCloudTaskHelper {
     terraformCloudClient.discardRun(url, token, runId, RunActionRequest.builder().comment(message).build());
   }
 
-  public void streamSentinelPolicies(
-      String url, String token, List<PolicyCheckData> policyCheckData, LogCallback logCallback) {
-    if (policyCheckData.isEmpty()) {
-      logCallback.saveExecutionLog("No policy available", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      boolean failed = false;
-      logCallback.saveExecutionLog("Policy checks...", LogLevel.INFO, CommandExecutionStatus.RUNNING);
+  public void streamSentinelPolicies(String url, String token, String runId, LogCallback logCallback) {
+    boolean failed = false;
+    logCallback.saveExecutionLog("Policy checks...", INFO, CommandExecutionStatus.RUNNING);
+    Set<String> completedPolicies = new HashSet<>();
+    List<PolicyCheckData> policyCheckData = getPolicyCheckData(url, token, runId);
+    while (true) {
       for (PolicyCheckData policyCheck : policyCheckData) {
-        String status = policyCheck.getAttributes().getStatus();
-        if (status.equals("hard_failed") || status.equals("soft_failed") || status.equals("advisory_failed")) {
-          failed = true;
+        if (policyCheck.getLinks().hasNonNull("output") && !completedPolicies.contains(policyCheck.getId())) {
+          String status = policyCheck.getAttributes().getStatus();
+          if (status.equals("hard_failed") || status.equals("soft_failed") || status.equals("advisory_failed")) {
+            failed = true;
+          }
+          String policyCheckOutput;
+          try {
+            policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
+          } catch (Exception e) {
+            throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_POLICY, policyCheck.getId()),
+                COULD_NOT_GET_POLICY_OUTPUT, new TerraformCloudException(ERROR_GETTING_POLICY_OUTPUT, e));
+          }
+          Arrays.stream(policyCheckOutput.split("\n"))
+              .forEach(raw -> logCallback.saveExecutionLog(raw, INFO, CommandExecutionStatus.RUNNING));
+          completedPolicies.add(policyCheck.getId());
         }
-        String policyCheckOutput;
-        try {
-          policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
-        } catch (Exception e) {
-          throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_POLICY, policyCheck.getId()),
-              COULD_NOT_GET_POLICY_OUTPUT, new TerraformCloudException(ERROR_GETTING_POLICY_OUTPUT, e));
-        }
-        Arrays.stream(policyCheckOutput.split("\n"))
-            .forEach(raw -> logCallback.saveExecutionLog(raw, LogLevel.INFO, CommandExecutionStatus.RUNNING));
       }
-      logCallback.saveExecutionLog("Policy check finished", LogLevel.INFO,
-          failed ? CommandExecutionStatus.FAILURE : CommandExecutionStatus.SUCCESS);
+      if (policyCheckData.size() == completedPolicies.size()) {
+        break;
+      } else {
+        sleep(ofSeconds(2));
+        policyCheckData = getPolicyCheckData(url, token, runId);
+      }
     }
+    logCallback.saveExecutionLog(
+        "Policy check finished", INFO, failed ? CommandExecutionStatus.FAILURE : CommandExecutionStatus.SUCCESS);
   }
 
   public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) {
@@ -443,7 +459,7 @@ public class TerraformCloudTaskHelper {
       if (policyCheck.getAttributes().getActions().isOverridable()) {
         String policyCheckId = policyCheck.getId();
         logCallback.saveExecutionLog(
-            format("Overriding policy check: %s", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+            format("Overriding policy check: %s", policyCheckId), INFO, CommandExecutionStatus.RUNNING);
         try {
           terraformCloudClient.overridePolicyChecks(url, token, policyCheckId);
         } catch (Exception e) {
@@ -451,7 +467,7 @@ public class TerraformCloudTaskHelper {
               COULD_NOT_OVERRIDE_POLICY, new TerraformCloudException(ERROR_OVERRIDE_POLICY, e));
         }
         logCallback.saveExecutionLog(
-            format("Policy check: %s is overridden", policyCheckId), LogLevel.INFO, CommandExecutionStatus.RUNNING);
+            format("Policy check: %s is overridden", policyCheckId), INFO, CommandExecutionStatus.RUNNING);
       }
     }
   }

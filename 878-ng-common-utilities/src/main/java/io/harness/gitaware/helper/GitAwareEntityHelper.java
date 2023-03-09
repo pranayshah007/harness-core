@@ -66,13 +66,14 @@ public class GitAwareEntityHelper {
     String connectorRef = gitContextRequestParams.getConnectorRef();
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
+    boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;

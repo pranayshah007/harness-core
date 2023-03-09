@@ -7,6 +7,12 @@
 
 package io.harness.idp.gitintegration.implementation;
 
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.TMP_LOCATION_FOR_GIT_CLONE;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -15,24 +21,53 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.gitintegration.GitIntegrationConstants;
+import io.harness.git.GitClientV2Impl;
+import io.harness.git.UsernamePasswordAuthRequest;
+import io.harness.git.model.ChangeType;
+import io.harness.git.model.CommitAndPushRequest;
+import io.harness.git.model.DownloadFilesRequest;
+import io.harness.git.model.GitFileChange;
+import io.harness.git.model.GitRepositoryType;
 import io.harness.idp.gitintegration.GitIntegrationUtil;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
+import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.math3.util.Pair;
 
+@OwnedBy(HarnessTeam.IDP)
 public class GithubConnectorProcessor extends ConnectorProcessor {
-  public List<EnvironmentSecret> getConnectorSecretsInfo(
+  @Inject GitClientV2Impl gitClientV2;
+
+  @Override
+  public String getInfraConnectorType(String accountIdentifier, String connectorIdentifier) {
+    Optional<ConnectorDTO> connectorDTO =
+        NGRestUtils.getResponse(connectorResourceClient.get(connectorIdentifier, accountIdentifier, null, null));
+    if (connectorDTO.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Connector not found for identifier: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+    }
+
+    ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnectorInfo();
+    GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    return config.getExecuteOnDelegate() ? CATALOG_INFRA_CONNECTOR_TYPE_PROXY : CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
+  }
+
+  public Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(
         connectorResourceClient.get(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
-    List<EnvironmentSecret> resultList = new ArrayList<>();
-
-    if (!connectorDTO.isPresent()) {
+    if (connectorDTO.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Github Connector not found for identifier : [%s] ", connectorIdentifier));
     }
@@ -45,6 +80,8 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubApiAccessDTO apiAccess = config.getApiAccess();
+
+    List<EnvironmentSecret> resultList = new ArrayList<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
@@ -76,6 +113,66 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     resultList.add(GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
         projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITHUB_TOKEN));
-    return resultList;
+    return new Pair<>(connectorInfoDTO, resultList);
+  }
+
+  public void performPushOperation(
+      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, List<String> filesToPush) {
+    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorSecretsInfo = getConnectorSecretsInfo(
+        accountIdentifier, null, null, catalogConnectorInfo.getSourceConnector().getIdentifier());
+    String githubConnectorSecret = connectorSecretsInfo.getSecond().get(0).getDecryptedValue();
+
+    GithubConnectorDTO config = (GithubConnectorDTO) connectorSecretsInfo.getFirst().getConnectorConfig();
+    GithubHttpCredentialsOutcomeDTO outcome =
+        (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
+    GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+
+    gitClientV2.cloneRepoAndCopyToDestDir(DownloadFilesRequest.builder()
+                                              .repoUrl(catalogConnectorInfo.getRepo())
+                                              .branch(catalogConnectorInfo.getBranch())
+                                              .filePaths(Collections.singletonList(".harness-idp-entities"))
+                                              .connectorId(connectorSecretsInfo.getFirst().getIdentifier())
+                                              .accountId(accountIdentifier)
+                                              .recursive(true)
+                                              .authRequest(UsernamePasswordAuthRequest.builder()
+                                                               .username(spec.getUsername())
+                                                               .password(githubConnectorSecret.toCharArray())
+                                                               .build())
+                                              .repoType(GitRepositoryType.YAML)
+                                              .destinationDirectory(TMP_LOCATION_FOR_GIT_CLONE + accountIdentifier)
+                                              .build());
+
+    List<GitFileChange> gitFileChanges = new ArrayList<>();
+    filesToPush.forEach(fileToPush -> {
+      GitFileChange gitFileChange;
+      try {
+        gitFileChange = GitFileChange.builder()
+                            .filePath(fileToPush.replace("/tmp/" + accountIdentifier, ""))
+                            .fileContent(Files.readString(Path.of(fileToPush)))
+                            .changeType(ChangeType.ADD)
+                            .accountId(accountIdentifier)
+                            .build();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      gitFileChanges.add(gitFileChange);
+    });
+
+    CommitAndPushRequest commitAndPushRequest = CommitAndPushRequest.builder()
+                                                    .repoUrl(catalogConnectorInfo.getRepo())
+                                                    .branch(catalogConnectorInfo.getBranch())
+                                                    .connectorId(connectorSecretsInfo.getFirst().getIdentifier())
+                                                    .accountId(accountIdentifier)
+                                                    .authRequest(UsernamePasswordAuthRequest.builder()
+                                                                     .username(spec.getUsername())
+                                                                     .password(githubConnectorSecret.toCharArray())
+                                                                     .build())
+                                                    .repoType(GitRepositoryType.YAML)
+                                                    .gitFileChanges(gitFileChanges)
+                                                    .authorName(spec.getUsername())
+                                                    .authorEmail("idp-harness@harness.io")
+                                                    .commitMessage("Importing Harness Entities to IDP")
+                                                    .build();
+    gitClientV2.commitAndPush(commitAndPushRequest);
   }
 }

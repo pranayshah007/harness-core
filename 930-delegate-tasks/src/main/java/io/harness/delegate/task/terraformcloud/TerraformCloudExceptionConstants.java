@@ -26,9 +26,8 @@ public final class TerraformCloudExceptionConstants {
     public static final String COULD_NOT_GET_WORKSPACE = "Could not get workspaces from: %s for organization: %s";
     public static final String COULD_NOT_GET_ORG = "Could not get organizations from: %s";
     public static final String COULD_NOT_CREATE_RUN = "Error happened during a run creation";
-    public static final String COULD_NOT_FORCE_RUN = "Could not force execute run: %s";
     public static final String COULD_NOT_GET_PLAN = "Could not get a plan: %s";
-    public static final String APPLY_UNREACHABLE_ERROR = "Apply for run id: %s is unreachable";
+    public static final String APPLY_UNREACHABLE_ERROR = "Apply failed for run id: %s . Status: %s";
     public static final String COULD_NOT_GET_APPLY_LOGS = "Could not get apply logs for apply: %s";
     public static final String COULD_NOT_UPLOAD_FILE = "Could not upload json file: %s to the bucket: %s";
     public static final String COULD_NOT_FIND_RELATIONSHIP = "Could not find relationship: %s";
@@ -52,7 +51,6 @@ public final class TerraformCloudExceptionConstants {
     public static final String ERROR_GETTING_WORKSPACE = "Failed to get workspaces";
     public static final String ERROR_GETTING_ORG = "Failed to get organizations";
     public static final String ERROR_CREATING_RUN = "Failed to create a run";
-    public static final String ERROR_DISCARD_PENDING_RUNS = "Failed to discard pending runs";
     public static final String ERROR_STREAMING_PLAN_LOGS = "Failed to stream Plan logs";
     public static final String ERROR_APPLYING = "Apply is unreachable";
     public static final String ERROR_STREAMING_APPLY_LOGS = "Failed to stream Apply logs";

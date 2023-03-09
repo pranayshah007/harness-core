@@ -105,6 +105,8 @@ public enum FeatureName {
   FFM_5951_FF_MFE_Targets_Listing("Enable Feature Flag MFE Targets listing page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
+  FFM_6800_FF_MFE_ONBOARDING("Enable Feature Flag MFE Onboarding page", HarnessTeam.CF),
+  FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
   FFM_6683_ALL_ENVIRONMENTS_FLAGS,
   FFM_4737_JIRA_INTEGRATION("Enable the Jira Integration feature", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
@@ -531,6 +533,8 @@ public enum FeatureName {
   PIE_NG_BATCH_GET_TEMPLATES(
       "FF to enable batching of templates to improve loading time of pipeline and template studio",
       HarnessTeam.PIPELINE),
+  PIE_GET_FILE_CONTENT_ONLY(
+      "FF to optimise the execution flow to fetch only file content for remote entities", HarnessTeam.PIPELINE),
   INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   QUEUE_CI_EXECUTIONS("FF to enable queueing in CI builds", HarnessTeam.CI),
   QUEUE_CI_EXECUTIONS_CONCURRENCY("FF to enable queueing in CI builds", HarnessTeam.CI),
