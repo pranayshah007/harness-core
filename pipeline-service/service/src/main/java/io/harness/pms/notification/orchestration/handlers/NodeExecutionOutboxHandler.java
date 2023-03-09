@@ -9,6 +9,7 @@ package io.harness.pms.notification.orchestration.handlers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.pms.audits.events.PipelineStartEvent;
@@ -18,6 +19,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
   public static final String PIPELINE = "PIPELINE";
   public static final String STAGE = "STAGE";
   @Inject private OutboxService outboxService;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public void onNodeStart(NodeStartInfo nodeStartInfo) {
@@ -39,21 +42,24 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver {
       return;
     }
 
-    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeStartInfo.getNodeExecution().getAmbiance())) {
-      String nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
-      try {
-        switch (nodeGroup) {
-          case PIPELINE:
-            sendPipelineExecutionEventForAudit(nodeStartInfo);
-            break;
-          case STAGE:
-            sendStageExecutionEventForAudit(nodeStartInfo);
-            break;
-          default:
-            log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
+    Ambiance ambiance = nodeStartInfo.getNodeExecution().getAmbiance();
+    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_AUDIT_EVENTS)) {
+      try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeStartInfo.getNodeExecution().getAmbiance())) {
+        String nodeGroup = nodeStartInfo.getNodeExecution().getGroup();
+        try {
+          switch (nodeGroup) {
+            case PIPELINE:
+              sendPipelineExecutionEventForAudit(nodeStartInfo);
+              break;
+            case STAGE:
+              sendStageExecutionEventForAudit(nodeStartInfo);
+              break;
+            default:
+              log.info("Currently Audits are not supported for NodeGroup of type: {}", nodeGroup);
+          }
+        } catch (Exception ex) {
+          log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
         }
-      } catch (Exception ex) {
-        log.error("Unexpected error occurred during handling of nodeGroup: {}", nodeGroup, ex);
       }
     }
   }
