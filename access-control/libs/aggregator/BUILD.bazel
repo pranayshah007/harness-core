@@ -44,12 +44,12 @@ java_library(
         "@maven//:org_apache_kafka_kafka_clients",
         "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_mongodb_driver_core",
-        "@maven//:pro_redisson_redisson",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_springframework_spring_context",
         "@maven//:org_springframework_spring_tx",
+        "@maven//:pro_redisson_redisson",
     ],
 )
 

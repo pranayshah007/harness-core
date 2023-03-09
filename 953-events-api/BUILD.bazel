@@ -57,9 +57,9 @@ java_library(
         "@maven//:io_dropwizard_metrics_metrics_core",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
-        "@maven//:pro_redisson_redisson",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:pro_redisson_redisson",
     ],
 )
 

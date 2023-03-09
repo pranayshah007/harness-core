@@ -51,8 +51,8 @@ java_library(
         "@maven//:io_vavr_vavr",
         "@maven//:javax_validation_validation_api",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:pro_redisson_redisson",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:pro_redisson_redisson",
     ],
 )
 

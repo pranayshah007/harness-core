@@ -161,8 +161,8 @@ java_library(
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_quartz_scheduler_quartz",
-        "@maven//:pro_redisson_redisson",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:pro_redisson_redisson",
     ],
 )
 
