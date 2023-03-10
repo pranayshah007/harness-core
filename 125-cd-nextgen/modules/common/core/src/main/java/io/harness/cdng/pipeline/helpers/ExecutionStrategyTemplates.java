@@ -31,6 +31,9 @@ public class ExecutionStrategyTemplates {
   public static final String SSH_WINRM_BASIC_SH_FTL_V2 = "ssh-winrm-basic-v2.sh.ftl";
   public static final String SSH_WINRM_ROLLING_SH_FTL_V2 = "ssh-winrm-rolling-v2.sh.ftl";
   public static final String SSH_WINRM_CANARY_SH_FTL_V2 = "ssh-winrm-canary-v2.sh.ftl";
+  public static final String SSH_WINRM_BASIC_SH_FTL_V3 = "ssh-winrm-basic-v3.sh.ftl";
+  public static final String SSH_WINRM_ROLLING_SH_FTL_V3 = "ssh-winrm-rolling-v3.sh.ftl";
+  public static final String SSH_WINRM_CANARY_SH_FTL_V3 = "ssh-winrm-canary-v3.sh.ftl";
 
   private static final Configuration cfgV2 = new Configuration(VERSION_2_3_23);
 
@@ -75,6 +78,9 @@ public class ExecutionStrategyTemplates {
     putTemplateToConfig(SSH_WINRM_BASIC_SH_FTL_V2, templateLoader);
     putTemplateToConfig(SSH_WINRM_ROLLING_SH_FTL_V2, templateLoader);
     putTemplateToConfig(SSH_WINRM_CANARY_SH_FTL_V2, templateLoader);
+    putTemplateToConfig(SSH_WINRM_BASIC_SH_FTL_V3, templateLoader);
+    putTemplateToConfig(SSH_WINRM_ROLLING_SH_FTL_V3, templateLoader);
+    putTemplateToConfig(SSH_WINRM_CANARY_SH_FTL_V3, templateLoader);
     cfgV2.setTemplateLoader(templateLoader);
     initV2 = true;
   }

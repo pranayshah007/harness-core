@@ -40,7 +40,7 @@ public class DefaultTempateLoader {
   private static final String DEFAULT_IIS_WEBSITE_POWERSHELL_IDENTIFIER = "Default_IIS_Website_PowerShell";
   private static final String DEFAULT_IIS_VIRTUAL_DIR_POWERSHELL_IDENTIFIER =
       "Default_IIS_Virtual_Directory_PowerShell";
-  private static final String DEFAULT_TEMPLATES_DIR = "snippets/Pipelines/execution/v2/templates";
+  private static final String DEFAULT_TEMPLATES_DIR = "snippets/Pipelines/execution/v3/templates";
   private static String defaultInstallWarBashTemplateYaml;
   private static String defaultInstallJarBashTemplateYaml;
   private static String defaultInstallTarBashTemplateYaml;

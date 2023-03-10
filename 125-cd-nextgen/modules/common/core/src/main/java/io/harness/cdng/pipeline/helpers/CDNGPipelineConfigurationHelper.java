@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @OwnedBy(CDP)
 public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;
-  @Inject private CDNGPipelineExecutionStrategyHelperV2 cdngPipelineExecutionStrategyHelperV2;
+  @Inject private CDNGPipelineExecutionStrategyHelperV3 cdngPipelineExecutionStrategyHelperV3;
   @Inject private CDFeatureFlagHelper featureFlagHelper;
 
   @VisibleForTesting static String LIBRARY = "Library";
@@ -94,13 +94,13 @@ public class CDNGPipelineConfigurationHelper {
       ServiceDefinitionType serviceDefinitionType, ExecutionStrategyType executionStrategyType, boolean includeVerify,
       StrategyParameters strategyParameters) throws IOException {
     if (ExecutionStrategyType.CANARY.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelperV2.generateCanaryYaml(
+      return cdngPipelineExecutionStrategyHelperV3.generateCanaryYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else if (ExecutionStrategyType.ROLLING.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelperV2.generateRollingYaml(
+      return cdngPipelineExecutionStrategyHelperV3.generateRollingYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else if (ExecutionStrategyType.BASIC.equals(executionStrategyType)) {
-      return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
+      return cdngPipelineExecutionStrategyHelperV3.generateBasicYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
       return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify);
