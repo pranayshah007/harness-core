@@ -20,7 +20,7 @@ public class ConfigurationProvider {
       return configuration;
     }
     var configurationBuilder = Configuration.builder();
-      if (StringUtils.isNotBlank(System.getenv(Env.TASK_DATA_PATH.name()))) {
+    if (StringUtils.isNotBlank(System.getenv(Env.TASK_DATA_PATH.name()))) {
       configurationBuilder.taskInputPath(System.getenv(Env.TASK_DATA_PATH.name()));
     }
     if (Boolean.parseBoolean(System.getenv(Env.SHOULD_SEND_RESPONSE.name()))) {
