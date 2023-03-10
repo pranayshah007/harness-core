@@ -810,8 +810,9 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   private List<ClusterHostFrequencyData> getFilteredControlClusterHostFrequencies(
       List<ClusterHostFrequencyData> controlClusterHostFrequencies, List<String> hostNames) {
     List<ClusterHostFrequencyData> filteredClusterHostFrequencyData = new ArrayList<>();
-    if (controlClusterHostFrequencies == null)
+    if (controlClusterHostFrequencies == null) {
       return filteredClusterHostFrequencyData;
+    }
     for (ClusterHostFrequencyData clusterHostFrequencyData : controlClusterHostFrequencies) {
       List<HostFrequencyData> hostFrequencyDataList =
           getFilteredHostFrequencyDataList(clusterHostFrequencyData.getFrequencyData(), hostNames);
@@ -837,8 +838,9 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
   private List<HostFrequencyData> getFilteredHostFrequencyDataList(
       List<HostFrequencyData> frequencyDataList, List<String> hostNames) {
     List<HostFrequencyData> filteredHostNames = new ArrayList<>();
-    if (frequencyDataList == null)
+    if (frequencyDataList == null) {
       return filteredHostNames;
+    }
     for (HostFrequencyData hostFrequencyData : frequencyDataList) {
       if (hostNames.contains(hostFrequencyData.getHost())) {
         filteredHostNames.add(hostFrequencyData);
