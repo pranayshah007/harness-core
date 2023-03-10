@@ -450,10 +450,20 @@ public class UserServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(account);
 
     String userEmail = "testemail@hello.com";
-    UserInviteDTO inviteDTO =
-        UserInviteDTO.builder().accountId(ACCOUNT_ID).email(userEmail).name(USER_NAME).token(UUID).build();
+    String testExternalId = "testExternalId";
+    UserInviteDTO inviteDTO = UserInviteDTO.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .email(userEmail)
+                                  .name(USER_NAME)
+                                  .token(UUID)
+                                  .externalId(testExternalId)
+                                  .build();
     when(accountService.get(ACCOUNT_ID)).thenReturn(account);
-    User user = User.Builder.anUser().twoFactorAuthenticationEnabled(true).email(userEmail).build();
+    User user = User.Builder.anUser()
+                    .twoFactorAuthenticationEnabled(true)
+                    .email(userEmail)
+                    .externalUserId(testExternalId)
+                    .build();
     wingsPersistence.save(user);
     retrofit2.Call<ResponseDTO<Boolean>> req = mock(retrofit2.Call.class);
     when(ngInviteClient.completeInvite(anyString())).thenReturn(req);

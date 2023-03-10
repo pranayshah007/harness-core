@@ -516,6 +516,7 @@ public class UserResourceNG {
         .createdAt(user.getCreatedAt())
         .lastUpdatedAt(user.getLastUpdatedAt())
         .emailVerified(user.isEmailVerified())
+        .externalId(user.getExternalUserId())
         .accounts(user.getAccounts()
                       .stream()
                       .map(account -> AccountMapper.toGatewayAccountRequest(account))

@@ -74,4 +74,5 @@ public class NGConstants {
   public static final String LOCATION = "location";
   public static final String VALUE = "value";
   public static final String PRIMARY = "primary";
+  public static final String EMAILS = "emails";
 }

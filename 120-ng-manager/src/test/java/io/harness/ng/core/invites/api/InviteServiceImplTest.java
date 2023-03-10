@@ -298,7 +298,28 @@ public class InviteServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
+  public void testCreate_UserDoesNotExist_UserNotInvitedYet() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.save(any())).thenReturn(getDummyInvite());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any()).execute())
+        .thenReturn(Response.success(new RestResponse(false)));
+    Invite dummyInvite = getDummyInvite();
+    dummyInvite.setExternalId("test_external_id");
+    InviteOperationResponse inviteOperationResponse = inviteService.create(dummyInvite, false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
   public void testCreate_NewUser_InviteAccepted_LdapGroup() {
+    final String testExternalId = "test_external_id";
     Invite invite = Invite.builder()
                         .accountIdentifier(accountIdentifier)
                         .orgIdentifier(orgIdentifier)
@@ -306,6 +327,7 @@ public class InviteServiceImplTest extends CategoryTest {
                         .approved(Boolean.FALSE)
                         .email(emailId)
                         .name(randomAlphabetic(7))
+                        .externalId(testExternalId)
                         .id(inviteId)
                         .roleBindings(getDummyInvite().getRoleBindings())
                         .inviteType(ADMIN_INITIATED_INVITE)
