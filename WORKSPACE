@@ -5840,6 +5840,7 @@ http_archive(
     url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
 )
 
+#test comment
 # Fetches the contrib_rules_jvm dependencies.
 # If you want to have a different version of some dependency,
 # you should fetch it *before* calling this.
