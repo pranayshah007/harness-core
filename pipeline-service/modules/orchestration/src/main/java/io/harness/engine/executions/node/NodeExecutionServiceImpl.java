@@ -429,7 +429,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     ops.accept(updateOps);
     boolean shouldLog = shouldLog(updateOps);
-    return transactionHelper.performTransaction(() -> {
+    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
         throw new NodeExecutionUpdateFailedException(
@@ -440,6 +440,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
       return updated;
     });
+    return updatedNodeExecution;
   }
 
   @VisibleForTesting
