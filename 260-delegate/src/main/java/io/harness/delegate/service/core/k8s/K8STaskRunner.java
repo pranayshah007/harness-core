@@ -122,6 +122,7 @@ public class K8STaskRunner {
         .addEnvVar("ACCOUNT_ID",
             delegateConfiguration.getAccountId()) // FixMe: EnvVar should be property of container, not job
         .addEnvVar("TASK_ID", taskId)
+        .addEnvVar("TASK_DATA_PATH", "/etc/config/task-data.bin")
         .addEnvVar("DELEGATE_NAME", "");
   }
 

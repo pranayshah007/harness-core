@@ -17,19 +17,21 @@ import software.wings.core.executors.bash.BashExecutorFactory;
 import com.google.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
+import static io.harness.shell.ScriptType.BASH;
+
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class BashScriptTaskHandler {
+  public static final String COMMAND_UNIT = "Execute";
   private final BashExecutorFactory shellExecutorFactory;
 
   public ExecuteCommandResponse handle(final ShellScriptTaskParametersNG parameters) {
     final ShellExecutorConfig executorConfig = ShellExecutorConfig.builder()
                                                    .accountId(parameters.getAccountId())
-                                                   .appId(parameters.getAppId())
                                                    .executionId(parameters.getExecutionId())
-                                                   .commandUnitName(parameters.getCommandUnit())
+                                                   .commandUnitName(COMMAND_UNIT)
                                                    .workingDirectory(parameters.getWorkingDirectory())
                                                    .environment(parameters.getEnvironmentVariables())
-                                                   .scriptType(parameters.getScriptType())
+                                                   .scriptType(BASH)
                                                    .build();
 
     final ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(executorConfig);

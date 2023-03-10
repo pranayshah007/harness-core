@@ -3,16 +3,21 @@ package io.harness.taskapps.shell.kryo;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.serializer.kryo.UnitProgressKryoSerializer;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.secretmanagerclient.SSHAuthScheme;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 
-import software.wings.beans.bash.ShellScriptTaskParametersNG;
+//import software.wings.beans.bash.ShellScriptTaskParametersNG;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -23,6 +28,12 @@ public class ShellScriptNgTaskKryoRegistrars implements KryoRegistrar {
     // This hijacks io.harness.delegate.task.shell.ShellScriptTaskParametersNG
     kryo.register(ShellScriptTaskParametersNG.class, 19463);
     kryo.register(ScriptType.class, 5253);
+
+    kryo.register(SSHKeySpecDTO.class, 543222);
+    kryo.register(SSHAuthDTO.class, 543234);
+    kryo.register(SSHAuthScheme.class, 543223);
+
+    kryo.register(EncryptedDataDetail.class, 5125);
 
     // Task Response
     kryo.register(ShellScriptTaskResponseNG.class, 19464);

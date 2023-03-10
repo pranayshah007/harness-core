@@ -86,7 +86,7 @@ public class CoreDelegateResource {
       final long timeout = delegateTaskPackage.getData().getTimeout();
 
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
-      final var taskDataBytes = kryoSerializer.asDeflatedBytes(delegateTaskPackage);
+      final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
       final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var pluginDesc =
