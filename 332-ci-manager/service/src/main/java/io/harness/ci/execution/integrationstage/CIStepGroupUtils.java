@@ -7,7 +7,6 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.beans.FeatureName.CI_CACHE_INTELLIGENCE;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 import static io.harness.beans.steps.CIStepInfoType.RESTORE_CACHE_GCS;
@@ -16,6 +15,7 @@ import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCO
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
@@ -122,14 +122,13 @@ public class CIStepGroupUtils {
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     Caching caching = integrationStageConfig.getCaching();
     boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
-    boolean featureCacheEnabled = featureFlagService.isEnabled(CI_CACHE_INTELLIGENCE, accountId);
     boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
         || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
     if (gitClone) {
       initializeExecutionSections.add(
           getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
-    boolean enableCacheIntel = featureCacheEnabled && saveCache && isHosted;
+    boolean enableCacheIntel = saveCache && isHosted;
     if (enableCacheIntel) {
       initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
     }
@@ -440,6 +439,7 @@ public class CIStepGroupUtils {
     }
     envVariables.put(PLUGIN_AUTO_DETECT_CACHE, ParameterField.createValueField(STRING_TRUE));
     envVariables.put(PLUGIN_AUTO_CACHE_ACCOUNT_ID, ParameterField.createValueField(accountId));
+    envVariables.put(PLUGIN_EXIT_CODE, ParameterField.createValueField(STRING_TRUE));
     if (cacheDir != null && cacheDir.size() > 0) {
       envVariables.put(PLUGIN_MOUNT, ParameterField.createValueField(String.join(",", cacheDir)));
     }
