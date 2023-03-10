@@ -232,6 +232,8 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse;
+import io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams;
+import io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse;
 import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams;
@@ -2135,6 +2137,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AppSettingsFile.class, 55407);
     kryo.register(EncryptedAppSettingsFile.class, 55408);
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
+    kryo.register(OciHelmDockerApiListTagsTaskParams.class, 55440);
+    kryo.register(OciHelmDockerApiListTagsTaskResponse.class, 55441);
 
     // GIT
     kryo.register(GitTaskNGRequest.class, 573401);

@@ -67,9 +67,11 @@ public class HelmChartVersionResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
       @QueryParam("chartName") String chartName, @QueryParam("region") String region,
-      @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath) {
-    HelmChartResponseDTO helmChartResponseDTO = helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier,
-        projectIdentifier, serviceRef, fqnPath, connectorIdentifier, chartName, region, bucketName, folderPath);
+      @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
+      @QueryParam("lastTag") String lastTag) {
+    HelmChartResponseDTO helmChartResponseDTO =
+        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -86,7 +88,8 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
       @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml) {
+      @QueryParam("lastTag") String lastTag, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
       HelmChartManifest helmChartManifest =
           (HelmChartManifest) helmChartService
@@ -132,8 +135,9 @@ public class HelmChartVersionResource {
       chartName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
           pipelineIdentifier, runtimeInputYaml, chartName, fqnPath, gitEntityBasicInfo, serviceRef);
     }
-    HelmChartResponseDTO helmChartResponseDTO = helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier,
-        projectIdentifier, serviceRef, fqnPath, connectorIdentifier, chartName, region, bucketName, folderPath);
+    HelmChartResponseDTO helmChartResponseDTO =
+        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 }

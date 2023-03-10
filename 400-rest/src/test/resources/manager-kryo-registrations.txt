@@ -2144,6 +2144,8 @@
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
+55440:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams
+55441:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
@@ -2300,6 +2302,7 @@
 97033:io.harness.helm.HelmCliCommandType
 97034:com.amazonaws.services.ec2.model.EnclaveOptions
 97035:io.harness.k8s.model.KubernetesResource
+97036:io.harness.exception.OciHelmDockerApiException
 97100:io.harness.manifest.CustomSourceConfig
 97101:io.harness.servicenow.ServiceNowActionNG
 97102:io.harness.servicenow.ServiceNowFieldAllowedValueNG
