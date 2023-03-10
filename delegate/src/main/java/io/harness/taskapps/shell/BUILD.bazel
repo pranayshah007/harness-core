@@ -18,7 +18,6 @@ java_library(
         "//delegate/src/main/java/io/harness/delegate/executor/bundle:module",
         "//delegate/src/main/java/io/harness/taskapps/common/kryo:module",
         "//delegate/src/main/java/io/harness/taskapps/shell/kryo:module",
-        "//delegate/src/main/java/io/harness/taskapps/shell/module",
     ],
 )
 
