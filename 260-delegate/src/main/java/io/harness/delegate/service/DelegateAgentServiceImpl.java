@@ -1692,17 +1692,29 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams = builder.build()
-                                          .toBuilder()
-                                          .delegateId(delegateId)
-                                          .lastHeartBeat(clock.millis())
-                                          .location(Paths.get("").toAbsolutePath().toString())
-                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-                                          .delegateConnectionId(delegateConnectionId)
-                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-                                          .build();
+      DelegateParams delegateParamsECS = builder.build()
+                                             .toBuilder()
+                                             .delegateId(delegateId)
+                                             .lastHeartBeat(clock.millis())
+                                             .location(Paths.get("").toAbsolutePath().toString())
+                                             .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                             .delegateConnectionId(delegateConnectionId)
+                                             .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                             .build();
 
+      // Send only minimal params over web socket to record HB
+      DelegateParams delegatesParams = DelegateParams.builder()
+                                           .delegateId(delegateId)
+                                           .accountId(accountId)
+                                           .lastHeartBeat(clock.millis())
+                                           .version(getVersion())
+                                           .location(Paths.get("").toAbsolutePath().toString())
+                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                           .delegateConnectionId(delegateConnectionId)
+                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                           .build();
       try {
+        final DelegateParams delegateParams = isEcsDelegate() ? delegateParamsECS : delegatesParams;
         HTimeLimiter.callInterruptible21(
             delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
         lastHeartbeatSentAt.set(clock.millis());
