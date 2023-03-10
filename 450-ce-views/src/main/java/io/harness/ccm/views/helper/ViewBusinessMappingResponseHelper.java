@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +71,8 @@ public class ViewBusinessMappingResponseHelper {
             break;
           case HIDE:
             for (QLCEViewEntityStatsDataPoint dataPoint : response.getData()) {
-              if (!dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+              if (!dataPoint.getName().equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())
+                  && !dataPoint.getName().equals(businessMapping.getUnallocatedCost().getLabel())) {
                 updatedDataPoints.add(dataPoint);
               }
             }
@@ -88,6 +90,15 @@ public class ViewBusinessMappingResponseHelper {
     if (!sharedCostBusinessMappings.isEmpty()) {
       updatedDataPoints = addSharedCostsFromFilters(updatedDataPoints, sharedCosts);
     }
+
+    updatedDataPoints =
+        updatedDataPoints.stream()
+            .filter(dataPoint
+                -> Objects.nonNull(dataPoint.getCost()) && Double.compare(dataPoint.getCost().doubleValue(), 0.0D) > 0)
+            .collect(Collectors.toList());
+    updatedDataPoints.sort(
+        (dataPoints1,
+            dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
 
     return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
   }
@@ -135,16 +146,15 @@ public class ViewBusinessMappingResponseHelper {
         finalCostTrend = 0;
         sharedCostAdded.put(dataPoint.getName(), true);
       }
-      final QLCEViewEntityStatsDataPointBuilder qlceViewEntityStatsDataPointBuilder =
-          QLCEViewEntityStatsDataPoint.builder();
-      qlceViewEntityStatsDataPointBuilder.id(dataPoint.getId())
-          .name(dataPoint.getName())
-          .cost(viewsQueryHelper.getRoundedDoubleValue(finalCost))
-          .costTrend(finalCostTrend);
-      updatedDataPoints.add(qlceViewEntityStatsDataPointBuilder.build());
+      updatedDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
+                                .id(dataPoint.getId())
+                                .name(dataPoint.getName())
+                                .cost(viewsQueryHelper.getRoundedDoubleValue(finalCost))
+                                .costTrend(finalCostTrend)
+                                .build());
     }
 
-    entitiesToUpdate.forEach(entity -> {
+    for (String entity : entitiesToUpdate) {
       if (!sharedCostAdded.containsKey(entity)) {
         sharedCostAdded.put(entity, true);
         updatedDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
@@ -154,7 +164,7 @@ public class ViewBusinessMappingResponseHelper {
                                   .costTrend(0)
                                   .build());
       }
-    });
+    }
 
     return updatedDataPoints;
   }
@@ -166,12 +176,14 @@ public class ViewBusinessMappingResponseHelper {
       SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
       switch (sharingStrategy) {
         case PROPORTIONAL:
-          sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+          sharedCost +=
+              sharedCosts.getOrDefault(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()), 0.0D)
               * (entityCost / totalCost);
           break;
         case EQUAL:
         default:
-          sharedCost += sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()))
+          sharedCost +=
+              sharedCosts.getOrDefault(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()), 0.0D)
               * (1.0 / totalEntities);
           break;
       }
@@ -243,17 +255,20 @@ public class ViewBusinessMappingResponseHelper {
       BusinessMapping sharedCostBusinessMapping, Double entityCost, Double numberOfEntities, Double totalCost) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBusinessMapping.getSharedCosts()) {
-      double sharedCostForGivenTimestamp =
-          sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
-      SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
-      switch (sharingStrategy) {
-        case PROPORTIONAL:
-          sharedCost += sharedCostForGivenTimestamp * (entityCost / totalCost);
-          break;
-        case EQUAL:
-        default:
-          sharedCost += sharedCostForGivenTimestamp * (1.0 / numberOfEntities);
-          break;
+      Map<Timestamp, Double> sharedCostsPerTimestamp =
+          sharedCosts.get(viewsQueryBuilder.modifyStringToComplyRegex(sharedCostBucket.getName()));
+      if (Objects.nonNull(sharedCostsPerTimestamp)) {
+        double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
+        SharingStrategy sharingStrategy = totalCost != 0 ? sharedCostBucket.getStrategy() : SharingStrategy.EQUAL;
+        switch (sharingStrategy) {
+          case PROPORTIONAL:
+            sharedCost += sharedCostForGivenTimestamp * (entityCost / totalCost);
+            break;
+          case EQUAL:
+          default:
+            sharedCost += sharedCostForGivenTimestamp * (1.0 / numberOfEntities);
+            break;
+        }
       }
     }
     return sharedCost;
@@ -269,5 +284,31 @@ public class ViewBusinessMappingResponseHelper {
     }
     Double currentValue = sharedCostFromGroupBy.get(sharedCostName).get(timeStamp);
     sharedCostFromGroupBy.get(sharedCostName).put(timeStamp, currentValue + sharedCostValue);
+  }
+
+  public List<QLCEViewEntityStatsDataPoint> subtractDuplicateSharedCostFromUnattributed(
+      final List<QLCEViewEntityStatsDataPoint> entityStatsDataPoints, final double totalSharedCostsInUnattributed,
+      final BusinessMapping businessMapping) {
+    final List<QLCEViewEntityStatsDataPoint> modifiedEntityStatsDataPoints = new ArrayList<>();
+    for (final QLCEViewEntityStatsDataPoint entityStatsDataPoint : entityStatsDataPoints) {
+      if (Objects.nonNull(businessMapping.getUnallocatedCost())
+          && entityStatsDataPoint.getName().equals(businessMapping.getUnallocatedCost().getLabel())) {
+        final Number finalCost = entityStatsDataPoint.getCost().doubleValue() - totalSharedCostsInUnattributed;
+        modifiedEntityStatsDataPoints.add(QLCEViewEntityStatsDataPoint.builder()
+                                              .name(entityStatsDataPoint.getName())
+                                              .id(entityStatsDataPoint.getId())
+                                              .pricingSource(entityStatsDataPoint.getPricingSource())
+                                              .cost(Math.max(finalCost.doubleValue(), 0.0D))
+                                              .costTrend(entityStatsDataPoint.getCostTrend())
+                                              .isClusterPerspective(entityStatsDataPoint.isClusterPerspective())
+                                              .clusterData(entityStatsDataPoint.getClusterData())
+                                              .instanceDetails(entityStatsDataPoint.getInstanceDetails())
+                                              .storageDetails(entityStatsDataPoint.getStorageDetails())
+                                              .build());
+      } else {
+        modifiedEntityStatsDataPoints.add(entityStatsDataPoint);
+      }
+    }
+    return modifiedEntityStatsDataPoints;
   }
 }

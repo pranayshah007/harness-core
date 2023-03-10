@@ -18,7 +18,6 @@ import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY_UN_NEST
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_VALUE_UN_NESTED;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLOUD_SERVICE_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
-import static io.harness.ccm.views.utils.ClusterTableKeys.COUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.COUNT_INNER;
 import static io.harness.ccm.views.utils.ClusterTableKeys.EFFECTIVE_CPU_LIMIT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.EFFECTIVE_CPU_REQUEST;
@@ -60,7 +59,8 @@ import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
-import io.harness.ccm.views.entities.ViewTimeGranularity;
+import io.harness.ccm.views.utils.ClickHouseConstants;
+import io.harness.ccm.views.utils.ClusterTableKeys;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
 
@@ -81,8 +81,10 @@ import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
+import com.healthmarketscience.sqlbuilder.UnionQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
+import io.fabric8.utils.Lists;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -90,6 +92,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -101,9 +104,9 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(CE)
 public class ViewsQueryBuilder {
-  @Inject ViewCustomFieldDao viewCustomFieldDao;
-  @Inject BusinessMappingService businessMappingService;
-  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject private ViewCustomFieldDao viewCustomFieldDao;
+  @Inject private BusinessMappingService businessMappingService;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   public static final String K8S_NODE = "K8S_NODE";
   public static final String K8S_POD = "K8S_POD";
@@ -121,7 +124,8 @@ public class ViewsQueryBuilder {
   private static final String DISTINCT = " DISTINCT(%s)";
   private static final String LOWER = "LOWER(%s)";
   private static final String COALESCE = " COALESCE(%s, %s)";
-  private static final String count = "COUNT(*)";
+  private static final String SHARED_COST_SPLIT_COLUMN = "(%s * (%s / %s))";
+  private static final String COUNT = "COUNT(*)";
   private static final String searchFilter = "REGEXP_CONTAINS( LOWER(%s), LOWER('%s') )";
   private static final String searchFilterClickHouse = "%s LIKE %s";
   private static final String regexFilter = "REGEXP_CONTAINS( %s, r'%s' )";
@@ -142,15 +146,17 @@ public class ViewsQueryBuilder {
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
-      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName) {
+      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName,
+      List<BusinessMapping> sharedCostBusinessMappings) {
     return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, aggregations, sortCriteriaList,
-        cloudProviderTableName, 0);
+        cloudProviderTableName, 0, null, sharedCostBusinessMappings);
   }
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
-      String cloudProviderTableName, int timeOffsetInDays) {
+      String cloudProviderTableName, int timeOffsetInDays, BusinessMapping sharedCostBusinessMapping,
+      List<BusinessMapping> sharedCostBusinessMappings) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -175,17 +181,70 @@ public class ViewsQueryBuilder {
       decorateQueryWithFilters(selectQuery, filters, tableIdentifier);
     }
 
-    if (!timeFilters.isEmpty()) {
-      decorateQueryWithTimeFilters(selectQuery, timeFilters, isClusterTable, tableIdentifier);
-    }
-
     if (!inExpressionFilters.isEmpty()) {
       decorateQueryWithInExpressionFilters(selectQuery, inExpressionFilters, groupByEntity, tableIdentifier);
     }
 
+    if (!Lists.isNullOrEmpty(sharedCostBusinessMappings)) {
+      decorateQueryWithNegateSharedCosts(selectQuery, sharedCostBusinessMappings, tableIdentifier);
+    }
+
+    if (!timeFilters.isEmpty()) {
+      decorateQueryWithTimeFilters(selectQuery, timeFilters, isClusterTable, tableIdentifier);
+    }
+
+    decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier);
+
+    if (groupByTime != null) {
+      if (timeOffsetInDays == 0) {
+        decorateQueryWithGroupByTime(selectQuery, groupByTime, isClusterTable, tableIdentifier, false);
+      } else {
+        decorateQueryWithGroupByTimeWithOffset(
+            selectQuery, groupByTime, isClusterTable, timeOffsetInDays, tableIdentifier);
+      }
+    }
+
+    if (!aggregations.isEmpty()) {
+      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
+    }
+
+    decorateQueryWithSharedCostAggregations(
+        selectQuery, groupByEntity, isClusterTable, tableIdentifier, sharedCostBusinessMapping);
+
+    if (!sortCriteriaList.isEmpty()) {
+      decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
+    }
+
+    log.info("Query for view {}", selectQuery);
+    return selectQuery;
+  }
+
+  private void decorateQueryWithNegateSharedCosts(final SelectQuery selectQuery,
+      final List<BusinessMapping> sharedCostBusinessMappings, final String tableIdentifier) {
+    for (final BusinessMapping businessMapping : sharedCostBusinessMappings) {
+      final CustomSql conditionKey = isClickHouseQuery()
+          ? getClickHouseSQLCaseStatementForSharedCost(businessMapping, tableIdentifier)
+          : getSQLCaseStatementForSharedCost(businessMapping, tableIdentifier);
+      final Condition condition =
+          new InCondition(conditionKey, (Object[]) getSharedBucketNames(businessMapping)).setNegate(true);
+      selectQuery.addCondition(condition);
+    }
+  }
+
+  private String[] getSharedBucketNames(final BusinessMapping businessMapping) {
+    List<String> sharedBucketNames = new ArrayList<>();
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
+      sharedBucketNames =
+          businessMapping.getSharedCosts().stream().map(SharedCost::getName).collect(Collectors.toList());
+    }
+    return sharedBucketNames.toArray(new String[0]);
+  }
+
+  private void decorateQueryWithGroupByAndColumns(
+      SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity, String tableIdentifier) {
     if (!groupByEntity.isEmpty()) {
       for (QLCEViewFieldInput groupBy : groupByEntity) {
-        Object sqlObjectFromField = getSQLObjectFromField(groupBy, tableIdentifier);
+        CustomSql sqlObjectFromField = getSQLObjectFromField(groupBy, tableIdentifier);
         if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
             && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
           selectQuery.addCustomColumns(sqlObjectFromField);
@@ -210,26 +269,118 @@ public class ViewsQueryBuilder {
         }
       }
     }
+  }
 
-    if (groupByTime != null) {
-      if (timeOffsetInDays == 0) {
-        decorateQueryWithGroupByTime(selectQuery, groupByTime, isClusterTable, tableIdentifier);
-      } else {
-        decorateQueryWithGroupByTimeWithOffset(
-            selectQuery, groupByTime, isClusterTable, timeOffsetInDays, tableIdentifier);
+  private void decorateQueryWithGroupByColumns(
+      final SelectQuery selectQuery, final List<QLCEViewFieldInput> groupByEntity, final String tableIdentifier) {
+    if (!groupByEntity.isEmpty()) {
+      for (final QLCEViewFieldInput groupBy : groupByEntity) {
+        final CustomSql sqlObjectFromField = getSQLObjectFromField(groupBy, tableIdentifier);
+        if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
+            && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
+          selectQuery.addCustomColumns(sqlObjectFromField);
+        } else if (groupBy.getIdentifier() == ViewFieldIdentifier.LABEL) {
+          selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(ViewsMetaDataFields.LABEL_VALUE.getAlias()));
+        } else {
+          // Will handle both Custom and Business Mapping Cases
+          selectQuery.addCustomColumns(
+              Converter.toCustomColumnSqlObject(modifyStringToComplyRegex(getColumnName(groupBy.getFieldName()))));
+        }
       }
     }
+  }
 
-    if (!aggregations.isEmpty()) {
-      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier);
-      decorateQueryWithSharedCostAggregations(selectQuery, groupByEntity, isClusterTable, tableIdentifier);
+  private void decorateQueryWithGroupBy(
+      final SelectQuery selectQuery, final List<QLCEViewFieldInput> groupByEntity, final String tableIdentifier) {
+    if (!groupByEntity.isEmpty()) {
+      for (final QLCEViewFieldInput groupBy : groupByEntity) {
+        final CustomSql sqlObjectFromField = getSQLObjectFromField(groupBy, tableIdentifier);
+        if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM && groupBy.getIdentifier() != BUSINESS_MAPPING
+            && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
+          selectQuery.addCustomGroupings(sqlObjectFromField);
+        } else if (groupBy.getIdentifier() == ViewFieldIdentifier.LABEL) {
+          selectQuery.addCustomGroupings(Converter.toCustomColumnSqlObject(ViewsMetaDataFields.LABEL_VALUE.getAlias()));
+        } else {
+          // Will handle both Custom and Business Mapping Cases
+          selectQuery.addCustomGroupings(
+              Converter.toCustomColumnSqlObject(modifyStringToComplyRegex(getColumnName(groupBy.getFieldName()))));
+        }
+      }
     }
+  }
 
-    if (!sortCriteriaList.isEmpty()) {
-      decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
+  public SelectQuery getTotalCountSharedCostOuterQuery(
+      final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery, final String cloudProviderTableName) {
+    final SelectQuery outerQuery = new SelectQuery();
+    final SelectQuery query = new SelectQuery();
+    final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    if (!Lists.isNullOrEmpty(groupBy)) {
+      decorateQueryWithGroupBy(query, getGroupByEntity(groupBy), tableIdentifier);
     }
+    query.addCustomFromTable(String.format("(%s)", unionQuery));
+    query.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, COUNT_INNER));
 
-    log.info("Query for view {}", selectQuery);
+    outerQuery.addCustomFromTable(String.format("(%s)", query));
+    outerQuery.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, ClusterTableKeys.COUNT));
+    log.info("Total count query for shared cost data: {}", outerQuery);
+    return outerQuery;
+  }
+
+  private void decorateSharedCostQueryGroupBy(final List<QLCEViewGroupBy> groupBy, final boolean isClusterPerspective,
+      final SelectQuery query, final String tableIdentifier) {
+    if (!Lists.isNullOrEmpty(groupBy)) {
+      // Handling label groupBy separately
+      final List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupBy);
+      final List<QLCEViewFieldInput> groupByLabel = getLabelGroupBy(groupByEntity);
+      final QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupBy);
+      if (!groupByLabel.isEmpty()) {
+        decorateQueryWithGroupByColumns(query, groupByLabel, tableIdentifier);
+        query.addCustomGroupings(ViewsMetaDataFields.LABEL_VALUE.getAlias());
+      } else {
+        decorateQueryWithGroupByAndColumns(query, groupByEntity, tableIdentifier);
+      }
+      if (Objects.nonNull(groupByTime)) {
+        decorateQueryWithGroupByTime(query, groupByTime, isClusterPerspective, tableIdentifier, true);
+      }
+    }
+  }
+
+  public SelectQuery getSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy,
+      final List<QLCEViewAggregation> aggregateFunction, final List<QLCEViewSortCriteria> sort,
+      final UnionQuery unionQuery, final String cloudProviderTableName, final boolean isClusterPerspective) {
+    final SelectQuery query = new SelectQuery();
+    final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, query, tableIdentifier);
+    if (!Lists.isNullOrEmpty(aggregateFunction)) {
+      decorateQueryWithAggregations(query, aggregateFunction, tableIdentifier, true);
+    }
+    if (!Lists.isNullOrEmpty(sort)) {
+      decorateQueryWithSortCriteria(query, sort);
+    }
+    query.addCustomFromTable(String.format("(%s)", unionQuery));
+    return query;
+  }
+
+  @NotNull
+  public SelectQuery getSharedCostQuery(final List<QLCEViewGroupBy> groupBy,
+      final List<QLCEViewAggregation> aggregateFunction, final Map<String, Double> entityCosts, final double totalCost,
+      final CostTarget costTarget, final SharedCost sharedCost, final BusinessMapping businessMapping,
+      final String cloudProviderTableName, final boolean isClusterPerspective) {
+    final SelectQuery selectQuery = new SelectQuery();
+    final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
+    switch (sharedCost.getStrategy()) {
+      case PROPORTIONAL:
+        decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
+            entityCosts.getOrDefault(costTarget.getName(), 0.0), totalCost);
+        break;
+      case EQUAL:
+        decorateSharedCostQueryWithAggregations(
+            selectQuery, aggregateFunction, tableIdentifier, 1, businessMapping.getCostTargets().size());
+        break;
+      default:
+        break;
+    }
     return selectQuery;
   }
 
@@ -269,7 +420,7 @@ public class ViewsQueryBuilder {
     // Note that condition is 'like'
     selectQuery.addCondition(BinaryCondition.like(new CustomSql("table_name"), table + "%"));
 
-    log.info("Information schema query for table {}", selectQuery.toString());
+    log.info("Information schema query for table {}", selectQuery);
     return selectQuery;
   }
 
@@ -293,7 +444,7 @@ public class ViewsQueryBuilder {
         Collections.emptyList(), Collections.emptyList(), selectQuery);
 
     if (!aggregations.isEmpty()) {
-      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier);
+      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
     }
 
     if (!timeFilters.isEmpty()) {
@@ -301,10 +452,10 @@ public class ViewsQueryBuilder {
     }
 
     if (groupByTime != null) {
-      decorateQueryWithGroupByTime(selectQuery, groupByTime, false, tableIdentifier);
+      decorateQueryWithGroupByTime(selectQuery, groupByTime, false, tableIdentifier, false);
     }
 
-    log.info("Query for Overview cost by providers {}", selectQuery.toString());
+    log.info("Query for Overview cost by providers {}", selectQuery);
     return selectQuery;
   }
 
@@ -318,7 +469,7 @@ public class ViewsQueryBuilder {
     QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
 
-    selectQueryInner.addCustomColumns(Converter.toCustomColumnSqlObject(count, COUNT_INNER));
+    selectQueryInner.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, COUNT_INNER));
 
     List<ViewField> customFields =
         collectFieldListByIdentifier(rules, filters, groupByEntity, ViewFieldIdentifier.CUSTOM);
@@ -339,38 +490,14 @@ public class ViewsQueryBuilder {
       decorateQueryWithTimeFilters(selectQueryInner, timeFilters, isClusterTable, tableIdentifier);
     }
 
-    if (!groupByEntity.isEmpty()) {
-      for (QLCEViewFieldInput groupBy : groupByEntity) {
-        Object sqlObjectFromField = getSQLObjectFromField(groupBy, tableIdentifier);
-        if (groupBy.getIdentifier() != ViewFieldIdentifier.CUSTOM
-            && groupBy.getIdentifier() != ViewFieldIdentifier.LABEL) {
-          selectQueryInner.addCustomGroupings(sqlObjectFromField);
-        } else if (groupBy.getIdentifier() == ViewFieldIdentifier.LABEL) {
-          if (!isClickHouseQuery()) {
-            String labelSubQuery = String.format(labelsSubQuery, groupBy.getFieldName());
-            selectQueryInner.addCustomGroupings(ViewsMetaDataFields.LABEL_VALUE.getAlias());
-            selectQueryInner.addCustomColumns(
-                Converter.toCustomColumnSqlObject(labelSubQuery, ViewsMetaDataFields.LABEL_VALUE.getAlias()));
-          } else {
-            String labelColumn = String.format(CLICKHOUSE_LABEL_VALUE_COLUMN, groupBy.getFieldName());
-            selectQueryInner.addCustomGroupings(ViewsMetaDataFields.LABEL_VALUE.getAlias());
-            selectQueryInner.addCustomColumns(
-                Converter.toCustomColumnSqlObject(labelColumn, ViewsMetaDataFields.LABEL_VALUE.getAlias()));
-          }
-        } else {
-          selectQueryInner.addAliasedColumn(
-              sqlObjectFromField, modifyStringToComplyRegex(getColumnName(groupBy.getFieldName())));
-          selectQueryInner.addCustomGroupings(modifyStringToComplyRegex(groupBy.getFieldName()));
-        }
-      }
-    }
+    decorateQueryWithGroupByAndColumns(selectQueryInner, groupByEntity, tableIdentifier);
 
     if (groupByTime != null) {
-      decorateQueryWithGroupByTime(selectQueryInner, groupByTime, isClusterTable, tableIdentifier);
+      decorateQueryWithGroupByTime(selectQueryInner, groupByTime, isClusterTable, tableIdentifier, false);
     }
 
-    selectQueryOuter.addCustomFromTable("(" + selectQueryInner.toString() + ")");
-    selectQueryOuter.addCustomColumns(Converter.toCustomColumnSqlObject(count, COUNT));
+    selectQueryOuter.addCustomFromTable(String.format("(%s)", selectQueryInner));
+    selectQueryOuter.addCustomColumns(Converter.toCustomColumnSqlObject(COUNT, ClusterTableKeys.COUNT));
 
     log.info("Total count query for view {}", selectQueryOuter);
     return selectQueryOuter;
@@ -596,7 +723,7 @@ public class ViewsQueryBuilder {
 
   public ViewsQueryMetadata getFilterValuesQuery(List<ViewRule> rules, List<QLCEViewFilter> filters,
       List<QLCEViewTimeFilter> timeFilters, String cloudProviderTableName, Integer limit, Integer offset,
-      boolean isLimitRequired) {
+      boolean isLimitRequired, boolean isSharedCostOuterQuery) {
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
     List<QLCEViewFieldInput> fields = new ArrayList<>();
     SelectQuery query = new SelectQuery();
@@ -610,9 +737,9 @@ public class ViewsQueryBuilder {
 
     boolean isLabelsPresent = false;
     List<ViewField> customFields =
-        collectFieldListByIdentifier(rules, filters, Collections.EMPTY_LIST, ViewFieldIdentifier.CUSTOM);
+        collectFieldListByIdentifier(rules, filters, Collections.emptyList(), ViewFieldIdentifier.CUSTOM);
     List<ViewField> businessMappings =
-        collectFieldListByIdentifier(rules, filters, Collections.EMPTY_LIST, BUSINESS_MAPPING);
+        collectFieldListByIdentifier(rules, filters, Collections.emptyList(), BUSINESS_MAPPING);
     List<String> labelKeysList = new ArrayList<>();
 
     if (!customFields.isEmpty()) {
@@ -629,7 +756,7 @@ public class ViewsQueryBuilder {
     }
 
     labelKeysList.addAll(collectLabelKeysList(rules, filters));
-    if (isLabelsPresent || evaluateLabelsPresent(rules, filters)) {
+    if ((isLabelsPresent || evaluateLabelsPresent(rules, filters)) && !isSharedCostOuterQuery) {
       decorateQueryWithLabelsMetadata(query, true, labelKeysList, getIsLabelsKeyFilterQuery(filters));
     }
 
@@ -654,82 +781,104 @@ public class ViewsQueryBuilder {
         case AZURE:
         case CLUSTER:
         case COMMON:
-          query.addAliasedColumn(new CustomSql(String.format(
-                                     DISTINCT, getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()))),
-              viewFieldInput.getFieldId());
-          if (AWS_ACCOUNT_FIELD.equals(viewFieldInput.getFieldName()) && filter.getValues().length != 1) {
-            // Skipping the first string for InCondition that client is passing in the search filter
-            // Considering only the AWS account Ids
-            query.addCondition(ComboCondition.or(
-                new InCondition(new CustomSql(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId())),
-                    Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
-                getSearchCondition(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString)));
+          if (isSharedCostOuterQuery) {
+            query.addAliasedColumn(
+                new CustomSql(String.format(DISTINCT, viewFieldInput.getFieldId())), viewFieldInput.getFieldId());
           } else {
-            query.addCondition(
-                getSearchCondition(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString));
+            query.addAliasedColumn(new CustomSql(String.format(
+                                       DISTINCT, getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()))),
+                viewFieldInput.getFieldId());
+            if (AWS_ACCOUNT_FIELD.equals(viewFieldInput.getFieldName()) && filter.getValues().length != 1) {
+              // Skipping the first string for InCondition that client is passing in the search filter
+              // Considering only the AWS account Ids
+              query.addCondition(ComboCondition.or(
+                  new InCondition(new CustomSql(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId())),
+                      Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
+                  getSearchCondition(
+                      getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString)));
+            } else {
+              query.addCondition(getSearchCondition(
+                  getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString));
+            }
           }
           sortKey = viewFieldInput.getFieldId();
           break;
         case LABEL:
           if (viewFieldInput.getFieldId().equals(LABEL_KEY.getFieldName())) {
-            if (!isClickHouseQuery()) {
-              query.addCustomGroupings(LABEL_KEY_UN_NESTED.getAlias());
-              query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getFieldName())),
+            if (isSharedCostOuterQuery) {
+              query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getAlias())),
                   LABEL_KEY_UN_NESTED.getAlias());
-              query.addCondition(
-                  new CustomCondition(getSearchCondition(LABEL_KEY_UN_NESTED.getFieldName(), searchString)));
-              sortKey = LABEL_KEY_UN_NESTED.getAlias();
             } else {
-              query.addAliasedColumn(
-                  new CustomSql(String.format("distinct arrayJoin(%s)", "labels.keys")), LABEL_KEY.getAlias());
-              //              query.addCondition(new CustomCondition(getSearchCondition(LABEL_KEY.getFieldName(),
-              //              searchString))); sortKey = LABEL_KEY_UN_NESTED.getAlias();
+              if (!isClickHouseQuery()) {
+                query.addCustomGroupings(LABEL_KEY_UN_NESTED.getAlias());
+                query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getFieldName())),
+                    LABEL_KEY_UN_NESTED.getAlias());
+                query.addCondition(
+                    new CustomCondition(getSearchCondition(LABEL_KEY_UN_NESTED.getFieldName(), searchString)));
+              } else {
+                query.addAliasedColumn(
+                    new CustomSql(String.format("distinct arrayJoin(%s)", "labels.keys")), LABEL_KEY.getAlias());
+              }
             }
+            sortKey = LABEL_KEY_UN_NESTED.getAlias();
           } else {
-            if (!isClickHouseQuery()) {
-              query.addCustomGroupings(LABEL_VALUE_UN_NESTED.getAlias());
-              query.addCondition(
-                  getCondition(getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()}), tableIdentifier));
-              query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_VALUE_UN_NESTED.getFieldName())),
+            if (isSharedCostOuterQuery) {
+              query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_VALUE_UN_NESTED.getAlias())),
                   LABEL_VALUE_UN_NESTED.getAlias());
-              query.addCondition(
-                  new CustomCondition(getSearchCondition(LABEL_VALUE_UN_NESTED.getFieldName(), searchString)));
-              sortKey = LABEL_VALUE_UN_NESTED.getAlias();
+            } else {
+              if (!isClickHouseQuery()) {
+                query.addCustomGroupings(LABEL_VALUE_UN_NESTED.getAlias());
+                query.addCondition(
+                    getCondition(getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()}), tableIdentifier));
+                query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_VALUE_UN_NESTED.getFieldName())),
+                    LABEL_VALUE_UN_NESTED.getAlias());
+                query.addCondition(
+                    new CustomCondition(getSearchCondition(LABEL_VALUE_UN_NESTED.getFieldName(), searchString)));
+              }
             }
+            sortKey = LABEL_VALUE_UN_NESTED.getAlias();
           }
           break;
         case CUSTOM:
-          query = new SelectQuery();
-          query.addCustomization(new PgLimitClause(limit));
-          query.addCustomization(new PgOffsetClause(offset));
-          query.addCustomFromTable(cloudProviderTableName);
-          if (!customFields.isEmpty()) {
-            modifyQueryForCustomFields(query, customFields);
-          }
           ViewCustomField customField = viewCustomFieldDao.getById(viewFieldInput.getFieldId());
-          query.addAliasedColumn(new CustomSql(String.format(DISTINCT, customField.getSqlFormula())),
-              modifyStringToComplyRegex(customField.getName()));
+          if (isSharedCostOuterQuery) {
+            query.addAliasedColumn(
+                new CustomSql(String.format(DISTINCT, modifyStringToComplyRegex(customField.getName()))),
+                modifyStringToComplyRegex(customField.getName()));
+          } else {
+            query = new SelectQuery();
+            query.addCustomization(new PgLimitClause(limit));
+            query.addCustomization(new PgOffsetClause(offset));
+            query.addCustomFromTable(cloudProviderTableName);
+            if (!customFields.isEmpty()) {
+              modifyQueryForCustomFields(query, customFields);
+            }
+            query.addAliasedColumn(new CustomSql(String.format(DISTINCT, customField.getSqlFormula())),
+                modifyStringToComplyRegex(customField.getName()));
+            query.addCondition(new CustomCondition(getSearchCondition(customField.getSqlFormula(), searchString)));
+          }
           sortKey = modifyStringToComplyRegex(customField.getName());
-          query.addCondition(new CustomCondition(getSearchCondition(customField.getSqlFormula(), searchString)));
           break;
         case BUSINESS_MAPPING:
-          query = new SelectQuery();
-          query.addCustomization(new PgLimitClause(limit));
-          query.addCustomization(new PgOffsetClause(offset));
-          query.addCustomFromTable(cloudProviderTableName);
-          if (!businessMappings.isEmpty()) {
-            modifyQueryForBusinessMapping(query, businessMappings, false);
-          }
           BusinessMapping businessMapping = businessMappingService.get(viewFieldInput.getFieldId());
-          query.addAliasedColumn(new CustomSql(String.format(DISTINCT,
-                                     getSQLCaseStatementBusinessMapping(
-                                         businessMappingService.get(viewFieldInput.getFieldId()), tableIdentifier))),
-              modifyStringToComplyRegex(businessMapping.getName()));
-          query.addCondition(new CustomCondition(
-              getSearchCondition(getSQLCaseStatementBusinessMapping(
-                                     businessMappingService.get(viewFieldInput.getFieldId()), tableIdentifier)
-                                     .toString(),
-                  searchString)));
+          if (isSharedCostOuterQuery) {
+            query.addAliasedColumn(
+                new CustomSql(String.format(DISTINCT, modifyStringToComplyRegex(businessMapping.getName()))),
+                modifyStringToComplyRegex(businessMapping.getName()));
+          } else {
+            query = new SelectQuery();
+            query.addCustomization(new PgLimitClause(limit));
+            query.addCustomization(new PgOffsetClause(offset));
+            query.addCustomFromTable(cloudProviderTableName);
+            if (!businessMappings.isEmpty()) {
+              modifyQueryForBusinessMapping(query, businessMappings, false);
+            }
+            query.addAliasedColumn(new CustomSql(String.format(
+                                       DISTINCT, getSQLCaseStatementBusinessMapping(businessMapping, tableIdentifier))),
+                modifyStringToComplyRegex(businessMapping.getName()));
+            query.addCondition(new CustomCondition(getSearchCondition(
+                getSQLCaseStatementBusinessMapping(businessMapping, tableIdentifier).toString(), searchString)));
+          }
           sortKey = modifyStringToComplyRegex(businessMapping.getName());
           break;
         default:
@@ -739,7 +888,7 @@ public class ViewsQueryBuilder {
       if (!sortKey.isEmpty()) {
         sortKey = String.format(LOWER, sortKey);
       }
-      //      query.addCustomOrdering(sortKey, OrderObject.Dir.ASCENDING);
+      query.addCustomOrdering(sortKey, OrderObject.Dir.ASCENDING);
     }
     log.info("Query for view filter {}", query);
 
@@ -1027,31 +1176,64 @@ public class ViewsQueryBuilder {
     selectQuery.addCustomOrdering(sortKey, dir);
   }
 
-  private void decorateQueryWithAggregations(
-      SelectQuery selectQuery, List<QLCEViewAggregation> aggregations, String tableIdentifier) {
+  private void decorateQueryWithAggregations(SelectQuery selectQuery, List<QLCEViewAggregation> aggregations,
+      String tableIdentifier, boolean isSharedCostQuery) {
     for (QLCEViewAggregation aggregation : aggregations) {
-      decorateQueryWithAggregation(selectQuery, aggregation, tableIdentifier);
+      decorateQueryWithAggregation(selectQuery, aggregation, tableIdentifier, isSharedCostQuery);
     }
   }
 
   private void decorateQueryWithAggregation(
-      SelectQuery selectQuery, QLCEViewAggregation aggregation, String tableIdentifier) {
+      SelectQuery selectQuery, QLCEViewAggregation aggregation, String tableIdentifier, boolean isSharedCostQuery) {
     FunctionCall functionCall = getFunctionCallType(aggregation.getOperationType());
     String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
     if (aggregation.getColumnName().equals(ViewsMetaDataFields.START_TIME.getFieldName())) {
-      selectQuery.addCustomColumns(
-          Converter.toCustomColumnSqlObject(functionCall.addCustomParams(new CustomSql(columnName)),
-              String.format(aliasStartTimeMaxMin, ViewsMetaDataFields.START_TIME.getFieldName(),
-                  aggregation.getOperationType())));
+      final String aliasedStartTimeColumnName = String.format(
+          aliasStartTimeMaxMin, ViewsMetaDataFields.START_TIME.getFieldName(), aggregation.getOperationType());
+      final String startTimeColumnName = isSharedCostQuery ? aliasedStartTimeColumnName : columnName;
+      selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
+          Objects.requireNonNull(functionCall).addCustomParams(new CustomSql(startTimeColumnName)),
+          aliasedStartTimeColumnName));
     } else {
-      selectQuery.addCustomColumns(
-          Converter.toCustomColumnSqlObject(functionCall.addCustomParams(new CustomSql(columnName)),
-              getAliasNameForAggregation(aggregation.getColumnName())));
+      selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
+          Objects.requireNonNull(functionCall).addCustomParams(new CustomSql(columnName)),
+          getAliasNameForAggregation(aggregation.getColumnName())));
     }
   }
 
-  private void decorateQueryWithSharedCostAggregations(
-      SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity, boolean isClusterTable, String tableIdentifier) {
+  private void decorateSharedCostQueryWithAggregations(final SelectQuery selectQuery,
+      final List<QLCEViewAggregation> aggregations, final String tableIdentifier, final double numeratorValue,
+      final double denominatorValue) {
+    if (Objects.nonNull(aggregations)) {
+      for (final QLCEViewAggregation aggregation : aggregations) {
+        decorateSharedCostQueryWithAggregation(
+            selectQuery, aggregation, tableIdentifier, numeratorValue, denominatorValue);
+      }
+    }
+  }
+
+  private void decorateSharedCostQueryWithAggregation(final SelectQuery selectQuery,
+      final QLCEViewAggregation aggregation, final String tableIdentifier, final double numeratorValue,
+      final double denominatorValue) {
+    final FunctionCall functionCall = getFunctionCallType(aggregation.getOperationType());
+    final String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
+    if (aggregation.getColumnName().equals(ViewsMetaDataFields.START_TIME.getFieldName())) {
+      final String aliasedStartTimeColumnName = String.format(
+          aliasStartTimeMaxMin, ViewsMetaDataFields.START_TIME.getFieldName(), aggregation.getOperationType());
+      selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
+          Objects.requireNonNull(functionCall).addCustomParams(new CustomSql(aliasedStartTimeColumnName)),
+          aliasedStartTimeColumnName));
+    } else {
+      selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
+          String.format(SHARED_COST_SPLIT_COLUMN,
+              Objects.requireNonNull(functionCall).addCustomParams(new CustomSql(columnName)), numeratorValue,
+              denominatorValue),
+          getAliasNameForAggregation(aggregation.getColumnName())));
+    }
+  }
+
+  private void decorateQueryWithSharedCostAggregations(SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity,
+      boolean isClusterTable, String tableIdentifier, BusinessMapping sharedCostBusinessMapping) {
     List<QLCEViewFieldInput> groupByBusinessMapping =
         groupByEntity.stream()
             .filter(groupBy -> groupBy.getIdentifier() == BUSINESS_MAPPING)
@@ -1059,12 +1241,22 @@ public class ViewsQueryBuilder {
 
     if (groupByBusinessMapping.size() > 1) {
       throw new InvalidRequestException("Invalid request: Cannot group by multiple cost categories.");
-    } else if (groupByBusinessMapping.size() == 1) {
+    }
+    if (groupByBusinessMapping.size() == 1) {
       BusinessMapping businessMapping = businessMappingService.get(groupByBusinessMapping.get(0).getFieldId());
-      List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
+      if (businessMapping != null) {
+        List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
+        if (sharedCosts != null) {
+          sharedCosts.forEach(sharedCost
+              -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost, isClusterTable, tableIdentifier));
+        }
+      }
+    } else if (sharedCostBusinessMapping != null) {
+      // Group by other than cost category
+      List<SharedCost> sharedCosts = sharedCostBusinessMapping.getSharedCosts();
       if (sharedCosts != null) {
         sharedCosts.forEach(sharedCost
-            -> decorateQueryWithSharedCostAggregation(selectQuery, sharedCost, isClusterTable, tableIdentifier));
+            -> selectQuery.addCondition(getConsolidatedRuleCondition(sharedCost.getRules(), tableIdentifier)));
       }
     }
   }
@@ -1073,8 +1265,9 @@ public class ViewsQueryBuilder {
       SelectQuery selectQuery, SharedCost sharedCost, boolean isClusterTable, String tableIdentifier) {
     FunctionCall functionCall = getFunctionCallType(SUM);
     selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-        new CoalesceExpression(functionCall.addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(
-                                   sharedCost.getRules(), isClusterTable, tableIdentifier)),
+        new CoalesceExpression(Objects.requireNonNull(functionCall)
+                                   .addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(
+                                       sharedCost.getRules(), isClusterTable, tableIdentifier)),
             Collections.singletonList(0)),
         modifyStringToComplyRegex(sharedCost.getName())));
   }
@@ -1083,6 +1276,11 @@ public class ViewsQueryBuilder {
       List<ViewRule> sharedCostRules, boolean isClusterTable, String tableIdentifier) {
     String columnName =
         isClusterTable ? ViewsMetaDataFields.CLUSTER_COST.getAlias() : ViewsMetaDataFields.COST.getAlias();
+    if (isClickHouseQuery()) {
+      columnName = isClusterTable
+          ? String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_CLUSTER_DATA_TABLE, columnName)
+          : String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, columnName);
+    }
     CaseStatement caseStatement = new CaseStatement();
     caseStatement.addWhen(getConsolidatedRuleCondition(sharedCostRules, tableIdentifier), new CustomSql(columnName));
     caseStatement.addElseNull();
@@ -1105,37 +1303,52 @@ public class ViewsQueryBuilder {
   }
 
   private void decorateQueryWithGroupByTime(SelectQuery selectQuery, QLCEViewTimeTruncGroupBy groupByTime,
-      boolean isTimeInEpochMillis, String tableIdentifier) {
+      boolean isTimeInEpochMillis, String tableIdentifier, boolean isSharedCostQuery) {
     String startTimeColumnName =
         getColumnNameForField(tableIdentifier, ViewsMetaDataFields.START_TIME.getFieldName().toLowerCase(Locale.ROOT));
     if (isClickHouseQuery()) {
-      if (isTimeInEpochMillis) {
-        String toDateTimeColumn = "toDateTime(" + startTimeColumnName + "/1000)";
-        String timeBucket = getGroupByTimeQueryWithDateTrunc(groupByTime, toDateTimeColumn);
-        selectQuery.addCustomColumns(
-            Converter.toCustomColumnSqlObject(new CustomExpression(timeBucket).setDisableParens(true),
-                ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
-      } else {
-        String timeBucket = getGroupByTimeQueryWithDateTrunc(groupByTime, startTimeColumnName);
-        selectQuery.addCustomColumns(
-            Converter.toCustomColumnSqlObject(new CustomExpression(timeBucket).setDisableParens(true),
-                ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
-      }
+      decorateClickHouseQueryWithGroupByTime(
+          selectQuery, groupByTime, isTimeInEpochMillis, isSharedCostQuery, startTimeColumnName);
     } else {
-      if (isTimeInEpochMillis) {
-        selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-            new TimeTruncatedExpression(
-                new TimestampMillisExpression(new CustomSql(startTimeColumnName)), groupByTime.getResolution()),
-            ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
-      } else {
-        selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-            new TimeTruncatedExpression(new CustomSql(startTimeColumnName), groupByTime.getResolution()),
-            ViewsMetaDataFields.TIME_GRANULARITY.getFieldName()));
-      }
+      decorateBigQueryWithGroupByTime(
+          selectQuery, groupByTime, isTimeInEpochMillis, isSharedCostQuery, startTimeColumnName);
     }
 
     selectQuery.addCustomGroupings(ViewsMetaDataFields.TIME_GRANULARITY.getFieldName());
     selectQuery.addCustomOrdering(ViewsMetaDataFields.TIME_GRANULARITY.getFieldName(), OrderObject.Dir.ASCENDING);
+  }
+
+  private void decorateClickHouseQueryWithGroupByTime(final SelectQuery selectQuery,
+      final QLCEViewTimeTruncGroupBy groupByTime, final boolean isTimeInEpochMillis, final boolean isSharedCostQuery,
+      final String startTimeColumnName) {
+    final String aliasedTimeGranularityColumn = ViewsMetaDataFields.TIME_GRANULARITY.getFieldName();
+    if (isTimeInEpochMillis) {
+      String toDateTimeColumn = "toDateTime(" + startTimeColumnName + "/1000)";
+      String timeBucket = getGroupByTimeQueryWithDateTrunc(groupByTime, toDateTimeColumn);
+      final Object timeGranularityColumn =
+          isSharedCostQuery ? aliasedTimeGranularityColumn : new CustomExpression(timeBucket).setDisableParens(true);
+      selectQuery.addCustomColumns(
+          Converter.toCustomColumnSqlObject(timeGranularityColumn, aliasedTimeGranularityColumn));
+    } else {
+      String timeBucket = getGroupByTimeQueryWithDateTrunc(groupByTime, startTimeColumnName);
+      final Object timeGranularityColumn =
+          isSharedCostQuery ? aliasedTimeGranularityColumn : new CustomExpression(timeBucket).setDisableParens(true);
+      selectQuery.addCustomColumns(
+          Converter.toCustomColumnSqlObject(timeGranularityColumn, aliasedTimeGranularityColumn));
+    }
+  }
+
+  private void decorateBigQueryWithGroupByTime(final SelectQuery selectQuery,
+      final QLCEViewTimeTruncGroupBy groupByTime, final boolean isTimeInEpochMillis, final boolean isSharedCostQuery,
+      final String startTimeColumnName) {
+    final String aliasedTimeGranularityColumn = ViewsMetaDataFields.TIME_GRANULARITY.getFieldName();
+    final Object timeGranularityColumn = isSharedCostQuery ? aliasedTimeGranularityColumn
+        : isTimeInEpochMillis
+        ? new TimeTruncatedExpression(
+            new TimestampMillisExpression(new CustomSql(startTimeColumnName)), groupByTime.getResolution())
+        : new TimeTruncatedExpression(new CustomSql(startTimeColumnName), groupByTime.getResolution());
+    selectQuery.addCustomColumns(
+        Converter.toCustomColumnSqlObject(timeGranularityColumn, aliasedTimeGranularityColumn));
   }
 
   public String getGroupByTimeQueryWithDateTrunc(QLCEViewTimeTruncGroupBy groupByTime, String dbFieldName) {
@@ -1208,6 +1421,14 @@ public class ViewsQueryBuilder {
                            : Collections.emptyList();
   }
 
+  private List<QLCEViewFieldInput> getLabelGroupBy(List<QLCEViewFieldInput> groupBy) {
+    return groupBy != null
+        ? groupBy.stream()
+              .filter(qlCEViewFieldInput -> qlCEViewFieldInput.getIdentifier() == ViewFieldIdentifier.LABEL)
+              .collect(Collectors.toList())
+        : Collections.emptyList();
+  }
+
   public QLCEViewTimeTruncGroupBy getGroupByTime(List<QLCEViewGroupBy> groupBy) {
     if (groupBy != null) {
       Optional<QLCEViewTimeTruncGroupBy> first = groupBy.stream()
@@ -1264,15 +1485,6 @@ public class ViewsQueryBuilder {
       qlCEViewFilterOperator = QLCEViewFilterOperator.LIKE;
     }
     return qlCEViewFilterOperator;
-  }
-
-  public QLCEViewTimeGroupType mapViewTimeGranularityToQLCEViewTimeGroupType(ViewTimeGranularity timeGranularity) {
-    if (timeGranularity.equals(ViewTimeGranularity.DAY)) {
-      return DAY;
-    } else if (timeGranularity.equals(ViewTimeGranularity.MONTH)) {
-      return QLCEViewTimeGroupType.MONTH;
-    }
-    return null;
   }
 
   public QLCEViewFieldInput getViewFieldInput(ViewField field) {
@@ -1371,7 +1583,7 @@ public class ViewsQueryBuilder {
     final Optional<QLCEViewFieldInput> groupBy = groupByEntity.stream().filter(Objects::nonNull).findFirst();
     final Optional<QLCEInExpressionFilter> filter = filters.stream().filter(Objects::nonNull).findFirst();
     if (filter.isPresent() && groupBy.isPresent()) {
-      final Object sqlObjectFromField = getSQLObjectFromField(groupBy.get(), tableIdentifier);
+      final CustomSql sqlObjectFromField = getSQLObjectFromField(groupBy.get(), tableIdentifier);
       final ViewFieldIdentifier groupByIdentifier = groupBy.get().getIdentifier();
       if (groupByIdentifier == BUSINESS_MAPPING) {
         selectQuery.addCondition(getCondition(filter.get(), sqlObjectFromField));
@@ -1387,7 +1599,8 @@ public class ViewsQueryBuilder {
   }
 
   private Condition getCondition(QLCEViewFilter filter, String tableIdentifier) {
-    Object conditionKey = getSQLObjectFromField(filter.getField(), tableIdentifier);
+    Condition condition;
+    CustomSql conditionKey = getSQLObjectFromField(filter.getField(), tableIdentifier);
     if (conditionKey.toString().equals(ViewsMetaDataFields.LABEL_VALUE.getFieldName())) {
       String labelKey = filter.getField().getFieldName();
       String labelSubQuery = isClickHouseQuery() ? String.format(CLICKHOUSE_LABEL_VALUE_COLUMN, labelKey)
@@ -1408,34 +1621,56 @@ public class ViewsQueryBuilder {
       operator = QLCEViewFilterOperator.IN;
     }
 
+    ViewFieldIdentifier viewFieldIdentifier = filter.getField().getIdentifier();
+    BusinessMapping businessMapping = null;
+    if (viewFieldIdentifier == BUSINESS_MAPPING) {
+      businessMapping = businessMappingService.get(filter.getField().getFieldId());
+    }
+
     switch (operator) {
       case EQUALS:
-        return BinaryCondition.equalTo(conditionKey, filter.getValues()[0]);
+        condition = BinaryCondition.equalTo(conditionKey, filter.getValues()[0]);
+        break;
       case IN:
-        return new InCondition(conditionKey, (Object[]) filter.getValues());
+        condition = new InCondition(conditionKey, (Object[]) filter.getValues());
+        break;
       case NOT_IN:
-        return new InCondition(conditionKey, (Object[]) filter.getValues()).setNegate(true);
+        condition = new InCondition(conditionKey, (Object[]) filter.getValues()).setNegate(true);
+        break;
       case NOT_NULL:
-        return UnaryCondition.isNotNull(conditionKey);
+        condition = UnaryCondition.isNotNull(conditionKey);
+        if (viewFieldIdentifier == BUSINESS_MAPPING) {
+          condition = new InCondition(conditionKey, businessMapping.getUnallocatedCost().getLabel()).setNegate(true);
+        }
+        break;
       case NULL:
         if (isClickHouseQuery()) {
-          return BinaryCondition.equalTo(conditionKey, "");
+          condition = BinaryCondition.equalTo(conditionKey, "");
+        } else {
+          condition = UnaryCondition.isNull(conditionKey);
         }
-        return UnaryCondition.isNull(conditionKey);
+        if (viewFieldIdentifier == BUSINESS_MAPPING) {
+          condition = new InCondition(conditionKey, businessMapping.getUnallocatedCost().getLabel());
+        }
+        break;
       case LIKE:
-        return new CustomCondition(String.format(regexFilter, conditionKey, filter.getValues()[0]));
+        condition = new CustomCondition(String.format(regexFilter, conditionKey, filter.getValues()[0]));
+        break;
       case SEARCH:
         // Searching capability for idFilters only
-        return new CustomCondition(getSearchCondition(conditionKey.toString(), filter.getValues()[0]));
+        condition = new CustomCondition(getSearchCondition(conditionKey.toString(), filter.getValues()[0]));
+        break;
       default:
         throw new InvalidRequestException("Invalid View Filter operator: " + operator);
     }
+
+    return condition;
   }
 
   // Change it back
   private Condition getCondition(
       QLCEViewTimeFilter timeFilter, boolean addLongValueConditions, String tableIdentifier) {
-    Object conditionKey = getSQLObjectFromField(timeFilter.getField(), tableIdentifier);
+    CustomSql conditionKey = getSQLObjectFromField(timeFilter.getField(), tableIdentifier);
     QLCEViewTimeFilterOperator operator = timeFilter.getOperator();
 
     switch (operator) {
@@ -1478,7 +1713,7 @@ public class ViewsQueryBuilder {
     return condition;
   }
 
-  private Object getSQLObjectFromField(QLCEViewFieldInput field, String tableIdentifier) {
+  private CustomSql getSQLObjectFromField(QLCEViewFieldInput field, String tableIdentifier) {
     switch (field.getIdentifier()) {
       case CLUSTER:
       case AWS:
@@ -1551,6 +1786,36 @@ public class ViewsQueryBuilder {
       }
       return new CustomSql(String.format("'%s'", unallocatedCostLabel));
     }
+    return new CustomSql(multiIfStatement.toString());
+  }
+
+  private CustomSql getSQLCaseStatementForSharedCost(
+      final BusinessMapping businessMapping, final String tableIdentifier) {
+    final CaseStatement caseStatement = new CaseStatement();
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
+      for (final SharedCost sharedCost : businessMapping.getSharedCosts()) {
+        caseStatement.addWhen(
+            getConsolidatedRuleCondition(sharedCost.getRules(), tableIdentifier), sharedCost.getName());
+      }
+      caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
+    }
+    return new CustomSql(caseStatement);
+  }
+
+  private CustomSql getClickHouseSQLCaseStatementForSharedCost(
+      final BusinessMapping businessMapping, final String tableIdentifier) {
+    final StringBuilder multiIfStatement = new StringBuilder();
+    multiIfStatement.append(MULTI_IF_STATEMENT_OPENING);
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
+      for (final SharedCost sharedCost : businessMapping.getSharedCosts()) {
+        multiIfStatement.append(getConsolidatedRuleCondition(sharedCost.getRules(), tableIdentifier))
+            .append(',')
+            .append(String.format("'%s'", sharedCost.getName()))
+            .append(',');
+      }
+    }
+    multiIfStatement.append(String.format("'%s'", ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName()))
+        .append(')');
     return new CustomSql(multiIfStatement.toString());
   }
 

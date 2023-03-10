@@ -129,8 +129,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private TableResult resultSet;
   @Mock private FieldValueList row;
   @Mock private CEMetadataRecordDao ceMetadataRecordDao;
-  @Mock BigQueryService bigQueryService;
-  @Mock BigQueryHelper bigQueryHelper;
+  @Mock private BigQueryService bigQueryService;
+  @Mock private BigQueryHelper bigQueryHelper;
 
   private Schema schema;
   private List<Field> fields;
@@ -151,17 +151,17 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryBuilder).getAliasFromField(any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean());
-    doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString());
+        .getFilterValuesQuery(any(), any(), any(), anyString(), anyInt(), anyInt(), anyBoolean(), anyBoolean());
+    doCallRealMethod().when(viewsQueryBuilder).getQuery(any(), any(), any(), any(), any(), any(), anyString(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt());
+        .getQuery(any(), any(), any(), any(), any(), any(), any(), anyString(), anyInt(), any(), any());
     doCallRealMethod().when(viewsQueryBuilder).getTotalCountQuery(any(), any(), any(), any(), anyString());
     doReturn(resultSet).when(bigQuery).query(any());
     doCallRealMethod().when(viewsQueryHelper).buildQueryParams(any(), anyBoolean());

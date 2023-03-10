@@ -13,6 +13,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FI
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
+import static io.harness.ccm.views.businessMapping.entities.SharingStrategy.PROPORTIONAL;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRATED;
@@ -25,6 +26,8 @@ import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.CostTarget;
+import io.harness.ccm.views.businessMapping.entities.SharedCost;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ClusterData;
@@ -61,8 +64,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
-import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
-import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
+import com.healthmarketscience.sqlbuilder.SetOperationQuery;
+import com.healthmarketscience.sqlbuilder.UnionQuery;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -95,7 +98,6 @@ public class ViewBillingServiceHelper {
   @Inject private ViewParametersHelper viewParametersHelper;
   @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
-  private static final String OTHERS = "Others";
   private static final String COST_DESCRIPTION = "of %s - %s";
   private static final String OTHER_COST_DESCRIPTION = "%s of total";
   private static final String COST_VALUE = "%s%s";
@@ -108,10 +110,8 @@ public class ViewBillingServiceHelper {
   private static final String SYSTEM_COST_LABEL = "System Cost";
   private static final String EMPTY_VALUE = "-";
   private static final String DATE_PATTERN_FOR_CHART = "MMM dd";
-  private static final String STANDARD_TIME_ZONE = "GMT";
   private static final long ONE_DAY_MILLIS = 86400000L;
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
-  private static final int MAX_LIMIT_VALUE = 10_000;
   private static final List<String> UNALLOCATED_COST_CLUSTER_FIELDS = ImmutableList.of(
       NAMESPACE_FIELD_ID, WORKLOAD_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID, TASK_FIELD_ID, LAUNCH_TYPE_FIELD_ID);
 
@@ -119,17 +119,13 @@ public class ViewBillingServiceHelper {
   // Query for filter values
   // ----------------------------------------------------------------------------------------------------------------
   public ViewsQueryMetadata getFilterValueStatsQuery(List<QLCEViewFilterWrapper> filters, String cloudProviderTableName,
-      Integer limit, Integer offset, ViewQueryParams queryParams) {
+      Integer limit, Integer offset, ViewQueryParams queryParams, final BusinessMapping sharedCostBusinessMapping) {
     boolean isClusterQuery = viewParametersHelper.isClusterTableQuery(filters, Collections.emptyList(), queryParams);
 
     List<ViewRule> viewRuleList = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
 
-    // In case of AWS Account filter, we might get multiple values for QLCEViewFilter if user is filtering on AWS
-    // Account name
-    // First value is the original filter string, the others are awsAccountIds
-    List<QLCEViewFilter> idFilters = awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(
-        viewParametersHelper.getIdFilters(filters), queryParams.getAccountId());
+    List<QLCEViewFilter> idFilters = getIdFiltersForFilterValues(filters, queryParams);
 
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
@@ -140,26 +136,117 @@ public class ViewBillingServiceHelper {
       }
     }
 
+    if (sharedCostBusinessMapping != null) {
+      for (SharedCost sharedCost : sharedCostBusinessMapping.getSharedCosts()) {
+        if (sharedCost.getRules() != null) {
+          viewRuleList.addAll(sharedCost.getRules());
+        }
+      }
+    }
+
     // account id is not passed in current gen queries
     if (queryParams.getAccountId() != null) {
       cloudProviderTableName = getUpdatedCloudProviderTableName(
           filters, null, null, queryParams.getAccountId(), cloudProviderTableName, isClusterQuery);
     }
 
+    boolean isLimitRequired = !viewParametersHelper.isDataFilteredByAwsAccount(idFilters);
+
     return viewsQueryBuilder.getFilterValuesQuery(viewRuleList, idFilters, viewsQueryHelper.getTimeFilters(filters),
-        cloudProviderTableName, limit, offset, !viewParametersHelper.isDataFilteredByAwsAccount(idFilters));
+        cloudProviderTableName, limit, offset, isLimitRequired, false);
+  }
+
+  private List<QLCEViewFilter> getIdFiltersForFilterValues(
+      final List<QLCEViewFilterWrapper> filters, final ViewQueryParams queryParams) {
+    // In case of AWS Account filter, we might get multiple values for QLCEViewFilter if user is filtering on AWS
+    // Account name
+    // First value is the original filter string, the others are awsAccountIds
+    return awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(
+        viewParametersHelper.getIdFilters(filters), queryParams.getAccountId());
   }
 
   // ----------------------------------------------------------------------------------------------------------------
-  // Query for Grid
+  // Query for Shared Cost
   // ----------------------------------------------------------------------------------------------------------------
-  public String getEntityStatsQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
-      Integer limit, Integer offset, ViewQueryParams queryParams) {
-    SelectQuery query = getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
-    query.addCustomization(new PgLimitClause(limit));
-    query.addCustomization(new PgOffsetClause(offset));
-    return query.toString();
+  public UnionQuery getSharedCostUnionQuery(final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
+      final String cloudProviderTableName, final ViewQueryParams queryParams,
+      final BusinessMapping sharedCostBusinessMapping, final Map<String, Double> entityCosts, final double totalCost,
+      final Set<String> selectedCostTargets, final boolean isClusterPerspective) {
+    final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
+    List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
+    List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
+    if (viewsQueryHelper.isGroupByNonePresent(modifiedGroupBy)) {
+      modifiedGroupBy = viewsQueryHelper.removeGroupByNone(modifiedGroupBy);
+    }
+    if (isClusterPerspective) {
+      modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
+      // Changes column name for cost to billingAmount
+      modifiedAggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
+    }
+    for (final CostTarget costTarget : sharedCostBusinessMapping.getCostTargets()) {
+      if (selectedCostTargets.contains(costTarget.getName())) {
+        for (final SharedCost sharedCost : sharedCostBusinessMapping.getSharedCosts()) {
+          if (shouldAddSharedCostQuery(entityCosts, totalCost, costTarget, sharedCost)) {
+            final BusinessMapping businessMapping = sharedCostBusinessMapping.toDTO();
+            businessMapping.setSharedCosts(List.of(sharedCost));
+            final SelectQuery selectQuery =
+                viewsQueryBuilder.getSharedCostQuery(modifiedGroupBy, modifiedAggregateFunction, entityCosts, totalCost,
+                    costTarget, sharedCost, businessMapping, cloudProviderTableName, isClusterPerspective);
+            final SelectQuery subQuery = getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+                cloudProviderTableName, queryParams, businessMapping, Collections.emptyList());
+            selectQuery.addCustomFromTable(String.format("(%s)", subQuery.toString()));
+            unionQuery.addQueries(String.format("(%s)", selectQuery));
+          }
+        }
+      }
+    }
+    return unionQuery;
+  }
+
+  private boolean shouldAddSharedCostQuery(final Map<String, Double> entityCosts, final double totalCost,
+      final CostTarget costTarget, final SharedCost sharedCost) {
+    return !(sharedCost.getStrategy() == PROPORTIONAL && Double.compare(totalCost, 0.0D) <= 0
+        && Double.compare(entityCosts.getOrDefault(costTarget.getName(), 0.0D), 0.0D) <= 0);
+  }
+
+  public ViewsQueryMetadata getFilterValueSharedCostOuterQuery(final List<QLCEViewFilterWrapper> filters,
+      final Integer limit, final Integer offset, final ViewQueryParams queryParams, final UnionQuery unionQuery) {
+    final List<QLCEViewFilter> idFilters = getIdFiltersForFilterValues(filters, queryParams);
+    final boolean isLimitRequired = !viewParametersHelper.isDataFilteredByAwsAccount(idFilters);
+    return viewsQueryBuilder.getFilterValuesQuery(Collections.emptyList(), idFilters, Collections.emptyList(),
+        String.format("(%s)", unionQuery), limit, offset, isLimitRequired, true);
+  }
+
+  public SelectQuery getSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy,
+      final List<QLCEViewAggregation> aggregateFunction, final List<QLCEViewSortCriteria> sort,
+      final boolean isClusterPerspective, final UnionQuery unionQuery, final String cloudProviderTableName) {
+    List<QLCEViewAggregation> modifiedAggregateFunction = aggregateFunction;
+    List<QLCEViewSortCriteria> modifiedSort = sort;
+    List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
+    if (viewsQueryHelper.isGroupByNonePresent(modifiedGroupBy)) {
+      modifiedGroupBy = viewsQueryHelper.removeGroupByNone(groupBy);
+    }
+    if (isClusterPerspective) {
+      modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
+      // Changes column name for cost to billingAmount
+      modifiedAggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
+      modifiedSort = viewParametersHelper.getModifiedSort(sort);
+    }
+    return viewsQueryBuilder.getSharedCostOuterQuery(modifiedGroupBy, modifiedAggregateFunction, modifiedSort,
+        unionQuery, cloudProviderTableName, isClusterPerspective);
+  }
+
+  public SelectQuery getTotalCountSharedCostOuterQuery(final List<QLCEViewGroupBy> groupBy, final UnionQuery unionQuery,
+      final String cloudProviderTableName, final boolean isClusterPerspective) {
+    List<QLCEViewGroupBy> modifiedGroupBy = groupBy;
+    if (viewsQueryHelper.isGroupByNonePresent(modifiedGroupBy)) {
+      modifiedGroupBy = viewsQueryHelper.removeGroupByNone(groupBy);
+    }
+    if (isClusterPerspective) {
+      modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
+    }
+    return viewsQueryBuilder.getTotalCountSharedCostOuterQuery(modifiedGroupBy, unionQuery, cloudProviderTableName);
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -173,9 +260,7 @@ public class ViewBillingServiceHelper {
     }
     if (gridData != null) {
       final List<String> fields = gridData.getFields();
-      log.info("GridFields : {}", fields);
       final List<List<String>> inValues = getInValuesList(gridData, fields);
-      log.info("GridFields in values : {}", inValues);
       if (!inValues.isEmpty()) {
         final List<QLCEViewFieldInput> qlCEViewFieldInputs = viewParametersHelper.getInFieldsList(fields);
         final String nullValueField = viewParametersHelper.getNullValueField(entityGroupBy, inValues);
@@ -277,7 +362,8 @@ public class ViewBillingServiceHelper {
   // ----------------------------------------------------------------------------------------------------------------
   public SelectQuery getTrendStatsQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewFilter> idFilters,
       List<QLCEViewTimeFilter> timeFilters, List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction,
-      List<ViewRule> viewRuleList, String cloudProviderTableName, ViewQueryParams queryParams) {
+      List<ViewRule> viewRuleList, String cloudProviderTableName, ViewQueryParams queryParams,
+      List<BusinessMapping> sharedCostBusinessMappings) {
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
       final String viewId = viewMetadataFilter.get().getViewMetadataFilter().getViewId();
@@ -294,7 +380,7 @@ public class ViewBillingServiceHelper {
           filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, groupBy, aggregateFunction,
-        Collections.emptyList(), cloudProviderTableName);
+        Collections.emptyList(), cloudProviderTableName, sharedCostBusinessMappings);
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -450,20 +536,23 @@ public class ViewBillingServiceHelper {
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
       boolean isTimeTruncGroupByRequired) {
     return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(null, isTimeTruncGroupByRequired, false, false, false));
+        viewsQueryHelper.buildQueryParams(null, isTimeTruncGroupByRequired, false, false, false),
+        Collections.emptyList());
   }
 
   // Next-gen
   public SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
-    return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams, null);
+      ViewQueryParams queryParams, List<BusinessMapping> sharedCostBusinessMappings) {
+    return getQuery(filters, groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams, null,
+        sharedCostBusinessMappings);
   }
 
   // Next-gen
   public SelectQuery getQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
-      ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping) {
+      ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping,
+      List<BusinessMapping> sharedCostBusinessMappings) {
     List<ViewRule> viewRuleList = new ArrayList<>();
 
     // Removing group by none if present
@@ -538,7 +627,8 @@ public class ViewBillingServiceHelper {
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, aggregateFunction, sort,
-        cloudProviderTableName, queryParams.getTimeOffsetInDays());
+        cloudProviderTableName, queryParams.getTimeOffsetInDays(), sharedCostBusinessMapping,
+        sharedCostBusinessMappings);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

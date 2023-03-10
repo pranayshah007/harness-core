@@ -20,6 +20,7 @@ import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.LinkedPerspectives;
+import io.harness.ccm.views.dto.LinkedPerspectives.LinkedPerspectivesBuilder;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
@@ -434,7 +435,7 @@ public class CEViewServiceImpl implements CEViewService {
     List<LinkedPerspectives> perspectiveListMessageList = new ArrayList<>();
     for (String businessMappingUuid : businessMappingUuids) {
       List<CEView> ceViewList = ceViewDao.findByAccountIdAndBusinessMapping(accountId, businessMappingUuid);
-      LinkedPerspectives.LinkedPerspectivesBuilder perspectiveListMessageBuilder =
+      LinkedPerspectivesBuilder perspectiveListMessageBuilder =
           LinkedPerspectives.builder().costCategoryId(businessMappingUuid);
       if (!Lists.isNullOrEmpty(ceViewList)) {
         perspectiveListMessageBuilder.perspectiveIdAndName(

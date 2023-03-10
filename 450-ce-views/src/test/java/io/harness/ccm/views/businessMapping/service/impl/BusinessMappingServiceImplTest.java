@@ -21,7 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
@@ -48,7 +48,7 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    businessMapping = BusinessMappingHelper.getBusinessMapping(BusinessMappingHelper.TEST_ID);
+    businessMapping = BusinessMappingTestHelper.getBusinessMapping(BusinessMappingTestHelper.TEST_ID);
   }
 
   @Test
@@ -67,9 +67,9 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testList() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
-    when(businessMappingDao.findByAccountId(BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
-    final List<BusinessMapping> response = businessMappingService.list(BusinessMappingHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingDao).findByAccountId(BusinessMappingHelper.TEST_ACCOUNT_ID);
+    when(businessMappingDao.findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
+    final List<BusinessMapping> response = businessMappingService.list(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(awsAccountFieldHelper, times(4)).mergeAwsAccountNameInAccountRules(anyList(), anyString());
     assertThat(response).isEqualTo(businessMappings);
   }
@@ -78,9 +78,9 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testGetByUUID() {
-    when(businessMappingDao.get(BusinessMappingHelper.TEST_ID)).thenReturn(businessMapping);
-    final BusinessMapping response = businessMappingService.get(BusinessMappingHelper.TEST_ID);
-    verify(businessMappingDao).get(BusinessMappingHelper.TEST_ID);
+    when(businessMappingDao.get(BusinessMappingTestHelper.TEST_ID)).thenReturn(businessMapping);
+    final BusinessMapping response = businessMappingService.get(BusinessMappingTestHelper.TEST_ID);
+    verify(businessMappingDao).get(BusinessMappingTestHelper.TEST_ID);
     assertThat(response).isEqualTo(businessMapping);
   }
 
@@ -88,11 +88,11 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testGetByUUIDAndAccountId() {
-    when(businessMappingDao.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingDao.get(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID))
         .thenReturn(businessMapping);
     final BusinessMapping response =
-        businessMappingService.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingDao).get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingService.get(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).get(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(awsAccountFieldHelper, times(4)).mergeAwsAccountNameInAccountRules(anyList(), anyString());
     assertThat(response).isEqualTo(businessMapping);
   }
@@ -112,11 +112,11 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testDelete() {
-    when(businessMappingDao.delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+    when(businessMappingDao.delete(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID))
         .thenReturn(true);
     final boolean response =
-        businessMappingService.delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingDao).delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingService.delete(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).delete(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     assertThat(response).isTrue();
   }
 
@@ -125,14 +125,14 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetBusinessMappingViewFields() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
-    when(businessMappingDao.findByAccountId(BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
+    when(businessMappingDao.findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(businessMappings);
     final List<ViewField> response =
-        businessMappingService.getBusinessMappingViewFields(BusinessMappingHelper.TEST_ACCOUNT_ID);
-    verify(businessMappingDao).findByAccountId(BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingService.getBusinessMappingViewFields(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     assertThat(response.size()).isEqualTo(1);
     final ViewField viewField = response.get(0);
-    assertThat(viewField.getFieldId()).isEqualTo(BusinessMappingHelper.TEST_ID);
-    assertThat(viewField.getFieldName()).isEqualTo(BusinessMappingHelper.TEST_NAME);
+    assertThat(viewField.getFieldId()).isEqualTo(BusinessMappingTestHelper.TEST_ID);
+    assertThat(viewField.getFieldName()).isEqualTo(BusinessMappingTestHelper.TEST_NAME);
     assertThat(viewField.getIdentifier()).isEqualTo(ViewFieldIdentifier.BUSINESS_MAPPING);
     assertThat(viewField.getIdentifierName()).isEqualTo(ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName());
   }

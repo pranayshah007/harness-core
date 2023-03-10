@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
-public final class BusinessMappingHelper {
+public final class BusinessMappingTestHelper {
   public static final String TEST_ID = UUID.randomUUID().toString();
   public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
   public static final String TEST_NAME = "TEST_NAME";
 
-  private BusinessMappingHelper() {}
+  private BusinessMappingTestHelper() {}
 
   public static BusinessMapping getBusinessMapping(final String uuid) {
     return BusinessMapping.builder()

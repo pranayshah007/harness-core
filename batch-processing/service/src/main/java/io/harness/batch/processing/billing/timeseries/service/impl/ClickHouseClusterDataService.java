@@ -43,13 +43,13 @@ import org.springframework.stereotype.Service;
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 public class ClickHouseClusterDataService {
-  public static final String AGGREGATED_KEYWORD = "Aggregated";
-  public static final String CLUSTER = "CLUSTER";
-  public static final String KEY = "key";
-  public static final String VALUE = "value";
+  private static final String AGGREGATED_KEYWORD = "Aggregated";
+  private static final String CLUSTER = "CLUSTER";
+  private static final String KEY = "key";
+  private static final String VALUE = "value";
   @Autowired private ClickHouseService clickHouseService;
-  @Autowired ClickHouseConfig clickHouseConfig;
-  @Autowired BatchMainConfig batchMainConfig;
+  @Autowired private ClickHouseConfig clickHouseConfig;
+  @Autowired private BatchMainConfig batchMainConfig;
 
   public void createClickHouseDataBaseIfNotExist() throws Exception {
     clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), ClickHouseConstants.createCCMDBQuery);

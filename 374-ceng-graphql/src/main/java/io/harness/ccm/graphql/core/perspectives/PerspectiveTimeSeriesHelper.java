@@ -43,7 +43,6 @@ import io.harness.ccm.views.dto.Reference;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
-import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
@@ -56,6 +55,7 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
 import com.google.inject.Inject;
+import io.fabric8.utils.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,7 +74,6 @@ import lombok.extern.slf4j.Slf4j;
 public class PerspectiveTimeSeriesHelper {
   @Inject EntityMetadataService entityMetadataService;
   @Inject BusinessMappingService businessMappingService;
-  @Inject ViewsQueryHelper viewsQueryHelper;
 
   private static final String OTHERS = "Others";
   private static final String UNALLOCATED_COST = "Unallocated";
@@ -143,6 +142,7 @@ public class PerspectiveTimeSeriesHelper {
       String id = DEFAULT_STRING_VALUE;
       String stringValue = DEFAULT_GRID_ENTRY_NAME;
       String type = DEFAULT_STRING_VALUE;
+      double sharedCostInUnattributed = 0.0D;
       for (Field field : fields) {
         switch (field.getType().getStandardType()) {
           case TIMESTAMP:
@@ -206,6 +206,7 @@ public class PerspectiveTimeSeriesHelper {
                 if (sharedCostBucketNames.contains(field.getName())) {
                   updateSharedCostMap(
                       sharedCostFromGroupBy, getNumericValue(row, field), field.getName(), startTimeTruncatedTimestamp);
+                  sharedCostInUnattributed = getNumericValue(row, field);
                 }
                 break;
             }
@@ -216,7 +217,9 @@ public class PerspectiveTimeSeriesHelper {
       }
 
       boolean addDataPoint = true;
-      if (strategy != null && stringValue.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+      if (strategy != null
+          && (stringValue.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())
+              || stringValue.equals(businessMapping.getUnallocatedCost().getLabel()))) {
         switch (strategy) {
           case HIDE:
             addDataPoint = false;
@@ -240,6 +243,11 @@ public class PerspectiveTimeSeriesHelper {
           costPerEntity.put(stringValue, costPerEntity.get(stringValue) + value);
           entityReference.put(stringValue, getReference(id, stringValue, type));
           totalCost += value;
+        }
+        if (businessMapping != null && businessMapping.getUnallocatedCost() != null
+            && businessMapping.getUnallocatedCost().getLabel().equals(stringValue)) {
+          value -= sharedCostInUnattributed;
+          value = Math.max(value, 0.0D);
         }
         addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
         addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
@@ -296,13 +304,19 @@ public class PerspectiveTimeSeriesHelper {
   private void addDataPointToMap(String id, String name, String type, double value,
       Map<Timestamp, List<DataPoint>> dataPointsMap, Timestamp startTimeTruncatedTimestamp) {
     if (value != DEFAULT_DOUBLE_VALUE) {
-      DataPointBuilder dataPointBuilder = DataPoint.builder();
-      dataPointBuilder.key(getReference(id, name, type));
-      dataPointBuilder.value(getRoundedDoubleValue(value));
       List<DataPoint> dataPoints = dataPointsMap.getOrDefault(startTimeTruncatedTimestamp, new ArrayList<>());
-      dataPoints.add(dataPointBuilder.build());
+      dataPoints.add(getDataPoint(id, name, type, value));
       dataPointsMap.put(startTimeTruncatedTimestamp, dataPoints);
     }
+  }
+
+  private DataPoint getDataPoint(String id, String name, String type, double value) {
+    DataPointBuilder dataPointBuilder = DataPoint.builder();
+    if (value != DEFAULT_DOUBLE_VALUE) {
+      dataPointBuilder.key(getReference(id, name, type));
+      dataPointBuilder.value(getRoundedDoubleValue(value));
+    }
+    return dataPointBuilder.build();
   }
 
   private List<TimeSeriesDataPoints> convertTimeSeriesPointsMapToList(
@@ -367,11 +381,29 @@ public class PerspectiveTimeSeriesHelper {
       Map<Timestamp, List<DataPoint>> costDataPointsMap,
       Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
     Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
-    costDataPointsMap.keySet().forEach(timestamp -> {
-      updatedDataPointsMap.put(timestamp,
-          addSharedCostsToDataPoint(costDataPointsMap.get(timestamp), sharedCostsFromRulesAndFilters, timestamp));
-    });
+    for (Map.Entry<Timestamp, List<DataPoint>> entry : costDataPointsMap.entrySet()) {
+      updatedDataPointsMap.put(
+          entry.getKey(), addSharedCostsToDataPoint(entry.getValue(), sharedCostsFromRulesAndFilters, entry.getKey()));
+    }
+    if (Maps.isNullOrEmpty(costDataPointsMap)) {
+      updatedDataPointsMap = getDataPointsFromSharedCosts(sharedCostsFromRulesAndFilters);
+    }
 
+    return updatedDataPointsMap;
+  }
+
+  private Map<Timestamp, List<DataPoint>> getDataPointsFromSharedCosts(
+      Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
+    Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
+    for (Map.Entry<String, Map<Timestamp, Double>> entry1 : sharedCostsFromRulesAndFilters.entrySet()) {
+      String name = entry1.getKey();
+      String id = getUpdatedId(DEFAULT_STRING_VALUE, name);
+      for (Map.Entry<Timestamp, Double> entry2 : entry1.getValue().entrySet()) {
+        List<DataPoint> dataPoints = updatedDataPointsMap.getOrDefault(entry2.getKey(), new ArrayList<>());
+        dataPoints.add(getDataPoint(id, name, DEFAULT_STRING_VALUE, entry2.getValue()));
+        updatedDataPointsMap.put(entry2.getKey(), dataPoints);
+      }
+    }
     return updatedDataPointsMap;
   }
 
@@ -411,7 +443,9 @@ public class PerspectiveTimeSeriesHelper {
       }
     });
 
-    return updatedDataPoints;
+    return updatedDataPoints.stream()
+        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
+        .collect(Collectors.toList());
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(
@@ -470,16 +504,19 @@ public class PerspectiveTimeSeriesHelper {
       List<SharedCost> sharedCostBuckets, Map<String, Map<Timestamp, Double>> sharedCosts) {
     double sharedCost = 0.0;
     for (SharedCost sharedCostBucket : sharedCostBuckets) {
-      double sharedCostForGivenTimestamp =
-          sharedCosts.get(modifyStringToComplyRegex(sharedCostBucket.getName())).get(timestamp);
-      switch (sharedCostBucket.getStrategy()) {
-        case PROPORTIONAL:
-          sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
-          break;
-        case EQUAL:
-        default:
-          sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
-          break;
+      Map<Timestamp, Double> sharedCostsPerTimestamp =
+          sharedCosts.get(modifyStringToComplyRegex(sharedCostBucket.getName()));
+      if (Objects.nonNull(sharedCostsPerTimestamp)) {
+        double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
+        switch (sharedCostBucket.getStrategy()) {
+          case PROPORTIONAL:
+            sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            break;
+          case EQUAL:
+          default:
+            sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());
+            break;
+        }
       }
     }
     return sharedCost;

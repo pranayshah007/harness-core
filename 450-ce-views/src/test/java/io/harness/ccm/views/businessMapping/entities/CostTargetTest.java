@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.rule.Owner;
 
@@ -30,7 +30,7 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testConstructor() {
-    final CostTarget costTarget = new CostTarget(TEST_NAME, BusinessMappingHelper.getRules());
+    final CostTarget costTarget = new CostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
     assertThat(costTarget).isNotNull();
   }
 
@@ -38,7 +38,8 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testBuilder() {
-    final CostTarget costTarget = CostTarget.builder().name(TEST_NAME).rules(BusinessMappingHelper.getRules()).build();
+    final CostTarget costTarget =
+        CostTarget.builder().name(TEST_NAME).rules(BusinessMappingTestHelper.getRules()).build();
     assertThat(costTarget).isNotNull();
   }
 
@@ -46,7 +47,7 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testJsonStringToObjectConversion() throws IOException {
-    final List<ViewRule> rules = BusinessMappingHelper.getRules();
+    final List<ViewRule> rules = BusinessMappingTestHelper.getRules();
     final String costTargetJsonString = "{\n"
         + "\t\"name\": \"" + TEST_NAME + "\",\n"
         + "\t\"rules\": " + new ObjectMapper().writeValueAsString(rules) + "\n"
@@ -60,9 +61,11 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testEqualsAndHashCode() {
-    final CostTarget costTarget1 = BusinessMappingHelper.getCostTarget(TEST_NAME, BusinessMappingHelper.getRules());
-    final CostTarget costTarget2 = BusinessMappingHelper.getCostTarget(TEST_NAME, BusinessMappingHelper.getRules());
-    final CostTarget costTarget3 = BusinessMappingHelper.getCostTarget(TEST_NAME, null);
+    final CostTarget costTarget1 =
+        BusinessMappingTestHelper.getCostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
+    final CostTarget costTarget2 =
+        BusinessMappingTestHelper.getCostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
+    final CostTarget costTarget3 = BusinessMappingTestHelper.getCostTarget(TEST_NAME, null);
     assertThat(costTarget1).isEqualTo(costTarget2);
     assertThat(costTarget1).isNotEqualTo(costTarget3);
     assertThat(costTarget1.hashCode()).isEqualTo(costTarget2.hashCode());
@@ -73,9 +76,11 @@ public class CostTargetTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testToString() {
-    final CostTarget costTarget1 = BusinessMappingHelper.getCostTarget(TEST_NAME, BusinessMappingHelper.getRules());
-    final CostTarget costTarget2 = BusinessMappingHelper.getCostTarget(TEST_NAME, BusinessMappingHelper.getRules());
-    final CostTarget costTarget3 = BusinessMappingHelper.getCostTarget(TEST_NAME, null);
+    final CostTarget costTarget1 =
+        BusinessMappingTestHelper.getCostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
+    final CostTarget costTarget2 =
+        BusinessMappingTestHelper.getCostTarget(TEST_NAME, BusinessMappingTestHelper.getRules());
+    final CostTarget costTarget3 = BusinessMappingTestHelper.getCostTarget(TEST_NAME, null);
     assertThat(costTarget1.toString()).isEqualTo(costTarget2.toString());
     assertThat(costTarget1.toString()).isNotEqualTo(costTarget3.toString());
   }

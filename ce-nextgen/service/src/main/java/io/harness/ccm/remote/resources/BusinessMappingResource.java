@@ -20,6 +20,7 @@ import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
+import io.harness.ccm.views.dto.CostCategoryDeleteDTO.CostCategoryDeleteDTOBuilder;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
@@ -155,7 +156,7 @@ public class BusinessMappingResource {
     rbacHelper.checkCostCategoryDeletePermission(accountId, null, null);
     LinkedPerspectives perspectiveListMessage =
         ceViewService.getViewsByBusinessMapping(accountId, Collections.singletonList(businessMappingId)).get(0);
-    CostCategoryDeleteDTO.CostCategoryDeleteDTOBuilder costCategoryDeleteDTOBuilder =
+    CostCategoryDeleteDTOBuilder costCategoryDeleteDTOBuilder =
         CostCategoryDeleteDTO.builder()
             .linkedPerspectives(perspectiveListMessage.getPerspectiveIdAndName())
             .deleted(false)

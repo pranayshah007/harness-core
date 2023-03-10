@@ -19,7 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping.BusinessMappingKeys;
-import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -47,14 +47,14 @@ public class BusinessMappingDaoTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    businessMapping = BusinessMappingHelper.getBusinessMapping(BusinessMappingHelper.TEST_ID);
+    businessMapping = BusinessMappingTestHelper.getBusinessMapping(BusinessMappingTestHelper.TEST_ID);
   }
 
   @Test
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testSave() {
-    when(hPersistence.save(any(BusinessMapping.class))).thenReturn(BusinessMappingHelper.TEST_ID);
+    when(hPersistence.save(any(BusinessMapping.class))).thenReturn(BusinessMappingTestHelper.TEST_ID);
     final BusinessMapping response = businessMappingDao.save(businessMapping);
     verify(hPersistence).save(businessMapping);
     assertThat(response).isEqualTo(businessMapping);
@@ -66,11 +66,12 @@ public class BusinessMappingDaoTest extends CategoryTest {
   public void testFindByAccountId() {
     final List<BusinessMapping> businessMappings = Collections.singletonList(businessMapping);
     when(hPersistence.createQuery(BusinessMapping.class)).thenReturn(query);
-    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
     when(query.asList()).thenReturn(businessMappings);
-    final List<BusinessMapping> response = businessMappingDao.findByAccountId(BusinessMappingHelper.TEST_ACCOUNT_ID);
+    final List<BusinessMapping> response =
+        businessMappingDao.findByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(hPersistence).createQuery(BusinessMapping.class);
-    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingHelper.TEST_ACCOUNT_ID);
+    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(query).asList();
     assertThat(response).isEqualTo(businessMappings);
   }
@@ -80,11 +81,11 @@ public class BusinessMappingDaoTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetByUUID() {
     when(hPersistence.createQuery(BusinessMapping.class, excludeValidate)).thenReturn(query);
-    when(query.filter(BusinessMappingKeys.uuid, BusinessMappingHelper.TEST_ID)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.uuid, BusinessMappingTestHelper.TEST_ID)).thenReturn(query);
     when(query.get()).thenReturn(businessMapping);
-    final BusinessMapping response = businessMappingDao.get(BusinessMappingHelper.TEST_ID);
+    final BusinessMapping response = businessMappingDao.get(BusinessMappingTestHelper.TEST_ID);
     verify(hPersistence).createQuery(BusinessMapping.class, excludeValidate);
-    verify(query).filter(BusinessMappingKeys.uuid, BusinessMappingHelper.TEST_ID);
+    verify(query).filter(BusinessMappingKeys.uuid, BusinessMappingTestHelper.TEST_ID);
     verify(query).get();
     assertThat(response).isEqualTo(businessMapping);
   }
@@ -94,14 +95,14 @@ public class BusinessMappingDaoTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetByUUIDAndAccountId() {
     when(hPersistence.createQuery(BusinessMapping.class, excludeValidate)).thenReturn(query);
-    when(query.filter(BusinessMappingKeys.uuid, BusinessMappingHelper.TEST_ID)).thenReturn(query);
-    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.uuid, BusinessMappingTestHelper.TEST_ID)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
     when(query.get()).thenReturn(businessMapping);
     final BusinessMapping response =
-        businessMappingDao.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingDao.get(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(hPersistence).createQuery(BusinessMapping.class, excludeValidate);
-    verify(query).filter(BusinessMappingKeys.uuid, BusinessMappingHelper.TEST_ID);
-    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingHelper.TEST_ACCOUNT_ID);
+    verify(query).filter(BusinessMappingKeys.uuid, BusinessMappingTestHelper.TEST_ID);
+    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(query).get();
     assertThat(response).isEqualTo(businessMapping);
   }
@@ -113,9 +114,9 @@ public class BusinessMappingDaoTest extends CategoryTest {
     when(hPersistence.createQuery(BusinessMapping.class)).thenReturn(query);
     when(hPersistence.createUpdateOperations(BusinessMapping.class)).thenReturn(updateOperations);
     when(query.field(BusinessMappingKeys.accountId)).thenReturn(fieldEnd);
-    when(fieldEnd.equal(BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(fieldEnd.equal(BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
     when(query.field(BusinessMappingKeys.uuid)).thenReturn(fieldEnd);
-    when(fieldEnd.equal(BusinessMappingHelper.TEST_ID)).thenReturn(query);
+    when(fieldEnd.equal(BusinessMappingTestHelper.TEST_ID)).thenReturn(query);
     final BusinessMapping response = businessMappingDao.update(businessMapping);
     verify(hPersistence).createQuery(BusinessMapping.class);
     verify(hPersistence).createUpdateOperations(BusinessMapping.class);
@@ -129,12 +130,12 @@ public class BusinessMappingDaoTest extends CategoryTest {
   public void testDelete() {
     when(hPersistence.createQuery(BusinessMapping.class)).thenReturn(query);
     when(query.field(BusinessMappingKeys.accountId)).thenReturn(fieldEnd);
-    when(fieldEnd.equal(BusinessMappingHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(fieldEnd.equal(BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
     when(query.field(BusinessMappingKeys.uuid)).thenReturn(fieldEnd);
-    when(fieldEnd.equal(BusinessMappingHelper.TEST_ID)).thenReturn(query);
+    when(fieldEnd.equal(BusinessMappingTestHelper.TEST_ID)).thenReturn(query);
     when(hPersistence.delete(query)).thenReturn(true);
     final boolean response =
-        businessMappingDao.delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+        businessMappingDao.delete(BusinessMappingTestHelper.TEST_ID, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(hPersistence).createQuery(BusinessMapping.class);
     verify(hPersistence).delete(query);
     assertThat(response).isTrue();
