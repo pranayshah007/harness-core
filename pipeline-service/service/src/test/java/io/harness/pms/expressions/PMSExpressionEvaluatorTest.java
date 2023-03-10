@@ -32,7 +32,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.OrchestrationConstants;
-import io.harness.engine.expressions.functors.ExpandedJsonFunctor;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;

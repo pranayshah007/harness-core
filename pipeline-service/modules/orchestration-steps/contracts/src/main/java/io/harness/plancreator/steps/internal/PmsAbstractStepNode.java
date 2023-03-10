@@ -9,7 +9,6 @@ package io.harness.plancreator.steps.internal;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
