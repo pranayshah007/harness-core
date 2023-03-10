@@ -118,6 +118,9 @@ import org.apache.commons.io.FileUtils;
 @Singleton
 public class TerraformCloudTaskHelper {
   private static final String OUTPUT_FORMAT = "\"%s\" : { \"value\" : %s, \"sensitive\" : %s }";
+  private static final String HARD_FAILED = "hard_failed";
+  private static final String SOFT_FAILED = "soft_failed";
+  private static final String ADVISORY_FAILED = "advisory_failed";
   private static final int CHUNK_SIZE = 100000;
   @Inject TerraformCloudClient terraformCloudClient;
   @Inject DelegateFileManagerBase delegateFileManager;
@@ -411,7 +414,7 @@ public class TerraformCloudTaskHelper {
       for (PolicyCheckData policyCheck : policyCheckData) {
         if (policyCheck.getLinks().hasNonNull("output") && !completedPolicies.contains(policyCheck.getId())) {
           String status = policyCheck.getAttributes().getStatus();
-          if (status.equals("hard_failed") || status.equals("soft_failed") || status.equals("advisory_failed")) {
+          if (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED) || status.equals(ADVISORY_FAILED)) {
             failed = true;
           }
           String policyCheckOutput;

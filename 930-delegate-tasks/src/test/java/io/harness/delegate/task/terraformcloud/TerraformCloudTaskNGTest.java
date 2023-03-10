@@ -34,14 +34,28 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
-import io.harness.delegate.beans.terraformcloud.PlanType;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetLastAppliedTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetOrganizationsTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndDestroyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanOnlyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudValidationTaskParams;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudApplyTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDestroyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.SecretRefData;
@@ -212,13 +226,16 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRefreshTaskResponse.class);
     verify(terraformCloudTaskHelper, times(1))
         .createRun(any(), any(), runRequestArgumentCaptor.capture(), anyBoolean(), any());
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isRefreshOnly());
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isAutoApply());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
+    TerraformCloudRefreshTaskResponse terraformCloudRefreshTaskResponse =
+        (TerraformCloudRefreshTaskResponse) delegateResponseData;
+    assertThat(terraformCloudRefreshTaskResponse.getRunId()).isEqualTo("run-123");
     verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).streamSentinelPolicies(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(0)).uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
@@ -246,16 +263,15 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudPlanOnlyTaskResponse.class);
+    TerraformCloudPlanOnlyTaskResponse tfcResponse = (TerraformCloudPlanOnlyTaskResponse) delegateResponseData;
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanOnly());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
     assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
-    assertThat(tfcResponse.getTfOutput()).isNull();
     assertThat(tfcResponse.getPolicyChecksJsonFileId()).isEqualTo("policyCheckJsonId");
-    verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
+    verify(terraformCloudTaskHelper, times(2)).getPolicyCheckData(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).streamSentinelPolicies(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
   }
@@ -282,13 +298,12 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudPlanAndApplyTaskResponse.class);
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanAndApply());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    TerraformCloudPlanAndApplyTaskResponse tfcResponse = (TerraformCloudPlanAndApplyTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
-    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
     verify(terraformCloudTaskHelper, times(1)).streamApplyLogs(any(), any(), any(), any());
   }
@@ -315,13 +330,12 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudPlanAndApplyTaskResponse.class);
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanAndApply());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    TerraformCloudPlanAndApplyTaskResponse tfcResponse = (TerraformCloudPlanAndApplyTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
-    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
     verify(terraformCloudTaskHelper, times(1)).streamApplyLogs(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(2)).getPolicyCheckData(any(), any(), any());
@@ -380,14 +394,14 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudPlanAndDestroyTaskResponse.class);
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isPlanAndApply());
     assertTrue(runRequestArgumentCaptor.getValue().getData().getAttributes().isDestroy());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    TerraformCloudPlanAndDestroyTaskResponse tfcResponse =
+        (TerraformCloudPlanAndDestroyTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
-    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
     verify(terraformCloudTaskHelper, times(1)).streamApplyLogs(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
@@ -398,14 +412,8 @@ public class TerraformCloudTaskNGTest {
   @Category(UnitTests.class)
   public void testRunPlanTaskType() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
-    TerraformCloudTaskParams taskParameters = TerraformCloudTaskParams.builder()
-                                                  .workspace(WORKSPACE)
-                                                  .organization(ORG)
-                                                  .accountId("accountId")
-                                                  .entityId("entityId")
-                                                  .planType(PlanType.APPLY)
-                                                  .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN)
-                                                  .build();
+    TerraformCloudPlanTaskParams taskParameters =
+        (TerraformCloudPlanTaskParams) getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN);
 
     taskParameters.setExportJsonTfPlan(true);
     RunData runData = new RunData();
@@ -423,17 +431,16 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudPlanTaskResponse.class);
     assertFalse(runRequestArgumentCaptor.getValue().getData().getAttributes().isDestroy());
     assertThat(runRequestArgumentCaptor.getValue().getData().getRelationships().get("workspace").getData().getId())
         .isEqualTo(WORKSPACE);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    TerraformCloudPlanTaskResponse tfcResponse = (TerraformCloudPlanTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
     assertThat(tfcResponse.getTfPlanJsonFileId()).isEqualTo("jsonId");
-    assertThat(tfcResponse.getTfOutput()).isNull();
     assertThat(tfcResponse.getPolicyChecksJsonFileId()).isEqualTo("jsonId");
     verify(terraformCloudTaskHelper, times(2)).uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
-    verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
+    verify(terraformCloudTaskHelper, times(2)).getPolicyCheckData(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).streamSentinelPolicies(any(), any(), any(), any());
   }
 
@@ -443,7 +450,6 @@ public class TerraformCloudTaskNGTest {
   public void testRunApplyTaskTypeWhenItPolicyCheckedStatus() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
     TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_APPLY);
-    taskParameters.setRunId("run-123");
     doReturn("output").when(terraformCloudTaskHelper).applyRun(any(), any(), any(), any(), any());
     RunData runData = new RunData();
     runData.setId("run-123");
@@ -455,10 +461,9 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudApplyTaskResponse.class);
+    TerraformCloudApplyTaskResponse tfcResponse = (TerraformCloudApplyTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
-    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
   }
 
@@ -468,7 +473,6 @@ public class TerraformCloudTaskNGTest {
   public void testRunApplyTaskTypeWhenItPolicyOverrideStatus() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
     TerraformCloudTaskParams taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_APPLY);
-    taskParameters.setRunId("run-123");
     RunData runData = new RunData();
     runData.setId("run-123");
     runData.setAttributes(Attributes.builder().status(RunStatus.POLICY_OVERRIDE).build());
@@ -484,10 +488,9 @@ public class TerraformCloudTaskNGTest {
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
-    assertThat(delegateResponseData).isInstanceOf(TerraformCloudRunTaskResponse.class);
-    TerraformCloudRunTaskResponse tfcResponse = (TerraformCloudRunTaskResponse) delegateResponseData;
+    assertThat(delegateResponseData).isInstanceOf(TerraformCloudApplyTaskResponse.class);
+    TerraformCloudApplyTaskResponse tfcResponse = (TerraformCloudApplyTaskResponse) delegateResponseData;
     assertThat(tfcResponse.getRunId()).isEqualTo("run-123");
-    assertThat(tfcResponse.getTfPlanJsonFileId()).isNull();
     assertThat(tfcResponse.getTfOutput()).isEqualTo("output");
     verify(terraformCloudTaskHelper, times(2)).getRun(any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
@@ -500,7 +503,7 @@ public class TerraformCloudTaskNGTest {
   @Category(UnitTests.class)
   public void testRunRollbackTaskType() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
-    TaskParameters taskParameters = getRollbackTaskParams();
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.ROLLBACK);
     RunData runData = new RunData();
     runData.setId("run-123");
     runData.setAttributes(Attributes.builder().status(RunStatus.POLICY_CHECKED).build());
@@ -535,7 +538,7 @@ public class TerraformCloudTaskNGTest {
   @Category(UnitTests.class)
   public void testRunRollbackTaskShouldBeSkipped() {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
-    TaskParameters taskParameters = getRollbackTaskParams();
+    TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.ROLLBACK);
     on(task).set("runRequestCreator", runRequestCreator);
     doReturn(getRollbackRunData()).when(terraformCloudTaskHelper).getRun(any(), any(), any());
     doReturn("relationshipId").when(terraformCloudTaskHelper).getRelationshipId(any(), any());
@@ -582,23 +585,84 @@ public class TerraformCloudTaskNGTest {
     return runData;
   }
 
-  private TaskParameters getRollbackTaskParams() {
-    TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(TerraformCloudTaskType.ROLLBACK);
-    terraformCloudTaskParams.setRunId("run-123");
-    terraformCloudTaskParams.setMessage("dummy");
-    return terraformCloudTaskParams;
-  }
-
   private TerraformCloudTaskParams getTerraformCloudTaskParams(
       TerraformCloudTaskType taskType, boolean shouldOverride) {
-    return TerraformCloudTaskParams.builder()
-        .terraformCloudTaskType(taskType)
-        .encryptionDetails(null)
-        .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
-        .workspace(WORKSPACE)
-        .policyOverride(shouldOverride)
-        .organization(ORG)
-        .build();
+    switch (taskType) {
+      case VALIDATE:
+        return TerraformCloudValidationTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .build();
+      case GET_ORGANIZATIONS:
+        return TerraformCloudGetOrganizationsTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .build();
+      case GET_WORKSPACES:
+        return TerraformCloudGetWorkspacesTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .organization(ORG)
+            .build();
+      case RUN_REFRESH_STATE:
+        return TerraformCloudRefreshTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .workspace(WORKSPACE)
+            .build();
+      case RUN_PLAN_ONLY:
+        return TerraformCloudPlanOnlyTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .accountId("accountId")
+            .entityId("entityId")
+            .workspace(WORKSPACE)
+            .build();
+      case RUN_PLAN_AND_APPLY:
+        return TerraformCloudPlanAndApplyTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .workspace(WORKSPACE)
+            .policyOverride(shouldOverride)
+            .build();
+      case RUN_PLAN_AND_DESTROY:
+        return TerraformCloudPlanAndDestroyTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .workspace(WORKSPACE)
+            .policyOverride(shouldOverride)
+            .build();
+      case RUN_PLAN:
+        return TerraformCloudPlanTaskParams.builder()
+            .workspace(WORKSPACE)
+            .accountId("accountId")
+            .entityId("entityId")
+            .planType(PlanType.APPLY)
+            .build();
+      case RUN_APPLY:
+        return TerraformCloudApplyTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .runId("run-123")
+            .build();
+      case ROLLBACK:
+        return TerraformCloudRollbackTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .workspace(WORKSPACE)
+            .message("dummy")
+            .runId("run-123")
+            .policyOverride(shouldOverride)
+            .build();
+      case GET_LAST_APPLIED_RUN:
+        return TerraformCloudGetLastAppliedTaskParams.builder()
+            .encryptionDetails(null)
+            .terraformCloudConnectorDTO(getTerraformCloudConnectorDTO())
+            .workspace(WORKSPACE)
+            .build();
+      default:
+        return null;
+    }
   }
 
   private TerraformCloudTaskParams getTerraformCloudTaskParams(TerraformCloudTaskType taskType) {

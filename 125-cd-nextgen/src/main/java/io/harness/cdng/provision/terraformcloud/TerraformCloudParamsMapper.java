@@ -22,18 +22,22 @@ import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanOnlySpe
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudRefreshSpecParameters;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams.TerraformCloudTaskParamsBuilder;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndDestroyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanOnlyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,84 +47,90 @@ import lombok.extern.slf4j.Slf4j;
 public class TerraformCloudParamsMapper {
   @Inject private TerraformCloudStepHelper helper;
 
-  public TerraformCloudTaskParams mapRunSpecToTaskParams(TerraformCloudRunSpecParameters runSpec, Ambiance ambiance) {
+  public TerraformCloudTaskParams mapRunSpecToTaskParams(
+      TerraformCloudRunStepParameters stepParameters, Ambiance ambiance) {
+    TerraformCloudRunSpecParameters runSpec = stepParameters.getSpec();
     TerraformCloudRunType runType = runSpec.getType();
-    TerraformCloudTaskParamsBuilder builder;
     switch (runType) {
       case REFRESH_STATE:
         TerraformCloudRefreshSpecParameters refreshSpec = (TerraformCloudRefreshSpecParameters) runSpec;
-        builder = buildTerraformCloudTaskParams(refreshSpec.getOrganization(), refreshSpec.getWorkspace(),
-            refreshSpec.getDiscardPendingRuns(), refreshSpec.getVariables())
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_REFRESH_STATE);
-        return builder.build();
+        return TerraformCloudRefreshTaskParams.builder()
+            .workspace(ParameterFieldHelper.getParameterFieldValue(refreshSpec.getWorkspace()))
+            .discardPendingRuns(ParameterFieldHelper.getBooleanParameterFieldValue(refreshSpec.getDiscardPendingRuns()))
+            .variables(getVariablesMap(refreshSpec.getVariables()))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .build();
       case PLAN_ONLY:
         TerraformCloudPlanOnlySpecParameters planOnlySpecParameters = (TerraformCloudPlanOnlySpecParameters) runSpec;
-        builder = buildTerraformCloudTaskParams(planOnlySpecParameters.getOrganization(),
-            planOnlySpecParameters.getWorkspace(), planOnlySpecParameters.getDiscardPendingRuns(),
-            planOnlySpecParameters.getVariables(), planOnlySpecParameters.getExportTerraformPlanJson(),
-            planOnlySpecParameters.getPlanType(), planOnlySpecParameters.getTargets())
-                      .terraformVersion(ParameterFieldHelper.getParameterFieldValue(
-                          ((TerraformCloudPlanOnlySpecParameters) runSpec).getTerraformVersion()))
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_ONLY);
-        break;
+        return TerraformCloudPlanOnlyTaskParams.builder()
+            .workspace(ParameterFieldHelper.getParameterFieldValue(planOnlySpecParameters.getWorkspace()))
+            .discardPendingRuns(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planOnlySpecParameters.getDiscardPendingRuns()))
+            .variables(getVariablesMap(planOnlySpecParameters.getVariables()))
+            .exportJsonTfPlan(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planOnlySpecParameters.getExportTerraformPlanJson()))
+            .planType(getPlanType(planOnlySpecParameters.getPlanType()))
+            .targets(ParameterFieldHelper.getParameterFieldValue(planOnlySpecParameters.getTargets()))
+            .terraformVersion(ParameterFieldHelper.getParameterFieldValue(planOnlySpecParameters.getTerraformVersion()))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .entityId(helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance))
+            .build();
       case PLAN_AND_APPLY:
         TerraformCloudPlanAndApplySpecParameters planAndApplySpecParameters =
             (TerraformCloudPlanAndApplySpecParameters) runSpec;
-        builder = buildTerraformCloudTaskParams(planAndApplySpecParameters.getOrganization(),
-            planAndApplySpecParameters.getWorkspace(), planAndApplySpecParameters.getDiscardPendingRuns(),
-            planAndApplySpecParameters.getVariables(), null, null, planAndApplySpecParameters.getTargets())
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
-        builder.policyOverride(
-            ParameterFieldHelper.getBooleanParameterFieldValue(planAndApplySpecParameters.getOverridePolicies()));
-        break;
+        return TerraformCloudPlanAndApplyTaskParams.builder()
+            .workspace(ParameterFieldHelper.getParameterFieldValue(planAndApplySpecParameters.getWorkspace()))
+            .discardPendingRuns(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planAndApplySpecParameters.getDiscardPendingRuns()))
+            .variables(getVariablesMap(planAndApplySpecParameters.getVariables()))
+            .targets(ParameterFieldHelper.getParameterFieldValue(planAndApplySpecParameters.getTargets()))
+            .policyOverride(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planAndApplySpecParameters.getOverridePolicies()))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .entityId(helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance))
+            .build();
       case PLAN_AND_DESTROY:
         TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
             (TerraformCloudPlanAndDestroySpecParameters) runSpec;
-        builder = buildTerraformCloudTaskParams(planAndDestroySpecParameters.getOrganization(),
-            planAndDestroySpecParameters.getWorkspace(), planAndDestroySpecParameters.getDiscardPendingRuns(),
-            planAndDestroySpecParameters.getVariables(), null, null, planAndDestroySpecParameters.getTargets())
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN_AND_DESTROY);
-        builder.policyOverride(
-            ParameterFieldHelper.getBooleanParameterFieldValue(planAndDestroySpecParameters.getOverridePolicies()));
-        break;
+        return TerraformCloudPlanAndDestroyTaskParams.builder()
+            .workspace(ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getWorkspace()))
+            .discardPendingRuns(ParameterFieldHelper.getBooleanParameterFieldValue(
+                planAndDestroySpecParameters.getDiscardPendingRuns()))
+            .variables(getVariablesMap(planAndDestroySpecParameters.getVariables()))
+            .targets(ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getTargets()))
+            .policyOverride(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planAndDestroySpecParameters.getOverridePolicies()))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .entityId(helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance))
+            .build();
       case PLAN:
         TerraformCloudPlanSpecParameters planSpecParameters = (TerraformCloudPlanSpecParameters) runSpec;
-        builder = buildTerraformCloudTaskParams(planSpecParameters.getOrganization(), planSpecParameters.getWorkspace(),
-            planSpecParameters.getDiscardPendingRuns(), planSpecParameters.getVariables(),
-            planSpecParameters.getExportTerraformPlanJson(), planSpecParameters.getPlanType(),
-            planSpecParameters.getTargets())
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_PLAN);
-        break;
+        return TerraformCloudPlanTaskParams.builder()
+            .workspace(ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getWorkspace()))
+            .discardPendingRuns(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planSpecParameters.getDiscardPendingRuns()))
+            .variables(getVariablesMap(planSpecParameters.getVariables()))
+            .exportJsonTfPlan(
+                ParameterFieldHelper.getBooleanParameterFieldValue(planSpecParameters.getExportTerraformPlanJson()))
+            .planType(getPlanType(planSpecParameters.getPlanType()))
+            .targets(ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getTargets()))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .entityId(helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance))
+            .build();
       case APPLY:
         TerraformCloudApplySpecParameters applySpecParameters = (TerraformCloudApplySpecParameters) runSpec;
-        builder = TerraformCloudTaskParams.builder()
-                      .runId(helper.getPlanRunId(
-                          ParameterFieldHelper.getParameterFieldValue(applySpecParameters.getProvisionerIdentifier()),
-                          ambiance))
-                      .terraformCloudTaskType(TerraformCloudTaskType.RUN_APPLY);
-        break;
+        return TerraformCloudApplyTaskParams.builder()
+            .runId(helper.getPlanRunId(
+                ParameterFieldHelper.getParameterFieldValue(applySpecParameters.getProvisionerIdentifier()), ambiance))
+            .message(ParameterFieldHelper.getParameterFieldValue(stepParameters.getMessage()))
+            .build();
       default:
         throw new InvalidRequestException(format("Unsupported run type: [%s]", runType));
     }
-    return builder.build();
-  }
-
-  private TerraformCloudTaskParamsBuilder buildTerraformCloudTaskParams(ParameterField<String> organization,
-      ParameterField<String> workspace, ParameterField<Boolean> discardPendingRuns, Map<String, Object> variables,
-      ParameterField<Boolean> exportTerraformPlanJson, PlanType planType, ParameterField<List<String>> targets) {
-    return buildTerraformCloudTaskParams(organization, workspace, discardPendingRuns, variables)
-        .exportJsonTfPlan(ParameterFieldHelper.getBooleanParameterFieldValue(exportTerraformPlanJson))
-        .targets(ParameterFieldHelper.getParameterFieldValue(targets))
-        .planType(planType != null ? getPlanType(planType) : null);
-  }
-
-  private TerraformCloudTaskParamsBuilder buildTerraformCloudTaskParams(ParameterField<String> organization,
-      ParameterField<String> workspaceId, ParameterField<Boolean> discardPendingRuns, Map<String, Object> variables) {
-    return TerraformCloudTaskParams.builder()
-        .organization(ParameterFieldHelper.getParameterFieldValue(organization))
-        .workspace(ParameterFieldHelper.getParameterFieldValue(workspaceId))
-        .discardPendingRuns(ParameterFieldHelper.getBooleanParameterFieldValue(discardPendingRuns))
-        .variables(getVariablesMap(variables));
   }
 
   private Map<String, String> getVariablesMap(Map<String, Object> inputVariables) {
@@ -133,8 +143,11 @@ public class TerraformCloudParamsMapper {
     return res;
   }
 
-  private io.harness.delegate.beans.terraformcloud.PlanType getPlanType(PlanType planType) {
-    return planType == PlanType.APPLY ? io.harness.delegate.beans.terraformcloud.PlanType.APPLY
-                                      : io.harness.delegate.beans.terraformcloud.PlanType.DESTROY;
+  private io.harness.delegate.task.terraformcloud.PlanType getPlanType(PlanType planType) {
+    if (planType != null) {
+      return planType == PlanType.APPLY ? io.harness.delegate.task.terraformcloud.PlanType.APPLY
+                                        : io.harness.delegate.task.terraformcloud.PlanType.DESTROY;
+    }
+    return null;
   }
 }

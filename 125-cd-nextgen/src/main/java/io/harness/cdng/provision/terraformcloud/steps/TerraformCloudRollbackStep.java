@@ -27,10 +27,9 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.terraformcloud.RollbackType;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.RollbackType;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -126,9 +125,8 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
     TerraformCloudConnectorDTO terraformCloudConnector =
         helper.getTerraformCloudConnectorWithRef(rollbackConfig.getConnectorRef(), ambiance);
 
-    TerraformCloudTaskParams terraformCloudTaskParams =
-        TerraformCloudTaskParams.builder()
-            .terraformCloudTaskType(TerraformCloudTaskType.ROLLBACK)
+    TerraformCloudRollbackTaskParams terraformCloudTaskParamsImpl =
+        TerraformCloudRollbackTaskParams.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .runId(rollbackConfig.getLastSuccessfulRun())
             .entityId(entityId)
@@ -150,7 +148,7 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                             .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
                             .timeout(StepUtils.getTimeoutMillis(
                                 stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
-                            .parameters(new Object[] {terraformCloudTaskParams})
+                            .parameters(new Object[] {terraformCloudTaskParamsImpl})
                             .build();
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,

@@ -30,10 +30,18 @@ import io.harness.cdng.provision.terraformcloud.steps.TerraformCloudRunStep;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse.TerraformCloudRunTaskResponseBuilder;
+import io.harness.delegate.task.terraformcloud.PlanType;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetLastAppliedTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudGetLastAppliedTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDestroyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
@@ -150,14 +158,13 @@ public class TerraformCloudRunStepTest extends CategoryTest {
         any(), taskDataArgumentCaptor.capture(), any(), commandUnitsCaptor.capture(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
-    TerraformCloudTaskParams taskParameters =
-        (TerraformCloudTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
-    assertThat(taskParameters.getTerraformCloudTaskType()).isEqualTo(TerraformCloudTaskType.RUN_PLAN);
+    TerraformCloudPlanTaskParams taskParameters =
+        (TerraformCloudPlanTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskParameters.getTaskType()).isEqualTo(TerraformCloudTaskType.RUN_PLAN);
     assertThat(taskParameters.getMessage()).isEqualTo("Triggered from Harness");
     assertThat(taskParameters.getTerraformCloudConnectorDTO().getTerraformCloudUrl()).isEqualTo("https://some.io");
     assertThat(taskParameters.getAccountId()).isEqualTo("test-account");
-    assertThat(taskParameters.getPlanType()).isEqualTo(io.harness.delegate.beans.terraformcloud.PlanType.APPLY);
-    assertThat(taskParameters.getOrganization()).isEqualTo("org");
+    assertThat(taskParameters.getPlanType()).isEqualTo(PlanType.APPLY);
     assertThat(taskParameters.getWorkspace()).isEqualTo("ws");
     assertThat(commandUnitsCaptor.getValue()).isNotNull();
     assertThat(commandUnitsCaptor.getValue()).contains("Plan");
@@ -195,14 +202,10 @@ public class TerraformCloudRunStepTest extends CategoryTest {
         any(), taskDataArgumentCaptor.capture(), any(), commandUnitsCaptor.capture(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
-    TerraformCloudTaskParams taskParameters =
-        (TerraformCloudTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
-    assertThat(taskParameters.getTerraformCloudTaskType()).isEqualTo(TerraformCloudTaskType.GET_LAST_APPLIED_RUN);
-    assertThat(taskParameters.getMessage()).isEqualTo("Triggered from Harness");
+    TerraformCloudGetLastAppliedTaskParams taskParameters =
+        (TerraformCloudGetLastAppliedTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskParameters.getTaskType()).isEqualTo(TerraformCloudTaskType.GET_LAST_APPLIED_RUN);
     assertThat(taskParameters.getTerraformCloudConnectorDTO().getTerraformCloudUrl()).isEqualTo("https://some.io");
-    assertThat(taskParameters.getAccountId()).isEqualTo("test-account");
-    assertThat(taskParameters.getPlanType()).isEqualTo(io.harness.delegate.beans.terraformcloud.PlanType.APPLY);
-    assertThat(taskParameters.getOrganization()).isEqualTo("org");
     assertThat(taskParameters.getWorkspace()).isEqualTo("ws");
     assertThat(commandUnitsCaptor.getValue()).isNotNull();
     assertThat(commandUnitsCaptor.getValue()).contains("Plan");
@@ -219,11 +222,18 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextRefresh() throws Exception {
-    StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(
-        ambiance, getStepElementParams(TerraformCloudRunType.REFRESH_STATE), null, () -> getResponseBuilder().build());
+    StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(ambiance,
+        getStepElementParams(TerraformCloudRunType.REFRESH_STATE), null,
+        ()
+            -> TerraformCloudRefreshTaskResponse.builder()
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .unitProgressData(unitProgressData)
+                   .runId("run-123")
+                   .build());
 
+    TerraformCloudRunOutcome terraformCloudRunOutcome = getOutcomeFromResponse(stepResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepResponse.getStepOutcomes()).isEmpty();
+    assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     verifyNoInteractions(helper);
   }
 
@@ -232,10 +242,13 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextPlanOnly() throws Exception {
     doReturn("provisionerId").when(helper).getProvisionIdentifier(any());
-    doReturn(true).when(helper).isExportTfPlanJson(any());
 
-    TerraformCloudRunTaskResponse response =
-        getResponseBuilder().tfPlanJsonFileId("tfPlanJsonFieldId").runId("run-123").build();
+    TerraformCloudPlanOnlyTaskResponse response = TerraformCloudPlanOnlyTaskResponse.builder()
+                                                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                      .unitProgressData(unitProgressData)
+                                                      .tfPlanJsonFileId("tfPlanJsonFieldId")
+                                                      .runId("run-123")
+                                                      .build();
     StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(
         ambiance, getStepElementParams(TerraformCloudRunType.PLAN_ONLY), null, () -> response);
 
@@ -245,7 +258,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getJsonFilePath()).isEqualTo("<+terraformCloudPlanJson.\"provisionerId\">");
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).isExportTfPlanJson(any());
     verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
   }
 
@@ -253,11 +265,15 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextPlanAndApply() throws Exception {
-    doReturn(false).when(helper).isExportTfPlanJson(any());
     doReturn(Collections.singletonMap("x1", "y1")).when(helper).parseTerraformOutputs(any());
 
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        getResponseBuilder().runId("run-123").tfOutput("{x1 : y1}").build();
+    TerraformCloudPlanAndApplyTaskResponse terraformCloudRunTaskResponse =
+        TerraformCloudPlanAndApplyTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .runId("run-123")
+            .tfOutput("{x1 : y1}")
+            .build();
 
     StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(ambiance,
         getStepElementParams(TerraformCloudRunType.PLAN_AND_APPLY), null, () -> terraformCloudRunTaskResponse);
@@ -269,7 +285,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
     assertThat(terraformCloudRunOutcome.getRunId()).isEqualTo("run-123");
     assertThat(terraformCloudRunOutcome.getOutputs().get("x1")).isEqualTo("y1");
     verify(helper, times(0)).saveTerraformCloudPlanOutput(any(), any(), any());
-    verify(helper, times(1)).isExportTfPlanJson(any());
     verify(helper, times(1)).saveTerraformCloudPlanExecutionDetails(any(), any(), any(), any(), any());
     verify(helper, times(1)).parseTerraformOutputs(any());
   }
@@ -278,11 +293,15 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextPlanAndDestroy() throws Exception {
-    doReturn(false).when(helper).isExportTfPlanJson(any());
     doReturn(Collections.singletonMap("x1", "y1")).when(helper).parseTerraformOutputs(any());
 
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        getResponseBuilder().runId("run-123").tfOutput("{x1 : y1}").build();
+    TerraformCloudPlanAndDestroyTaskResponse terraformCloudRunTaskResponse =
+        TerraformCloudPlanAndDestroyTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .runId("run-123")
+            .tfOutput("{x1 : y1}")
+            .build();
     StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(ambiance,
         getStepElementParams(TerraformCloudRunType.PLAN_AND_DESTROY), null, () -> terraformCloudRunTaskResponse);
 
@@ -302,9 +321,13 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextPlan() throws Exception {
     doReturn("provisionerId").when(helper).getProvisionIdentifier(any());
-    doReturn(true).when(helper).isExportTfPlanJson(any());
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        getResponseBuilder().runId("run-123").tfPlanJsonFileId("jsonFileId").build();
+    TerraformCloudPlanTaskResponse terraformCloudRunTaskResponse =
+        TerraformCloudPlanTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .runId("run-123")
+            .tfPlanJsonFileId("jsonFileId")
+            .build();
     StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(
         ambiance, getStepElementParams(TerraformCloudRunType.PLAN), null, () -> terraformCloudRunTaskResponse);
 
@@ -323,11 +346,15 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextApply() throws Exception {
-    doReturn(false).when(helper).isExportTfPlanJson(any());
     doReturn(Collections.singletonMap("x1", "y1")).when(helper).parseTerraformOutputs(any());
 
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        getResponseBuilder().runId("run-123").tfOutput("{x1 : y1}").build();
+    TerraformCloudApplyTaskResponse terraformCloudRunTaskResponse =
+        TerraformCloudApplyTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .runId("run-123")
+            .tfOutput("{x1 : y1}")
+            .build();
     StepResponse stepResponse = terraformCloudRunStep.finalizeExecutionWithSecurityContext(
         ambiance, getStepElementParams(TerraformCloudRunType.APPLY), null, () -> terraformCloudRunTaskResponse);
 
@@ -363,7 +390,12 @@ public class TerraformCloudRunStepTest extends CategoryTest {
 
     TaskChainResponse taskChainResponse = terraformCloudRunStep.executeNextLinkWithSecurityContext(ambiance,
         getStepElementParams(TerraformCloudRunType.APPLY), null, TerraformCloudPassThroughData.builder().build(),
-        () -> getResponseBuilder().lastAppliedRun("run-123").build());
+        ()
+            -> TerraformCloudGetLastAppliedTaskResponse.builder()
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .unitProgressData(unitProgressData)
+                   .lastAppliedRun("run-123")
+                   .build());
 
     assertThat(taskChainResponse).isNotNull();
     assertTrue(taskChainResponse.isChainEnd());
@@ -372,10 +404,9 @@ public class TerraformCloudRunStepTest extends CategoryTest {
         any(), taskDataArgumentCaptor.capture(), any(), commandUnitsCaptor.capture(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
-    TerraformCloudTaskParams taskParameters =
-        (TerraformCloudTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
-    assertThat(taskParameters.getTerraformCloudTaskType()).isEqualTo(TerraformCloudTaskType.RUN_APPLY);
-    assertThat(taskParameters.getOrganization()).isEqualTo("org");
+    TerraformCloudApplyTaskParams taskParameters =
+        (TerraformCloudApplyTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(taskParameters.getTaskType()).isEqualTo(TerraformCloudTaskType.RUN_APPLY);
     assertThat(commandUnitsCaptor.getValue()).isNotNull();
     assertThat(commandUnitsCaptor.getValue()).contains("Apply");
     verify(helper, times(1)).saveTerraformCloudConfig(any(), any(), any(), any());
@@ -383,13 +414,6 @@ public class TerraformCloudRunStepTest extends CategoryTest {
 
   private StepElementParameters getStepElementParams(TerraformCloudRunType type) {
     return StepElementParameters.builder().spec(utils.getTerraformCloudRunStepParams(type)).build();
-  }
-
-  private TerraformCloudRunTaskResponseBuilder getResponseBuilder() {
-    return TerraformCloudRunTaskResponse.builder()
-        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-        .unitProgressData(unitProgressData)
-        .detailedExitCode(2);
   }
 
   private TerraformCloudRunOutcome getOutcomeFromResponse(StepResponse stepResponse) {

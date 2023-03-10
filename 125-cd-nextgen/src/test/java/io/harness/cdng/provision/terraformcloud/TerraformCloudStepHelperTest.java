@@ -46,7 +46,6 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -163,8 +162,7 @@ public class TerraformCloudStepHelperTest extends CategoryTest {
   public void testSaveTerraformCloudPlanOutput() {
     ArgumentCaptor<TerraformCloudPlanOutput> planOutputArgumentCaptor =
         ArgumentCaptor.forClass(TerraformCloudPlanOutput.class);
-    TerraformCloudRunTaskResponse response = TerraformCloudRunTaskResponse.builder().runId("run-123").build();
-    helper.saveTerraformCloudPlanOutput(utils.getPlanSpecParameters(), response, utils.getAmbiance());
+    helper.saveTerraformCloudPlanOutput(utils.getPlanSpecParameters(), "run-123", utils.getAmbiance());
     verify(executionSweepingOutputService, times(1))
         .consume(any(), eq(TFC_SWEEPING_OUTPUT_IDENTIFIER), planOutputArgumentCaptor.capture(),
             eq(StepOutcomeGroup.STAGE.name()));

@@ -5,10 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans.terraformcloud;
+package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(CDP) public enum RollbackType { APPLY, DESTROY }
+@OwnedBy(CDP) public enum PlanType { APPLY, DESTROY }

@@ -5,26 +5,26 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.terraformcloud.response;
+package io.harness.delegate.task.terraformcloud.request;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
-@OwnedBy(HarnessTeam.CDP)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class TerraformCloudValidateTaskResponse extends TerraformCloudDelegateTaskResponse {
-  private ConnectorValidationResult connectorValidationResult;
+@OwnedBy(HarnessTeam.CDP)
+public class TerraformCloudApplyTaskParams extends TerraformCloudTaskParams {
+  String runId;
+  String message;
 
   @Override
   public TerraformCloudTaskType getTaskType() {
-    return TerraformCloudTaskType.VALIDATE;
+    return TerraformCloudTaskType.RUN_APPLY;
   }
 }

@@ -9,22 +9,20 @@ package io.harness.delegate.task.terraformcloud.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.CDP)
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Value
 @SuperBuilder
-public class TerraformCloudValidateTaskResponse extends TerraformCloudDelegateTaskResponse {
-  private ConnectorValidationResult connectorValidationResult;
-
+@EqualsAndHashCode(callSuper = true)
+public class TerraformCloudRefreshTaskResponse extends TerraformCloudDelegateTaskResponse {
+  String runId;
   @Override
   public TerraformCloudTaskType getTaskType() {
-    return TerraformCloudTaskType.VALIDATE;
+    return TerraformCloudTaskType.RUN_REFRESH_STATE;
   }
 }

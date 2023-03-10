@@ -38,17 +38,29 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.terraformcloud.PlanType;
-import io.harness.delegate.beans.terraformcloud.RollbackType;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetLastAppliedTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndApplyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndDestroyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanOnlyTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudApplyTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudGetLastAppliedTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDestroyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.delegate.utils.TaskExceptionUtils;
@@ -108,7 +120,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         : CommandUnitsProgress.builder().build();
     TerraformCloudDelegateTaskResponse taskResponse;
     try {
-      switch (taskParameters.getTerraformCloudTaskType()) {
+      switch (taskParameters.getTaskType()) {
         case VALIDATE:
           ConnectorValidationResult connectorValidationResult =
               terraformCloudValidationHandler.validate(terraformCloudConfig);
@@ -122,40 +134,49 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
                              .build();
           break;
         case GET_WORKSPACES:
-          taskResponse = TerraformCloudWorkspacesTaskResponse.builder()
-                             .workspaces(terraformCloudTaskHelper.getWorkspacesMap(
-                                 terraformCloudConfig, taskParameters.getOrganization()))
-                             .build();
+          TerraformCloudGetWorkspacesTaskParams params = (TerraformCloudGetWorkspacesTaskParams) taskParameters;
+          taskResponse =
+              TerraformCloudWorkspacesTaskResponse.builder()
+                  .workspaces(terraformCloudTaskHelper.getWorkspacesMap(terraformCloudConfig, params.getOrganization()))
+                  .build();
           break;
         case RUN_REFRESH_STATE:
-          refreshState((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-              taskParameters, commandUnitsProgress);
-          taskResponse = TerraformCloudRunTaskResponse.builder().build();
+          taskResponse =
+              refreshState((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  (TerraformCloudRefreshTaskParams) taskParameters, commandUnitsProgress);
           break;
         case RUN_PLAN_ONLY:
+          taskResponse =
+              planOnly((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  (TerraformCloudPlanOnlyTaskParams) taskParameters, commandUnitsProgress);
+          break;
         case RUN_PLAN:
           taskResponse = plan((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-              taskParameters, commandUnitsProgress);
+              (TerraformCloudPlanTaskParams) taskParameters, commandUnitsProgress);
           break;
         case RUN_PLAN_AND_APPLY:
-        case RUN_PLAN_AND_DESTROY:
           taskResponse =
               autoApply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-                  taskParameters, commandUnitsProgress);
+                  (TerraformCloudPlanAndApplyTaskParams) taskParameters, commandUnitsProgress);
+          break;
+        case RUN_PLAN_AND_DESTROY:
+          taskResponse =
+              autoDestroy((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
+                  (TerraformCloudPlanAndDestroyTaskParams) taskParameters, commandUnitsProgress);
           break;
         case RUN_APPLY:
           taskResponse = apply((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-              taskParameters, commandUnitsProgress);
+              (TerraformCloudApplyTaskParams) taskParameters, commandUnitsProgress);
           break;
         case ROLLBACK:
           taskResponse =
               rollback((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-                  taskParameters, commandUnitsProgress);
+                  (TerraformCloudRollbackTaskParams) taskParameters, commandUnitsProgress);
           break;
         case GET_LAST_APPLIED_RUN:
           taskResponse =
               getLastAppliedRun((TerraformCloudApiTokenCredentials) terraformCloudConfig.getTerraformCloudCredentials(),
-                  taskParameters, commandUnitsProgress);
+                  (TerraformCloudGetLastAppliedTaskParams) taskParameters, commandUnitsProgress);
           break;
         default:
           throw new InvalidRequestException("Terraform Cloud Task type not identified");
@@ -167,15 +188,15 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       TaskExceptionUtils.handleExceptionCommandUnits(
           commandUnitsProgress, unitName -> getLogCallback(unitName, commandUnitsProgress), sanitizedException);
-      log.error(format("Failed to execute Terraform Cloud Task [%s]", taskParameters.getTerraformCloudTaskType()),
+      log.error(format("Failed to execute Terraform Cloud Task [%s]", taskParameters.getTaskType().name()),
           sanitizedException);
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     }
   }
 
-  private void refreshState(TerraformCloudApiTokenCredentials credentials, TerraformCloudTaskParams taskParameters,
-      CommandUnitsProgress commandUnitsProgress) {
+  private TerraformCloudRefreshTaskResponse refreshState(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudRefreshTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
@@ -183,11 +204,12 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
-    policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
+    policyCheckInternal(url, token, runData.getId(), null, null, commandUnitsProgress);
+    return TerraformCloudRefreshTaskResponse.builder().runId(runData.getId()).build();
   }
 
-  private TerraformCloudRunTaskResponse plan(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+  private TerraformCloudPlanOnlyTaskResponse planOnly(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudPlanOnlyTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
@@ -195,28 +217,23 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
-    String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
+    String tfPolicyCheckFileId = policyCheckInternal(
+        url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
 
     String tfPlanJsonFileId = null;
     if (taskParameters.isExportJsonTfPlan()) {
-      String jsonPlan = terraformCloudTaskHelper.getJsonPlan(credentials.getUrl(), credentials.getToken(), runData);
-      if (jsonPlan != null) {
-        tfPlanJsonFileId = terraformCloudTaskHelper.uploadJsonFile(taskParameters.getAccountId(), getDelegateId(),
-            getTaskId(), taskParameters.getEntityId(),
-            taskParameters.getPlanType() == PlanType.APPLY ? TFC_PLAN_FILE_OUTPUT_NAME
-                                                           : TFC_DESTROY_PLAN_FILE_OUTPUT_NAME,
-            jsonPlan, FileBucket.TERRAFORM_PLAN_JSON);
-      }
+      tfPlanJsonFileId = exportPlanJson(credentials, runData, taskParameters.getAccountId(),
+          taskParameters.getEntityId(), taskParameters.getPlanType());
     }
-    return TerraformCloudRunTaskResponse.builder()
+    return TerraformCloudPlanOnlyTaskResponse.builder()
         .runId(runData.getId())
         .tfPlanJsonFileId(tfPlanJsonFileId)
         .policyChecksJsonFileId(tfPolicyCheckFileId)
         .build();
   }
 
-  private TerraformCloudRunTaskResponse autoApply(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+  private TerraformCloudPlanTaskResponse plan(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudPlanTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
 
@@ -224,17 +241,61 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
-    String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
+    String tfPolicyCheckFileId = policyCheckInternal(
+        url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
+
+    String tfPlanJsonFileId = null;
+    if (taskParameters.isExportJsonTfPlan()) {
+      tfPlanJsonFileId = exportPlanJson(credentials, runData, taskParameters.getAccountId(),
+          taskParameters.getEntityId(), taskParameters.getPlanType());
+    }
+    return TerraformCloudPlanTaskResponse.builder()
+        .runId(runData.getId())
+        .tfPlanJsonFileId(tfPlanJsonFileId)
+        .policyChecksJsonFileId(tfPolicyCheckFileId)
+        .build();
+  }
+
+  private TerraformCloudPlanAndApplyTaskResponse autoApply(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudPlanAndApplyTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+    String url = credentials.getUrl();
+    String token = credentials.getToken();
+
+    RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequestCreator.createRunRequest(taskParameters),
+        taskParameters.isDiscardPendingRuns(),
+        getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
+
+    String tfPolicyCheckFileId = policyCheckInternal(
+        url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
     String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
-    return TerraformCloudRunTaskResponse.builder()
+    return TerraformCloudPlanAndApplyTaskResponse.builder()
         .runId(runData.getId())
         .tfOutput(output)
         .policyChecksJsonFileId(tfPolicyCheckFileId)
         .build();
   }
 
-  public TerraformCloudRunTaskResponse apply(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+  private TerraformCloudPlanAndDestroyTaskResponse autoDestroy(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudPlanAndDestroyTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+    String url = credentials.getUrl();
+    String token = credentials.getToken();
+
+    RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequestCreator.createRunRequest(taskParameters),
+        taskParameters.isDiscardPendingRuns(),
+        getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
+
+    String tfPolicyCheckFileId = policyCheckInternal(
+        url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
+    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
+    return TerraformCloudPlanAndDestroyTaskResponse.builder()
+        .runId(runData.getId())
+        .tfOutput(output)
+        .policyChecksJsonFileId(tfPolicyCheckFileId)
+        .build();
+  }
+
+  public TerraformCloudApplyTaskResponse apply(TerraformCloudApiTokenCredentials credentials,
+      TerraformCloudApplyTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback = getLogCallback(TerraformCloudCommandUnit.APPLY.getDisplayName(), commandUnitsProgress);
     String url = credentials.getUrl();
     String token = credentials.getToken();
@@ -252,10 +313,10 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     }
     if (runData.getAttributes().getActions().isConfirmable()) {
       String output = terraformCloudTaskHelper.applyRun(url, token, runId, taskParameters.getMessage(), logCallback);
-      return TerraformCloudRunTaskResponse.builder().runId(runId).tfOutput(output).build();
+      return TerraformCloudApplyTaskResponse.builder().runId(runId).tfOutput(output).build();
     } else if (!runData.getAttributes().isHasChanges()) {
       logCallback.saveExecutionLog("Apply will not run. No changes.", INFO, CommandExecutionStatus.SUCCESS);
-      return TerraformCloudRunTaskResponse.builder().runId(runId).build();
+      return TerraformCloudApplyTaskResponse.builder().runId(runId).build();
     } else {
       logCallback.saveExecutionLog(format(APPLY_ERROR_MESSAGE, runData.getAttributes().getStatus().name()), ERROR,
           CommandExecutionStatus.FAILURE);
@@ -266,7 +327,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private TerraformCloudRollbackTaskResponse rollback(TerraformCloudApiTokenCredentials credentials,
-      TerraformCloudTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
+      TerraformCloudRollbackTaskParams taskParameters, CommandUnitsProgress commandUnitsProgress) {
     String url = credentials.getUrl();
     String token = credentials.getToken();
     String runId = taskParameters.getRunId();
@@ -296,7 +357,8 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     RunData runData = terraformCloudTaskHelper.createRun(url, token, runRequest, taskParameters.isDiscardPendingRuns(),
         getLogCallback(TerraformCloudCommandUnit.PLAN.getDisplayName(), commandUnitsProgress));
 
-    String tfPolicyCheckFileId = policyCheckInternal(url, token, taskParameters, runData.getId(), commandUnitsProgress);
+    String tfPolicyCheckFileId = policyCheckInternal(
+        url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
     String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
 
     return TerraformCloudRollbackTaskResponse.builder()
@@ -306,7 +368,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
         .build();
   }
 
-  private String policyCheckInternal(String url, String token, TerraformCloudTaskParams taskParameters, String runId,
+  private String policyCheckInternal(String url, String token, String runId, String accountId, String entityId,
       CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback =
         getLogCallback(TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(), commandUnitsProgress);
@@ -317,18 +379,18 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     }
     terraformCloudTaskHelper.streamSentinelPolicies(url, token, runId, logCallback);
 
-    if (taskParameters.getTerraformCloudTaskType() == TerraformCloudTaskType.RUN_REFRESH_STATE) {
+    if (accountId == null || entityId == null) {
       return null;
     }
+    policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
     String policyChecksJsonData;
     try {
       policyChecksJsonData = new ObjectMapper().writeValueAsString(policyCheckData);
     } catch (JsonProcessingException e) {
       throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CONTACT_HARNESS, COULD_NOT_CONVERT_POLICIES, e);
     }
-    return terraformCloudTaskHelper.uploadJsonFile(taskParameters.getAccountId(), getDelegateId(), getTaskId(),
-        taskParameters.getEntityId(), TFC_POLICY_CHECK_FILE_NAME, policyChecksJsonData,
-        FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS);
+    return terraformCloudTaskHelper.uploadJsonFile(accountId, getDelegateId(), getTaskId(), entityId,
+        TFC_POLICY_CHECK_FILE_NAME, policyChecksJsonData, FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS);
   }
 
   private String applyInternal(
@@ -349,8 +411,8 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     return terraformCloudTaskHelper.getApplyOutput(url, token, runData);
   }
 
-  private TerraformCloudDelegateTaskResponse getLastAppliedRun(
-      TerraformCloudApiTokenCredentials terraformCloudCredentials, TerraformCloudTaskParams params,
+  private TerraformCloudGetLastAppliedTaskResponse getLastAppliedRun(
+      TerraformCloudApiTokenCredentials terraformCloudCredentials, TerraformCloudGetLastAppliedTaskParams params,
       CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback =
         getLogCallback(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(), commandUnitsProgress);
@@ -372,7 +434,22 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String lastAppliedId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspace);
     logCallback.saveExecutionLog(
         format("Last applied run was: %s", lastAppliedId), INFO, CommandExecutionStatus.SUCCESS);
-    return TerraformCloudRunTaskResponse.builder().lastAppliedRun(lastAppliedId).workspaceId(workspace).build();
+    return TerraformCloudGetLastAppliedTaskResponse.builder()
+        .lastAppliedRun(lastAppliedId)
+        .workspaceId(workspace)
+        .build();
+  }
+
+  private String exportPlanJson(TerraformCloudApiTokenCredentials credentials, RunData runData, String accountId,
+      String entityId, PlanType planType) {
+    String jsonPlan = terraformCloudTaskHelper.getJsonPlan(credentials.getUrl(), credentials.getToken(), runData);
+    if (jsonPlan != null) {
+      return terraformCloudTaskHelper.uploadJsonFile(accountId, getDelegateId(), getTaskId(), entityId,
+          planType == PlanType.APPLY ? TFC_PLAN_FILE_OUTPUT_NAME : TFC_DESTROY_PLAN_FILE_OUTPUT_NAME, jsonPlan,
+          FileBucket.TERRAFORM_PLAN_JSON);
+    } else {
+      return null;
+    }
   }
 
   @Override

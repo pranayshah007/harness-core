@@ -32,9 +32,9 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.terraformcloud.TerraformCloudApiException;
@@ -228,7 +228,7 @@ public class TerraformCloudCleanupTaskNGTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testUnsupportedParametersType() throws IOException {
-    assertThatThrownBy(() -> task.run(TerraformCloudTaskParams.builder().build()))
+    assertThatThrownBy(() -> task.run(TerraformCloudRefreshTaskParams.builder().build()))
         .isInstanceOf(UnsupportedOperationException.class)
         .hasMessage("Unsupported parameters type");
   }
