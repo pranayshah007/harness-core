@@ -102,7 +102,7 @@ public class MatrixConfigServiceHelper {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
-      maxConcurrency = maxConcurrencyParameterField.getValue();
+      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
