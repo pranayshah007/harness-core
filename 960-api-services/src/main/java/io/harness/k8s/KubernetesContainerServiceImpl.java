@@ -25,7 +25,6 @@ import static io.harness.k8s.K8sConstants.GCP_KUBE_CONFIG_TEMPLATE;
 import static io.harness.k8s.K8sConstants.HARNESS_KUBERNETES_REVISION_LABEL_KEY;
 import static io.harness.k8s.K8sConstants.ID_TOKEN_KEY;
 import static io.harness.k8s.K8sConstants.ISSUER_URL_KEY;
-import static io.harness.k8s.K8sConstants.KUBE_CONFIG_EXEC_TEMPLATE;
 import static io.harness.k8s.K8sConstants.KUBE_CONFIG_OIDC_TEMPLATE;
 import static io.harness.k8s.K8sConstants.KUBE_CONFIG_TEMPLATE;
 import static io.harness.k8s.K8sConstants.MASTER_URL;
@@ -2168,7 +2167,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
 
     if (KubernetesClusterAuthType.EXEC_OAUTH == config.getAuthType()) {
-      return generateExecFormatKubeconfig(KUBE_CONFIG_EXEC_TEMPLATE, config);
+      return generateExecFormatKubeconfig(config);
     }
 
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
@@ -2372,7 +2371,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     return exponentialRetry;
   }
 
-  private String generateExecFormatKubeconfig(String execFormat, KubernetesConfig config) {
+  private String generateExecFormatKubeconfig(KubernetesConfig config) {
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + String.valueOf(config.getCaCert()) : "";
@@ -2390,13 +2389,16 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     } catch (JsonProcessingException ex) {
       throw new InvalidRequestException("Unable to convert Exec to yaml", ex);
     }
-    return execFormat.replace("${MASTER_URL}", config.getMasterUrl())
+    return K8sConstants.KUBE_CONFIG_EXEC_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
         .replace("${CERTIFICATE_AUTHORITY_DATA}", certificateAuthorityData)
         .replace("${NAMESPACE}", namespace)
-        .replace("${CLUSTER_NAME}", config.getAzureConfig().getClusterName())
-        .replace("${CLUSTER_USER}", config.getAzureConfig().getClusterUser())
-        .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
+        .replace("${CLUSTER_NAME}",
+            config.getAzureConfig() != null ? config.getAzureConfig().getClusterName() : "CLUSTER_NAME")
+        .replace("${CLUSTER_USER}",
+            config.getAzureConfig() != null ? config.getAzureConfig().getClusterUser() : "HARNESS_USER")
+        .replace("${CURRENT_CONTEXT}",
+            config.getAzureConfig() != null ? config.getAzureConfig().getCurrentContext() : "CURRENT_CONTEXT")
         .replace("${EXEC}", exec);
   }
 }
