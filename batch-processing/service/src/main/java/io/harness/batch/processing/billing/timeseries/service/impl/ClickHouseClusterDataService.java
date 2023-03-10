@@ -143,15 +143,11 @@ public class ClickHouseClusterDataService {
   }
 
   private static String getClusterDataCreationQuery(String clusterDataTableName) {
-    String clusterDataAggregatedCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataAggregatedCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static String getClusterDataAggregatedCreationQuery(String clusterDataTableName) {
-    String clusterDataCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static void getBatchedPreparedStatement(PreparedStatement prepareStatement, ClusterBillingData billingData)

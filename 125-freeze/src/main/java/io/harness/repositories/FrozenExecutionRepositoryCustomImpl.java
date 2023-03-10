@@ -11,8 +11,6 @@ import io.harness.freeze.entity.FrozenExecution;
 import io.harness.freeze.entity.FrozenExecution.FrozenExecutionKeys;
 
 import com.google.inject.Inject;
-import com.mongodb.ReadPreference;
-import dev.morphia.query.FindOptions;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

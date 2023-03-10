@@ -153,7 +153,6 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   public List<ManifestOutcome> getAwsLambdaManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
     // Filter only Aws Lambda supported manifest types
-
     return manifestOutcomes.stream()
         .filter(manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
         .collect(Collectors.toList());

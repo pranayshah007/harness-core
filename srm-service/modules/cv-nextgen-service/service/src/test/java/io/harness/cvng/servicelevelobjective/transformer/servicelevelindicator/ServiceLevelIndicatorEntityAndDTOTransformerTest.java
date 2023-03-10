@@ -19,6 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.rule.Owner;

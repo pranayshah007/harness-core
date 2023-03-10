@@ -28,8 +28,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @OwnedBy(CDC)
-@NoArgsConstructor
 @Builder(toBuilder = true)
+@NoArgsConstructor
 @AllArgsConstructor
 @RecasterAlias("io.harness.steps.shellscript.ShellScriptSourceWrapper")
 public class ShellScriptSourceWrapper {
