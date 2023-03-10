@@ -7,6 +7,8 @@
 
 package io.harness.migrations.all;
 
+import static software.wings.beans.Account.AccountKeys;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -15,13 +17,14 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
-import software.wings.beans.Account.AccountKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,12 +39,15 @@ public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements
 
     Query<Account> accountsQuery =
         wingsPersistence.createQuery(Account.class).field(AccountKeys.isCrossGenerationAccessEnabled).doesNotExist();
+    log.info("Migration will run for total {} accounts", accountsQuery.count());
+    Set<String> accountsLeftForMigration = new HashSet<>();
 
     try (HIterator<Account> records = new HIterator<>(accountsQuery.fetch())) {
       while (records.hasNext()) {
         Account account = null;
         try {
           account = records.next();
+          accountsLeftForMigration.add(account.getUuid());
           UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
 
           if (DefaultExperience.isNGExperience(account.getDefaultExperience())) {
@@ -56,14 +62,20 @@ public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements
               updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
             }
           }
+
           wingsPersistence.update(account, updateOperations);
+          accountsLeftForMigration.remove(account.getUuid());
           log.info("isCrossGenerationAccessEnabled field is successfully added into account: {}", account.getUuid());
         } catch (Exception e) {
           log.error("Error while updating isCrossGenerationAccessEnabled field for account: {}",
               account != null ? account.getUuid() : "", e);
         }
       }
+    } finally {
+      log.info(
+          "Total accounts with failed migration= {} and the list= {}", accountsQuery.count(), accountsLeftForMigration);
     }
+
     log.info("Migration to add new isCrossGenerationAccessEnabled field into all the accounts finished");
   }
 }
