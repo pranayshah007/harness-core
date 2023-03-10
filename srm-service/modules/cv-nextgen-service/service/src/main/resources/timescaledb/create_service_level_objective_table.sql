@@ -7,15 +7,20 @@
 BEGIN;
 CREATE TABLE IF NOT EXISTS SERVICE_LEVEL_OBJECTIVE (
                                                        REPORTEDAT TIMESTAMPTZ NOT NULL,
+                                                       UPDATEDAT TIMESTAMPTZ DEFAULT (NOW()),
                                                        ACCOUNTID TEXT,
                                                        ORGID TEXT,
                                                        PROJECTID TEXT,
                                                        SLOID TEXT,
                                                        SLONAME TEXT,
+                                                       USERJOURNEY TEXT,
+                                                       PERIODLENGTH INTEGER,
                                                        SLITYPE TEXT,
                                                        PERIODTYPE TEXT,
-                                                       UPDATEDAT TIMESTAMPTZ DEFAULT (NOW()),
-
+                                                       SLOPERCENTAGE DECIMAL,
+                                                       TOTALERRORBUDGET INTEGER
+                                                       SERVICE TEXT,
+                                                       ENV TEXT,
     CONSTRAINT SERVICE_LEVEL_OBJECTIVE_UNIQUE_RECORD_INDEX UNIQUE(ACCOUNTID,ORGID,PROJECTID,SLOID)
     );
 COMMIT;

@@ -6,7 +6,6 @@
 ---------- SLO_HEALTH_INDICATOR TABLE START ------------
 BEGIN;
 CREATE TABLE IF NOT EXISTS SLO_HEALTH_INDICATOR (
-                                                    REPORTEDAT TIMESTAMPTZ NOT NULL,
                                                     ACCOUNTID TEXT,
                                                     ORGID TEXT,
                                                     PROJECTID TEXT,
@@ -14,7 +13,7 @@ CREATE TABLE IF NOT EXISTS SLO_HEALTH_INDICATOR (
                                                     STATUS TEXT,
                                                     ERRORBUDGETPERCENTAGE TEXT,
                                                     ERRORBUDGETREMAINING TEXT,
-                                                    UPDATEDAT TIMESTAMPTZ DEFAULT (NOW()),
+                                                    SLIVALUE DECIMAL,
 
     CONSTRAINT SLO_HEALTH_INDICATOR_UNIQUE_RECORD_INDEX UNIQUE(ACCOUNTID,ORGID,PROJECTID,SLOID)
     );
