@@ -82,6 +82,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
   @Inject private DockerRestClientFactory dockerRestClientFactory;
   private static final String AUTHENTICATE_HEADER = "Www-Authenticate";
   private static final int MAX_NUMBER_OF_BUILDS = 250;
+  private static final String TAG_REGEX_TO_IGNORE = "\\*";
   private final Retry retry;
 
   private ExpiringMap<String, String> cachedBearerTokens = ExpiringMap.builder().variableExpiration().build();
@@ -109,14 +110,15 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
           "Check if the image exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
-    // Sorting at build tag for docker artifacts.
-    // Don't change this order.
-    if (tagRegex != null) {
+    // Here we ignore tagRegex if it is equal to TAG_REGEX_TO_IGNORE - This is because DockerRegistry triggers are
+    // using tagRegex as "\\*" by default.
+    if (tagRegex != null && !TAG_REGEX_TO_IGNORE.equals(tagRegex)) {
       buildDetails = buildDetails.stream()
                          .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
                          .collect(Collectors.toList());
     }
-
+    // Sorting at build tag for docker artifacts.
+    // Don't change this order.
     return buildDetails.stream().sorted(new BuildDetailsInternalComparatorAscending()).collect(toList());
   }
 
