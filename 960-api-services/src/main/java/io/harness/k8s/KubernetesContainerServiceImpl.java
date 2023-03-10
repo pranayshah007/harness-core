@@ -2164,8 +2164,11 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     }
 
     if (KubernetesClusterAuthType.AZURE_OAUTH == config.getAuthType()) {
-      return config.getExec() != null ? generateExecFormatKubeconfig(KUBE_CONFIG_EXEC_TEMPLATE, config)
-                                      : generateKubeConfigStringForAzure(config);
+      return generateKubeConfigStringForAzure(config);
+    }
+
+    if (KubernetesClusterAuthType.EXEC_OAUTH == config.getAuthType()) {
+      return generateExecFormatKubeconfig(KUBE_CONFIG_EXEC_TEMPLATE, config);
     }
 
     String insecureSkipTlsVerify = isEmpty(config.getCaCert()) ? "insecure-skip-tls-verify: true" : "";

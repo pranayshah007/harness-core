@@ -725,7 +725,7 @@ public class AzureAsyncTaskHelper {
           .username(azureKubeConfig.getUsers().get(0).getName().toCharArray())
           .azureConfig(kubernetesAzureConfig)
           .exec(userConfig.getExec())
-          .authType(KubernetesClusterAuthType.AZURE_OAUTH)
+          .authType(KubernetesClusterAuthType.EXEC_OAUTH)
           .build();
     } else {
       return KubernetesConfig.builder()

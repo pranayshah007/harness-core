@@ -13,7 +13,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
-import static io.harness.k8s.model.KubernetesClusterAuthType.AZURE_OAUTH;
+import static io.harness.k8s.model.KubernetesClusterAuthType.EXEC_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.k8s.model.KubernetesClusterAuthType.USER_PASSWORD;
@@ -1668,7 +1668,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                     .build();
 
     KubernetesConfig kubeConfig = KubernetesConfig.builder()
-                                      .authType(AZURE_OAUTH)
+                                      .authType(EXEC_OAUTH)
                                       .namespace("namespace")
                                       .masterUrl("masterUrl")
                                       .caCert("caCert".toCharArray())
