@@ -2734,3 +2734,7 @@
 10000513:io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest
 10000514:io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse
 10000515:io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse
+10000516:io.harness.delegate.task.aws.lambda.AwsLambdaNexusArtifactConfig
+10000517:io.harness.delegate.task.aws.lambda.AwsLambdaJenkinsArtifactConfig
+10000518:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactoryArtifactConfig
+10000519:io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig
