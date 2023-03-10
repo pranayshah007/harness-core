@@ -2436,7 +2436,8 @@ public class K8sTaskHelperBase {
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
@@ -2484,7 +2485,7 @@ public class K8sTaskHelperBase {
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
         return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
             kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback);
+            executionLogCallback, kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(
