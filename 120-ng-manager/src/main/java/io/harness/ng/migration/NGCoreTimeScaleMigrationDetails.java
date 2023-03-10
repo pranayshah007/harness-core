@@ -10,7 +10,11 @@ package io.harness.ng.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
-import io.harness.ng.core.migration.timescale.*;
+import io.harness.ng.core.migration.timescale.AddModuleTypeSpecificColumnsToModuleLicensesTable;
+import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraInfoTable;
+import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
+import io.harness.ng.core.migration.timescale.GetActiveServicesByDateFunction;
+import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
