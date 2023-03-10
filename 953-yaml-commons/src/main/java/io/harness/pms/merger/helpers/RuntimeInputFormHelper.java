@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
-import static io.harness.pms.merger.fqn.FQNNode.NodeType.KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -75,9 +74,9 @@ public class RuntimeInputFormHelper {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
 
-    // Add deploymentType in runtime input Form
+    // Add deploymentType in runtime input form, it will be the last fqnNode in fqnList
     FQNNode deploymentTypeFqnNode =
-        FQNNode.builder().nodeType(KEY).key("deploymentType").uuidKey(null).uuidValue(null).build();
+        FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key("deploymentType").uuidKey(null).uuidValue(null).build();
 
     fullMap.keySet().forEach(key -> {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
@@ -111,7 +110,7 @@ public class RuntimeInputFormHelper {
       templateMap.keySet().forEach(key -> {
         FQN parent = key.getParent();
         FQN defaultSibling = FQN.duplicateAndAddNode(
-            parent, FQNNode.builder().nodeType(KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
         if (fullMap.containsKey(defaultSibling)) {
           defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
         }
@@ -176,7 +175,7 @@ public class RuntimeInputFormHelper {
     int indexWithKey = -1;
     for (int i = 0; i < fqnList.size(); i++) {
       FQNNode fqnNode = fqnList.get(i);
-      if (key.equals(fqnNode.getKey()) && fqnNode.getNodeType() == KEY) {
+      if (key.equals(fqnNode.getKey()) && fqnNode.getNodeType() == FQNNode.NodeType.KEY) {
         indexWithKey = i;
         break;
       }
