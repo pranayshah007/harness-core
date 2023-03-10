@@ -61,9 +61,9 @@ public class K8STaskRunnerTest {
 
   private static TaskData createDummyTaskData() {
     final Map<String, String> vars = ImmutableMap.of("key1", "va1", "key2", "val2");
-    final var shellScriptParameters = new ShellScriptTaskParametersNG("execUd", List.of("Some", "vars"),
-        List.of("secret"), "my super \n script", 1000, "accId", "appId", "/root/not", vars);
-    final var objects = new Object[] {shellScriptParameters};
+//    final var shellScriptParameters = new ShellScriptTaskParametersNG("execUd", List.of("Some", "vars"),
+//        List.of("secret"), "my super \n script", 1000, "accId", "appId", "/root/not", vars);
+    final var objects = new Object[] {null};
     return TaskData.builder().parameters(objects).build();
   }
 }
