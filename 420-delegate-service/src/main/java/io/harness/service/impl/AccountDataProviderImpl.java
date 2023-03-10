@@ -9,6 +9,7 @@ package io.harness.service.impl;
 
 import io.harness.account.AccountClient;
 import io.harness.delegate.beans.DelegateRing;
+import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.client.CGRestUtils;
@@ -28,8 +29,6 @@ public class AccountDataProviderImpl implements AccountDataProvider {
   @Override
   public DelegateRing getDelegateRing(String accountId) {
     AccountDTO response = CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
-    return persistence.createQuery(DelegateRing.class)
-        .filter(DelegateRing.DelegateRingKeys.ringName, response.getRingName())
-        .get();
+    return persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, response.getRingName()).get();
   }
 }

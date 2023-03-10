@@ -9,11 +9,6 @@ package io.harness.delegate.task.aws.lambda;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
-import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
-import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -29,14 +24,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions.AwsLambdaFunctionWithActiveVersionsBuilder;
-import io.harness.eraro.ErrorCode;
-import io.harness.eraro.Level;
-import io.harness.exception.FileCreationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
@@ -54,12 +45,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -70,13 +56,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.util.Strings;
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.model.AliasConfiguration;
 import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
 import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
@@ -110,12 +92,13 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 public class AwsLambdaTaskHelper {
   @Inject private AwsLambdaClient awsLambdaClient;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
+
+  @Inject private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
   @Inject private TimeLimiter timeLimiter;
   private YamlUtils yamlUtils = new YamlUtils();
 
   private final String ACTIVE_LAST_UPDATE_STATUS = "Successful";
   private final String FAILED_LAST_UPDATE_STATUS = "Failed";
-  private final String TEMP_ARTIFACT_FILE = "tempArtifactFile";
 
   long TIMEOUT_IN_SECONDS = 60 * 60L;
   long WAIT_SLEEP_IN_SECONDS = 10L;
@@ -280,7 +263,7 @@ public class AwsLambdaTaskHelper {
 
   private CreateFunctionResponse updateFunctionWithArtifact(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
       String awsLambdaManifestContent, LogCallback logCallback,
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, GetFunctionResponse function) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, GetFunctionResponse function) throws IOException {
     String functionName = function.configuration().functionName();
     String functionCodeSha = function.configuration().codeSha256();
     logCallback.saveExecutionLog(format("Function: [%s] already exists. Update and Publish.", functionName));
@@ -315,18 +298,16 @@ public class AwsLambdaTaskHelper {
   }
 
   private void updateFunctionCodeWithArtifact(AwsLambdaArtifactConfig awsLambdaArtifactConfig, LogCallback logCallback,
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName,
-      String existingFunctionCodeSha) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName, String existingFunctionCodeSha)
+      throws IOException {
     FunctionCode functionCode;
-    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
 
     UpdateFunctionCodeRequest.Builder updateFunctionCodeRequest;
 
     if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
-      updateFunctionCodeRequest = UpdateFunctionCodeRequest.builder()
-                                      .functionName(functionName)
-                                      .s3Bucket(functionCode.s3Bucket())
-                                      .s3Key(functionCode.s3Key());
+      updateFunctionCodeRequest =
+          UpdateFunctionCodeRequest.builder().functionName(functionName).zipFile(functionCode.zipFile());
     } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
       updateFunctionCodeRequest =
           UpdateFunctionCodeRequest.builder().functionName(functionName).imageUri(functionCode.imageUri());
@@ -336,6 +317,8 @@ public class AwsLambdaTaskHelper {
     }
 
     if (isFunctionCodeUpdateNeeded(awsLambdaFunctionsInfraConfig, updateFunctionCodeRequest, existingFunctionCodeSha)) {
+      updateFunctionCodeRequest.dryRun(false).publish(true);
+
       // Update Function Code
       UpdateFunctionCodeResponse updateFunctionCodeResponse =
           awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -353,7 +336,7 @@ public class AwsLambdaTaskHelper {
     }
   }
 
-  private boolean isFunctionCodeUpdateNeeded(AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
+  protected boolean isFunctionCodeUpdateNeeded(AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
       UpdateFunctionCodeRequest.Builder updateFunctionCodeRequest, String existingFunctionCodeSha) {
     UpdateFunctionCodeResponse updateFunctionCodeResponseDryRun =
         awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -362,12 +345,22 @@ public class AwsLambdaTaskHelper {
     return !updateFunctionCodeResponseDryRun.codeSha256().equals(existingFunctionCodeSha);
   }
 
-  protected FunctionCode prepareFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig) {
+  /**
+   *
+   * @param awsLambdaArtifactConfig Configuration information about the artifact source
+   * @param logCallback
+   * @return FunctionCode AWS object that contains the zip blob for package type artifacts and image uri for ECR
+   *     artifacts
+   * @throws IOException
+   */
+  protected FunctionCode prepareFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig, LogCallback logCallback)
+      throws IOException {
     if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
       AwsLambdaS3ArtifactConfig awsLambdaS3ArtifactConfig = (AwsLambdaS3ArtifactConfig) awsLambdaArtifactConfig;
+
       return FunctionCode.builder()
-          .s3Bucket(awsLambdaS3ArtifactConfig.getBucketName())
-          .s3Key(awsLambdaS3ArtifactConfig.getFilePath())
+          .zipFile(awsLambdaTaskHelperBase.downloadArtifactFromS3BucketAndPrepareSdkBytes(
+              awsLambdaS3ArtifactConfig, logCallback))
           .build();
     } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
       AwsLambdaEcrArtifactConfig awsLambdaEcrArtifactConfig = (AwsLambdaEcrArtifactConfig) awsLambdaArtifactConfig;
@@ -404,14 +397,14 @@ public class AwsLambdaTaskHelper {
 
   private CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
       LogCallback logCallback, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
-      CreateFunctionRequest.Builder createFunctionRequestBuilder, String functionName) {
+      CreateFunctionRequest.Builder createFunctionRequestBuilder, String functionName) throws IOException {
     CreateFunctionResponse createFunctionResponse;
     FunctionCode functionCode;
 
     logCallback.saveExecutionLog(format("Creating Function: %s in region: %s %n", functionName,
         awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
 
-    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
     createFunctionRequestBuilder.code(functionCode);
     createFunctionRequestBuilder.publish(true);
 
@@ -492,57 +485,6 @@ public class AwsLambdaTaskHelper {
     logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
   }
 
-  /**
-   * Download the previous version of artifact from S3 and prepare SdkBytes
-   * @param funcCodeLocation Presigned URL to download file from S3
-   * @param logCallback Used for logging
-   * @return SdkBytes Aws Object that is required to update function for .zip packages
-   * @throws IOException
-   */
-  private SdkBytes downloadArtifactZipAndPrepareSdkBytes(String funcCodeLocation, LogCallback logCallback)
-      throws IOException {
-    // Create directory for downloading files
-    String baseDir = "./aws-lambda-working-dir/";
-    String workingDir = baseDir + UUIDGenerator.generateUuid();
-    String artifactDir = Paths.get(workingDir).toString();
-
-    createDirectoryIfDoesNotExist(artifactDir);
-    waitForDirectoryToBeAccessibleOutOfProcess(artifactDir, 10);
-    String artifactFilePath = Paths.get(artifactDir, TEMP_ARTIFACT_FILE).toAbsolutePath().toString();
-
-    File tempArtifact = new File(artifactFilePath);
-
-    if (!tempArtifact.createNewFile()) {
-      log.error("Failed to create new file");
-      logCallback.saveExecutionLog("Failed to create a file for s3 object", ERROR);
-      throw new FileCreationException("Failed to create file " + tempArtifact.getCanonicalPath(), null,
-          ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
-    }
-
-    // Call S3 with presigned url to fetch file
-    InputStream is;
-    try {
-      OkHttpClient client = new OkHttpClient();
-      Request request = new Request.Builder().url(funcCodeLocation).build();
-      Response response = client.newCall(request).execute();
-      if (!response.isSuccessful()) {
-        throw new InvalidRequestException("Failed to download file.");
-      }
-      FileOutputStream fos = new FileOutputStream(tempArtifact);
-      fos.write(response.body().bytes());
-      fos.close();
-
-      is = new FileInputStream(tempArtifact);
-    } catch (Exception ex) {
-      log.error("Unable to download file from S3. Rollback failed");
-      throw new InvalidRequestException("Unable to download file from S3. Rollback failed", ex);
-    } finally {
-      deleteDirectoryAndItsContentIfExists(artifactDir);
-    }
-
-    return SdkBytes.fromInputStream(is);
-  }
-
   private UpdateFunctionCodeRequest getUpdateFunctionCodeRequest(String functionName, FunctionCodeLocation funcCodeLoc,
       String functionConfiguration, LogCallback logCallback,
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) throws IOException {
@@ -552,7 +494,8 @@ public class AwsLambdaTaskHelper {
       // Fetch Existing function to get functions code location
       GetFunctionResponse function =
           fetchExistingFunctionWithFunctioArn(functionConfiguration, awsLambdaFunctionsInfraConfig);
-      builder.zipFile(downloadArtifactZipAndPrepareSdkBytes(function.code().location(), logCallback));
+      builder.zipFile(awsLambdaTaskHelperBase.downloadArtifactZipAndPrepareSdkBytesForRollback(
+          function.code().location(), logCallback));
     } else if (funcCodeLoc.repositoryType().equals("ECR")) {
       builder.imageUri(funcCodeLoc.imageUri());
     } else {

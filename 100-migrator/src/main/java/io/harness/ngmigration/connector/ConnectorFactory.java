@@ -15,6 +15,7 @@ import static software.wings.settings.SettingVariableTypes.AZURE;
 import static software.wings.settings.SettingVariableTypes.AZURE_ARTIFACTS_PAT;
 import static software.wings.settings.SettingVariableTypes.DATA_DOG;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
+import static software.wings.settings.SettingVariableTypes.ELK;
 import static software.wings.settings.SettingVariableTypes.GCP;
 import static software.wings.settings.SettingVariableTypes.GCS_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.GIT;
@@ -57,6 +58,7 @@ public class ConnectorFactory {
   private static final BaseConnector ociHelmConnector = new OCIHelmConnectorImpl();
   private static final BaseConnector unsupportedConnector = new UnsupportedConnectorImpl();
 
+  private static final BaseConnector elkConnector = new ElkConnectorImpl();
   private static final BaseConnector jiraConnector = new JiraConnectorImpl();
   private static final BaseConnector serviceNowConnector = new ServiceNowConnectorImpl();
 
@@ -100,6 +102,7 @@ public class ConnectorFactory {
           .put(SPLUNK, splunkConnector)
           .put(SPOT_INST, spotConnector)
           .put(AZURE_ARTIFACTS_PAT, azureArtifactPat)
+          .put(ELK, elkConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {

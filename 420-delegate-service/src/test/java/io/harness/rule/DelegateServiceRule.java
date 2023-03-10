@@ -57,6 +57,8 @@ import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.waiter.WaiterConfiguration.PersistenceLayer;
 
+import software.wings.service.intfc.security.SecretManager;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
@@ -220,6 +222,7 @@ public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, Mongo
         bind(OutboxDao.class).to(OutboxDaoImpl.class);
         bind(OutboxService.class).to(OutboxServiceImpl.class);
         bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
+        bind(SecretManager.class).toInstance(mock(SecretManager.class));
         bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });

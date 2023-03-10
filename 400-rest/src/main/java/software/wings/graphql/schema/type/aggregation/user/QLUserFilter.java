@@ -24,4 +24,5 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PL)
 public class QLUserFilter implements EntityFilter {
   QLIdFilter user;
+  Boolean includeDisabled;
 }

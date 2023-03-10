@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sTestConstants.CONFIG_MAP_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DAEMON_SET_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DEPLOYMENT_YAML;
+import static io.harness.delegate.k8s.K8sTestConstants.SECRET_YAML;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.InProgress;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
@@ -453,6 +455,27 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .saveRelease(false, false, kubernetesConfig, currentRelease, releaseHistory, "release");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testAppendingSecretConfigmapNamesToCanaryWorkloads() {
+    List<KubernetesResource> kubernetesResources = new ArrayList<>();
+    kubernetesResources.addAll(ManifestHelper.processYaml(CONFIG_MAP_YAML));
+    kubernetesResources.addAll(ManifestHelper.processYaml(SECRET_YAML));
+    kubernetesResources.addAll(ManifestHelper.processYaml(DEPLOYMENT_YAML));
+    kubernetesResources.forEach(resource -> resource.getResourceId().setNamespace("ns"));
+
+    String canaryResources =
+        k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads("ns/Deployment/test", kubernetesResources);
+
+    assertThat(canaryResources).isEqualTo("ns/Deployment/test,ns/ConfigMap/mycm,ns/Secret/mysecret");
+
+    // resources without any configmaps/secrets
+    assertThat(k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+                   "test", List.of(kubernetesResources.get(2))))
+        .isEqualTo("test");
   }
 
   private void assertInvalidWorkloadsInManifest(boolean result, String expectedMessage) throws Exception {

@@ -99,6 +99,7 @@ import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
 import io.harness.migrations.all.DisableArtifactCollectionForInactiveAccount;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
+import io.harness.migrations.all.EncryptDelegateTokenMigration;
 import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
 import io.harness.migrations.all.ExplodeLogMLFeedbackRecordsMigration;
@@ -419,6 +420,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(242, AddIsCrossGenerationAccessEnabledToAccountMigration.class))
         .add(Pair.of(243, ApiKeyLocalToKMSMigration.class))
         .add(Pair.of(244, ForAllAccountsAddIsCrossGenerationAccessEnabledMigration.class))
+        .add(Pair.of(245, EncryptDelegateTokenMigration.class))
         .build();
   }
 }

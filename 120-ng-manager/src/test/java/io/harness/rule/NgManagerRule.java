@@ -75,7 +75,7 @@ import org.junit.runners.model.Statement;
 @Slf4j
 public class NgManagerRule implements MethodRule, InjectorRuleMixinNew, MongoRuleMixin {
   ClosingFactory closingFactory;
-  final static Injector[] injector = {null};
+  static final Injector[] injector = {null};
 
   public NgManagerRule(ClosingFactory closingFactory) {
     this.closingFactory = closingFactory;

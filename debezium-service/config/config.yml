@@ -78,6 +78,20 @@ debeziumConfigs:
           enabled: ${SNAPSHOT_EVENTS_FRAMEWORK_SSL_CONFIG_ENABLED:-false}
           CATrustStorePath: ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PATH:-/tmp/ca_trust_store}
           CATrustStorePassword:  ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PASSWORD:-}
+  - isEnabled: ${IS_ENABLED_PLG:-false}
+    name: ${DEBEZIUM_NAME_PLG:-plg} # unique for each debezium config
+    mongodb.name: ${MONGODB_NAME_PLG:-ngMongo} # unique for each debezium config
+    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_PIPELINE:-false}
+    database.include.list: ${DATABASE_INCLUDE_LIST_PLG:-ng-harness}
+    collection.include.list: ${COLLECTION_INCLUDE_LIST_PLG:-ng-harness.moduleLicenses}
+    redisStreamSize: ${REDIS_STREAM_SIZE_PLG:-10000}
+    snapshot.mode: ${SNAPSHOT_MODE_PLG:-never}
+    max.queue.size: ${MAX_QUEUE_SIZE_PLG:-8192}
+    max.batch.size: ${MAX_BATCH_SIZE_PLG:-2048}
+    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES_PLG:-1000000000}
+    poll.interval.ms: ${POLL_INTERVAL_MS_PLG:-3000}
+    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS_PLG:-10000}
+    mongodb.connection.string: ${MONGODB_CONNECTION_STRING_PLG:-mongodb://0.0.0.0:27017}
   - isEnabled: ${IS_ENABLED_APPLICATIONS:-false}
     name: ${DEBEZIUM_NAME_APPLICATIONS:-applications} # unique for each debezium config
     mongodb.name: ${MONGODB_NAME_APPLICATIONS:-harnessMongo} # unique for each debezium config

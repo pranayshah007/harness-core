@@ -17,6 +17,19 @@ pipeline:
           environment:
                environmentRef: environmentVariableTest
                deployToAll: false
+               provisioner:
+                 steps:
+                   - step:
+                       type: ShellScriptProvision
+                       name: provision
+                       identifier: provision
+                       spec:
+                         source:
+                           type: Inline
+                           spec:
+                             script: |-
+                               echo hello
+                       timeout: 10m
                infrastructureDefinition:
                   identifier: infra
           execution:

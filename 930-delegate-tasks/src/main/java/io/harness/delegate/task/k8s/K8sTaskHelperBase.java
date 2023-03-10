@@ -3111,6 +3111,16 @@ public class K8sTaskHelperBase {
     }
   }
 
+  public void addSuffixToConfigmapsAndSecrets(
+      List<KubernetesResource> resources, String suffix, LogCallback executionLogCallback) {
+    try {
+      VersionUtils.addSuffixToConfigmapsAndSecrets(resources, suffix, executionLogCallback);
+    } catch (KubernetesYamlException exception) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
+    }
+  }
+
   public boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
       String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback,
       String gcpKeyFilePath) throws Exception {
