@@ -22,6 +22,7 @@ import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
@@ -48,6 +49,15 @@ public class CIStepInfoUtils {
       return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
     }
     return null;
+  }
+
+  public static String getPluginVersionForInfra(CIExecutionConfigService ciExecutionConfigService,
+      CIStepInfoType stepInfoType, String accountId, Infrastructure infrastructure) {
+    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      return ciExecutionConfigService.getPluginVersionForK8(stepInfoType, accountId).getImage();
+    } else {
+      return ciExecutionConfigService.getPluginVersionForVM(stepInfoType, accountId);
+    }
   }
 
   public static ParameterField<Boolean> getPrivilegedMode(PluginCompatibleStep step) {

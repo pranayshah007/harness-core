@@ -9,6 +9,7 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
+import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.beans.steps.CIStepInfoType.RESTORE_CACHE_GCS;
 import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
@@ -44,7 +45,6 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
-import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -58,6 +58,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -125,17 +126,16 @@ public class CIStepGroupUtils {
     boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
         || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
     if (gitClone) {
-      initializeExecutionSections.add(
-          getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
+      initializeExecutionSections.add(getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, infrastructure));
     }
     boolean enableCacheIntel = saveCache && isHosted;
     if (enableCacheIntel) {
-      initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
+      initializeExecutionSections.add(getRestoreCacheStep(caching, accountId, infrastructure));
     }
     initializeExecutionSections.addAll(executionSections);
 
     if (enableCacheIntel) {
-      initializeExecutionSections.add(getSaveCacheStep(caching, accountId));
+      initializeExecutionSections.add(getSaveCacheStep(caching, accountId, infrastructure));
     }
     if (isNotEmpty(initializeExecutionSections)) {
       ExecutionWrapperConfig liteEngineStepExecutionWrapper = fetchInitializeStepExecutionWrapper(
@@ -268,7 +268,7 @@ public class CIStepGroupUtils {
   }
 
   private ExecutionWrapperConfig getGitCloneStep(
-      CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, String accountId, OSType os) {
+      CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, String accountId, Infrastructure infrastructure) {
     Map<String, JsonNode> settings = new HashMap<>();
     if (ciCodebase == null) {
       throw new CIStageExecutionException("Codebase is mandatory with enabled cloneCodebase flag");
@@ -299,12 +299,15 @@ public class CIStepGroupUtils {
     }
 
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
+
+    OSType os = IntegrationStageUtils.getBuildType(infrastructure);
     if (os == OSType.Windows) {
       entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
     }
 
     String gitCloneImage =
-        ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, accountId).getImage();
+        CIStepInfoUtils.getPluginVersionForInfra(ciExecutionConfigService, GIT_CLONE, accountId, infrastructure);
+
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(GIT_CLONE_STEP_ID)
                               .image(ParameterField.createValueField(gitCloneImage))
@@ -336,11 +339,14 @@ public class CIStepGroupUtils {
     }
   }
 
-  private ExecutionWrapperConfig getRestoreCacheStep(Caching caching, String accountId) {
+  private ExecutionWrapperConfig getRestoreCacheStep(Caching caching, String accountId, Infrastructure infrastructure) {
     Map<String, JsonNode> settings = new HashMap<>();
     Map<String, ParameterField<String>> envVariables = new HashMap<>();
     String uuid = generateUuid();
-    String restoreCacheImage = ciExecutionConfigService.getPluginVersionForK8(RESTORE_CACHE_GCS, accountId).getImage();
+
+    String restoreCacheImage = CIStepInfoUtils.getPluginVersionForInfra(
+        ciExecutionConfigService, RESTORE_CACHE_GCS, accountId, infrastructure);
+
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
@@ -377,11 +383,14 @@ public class CIStepGroupUtils {
     }
   }
 
-  private ExecutionWrapperConfig getSaveCacheStep(Caching caching, String accountId) {
+  private ExecutionWrapperConfig getSaveCacheStep(Caching caching, String accountId, Infrastructure infrastructure) {
     Map<String, JsonNode> settings = new HashMap<>();
     Map<String, ParameterField<String>> envVariables = new HashMap<>();
     String uuid = generateUuid();
-    String saveCacheImage = ciExecutionConfigService.getPluginVersionForK8(SAVE_CACHE_GCS, accountId).getImage();
+
+    String saveCacheImage =
+        CIStepInfoUtils.getPluginVersionForInfra(ciExecutionConfigService, SAVE_CACHE_GCS, accountId, infrastructure);
+
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);

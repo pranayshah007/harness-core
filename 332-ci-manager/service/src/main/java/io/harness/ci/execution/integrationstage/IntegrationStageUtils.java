@@ -60,9 +60,13 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
@@ -745,6 +749,24 @@ public class IntegrationStageUtils {
 
     K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
+  }
+
+  public static OSType getBuildType(Infrastructure infra) {
+    if (infra instanceof VmInfraYaml) {
+      VmInfraYaml infrastructure = (VmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
+    } else if (infra instanceof DockerInfraYaml) {
+      DockerInfraYaml infrastructure = (DockerInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else if (infra instanceof K8sDirectInfraYaml) {
+      K8sDirectInfraYaml infrastructure = (K8sDirectInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getOs());
+    } else if (infra instanceof HostedVmInfraYaml) {
+      HostedVmInfraYaml infrastructure = (HostedVmInfraYaml) infra;
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else {
+      throw new CIStageExecutionException("unexpected type of infra received");
+    }
   }
 
   public static ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
