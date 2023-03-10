@@ -6,12 +6,12 @@
 # Add properties that are shared between developers and ci build system
 
 # Setup java toolchain for compilation
-build --java_language_version=11
+build --java_language_version=17
 
 # Setup java toolchain for execution
 build --java_runtime_version=local_jdk
 
-build --tool_java_language_version=11
+build --tool_java_language_version=17
 build --tool_java_runtime_version=local_jdk
 
 build --enable_platform_specific_config
@@ -24,7 +24,7 @@ build --experimental_strict_java_deps=off
 build --java_header_compilation=false
 build --javacopt='-XepDisableAllChecks'
 build --javacopt='-Xlint:none'
-build --javacopt='--release 11'
+build --javacopt='--release 17'
 
 #CV-Nextgen
 build --action_env=VERIFICATION_SERVICE_SECRET=67d9b94d9856665afc21acd3aa745401

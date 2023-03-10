@@ -5291,7 +5291,7 @@ plain_artifacts = [
     "org.ow2.asm:asm:5.0.4",
     "org.passay:passay:1.3.1",
     "org.postgresql:postgresql:42.2.25",
-    "org.projectlombok:lombok:1.18.18",
+    "org.projectlombok:lombok:1.18.26",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
     "org.redisson:redisson:3.17.7",
