@@ -1635,7 +1635,6 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         + "users:\n"
         + "- name: CLUSTER_USER\n"
         + "  user:\n"
-        + "    token: TOKEN\n"
         + "    exec:\n"
         + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
         + "      args:\n"

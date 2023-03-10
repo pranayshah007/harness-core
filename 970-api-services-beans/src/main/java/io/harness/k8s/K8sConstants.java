@@ -159,7 +159,6 @@ public interface K8sConstants {
       + "users:\n"
       + "- name: ${CLUSTER_USER}\n"
       + "  user:\n"
-      + "    token: ${TOKEN}\n"
       + "    ${EXEC}";
 
   String eventOutputFormat =

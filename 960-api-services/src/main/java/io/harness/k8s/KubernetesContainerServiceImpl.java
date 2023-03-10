@@ -2394,7 +2394,6 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${CLUSTER_NAME}", config.getAzureConfig().getClusterName())
         .replace("${CLUSTER_USER}", config.getAzureConfig().getClusterUser())
         .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
-        .replace("${TOKEN}", config.getAzureConfig().getAadIdToken())
         .replace("${EXEC}", exec);
   }
 }
