@@ -470,6 +470,7 @@ public class TemplateMergeServiceHelper {
         .repoName(savedEntity.getRepo())
         .entityType(EntityType.TEMPLATE)
         .loadFromCache(loadFromCache)
+        .getOnlyFileContent(TemplateUtils.isExecutionFlow())
         .build();
   }
 

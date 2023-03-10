@@ -27,4 +27,5 @@ public class GetFileGitContextRequestParams {
   String connectorRef;
   boolean loadFromCache;
   EntityType entityType;
+  boolean getOnlyFileContent;
 }
