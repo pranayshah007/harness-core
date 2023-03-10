@@ -149,7 +149,7 @@ public interface EnvironmentService extends OwnedByApplication {
    */
   List<String> getEnvIdsByApp(@NotEmpty String appId);
 
-  Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds);
+  Map<String, List<Base>> getAppIdEnvMap(Set<String> appIds, String accountId);
 
   /**
    * @param appIds the applicationIds for which we need to fetch the environments
