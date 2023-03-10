@@ -95,6 +95,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
 
     BasicAWSCredentials awsCreds =
         new BasicAWSCredentials(marketPlaceConfig.getAwsAccessKey(), marketPlaceConfig.getAwsSecretKey());
+    log.info("AWS Credentials=[{}]", awsCreds);
 
     ResolveCustomerResult resolveCustomerResult;
     try {
@@ -103,6 +104,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
                                   .withRegion(Regions.US_EAST_1)
                                   .build()
                                   .resolveCustomer(resolveCustomerRequest);
+      log.info("ResolveCustomerResult=[{}]", resolveCustomerResult);
+
     } catch (AWSMarketplaceMeteringException e) {
       log.error("Failed to resolveCustomer for customerToken:[{}]", token, e);
       return generateMessageResponse("Failed to authenticate user with AWS", "ERROR", null, null);
