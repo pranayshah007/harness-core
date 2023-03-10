@@ -131,6 +131,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Singleton
@@ -294,7 +295,7 @@ public class NgUserServiceImpl implements NgUserService {
                             .is(scope.getOrgIdentifier())
                             .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                             .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).getContent();
+    return userMembershipRepository.findAllUserIds(criteria, Pageable.ofSize(50000)).getContent();
   }
 
   @Override
@@ -462,10 +463,7 @@ public class NgUserServiceImpl implements NgUserService {
                                           .is(scope.getOrgIdentifier())
                                           .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
                                           .is(scope.getProjectIdentifier());
-    return userMembershipRepository.findAll(userMembershipCriteria)
-        .stream()
-        .map(UserMembership::getUserId)
-        .collect(toSet());
+    return userMembershipRepository.findAllUserIds(userMembershipCriteria, Pageable.unpaged()).toSet();
   }
 
   @VisibleForTesting
@@ -532,8 +530,8 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
-  public Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable) {
-    return userMembershipRepository.findAll(criteria, pageable);
+  public CloseableIterator<UserMembership> streamUserMemberships(Criteria criteria) {
+    return userMembershipRepository.stream(criteria);
   }
 
   @Override
@@ -737,7 +735,16 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean isUserAtScope(String userId, Scope scope) {
-    return isNotEmpty(getUsersAtScope(Collections.singleton(userId), scope));
+    Criteria criteria = Criteria.where(UserMembershipKeys.userId)
+                            .is(userId)
+                            .and(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.ORG_IDENTIFIER_KEY)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY)
+                            .is(scope.getProjectIdentifier());
+
+    return null != userMembershipRepository.findOne(criteria);
   }
 
   @Override
@@ -780,20 +787,23 @@ public class NgUserServiceImpl implements NgUserService {
         return false;
       }
       Criteria userMembershipCriteria = getCriteriaForFetchingChildScopes(userId, scope);
-      List<UserMembership> userMemberships = userMembershipRepository.findAll(userMembershipCriteria);
       validateUserMembershipsDeletion(scope, userId, removeUserFilter);
 
       Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
       String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
       String userName = userMetadata.map(UserMetadata::getName).orElse(null);
 
-      userMemberships.forEach(
-          userMembership -> Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      try (CloseableIterator<UserMembership> iterator = userMembershipRepository.stream(userMembershipCriteria)) {
+        while (iterator.hasNext()) {
+          UserMembership userMembership = iterator.next();
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             userMembershipRepository.delete(userMembership);
             outboxService.save(new RemoveCollaboratorEvent(
                 scope.getAccountIdentifier(), userMembership.getScope(), publicIdentifier, userId, userName, source));
             return userMembership;
-          })));
+          }));
+        }
+      }
     }
     return true;
   }
@@ -802,19 +812,21 @@ public class NgUserServiceImpl implements NgUserService {
   public boolean removeUserWithCriteria(String userId, UserMembershipUpdateSource source, Criteria criteria) {
     log.info("Trying to remove user {} with criteria {}", userId, criteria.toString());
     try (TimeLogger timeLogger = new TimeLogger(LoggerFactory.getLogger(getClass().getName()))) {
-      List<UserMembership> userMemberships = userMembershipRepository.findAll(criteria);
-
       Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
       String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
       String userName = userMetadata.map(UserMetadata::getName).orElse(null);
 
-      userMemberships.forEach(
-          userMembership -> Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      try (CloseableIterator<UserMembership> iterator = userMembershipRepository.stream(criteria)) {
+        while (iterator.hasNext()) {
+          UserMembership userMembership = iterator.next();
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             userMembershipRepository.delete(userMembership);
             outboxService.save(new RemoveCollaboratorEvent(userMembership.getScope().getAccountIdentifier(),
                 userMembership.getScope(), publicIdentifier, userId, userName, source));
             return userMembership;
-          })));
+          }));
+        }
+      }
     }
     return true;
   }
@@ -951,7 +963,13 @@ public class NgUserServiceImpl implements NgUserService {
                             .and(UserMembershipKeys.createdAt)
                             .gte(startInterval)
                             .lt(endInterval);
-    long newUsersCount = userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).stream().count();
-    return UsersCountDTO.builder().totalCount(listUserIds(scope).stream().count()).newCount(newUsersCount).build();
+    long newUsersCount = userMembershipRepository.count(criteria);
+    criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                   .is(scope.getAccountIdentifier())
+                   .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                   .is(scope.getOrgIdentifier())
+                   .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                   .is(scope.getProjectIdentifier());
+    return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
   }
 }

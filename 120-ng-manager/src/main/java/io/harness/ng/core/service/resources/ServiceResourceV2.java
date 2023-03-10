@@ -113,6 +113,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -181,7 +182,9 @@ public class ServiceResourceV2 {
 
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
-  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
+  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of Service Identifiers for the entities, maximum size of list is 1000.";
+  private static final int MAX_LIMIT = 1000;
 
   @GET
   @Path("{serviceIdentifier}")
@@ -273,8 +276,8 @@ public class ServiceResourceV2 {
   public ResponseDTO<PageResponse<ServiceResponse>>
   createServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(
-          description = "Details of the Services to be created") @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
+      @Parameter(description = "Details of the Services to be created, maximum 1000 services can be created.") @Valid
+      @Max(MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     throwExceptionForNoRequestDTO(serviceRequestDTOs);
     for (ServiceRequestDTO serviceRequestDTO : serviceRequestDTOs) {
       accessControlClient.checkForAccessOrThrow(
@@ -391,7 +394,7 @@ public class ServiceResourceV2 {
   listServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -467,7 +470,8 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
+      @Parameter(description = "List of ServicesIds, maximum 1000 ServicesIds can be checked.") @QueryParam(
+          "serviceIdentifiers") @Max(MAX_LIMIT) List<String> serviceIdentifiers,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")

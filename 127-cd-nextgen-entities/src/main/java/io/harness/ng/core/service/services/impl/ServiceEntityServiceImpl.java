@@ -339,7 +339,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public List<ServiceEntity> listRunTimePermission(Criteria criteria) {
-    return serviceRepository.findAllRunTimePermission(criteria);
+    int NO_LIMIT = 50000;
+    return serviceRepository.findAll(criteria, Pageable.ofSize(NO_LIMIT)).toList();
   }
 
   @Override

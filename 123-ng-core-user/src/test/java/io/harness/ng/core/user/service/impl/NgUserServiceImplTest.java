@@ -79,6 +79,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -92,6 +93,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -286,13 +288,15 @@ public class NgUserServiceImplTest extends CategoryTest {
 
   private void preLastAdminFailure(String userId, Scope scope, UserMembership userMembership) {
     when(userMembershipRepository.findOne(any())).thenReturn(userMembership);
-    when(userMembershipRepository.findAll(any(Criteria.class))).thenReturn(Collections.singletonList(userMembership));
+    when(userMembershipRepository.stream(any(Criteria.class)))
+        .thenReturn(createCloseableIterator(List.of(userMembership).iterator()));
     when(lastAdminCheckService.doesAdminExistAfterRemoval(any(), any())).thenReturn(false);
   }
 
   private void assertSuccessfulRemoveUserFromScope(String userId, Scope scope, UserMembership userMembership) {
     when(userMembershipRepository.findOne(any())).thenReturn(userMembership);
-    when(userMembershipRepository.findAll(any(Criteria.class))).thenReturn(Collections.singletonList(userMembership));
+    when(userMembershipRepository.stream(any(Criteria.class)))
+        .thenReturn(createCloseableIterator(List.of(userMembership).iterator()));
     when(lastAdminCheckService.doesAdminExistAfterRemoval(any(), any())).thenReturn(true);
     when(userMetadataRepository.findDistinctByUserId(userId))
         .thenReturn(Optional.of(UserMetadata.builder().userId(userId).build()));
@@ -557,5 +561,22 @@ public class NgUserServiceImplTest extends CategoryTest {
     preAddUserToScope(userId, scope, new ArrayList<>(), new ArrayList<>());
     ngUserService.addUserToScope(userId, scope, null, null, UserMembershipUpdateSource.USER);
     assertAddUserToScope(scope, singletonList(userId), null);
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }
