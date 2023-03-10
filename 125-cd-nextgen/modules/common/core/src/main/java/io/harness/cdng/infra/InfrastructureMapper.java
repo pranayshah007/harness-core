@@ -26,6 +26,7 @@ import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -52,6 +53,7 @@ import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -365,6 +367,23 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(awsLambdaInfrastructureOutcome, awsLambdaInfrastructure.getInfraIdentifier(),
             awsLambdaInfrastructure.getInfraName());
         infrastructureOutcome = awsLambdaInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome =
+            K8sAwsInfrastructureOutcome.builder()
+                .connectorRef(k8sAwsInfrastructure.getConnectorRef().getValue())
+                .namespace(k8sAwsInfrastructure.getNamespace().getValue())
+                .cluster(k8sAwsInfrastructure.getCluster().getValue())
+                .releaseName(getValueOrExpression(k8sAwsInfrastructure.getReleaseName()))
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, k8sAwsInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(k8sAwsInfrastructureOutcome, k8sAwsInfrastructure.getInfraIdentifier(),
+            k8sAwsInfrastructure.getInfraName());
+        infrastructureOutcome = k8sAwsInfrastructureOutcome;
         break;
 
       default:

@@ -50,6 +50,7 @@ import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
@@ -67,6 +68,7 @@ import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -984,6 +986,48 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .build();
 
     infrastructureStep.validateInfrastructure(infrastructure, null);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testCreateK8sAwsInfraMapping() {
+    String namespace = "namespace";
+    String connector = "connector";
+    String cluster = "cluster";
+
+    Infrastructure infrastructureSpec = K8sAwsInfrastructure.builder()
+                                            .connectorRef(ParameterField.createValueField(connector))
+                                            .namespace(ParameterField.createValueField(namespace))
+                                            .cluster(ParameterField.createValueField(cluster))
+                                            .build();
+
+    InfraMapping expectedInfraMapping =
+        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+
+    infrastructureSpec = K8sAwsInfrastructure.builder()
+                             .connectorRef(ParameterField.createValueField(connector))
+                             .namespace(ParameterField.createValueField(namespace))
+                             .cluster(ParameterField.createValueField(cluster))
+                             .build();
+
+    expectedInfraMapping =
+        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+
+    infrastructureSpec = K8sAwsInfrastructure.builder()
+                             .connectorRef(ParameterField.createValueField(connector))
+                             .namespace(ParameterField.createValueField(namespace))
+                             .cluster(ParameterField.createValueField(cluster))
+                             .build();
+
+    expectedInfraMapping =
+        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
   }
 
   private void assertConnectorValidationMessage(Infrastructure infrastructure, String message) {

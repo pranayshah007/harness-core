@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -15,20 +15,21 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
+import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiParam;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -42,13 +43,18 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@JsonTypeName(InfrastructureKind.KUBERNETES_AZURE)
+@JsonTypeName(InfrastructureKind.KUBERNETES_AWS)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
-@TypeAlias("k8sAzureInfrastructure")
+@TypeAlias("k8sAwsInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.infra.yaml.K8sAzureInfrastructure")
-public class K8sAzureInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, AzureInfrastructure {
+@RecasterAlias("io.harness.cdng.infra.yaml.K8sAwsInfrastructure")
+public class K8sAwsInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -72,32 +78,13 @@ public class K8sAzureInfrastructure
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> cluster;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> subscriptionId;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> resourceGroup;
-  @ApiParam(defaultValue = "false")
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  @Wither
-  ParameterField<Boolean> useClusterAdminCredentials;
-
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Override
   public InfraMapping getInfraMapping() {
-    return K8sAzureInfraMapping.builder()
-        .azureConnector(connectorRef.getValue())
+    return K8sAwsInfraMapping.builder()
+        .awsConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
-        .subscription(subscriptionId.getValue())
-        .resourceGroup(resourceGroup.getValue())
-        .useClusterAdminCredentials(useClusterAdminCredentials.getValue())
         .build();
   }
 
@@ -108,19 +95,18 @@ public class K8sAzureInfrastructure
 
   @Override
   public String[] getInfrastructureKeyValues() {
-    return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue(), subscriptionId.getValue(),
-        resourceGroup.getValue()};
+    return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue()};
   }
 
   @Override
   public String getKind() {
-    return InfrastructureKind.KUBERNETES_AZURE;
+    return InfrastructureKind.KUBERNETES_AWS;
   }
 
   @Override
   public Infrastructure applyOverrides(Infrastructure overrideConfig) {
-    K8sAzureInfrastructure config = (K8sAzureInfrastructure) overrideConfig;
-    K8sAzureInfrastructure resultantInfra = this;
+    K8sAwsInfrastructure config = (K8sAwsInfrastructure) overrideConfig;
+    K8sAwsInfrastructure resultantInfra = this;
     if (!ParameterField.isNull(config.getConnectorRef())) {
       resultantInfra = resultantInfra.withConnectorRef(config.getConnectorRef());
     }
@@ -132,15 +118,6 @@ public class K8sAzureInfrastructure
     }
     if (!ParameterField.isNull(config.getReleaseName())) {
       resultantInfra = resultantInfra.withReleaseName(config.getReleaseName());
-    }
-    if (!ParameterField.isNull(config.getSubscriptionId())) {
-      resultantInfra = resultantInfra.withSubscriptionId(config.getSubscriptionId());
-    }
-    if (!ParameterField.isNull(config.getResourceGroup())) {
-      resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());
-    }
-    if (!ParameterField.isNull(config.getUseClusterAdminCredentials())) {
-      resultantInfra = resultantInfra.withUseClusterAdminCredentials(config.getUseClusterAdminCredentials());
     }
     return resultantInfra;
   }

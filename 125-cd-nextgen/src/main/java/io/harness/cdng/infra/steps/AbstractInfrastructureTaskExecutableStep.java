@@ -42,6 +42,7 @@ import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -693,6 +694,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.AWS.name()));
     }
 
+    if (InfrastructureKind.KUBERNETES_AWS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -819,6 +828,16 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
+        break;
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(k8sAwsInfrastructure.getConnectorRef(),
+            k8sAwsInfrastructure.getNamespace(), k8sAwsInfrastructure.getCluster());
+
+        if (k8sAwsInfrastructure.getNamespace() != null && isNotEmpty(k8sAwsInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(
+              logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
+        }
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
