@@ -24,6 +24,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
 import io.harness.factory.ClosingFactory;
+import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -207,6 +208,7 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
                 InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(PMSPipelineService.class).toInstance(mock(PMSPipelineService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(PipelineGovernanceService.class).toInstance(mock(PipelineGovernanceService.class));
         bind(PipelineEnforcementService.class).toInstance(mock(PipelineEnforcementService.class));
         bind(TemplateResourceClient.class).toInstance(mock(TemplateResourceClient.class));

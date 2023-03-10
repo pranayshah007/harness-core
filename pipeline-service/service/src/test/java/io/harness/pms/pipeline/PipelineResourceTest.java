@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -672,8 +671,10 @@ public class PipelineResourceTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testRefreshFFCache() throws ExecutionException {
-    doThrow(new ExecutionException("ff cache", null)).when(featureFlagHelper).refreshCacheForGivenAccountId(ACCOUNT_ID);
+  public void testRefreshFFCache() {
+    doThrow(new InvalidRequestException("ff cache couldn't be refreshed"))
+        .when(featureFlagHelper)
+        .refreshCacheForGivenAccountId(ACCOUNT_ID);
     ResponseDTO<Boolean> failResponse = pipelineResource.refreshFFCache(ACCOUNT_ID);
     assertThat(failResponse.getData()).isFalse();
     doReturn(true).when(featureFlagHelper).refreshCacheForGivenAccountId(ACCOUNT_ID);

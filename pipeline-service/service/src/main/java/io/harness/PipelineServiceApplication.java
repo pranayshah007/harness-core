@@ -25,6 +25,9 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.configuration.DeployVariant;
 import io.harness.consumers.GraphUpdateRedisConsumer;
 import io.harness.controller.PrimaryVersionChangeScheduler;
@@ -56,6 +59,7 @@ import io.harness.event.PlanExecutionMetadataDeleteObserver;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
 import io.harness.execution.consumers.SdkResponseEventRedisConsumer;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.gitsync.GitSyncEntitiesConfiguration;
@@ -317,6 +321,22 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
       @Named("dbAliases")
       public List<String> getDbAliases() {
         return appConfig.getDbAliases();
+      }
+    });
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return appConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return appConfig.getFeatureFlagConfig();
       }
     });
     modules.add(new NotificationClientModule(appConfig.getNotificationClientConfiguration()));

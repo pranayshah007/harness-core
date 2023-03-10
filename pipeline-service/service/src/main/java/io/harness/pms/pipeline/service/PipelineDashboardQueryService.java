@@ -9,6 +9,8 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.beans.FeatureName.FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.dashboard.MeanAndMedian;
 import io.harness.pms.dashboard.StatusAndTime;
@@ -27,6 +29,7 @@ import org.jooq.Table;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 
+@OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineDashboardQueryService {
   @Inject private DSLContext dsl;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;

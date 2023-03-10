@@ -39,6 +39,7 @@ import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -311,6 +312,7 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
+    install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
         configuration.getOrchestrationVisualizationThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());

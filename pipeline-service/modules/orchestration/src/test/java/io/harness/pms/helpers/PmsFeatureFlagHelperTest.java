@@ -7,90 +7,59 @@
 
 package io.harness.pms.helpers;
 
+import static io.harness.beans.FeatureName.ARGO_PHASE1;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 
-import io.harness.OrchestrationTestBase;
-import io.harness.account.AccountClient;
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureFlag;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.rest.RestResponse;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
 
-import com.google.common.collect.ImmutableList;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.ExecutionException;
-import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import retrofit2.Call;
-import retrofit2.Response;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PmsFeatureFlagHelperTest extends OrchestrationTestBase {
+@RunWith(MockitoJUnitRunner.class)
+public class PmsFeatureFlagHelperTest extends CategoryTest {
   private static final String accountId = "accountId";
-  @Mock private AccountClient accountClient;
 
-  private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock FeatureFlagService featureFlagService;
+  @InjectMocks PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Before
   public void setUp() {
-    pmsFeatureFlagHelper = new PmsFeatureFlagHelper();
-    Reflect.on(pmsFeatureFlagHelper).set("accountClient", accountClient);
+    doReturn(true).when(featureFlagService).isEnabled(ARGO_PHASE1, accountId);
   }
 
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void isEnabled() throws IOException {
-    Call<RestResponse<Collection<FeatureFlag>>> callMock = Mockito.mock(Call.class);
-    when(accountClient.listAllFeatureFlagsForAccount(anyString())).thenReturn(callMock);
-    when(callMock.execute())
-        .thenReturn(Response.success(new RestResponse<>(ImmutableList.of(
-            FeatureFlag.builder().enabled(true).name(FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name()).build()))));
-
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name())).isTrue();
     assertThat(pmsFeatureFlagHelper.isEnabled(accountId, "dd")).isFalse();
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE)).isTrue();
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ARGO_PHASE1)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void updateCache() throws IOException, ExecutionException {
-    Call<RestResponse<Collection<FeatureFlag>>> callMock = Mockito.mock(Call.class);
-    when(accountClient.listAllFeatureFlagsForAccount(anyString())).thenReturn(callMock);
-    when(callMock.execute())
-        .thenReturn(Response.success(new RestResponse<>(ImmutableList.of(
-            FeatureFlag.builder().enabled(true).name(FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name()).build()))));
-
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name())).isTrue();
-
-    pmsFeatureFlagHelper.updateCache(accountId, false, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name());
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name())).isFalse();
-
-    pmsFeatureFlagHelper.updateCache(accountId, true, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name());
-    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name())).isTrue();
+    assertThat(pmsFeatureFlagHelper.isEnabled(accountId, ARGO_PHASE1)).isTrue();
   }
 
   @Test
   @Owner(developers = SOUMYAJIT)
   @Category(UnitTests.class)
-  public void validateRefreshCacheForGivenAccountId() throws ExecutionException {
-    Boolean flag = pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId);
-    assertThat(flag).isEqualTo(true);
+  public void validateRefreshCacheForGivenAccountId() {
+    assertThatThrownBy(() -> pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Cache will be automatically refreshed within 5 mins");
   }
 }

@@ -75,7 +75,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -426,7 +425,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<Boolean> refreshFFCache(@NotNull @AccountIdentifier String accountId) {
     try {
       return ResponseDTO.newResponse(pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId));
-    } catch (ExecutionException e) {
+    } catch (InvalidRequestException e) {
       log.error("Execution exception occurred while updating cache: " + e.getMessage());
     }
     return ResponseDTO.newResponse(false);
