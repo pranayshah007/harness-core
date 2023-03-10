@@ -14,8 +14,6 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.MANUAL_CREDENTIALS;
-import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_BINARY;
-import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
@@ -40,7 +38,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
