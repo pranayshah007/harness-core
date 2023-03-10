@@ -74,6 +74,7 @@ import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
@@ -102,9 +103,12 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
@@ -804,6 +808,35 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (!secretOptional.isPresent()) {
       throw new EntityNotFoundException(
           format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
+    }
+  }
+
+  @Override
+  public void validateSecretDtoSpec(SecretDTOV2 secretDTO) {
+    if (secretDTO != null) {
+      if (secretDTO.getSpec() instanceof WinRmCredentialsSpecDTO) {
+        WinRmCredentialsSpecDTO winRmCredentialsSpecDTO = (WinRmCredentialsSpecDTO) secretDTO.getSpec();
+        validateCommandParameters(winRmCredentialsSpecDTO.getParameters());
+      }
+    }
+  }
+
+  private void validateCommandParameters(List<WinRmCommandParameter> parameters) {
+    if (!isEmpty(parameters)) {
+      validateParameterNameUnique(parameters);
+    }
+  }
+
+  private void validateParameterNameUnique(List<WinRmCommandParameter> parameters) {
+    Set<String> uniqueParamNames = new HashSet<>();
+    List<String> duplicateParamNames = parameters.stream()
+                                           .map(WinRmCommandParameter::getParameter)
+                                           .filter(param -> !uniqueParamNames.add(param))
+                                           .collect(Collectors.toList());
+
+    if (!isEmpty(duplicateParamNames)) {
+      throw new InvalidRequestException(format("Command parameter names must be unique, however duplicate(s) found: %s",
+          String.join(", ", duplicateParamNames)));
     }
   }
 

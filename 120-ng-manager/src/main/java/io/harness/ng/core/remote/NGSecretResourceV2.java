@@ -189,6 +189,7 @@ public class NGSecretResourceV2 {
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
@@ -258,6 +259,7 @@ public class NGSecretResourceV2 {
         SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
     if (privateSecret) {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
@@ -428,6 +430,7 @@ public class NGSecretResourceV2 {
         secret != null ? secret.getSecret().getOwner() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     return ResponseDTO.newResponse(
         ngSecretService.update(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));
@@ -460,6 +463,7 @@ public class NGSecretResourceV2 {
         secret != null ? secret.getSecret().getOwner() : null);
 
     ngSecretService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, dto.getSecret());
+    ngSecretService.validateSecretDtoSpec(dto.getSecret());
 
     return ResponseDTO.newResponse(ngSecretService.updateViaYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto.getSecret()));

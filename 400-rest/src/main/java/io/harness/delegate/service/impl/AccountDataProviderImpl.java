@@ -7,6 +7,8 @@
 
 package io.harness.delegate.service.impl;
 
+import static io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
+
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.persistence.HPersistence;
