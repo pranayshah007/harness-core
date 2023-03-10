@@ -1601,6 +1601,7 @@ public class K8sStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .identifier("helm")
             .store(harnessStore)
+            .chartName(ParameterField.createValueField("Todolist"))
             .valuesPaths(ParameterField.createValueField(asList("org:/path/to/helm/chart/valuesOverride.yaml")))
             .build();
 

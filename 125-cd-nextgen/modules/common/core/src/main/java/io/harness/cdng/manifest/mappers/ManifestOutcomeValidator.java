@@ -9,7 +9,12 @@ package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.HelmChart;
+import static io.harness.cdng.manifest.ManifestType.K8Manifest;
 import static io.harness.cdng.manifest.ManifestType.Kustomize;
+import static io.harness.cdng.manifest.ManifestType.KustomizePatches;
+import static io.harness.cdng.manifest.ManifestType.OpenshiftParam;
+import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
+import static io.harness.cdng.manifest.ManifestType.VALUES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -23,16 +28,21 @@ import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
@@ -43,10 +53,7 @@ public class ManifestOutcomeValidator {
       validateStore(
           manifestOutcome.getStore(), manifestOutcome.getType(), manifestOutcome.getIdentifier(), allowExpression);
     }
-
-    if (ManifestType.HelmChart.equals(manifestOutcome.getType())) {
-      validateHelmChartManifest((HelmChartManifestOutcome) manifestOutcome, allowExpression);
-    }
+    validateManifestOutcome(manifestOutcome, allowExpression);
   }
 
   public void validateStore(StoreConfig store, String manifestKind, String manifestId, boolean allowExpression) {
@@ -65,20 +72,21 @@ public class ManifestOutcomeValidator {
     }
   }
 
+  private void validateManifestOutcome(ManifestOutcome manifestOutcome, boolean allowExpressions) {
+    if (HelmChart.equals(manifestOutcome.getType())) {
+      validateHelmChartManifest((HelmChartManifestOutcome) manifestOutcome, allowExpressions);
+    } else if (K8Manifest.equals(manifestOutcome.getType())) {
+      validateK8Manifest((K8sManifestOutcome) manifestOutcome, allowExpressions);
+    } else if (OpenshiftTemplate.equals(manifestOutcome.getType())) {
+      validateOpenshiftTemplateManifest((OpenshiftManifestOutcome) manifestOutcome, allowExpressions);
+    } else if (Kustomize.equals(manifestOutcome.getType())) {
+      validateKustomizeManifest((KustomizeManifestOutcome) manifestOutcome, allowExpressions);
+    }
+  }
+
   private void validateHelmChartManifest(HelmChartManifestOutcome helmChartManifest, boolean allowExpression) {
     String manifestStoreKind = helmChartManifest.getStore().getKind();
-    if (ManifestStoreType.HARNESS.equals(manifestStoreKind)) {
-      HarnessStore harnessStore = (HarnessStore) helmChartManifest.getStore();
-      if (!hasValue(harnessStore.getFiles())) {
-        throw new InvalidArgumentsException(Pair.of("files", format("required for %s store type", manifestStoreKind)));
-      }
-    } else if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestStoreKind)) {
-      CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) helmChartManifest.getStore();
-      if (!hasValue(customRemoteStoreConfig.getFilePath(), allowExpression)) {
-        throw new InvalidArgumentsException(
-            Pair.of("filePath", format("required for %s store type", manifestStoreKind)));
-      }
-    } else if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
+    if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
       if (!hasValue(helmChartManifest.getChartName(), allowExpression)) {
         throw new InvalidArgumentsException(
             Pair.of("chartName", format("required for %s store type", manifestStoreKind)));
@@ -95,6 +103,41 @@ public class ManifestOutcomeValidator {
         throw new InvalidArgumentsException(
             Pair.of("chartVersion", format("not allowed for %s store", manifestStoreKind)));
       }
+    }
+
+    if (!optionalFieldHasValue(helmChartManifest.getValuesPaths())) {
+      throw new InvalidArgumentsException(Pair.of("valuesPaths",
+          format(
+              "Path for values.yaml files for manifest identifier: %s and manifest type: %s is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty",
+              helmChartManifest.getIdentifier(), helmChartManifest.getType())));
+    }
+  }
+
+  private void validateK8Manifest(K8sManifestOutcome k8sManifestOutcome, boolean allowExpression) {
+    if (!optionalFieldHasValue(k8sManifestOutcome.getValuesPaths())) {
+      throw new InvalidArgumentsException(Pair.of("valuesPaths",
+          format(
+              "Path for values.yaml files for manifest identifier: %s and manifest type: %s is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty",
+              k8sManifestOutcome.getIdentifier(), k8sManifestOutcome.getType())));
+    }
+  }
+
+  private void validateOpenshiftTemplateManifest(
+      OpenshiftManifestOutcome openshiftManifestOutcome, boolean allowExpression) {
+    if (!optionalFieldHasValue(openshiftManifestOutcome.getParamsPaths())) {
+      throw new InvalidArgumentsException(Pair.of("paramsPaths",
+          format(
+              "Path for params.yaml files for manifest identifier: %s and manifest type: %s is not valid. Check in the params.yaml setup in the manifest configuration to make sure it's not empty",
+              openshiftManifestOutcome.getIdentifier(), openshiftManifestOutcome.getType())));
+    }
+  }
+
+  private void validateKustomizeManifest(KustomizeManifestOutcome kustomizeManifestOutcome, boolean allowExpression) {
+    if (!optionalFieldHasValue(kustomizeManifestOutcome.getPatchesPaths())) {
+      throw new InvalidArgumentsException(Pair.of("patchesPaths",
+          format(
+              "Path for patches.yaml files for manifest identifier: %s and manifest type: %s is not valid. Check in the params.yaml setup in the manifest configuration to make sure it's not empty",
+              kustomizeManifestOutcome.getIdentifier(), kustomizeManifestOutcome.getType())));
     }
   }
 
@@ -220,6 +263,18 @@ public class ManifestOutcomeValidator {
   }
 
   private boolean hasValue(ParameterField<List<String>> parameterField) {
-    return !ParameterField.isNull(parameterField) || isNotEmpty(getParameterFieldValue(parameterField));
+    if (!ParameterField.isNull(parameterField) && isNotEmpty(getParameterFieldValue(parameterField))) {
+      List<String> stringList = getParameterFieldValue(parameterField);
+      return stringList.stream().noneMatch(StringUtils::isBlank);
+    }
+    return false;
+  }
+
+  private boolean optionalFieldHasValue(ParameterField<List<String>> parameterField) {
+    if (!ParameterField.isNull(parameterField) && isNotEmpty(getParameterFieldValue(parameterField))) {
+      List<String> stringList = getParameterFieldValue(parameterField);
+      return stringList.stream().noneMatch(StringUtils::isBlank);
+    }
+    return true;
   }
 }
