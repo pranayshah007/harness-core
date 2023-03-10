@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
 import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 import static io.harness.git.Constants.HARNESS_IO_KEY_;
@@ -150,7 +151,6 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
-  private static final String DEFAULT_FETCH_IDENTIFIER = "--default";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
