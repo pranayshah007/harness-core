@@ -58,7 +58,7 @@ public class KustomizeClientImplTest extends CategoryTest {
     CliResponse cliResponse = CliResponse.builder().build();
     doReturn(cliResponse)
         .when(cliHelper)
-        .executeCliCommand("KUSTOMIZE_BINARY_PATH build  KUSTOMIZE_DIR_PATH",
+        .executeCliCommand("KUSTOMIZE_BINARY_PATH build KUSTOMIZE_DIR_PATH ",
             io.harness.kustomize.KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(),
             "MANIFEST_FILES_DIRECTORY", logCallback);
 
@@ -81,7 +81,7 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins  KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build KUSTOMIZE_DIR_PATH --enable_alpha_plugins ",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
@@ -104,7 +104,7 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable-alpha-plugins  KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build KUSTOMIZE_DIR_PATH --enable-alpha-plugins ",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
@@ -127,7 +127,7 @@ public class KustomizeClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(
-            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build --enable_alpha_plugins  KUSTOMIZE_DIR_PATH",
+            "XDG_CONFIG_HOME=PLUGIN_PATH KUSTOMIZE_BINARY_PATH build KUSTOMIZE_DIR_PATH --enable_alpha_plugins ",
             KustomizeConstants.KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(), "MANIFEST_FILES_DIRECTORY",
             logCallback);
 
