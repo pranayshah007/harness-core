@@ -12,12 +12,8 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
-import io.harness.delegate.task.shell.SshSessionConfigMapperFields;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
@@ -28,8 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ShellScriptTaskParametersNG
-    implements TaskParameters, ExecutionCapabilityDemander, SshSessionConfigMapperFields {
+public class ShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
   private final boolean executeOnDelegate;
   @Expression(ALLOW_SECRETS) private final String script;
   private final List<String> outputVars;
@@ -39,12 +34,6 @@ public class ShellScriptTaskParametersNG
   @Expression(ALLOW_SECRETS) private final Map<String, String> environmentVariables;
   private final List<String> secretOutputVars;
   private final ScriptType scriptType;
-
-  // Target Host Specific fields - needed for Kryo to work but not used
-  private final K8sInfraDelegateConfig k8sInfraDelegateConfig;
-  private final SSHKeySpecDTO sshKeySpecDTO;
-  private final List<EncryptedDataDetail> encryptionDetails;
-  private final String host;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(final ExpressionEvaluator maskingEvaluator) {
