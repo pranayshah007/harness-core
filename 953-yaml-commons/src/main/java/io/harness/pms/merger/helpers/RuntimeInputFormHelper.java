@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
+import static io.harness.pms.merger.fqn.FQNNode.NodeType.KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
@@ -73,6 +74,11 @@ public class RuntimeInputFormHelper {
       YamlConfig yamlConfig, boolean keepInput, boolean keepDefaultValues) {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
+
+    // Add deploymentType in runtime input Form
+    FQNNode deploymentTypeFqnNode =
+        FQNNode.builder().nodeType(KEY).key("deploymentType").uuidKey(null).uuidValue(null).build();
+
     fullMap.keySet().forEach(key -> {
       String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
       // keepInput can be considered always true if value matches executionInputPattern. As the input will be provided
@@ -80,7 +86,8 @@ public class RuntimeInputFormHelper {
       if (NGExpressionUtils.matchesExecutionInputPattern(value)
           || (keepInput && NGExpressionUtils.matchesInputSetPattern(value))
           || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
-              && !key.isType())) {
+              && !key.isType())
+          || (key.getFqnList().get(key.getFqnList().size() - 1).equals(deploymentTypeFqnNode))) {
         templateMap.put(key, fullMap.get(key));
       }
     });
@@ -104,7 +111,7 @@ public class RuntimeInputFormHelper {
       templateMap.keySet().forEach(key -> {
         FQN parent = key.getParent();
         FQN defaultSibling = FQN.duplicateAndAddNode(
-            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+            parent, FQNNode.builder().nodeType(KEY).key(YAMLFieldNameConstants.DEFAULT).build());
         if (fullMap.containsKey(defaultSibling)) {
           defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
         }
@@ -169,7 +176,7 @@ public class RuntimeInputFormHelper {
     int indexWithKey = -1;
     for (int i = 0; i < fqnList.size(); i++) {
       FQNNode fqnNode = fqnList.get(i);
-      if (key.equals(fqnNode.getKey()) && fqnNode.getNodeType() == FQNNode.NodeType.KEY) {
+      if (key.equals(fqnNode.getKey()) && fqnNode.getNodeType() == KEY) {
         indexWithKey = i;
         break;
       }
