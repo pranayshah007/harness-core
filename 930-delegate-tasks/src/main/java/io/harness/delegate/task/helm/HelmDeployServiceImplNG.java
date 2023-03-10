@@ -903,7 +903,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           continue;
         }
 
-        Path filePath = Paths.get(directoryPath, manifestFile.getFileName());
+        Path filePath = Paths.get(directoryPath, manifestFile.getFilePath());
         Path parent = filePath.getParent();
         if (parent == null) {
           throw new InvalidRequestException("Failed to create file at path " + filePath.toString());
