@@ -305,7 +305,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .hasMessageContaining(
             "Manifests are mandatory for K8s step. Select one from " + String.join(", ", K8S_SUPPORTED_MANIFEST_TYPES));
 
-    K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().build();
+    K8sManifestOutcome k8sManifestOutcome = K8sManifestOutcome.builder().store(GitStore.builder().build()).build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
     List<ManifestOutcome> serviceManifestOutcomes = new ArrayList<>();
     serviceManifestOutcomes.add(k8sManifestOutcome);
@@ -369,6 +369,7 @@ public class K8sStepHelperTest extends CategoryTest {
         HelmChartManifestOutcome.builder()
             .helmVersion(HelmVersion.V3)
             .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(GitStore.builder().build())
             .build();
     ValuesManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().build();
     List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
@@ -376,6 +377,28 @@ public class K8sStepHelperTest extends CategoryTest {
     manifestOutcomes.add(valuesManifestOutcome);
 
     assertThat(k8sStepHelper.getK8sSupportedManifestOutcome(manifestOutcomes)).isEqualTo(helmChartManifestOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetOpenshiftManifestOutcomeWithHarnessAndInheritFromManifestStore() {
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        OpenshiftManifestOutcome.builder()
+            .identifier("OcTemplate")
+            .skipResourceVersioning(ParameterField.createValueField(true))
+            .store(HarnessStore.builder().build())
+            .build();
+    ValuesManifestOutcome valuesManifestOutcome =
+        ValuesManifestOutcome.builder().store(InheritFromManifestStoreConfig.builder().build()).build();
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
+    manifestOutcomes.add(openshiftManifestOutcome);
+    manifestOutcomes.add(valuesManifestOutcome);
+
+    assertThatThrownBy(() -> k8sStepHelper.getK8sSupportedManifestOutcome(manifestOutcomes))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "InheritFromManifest store type is not supported with Manifest identifier: OcTemplate, Manifest type: OpenshiftTemplate, Manifest store type: Harness");
   }
 
   @Test

@@ -549,7 +549,17 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
           "There can be only a single manifest. Select one from " + String.join(", ", K8S_SUPPORTED_MANIFEST_TYPES),
           USER);
     }
-    return k8sManifests.get(0);
+
+    ManifestOutcome k8sManifest = k8sManifests.get(0);
+    if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {
+      if (manifestOutcomes.stream().anyMatch(
+              manifestOutcome -> ManifestStoreType.InheritFromManifest.equals(manifestOutcome.getStore().getKind()))) {
+        throw new InvalidRequestException(format(
+            "InheritFromManifest store type is not supported with Manifest identifier: %s, Manifest type: %s, Manifest store type: %s",
+            k8sManifest.getIdentifier(), k8sManifest.getType(), k8sManifest.getStore().getKind()));
+      }
+    }
+    return k8sManifest;
   }
 
   public List<KustomizePatchesManifestOutcome> getKustomizePatchesManifests(
