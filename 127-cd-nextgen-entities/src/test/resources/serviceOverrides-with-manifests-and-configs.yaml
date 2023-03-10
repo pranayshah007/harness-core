@@ -1,0 +1,26 @@
+serviceOverrides:
+  environmentRef: envId
+  serviceRef: srvId
+  variables: []
+  manifests:
+    - manifest:
+        identifier: m
+        type: Values
+        spec:
+          store:
+            type: Git
+            spec:
+              connectorRef: my_git
+              gitFetchType: Branch
+              paths:
+                - somepath
+              branch: somebranch
+  configFiles:
+    - configFile:
+        identifier: c
+        spec:
+          store:
+            type: Harness
+            spec:
+              files:
+                - anyfile

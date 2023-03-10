@@ -10,6 +10,8 @@ package io.harness.ng.core.serviceoverride.mapper;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
@@ -58,16 +60,75 @@ public class NGServiceOverrideEntityConfigMapper {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }
     }
-    return NGServiceOverrideConfig.builder()
-        .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                       .environmentRef(serviceOverridesEntity.getEnvironmentRef())
-                                       .serviceRef(serviceOverridesEntity.getServiceRef())
-                                       .variables(variableOverride)
-                                       .manifests(manifestsList)
-                                       .configFiles(configFiles)
-                                       .applicationSettings(applicationSettings)
-                                       .connectionStrings(connectionStrings)
-                                       .build())
-        .build();
+
+    NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+        NGServiceOverrideInfoConfig.builder()
+            .environmentRef(serviceOverridesEntity.getEnvironmentRef())
+            .serviceRef(serviceOverridesEntity.getServiceRef())
+            .variables(variableOverride)
+            .manifests(manifestsList)
+            .configFiles(configFiles)
+            .applicationSettings(applicationSettings)
+            .connectionStrings(connectionStrings)
+            .build();
+
+    validateServiceOverrideInfoConfig(serviceOverrideInfoConfig);
+
+    return NGServiceOverrideConfig.builder().serviceOverrideInfoConfig(serviceOverrideInfoConfig).build();
+  }
+
+  private void validateServiceOverrideInfoConfig(NGServiceOverrideInfoConfig serviceOverrideInfoConfig) {
+    validateApplicationSettings(serviceOverrideInfoConfig.getApplicationSettings());
+    validateManifestConfigs(serviceOverrideInfoConfig.getManifests());
+    validateConfigFiles(serviceOverrideInfoConfig.getConfigFiles());
+  }
+
+  private void validateApplicationSettings(ApplicationSettingsConfiguration applicationSettingsConfiguration) {
+    try {
+      if (applicationSettingsConfiguration != null && applicationSettingsConfiguration.getStore().getSpec() == null) {
+        throw new InvalidRequestException("Invalid application settings structure provided");
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException(format("Invalid application settings structure provided: %s", e.getMessage()));
+    }
+  }
+
+  private void validateManifestConfig(ManifestConfigWrapper manifestConfigWrapper) {
+    String identifier = null;
+    try {
+      identifier = manifestConfigWrapper.getManifest().getIdentifier();
+      if (manifestConfigWrapper.getManifest().getSpec().getStoreConfig() == null) {
+        throw new InvalidRequestException(format("Invalid manifest structure provided for identifier %s", identifier));
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          format("Invalid manifest structure provided for identifier %s: %s", identifier, e.getMessage()));
+    }
+  }
+
+  private void validateConfigFile(ConfigFileWrapper configFileWrapper) {
+    String identifier = null;
+    try {
+      identifier = configFileWrapper.getConfigFile().getIdentifier();
+      if (configFileWrapper.getConfigFile().getSpec().getStore().getValue().getSpec() == null) {
+        throw new InvalidRequestException(
+            format("Invalid config file structure provided for identifier %s", identifier));
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          format("Invalid config file structure provided for identifier %s: %s", identifier, e.getMessage()));
+    }
+  }
+
+  private void validateManifestConfigs(List<ManifestConfigWrapper> manifestConfigWrappers) {
+    if (isNotEmpty(manifestConfigWrappers)) {
+      manifestConfigWrappers.stream().forEach(NGServiceOverrideEntityConfigMapper::validateManifestConfig);
+    }
+  }
+
+  private void validateConfigFiles(List<ConfigFileWrapper> configFileWrappers) {
+    if (isNotEmpty(configFileWrappers)) {
+      configFileWrappers.stream().forEach(NGServiceOverrideEntityConfigMapper::validateConfigFile);
+    }
   }
 }

@@ -1,0 +1,13 @@
+serviceOverrides:
+  environmentRef: envId
+  serviceRef: srvId
+  variables: []
+  configFiles:
+    - configFile:
+        identifier: c
+        spec:
+          store:
+          type: Harness
+          spec:
+            files:
+              - anyfile
