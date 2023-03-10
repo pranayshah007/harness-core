@@ -15,6 +15,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
+import software.wings.beans.Account.AccountKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
@@ -33,9 +34,8 @@ public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements
   public void migrate() {
     log.info("Starting the migration to add new isCrossGenerationAccessEnabled field into all the accounts");
 
-    Query<Account> accountsQuery = wingsPersistence.createQuery(Account.class)
-                                       .field(Account.AccountKeys.isCrossGenerationAccessEnabled)
-                                       .doesNotExist();
+    Query<Account> accountsQuery =
+        wingsPersistence.createQuery(Account.class).field(AccountKeys.isCrossGenerationAccessEnabled).doesNotExist();
 
     try (HIterator<Account> records = new HIterator<>(accountsQuery.fetch())) {
       while (records.hasNext()) {
@@ -45,15 +45,15 @@ public class ForAllAccountsAddIsCrossGenerationAccessEnabledMigration implements
           UpdateOperations<Account> updateOperations = wingsPersistence.createUpdateOperations(Account.class);
 
           if (DefaultExperience.isNGExperience(account.getDefaultExperience())) {
-            updateOperations.set(Account.AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
+            updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
           } else {
             boolean isFFEnabled =
                 accountService.isFeatureFlagEnabled(FeatureName.PL_HIDE_LAUNCH_NEXTGEN.name(), account.getUuid());
 
             if (isFFEnabled) {
-              updateOperations.set(Account.AccountKeys.isCrossGenerationAccessEnabled, Boolean.FALSE);
+              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.FALSE);
             } else {
-              updateOperations.set(Account.AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
+              updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, Boolean.TRUE);
             }
           }
           wingsPersistence.update(account, updateOperations);

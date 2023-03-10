@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.filter.DelegateFilterPropertiesMapper;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesMapper;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -37,6 +38,7 @@ public class DelegateServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(FiltersModule.getInstance());
+    install(FeatureFlagModule.getInstance());
     bind(DelegateTaskService.class).to(DelegateTaskServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(DelegateCallbackRegistry.class).to(DelegateCallbackRegistryImpl.class);
