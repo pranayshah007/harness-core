@@ -79,6 +79,9 @@ import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.ssca.cd.execution.filtercreator.CdSscaStepFilterJsonCreator;
+import io.harness.ssca.cd.execution.variablecreator.CdSscaStepVariableCreator;
+import io.harness.ssca.plancreator.CdSscaOrchestrationStepPlanCreator;
 import io.harness.steps.approval.ApprovalStepVariableCreator;
 import io.harness.steps.approval.step.custom.CustomApprovalStepPlanCreator;
 import io.harness.steps.approval.step.custom.CustomApprovalStepVariableCreator;
@@ -171,6 +174,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new PipelineStagePlanCreatorV1());
     planCreators.add(new ContainerStepPlanCreator());
     planCreators.add(new GroupPlanCreatorV1());
+    planCreators.add(new CdSscaOrchestrationStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -193,6 +197,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(ImmutableSet.of(STAGES, STRATEGY, STEPS, SPEC)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
@@ -227,6 +232,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, RESOURCE_CONSTRAINT)));
     variableCreators.add(new ContainerStepVariableCreator());
     variableCreators.add(new BarrierStepVariableCreator());
+    variableCreators.add(new CdSscaStepVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }
