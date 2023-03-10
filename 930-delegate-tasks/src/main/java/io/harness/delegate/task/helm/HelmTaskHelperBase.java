@@ -1074,6 +1074,9 @@ public class HelmTaskHelperBase {
         } catch (Exception ex) {
           String errorMsg = format("Failed to fetch yaml file from %s manifest", helmFetchFileConfig.getIdentifier());
           logCallback.saveExecutionLog(errorMsg + ExceptionUtils.getMessage(ex), WARN);
+          if (ex instanceof NoSuchFileException && helmFetchFileConfig.isSucceedIfFileNotFound()) {
+            continue;
+          }
           throw ex;
         }
       }
