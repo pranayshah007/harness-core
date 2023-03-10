@@ -63,7 +63,15 @@ RUN yum install -y nodejs python mongodb-org-shell google-cloud-cli autoconf bin
     && wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip \
     && unzip sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip\
     && mv sonar-scanner-${SONARQUBE_VERSION}-linux /opt/ \
-    && rm -f sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip
+    && rm -f sonar-scanner-cli-${SONARQUBE_VERSION}-linux.zip \
+    && wget https://archive.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz \
+    && tar -xf apache-maven-3.6.1-bin.tar.gz && mv apache-maven-3.6.1/ /usr/local/src/apache-maven \
+    && echo "export M2_HOME=/usr/local/src/apache-maven \
+    && export PATH=\${M2_HOME}/bin:\${PATH}" > /etc/profile.d/maven.sh \
+    && chmod +x /etc/profile.d/maven.sh \
+    && source /etc/profile.d/maven.sh \
+    && rm apache-maven-3.6.1-bin.tar.gz \
+    && cd / && rm -rf /tmp/*
 
 CMD [ "/deployments/run-java.sh" ]
 
