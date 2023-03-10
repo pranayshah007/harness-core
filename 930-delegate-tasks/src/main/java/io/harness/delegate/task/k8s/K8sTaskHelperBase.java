@@ -2949,6 +2949,13 @@ public class K8sTaskHelperBase {
       throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_VALUES_YAML,
           KubernetesExceptionExplanation.INVALID_VALUES_YAML,
           new KubernetesValuesException(message, exception.getCause()));
+    } catch (NoSuchFileException e) {
+      String prefixMessage = "There may be an issue with file/folder path, due to which file is not found. ";
+      String suffixMessage = "Please check if file exists in the specified path.";
+      if (isNotEmpty(e.getFile()) && e.getFile().contains("charts/")) {
+        suffixMessage = suffixMessage + " Also check if sub-chart name is correct/valid.";
+      }
+      throw NestedExceptionUtils.hintWithExplanationException(prefixMessage + suffixMessage, "No such file found", e);
     }
   }
 

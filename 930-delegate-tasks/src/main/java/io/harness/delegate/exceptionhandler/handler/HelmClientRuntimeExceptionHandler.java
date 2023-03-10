@@ -145,6 +145,10 @@ public class HelmClientRuntimeExceptionHandler implements ExceptionHandler {
     if (lowerCaseMessage.contains("invalid kubernetes yaml")) {
       return NestedExceptionUtils.hintWithExplanationException(
           HINT_INVALID_YAML, EXPLAIN_INVALID_YAML, new InvalidRequestException(message));
+    } else if (lowerCaseMessage.contains("chart.yaml file is missing") || lowerCaseMessage.contains("not found")) {
+      return NestedExceptionUtils.hintWithExplanationException(
+          "Working directory may be incorrect. Check if the chart name, sub-chart name (if applicable) are correct/valid",
+          "Unable to render the chart as Chart.yaml file is missing", new InvalidRequestException(message));
     }
     return NestedExceptionUtils.hintWithExplanationException(
         DEFAULT_HINT_HELM_RENDER_CHART, DEFAULT_EXPLAIN_RENDER_CHART, helmClientException);
