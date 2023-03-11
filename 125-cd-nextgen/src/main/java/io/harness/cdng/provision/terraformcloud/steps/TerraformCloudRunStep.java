@@ -8,12 +8,10 @@
 package io.harness.cdng.provision.terraformcloud.steps;
 
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APPLY;
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.REFRESH_STATE;
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_LAST_APPLIED_RUN;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.GET_LAST_APPLIED_RUN;
 
 import static java.lang.String.format;
 
@@ -33,15 +31,27 @@ import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
-import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.TerraformCloudRunOutcomeBuilder;
+import io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters;
+import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters;
+import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters;
+import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanOnlySpecParameters;
 import io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanSpecParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetLastAppliedTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudGetLastAppliedTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndApplyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDestroyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
@@ -146,11 +156,12 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
     runSpec.validate();
     TerraformCloudRunType runType = runSpec.getType();
-    TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
-
+    TerraformCloudTaskParams terraformCloudTaskParams;
     if (runType == PLAN_AND_APPLY || runType == PLAN_AND_DESTROY || runType == APPLY) {
       // If we are doing any previsioning get the latest applied run that might be used for rollback
-      terraformCloudTaskParams.setTerraformCloudTaskType(GET_LAST_APPLIED_RUN);
+      terraformCloudTaskParams = getTerraformCloudGetLatestAppliedParams(runSpec, ambiance);
+    } else {
+      terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
     }
     return getTaskChainResponse(stepElementParameters, terraformCloudTaskParams, runStepParameters, ambiance);
   }
@@ -161,15 +172,25 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        (TerraformCloudRunTaskResponse) responseSupplier.get();
+    TerraformCloudDelegateTaskResponse delegateTaskResponse =
+        (TerraformCloudDelegateTaskResponse) responseSupplier.get();
 
-    helper.saveTerraformCloudConfig(runStepParameters.getSpec(), terraformCloudRunTaskResponse.getWorkspaceId(),
-        terraformCloudRunTaskResponse.getLastAppliedRun(), ambiance);
-    TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
-    terraformCloudTaskParams.setCommandUnitsProgress(
-        UnitProgressDataMapper.toCommandUnitsProgress(terraformCloudRunTaskResponse.getUnitProgressData()));
-    return getTaskChainResponse(stepElementParameters, terraformCloudTaskParams, runStepParameters, ambiance);
+    TerraformCloudTaskType taskType = delegateTaskResponse.getTaskType();
+    if (taskType == GET_LAST_APPLIED_RUN) {
+      TerraformCloudGetLastAppliedTaskResponse terraformCloudRunTaskResponse =
+          (TerraformCloudGetLastAppliedTaskResponse) delegateTaskResponse;
+
+      helper.saveTerraformCloudConfig(runStepParameters.getSpec(), terraformCloudRunTaskResponse.getWorkspaceId(),
+          terraformCloudRunTaskResponse.getLastAppliedRun(), ambiance);
+      TerraformCloudTaskParams terraformCloudTaskParams = getTerraformCloudTaskParams(ambiance, runStepParameters);
+      terraformCloudTaskParams.setCommandUnitsProgress(
+          UnitProgressDataMapper.toCommandUnitsProgress(terraformCloudRunTaskResponse.getUnitProgressData()));
+      return getTaskChainResponse(stepElementParameters, terraformCloudTaskParams, runStepParameters, ambiance);
+    } else {
+      log.error(format("Unsupported task type [%s] in Task Chain", taskType));
+      throw new InvalidRequestException(
+          format("Unsupported task type [%s] in Task Chain", taskType), WingsException.USER);
+    }
   }
 
   @Override
@@ -180,8 +201,8 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    TerraformCloudRunTaskResponse terraformCloudRunTaskResponse =
-        (TerraformCloudRunTaskResponse) responseSupplier.get();
+    TerraformCloudDelegateTaskResponse terraformCloudRunTaskResponse =
+        (TerraformCloudDelegateTaskResponse) responseSupplier.get();
     List<UnitProgress> unitProgresses = terraformCloudRunTaskResponse.getUnitProgressData() == null
         ? Collections.emptyList()
         : terraformCloudRunTaskResponse.getUnitProgressData().getUnitProgresses();
@@ -207,53 +228,131 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
     }
 
     TerraformCloudRunType runType = runStepParameters.getSpec().getType();
-    if (CommandExecutionStatus.SUCCESS == terraformCloudRunTaskResponse.getCommandExecutionStatus()
-        && runType != TerraformCloudRunType.REFRESH_STATE) {
-      String provisionerIdentifier = helper.getProvisionIdentifier(runStepParameters.getSpec());
-      String policyChecksJsonFileId = terraformCloudRunTaskResponse.getPolicyChecksJsonFileId();
-      String tfPlanJsonFileId = terraformCloudRunTaskResponse.getTfPlanJsonFileId();
-      if (runType != APPLY) {
-        RunDetails runDetails = PLAN.equals(runType)
-            ? RunDetails.builder()
-                  .runId(terraformCloudRunTaskResponse.getRunId())
-                  .connectorRef(ParameterFieldHelper.getParameterFieldValue(
-                      ((TerraformCloudPlanSpecParameters) runStepParameters.getSpec()).getConnectorRef()))
-                  .build()
-            : null;
-        helper.saveTerraformCloudPlanExecutionDetails(
-            ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionerIdentifier, runDetails);
+    if (CommandExecutionStatus.SUCCESS == terraformCloudRunTaskResponse.getCommandExecutionStatus()) {
+      TerraformCloudRunOutcome terraformCloudRunOutcome;
+      switch (runType) {
+        case REFRESH_STATE:
+          TerraformCloudRefreshTaskResponse refreshTaskResponse =
+              (TerraformCloudRefreshTaskResponse) terraformCloudRunTaskResponse;
+          terraformCloudRunOutcome = TerraformCloudRunOutcome.builder().runId(refreshTaskResponse.getRunId()).build();
+          break;
+        case PLAN_ONLY:
+          TerraformCloudPlanOnlyTaskResponse planOnlyResponse =
+              (TerraformCloudPlanOnlyTaskResponse) terraformCloudRunTaskResponse;
+          TerraformCloudPlanOnlySpecParameters planOnlySpecParameters =
+              (TerraformCloudPlanOnlySpecParameters) runStepParameters.getSpec();
+          terraformCloudRunOutcome = handePlanOnlyResponse(planOnlyResponse, planOnlySpecParameters, ambiance);
+          break;
+        case PLAN_AND_APPLY:
+          TerraformCloudPlanAndApplyTaskResponse planAndApplyResponse =
+              (TerraformCloudPlanAndApplyTaskResponse) terraformCloudRunTaskResponse;
+          TerraformCloudPlanAndApplySpecParameters planAndApplySpecParameters =
+              (TerraformCloudPlanAndApplySpecParameters) runStepParameters.getSpec();
+          terraformCloudRunOutcome =
+              handePlanAndApplyResponse(planAndApplyResponse, planAndApplySpecParameters, ambiance);
+          break;
+        case PLAN_AND_DESTROY:
+          TerraformCloudPlanAndDestroyTaskResponse planAndDestroyResponse =
+              (TerraformCloudPlanAndDestroyTaskResponse) terraformCloudRunTaskResponse;
+          TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
+              (TerraformCloudPlanAndDestroySpecParameters) runStepParameters.getSpec();
+          terraformCloudRunOutcome =
+              handlePlanAndDestroyResponse(planAndDestroyResponse, planAndDestroySpecParameters, ambiance);
+          break;
+        case PLAN:
+          TerraformCloudPlanTaskResponse planResponse = (TerraformCloudPlanTaskResponse) terraformCloudRunTaskResponse;
+          TerraformCloudPlanSpecParameters planSpecParameters =
+              (TerraformCloudPlanSpecParameters) runStepParameters.getSpec();
+          terraformCloudRunOutcome = handlePlanResponse(planResponse, planSpecParameters, ambiance);
+          break;
+        case APPLY:
+          TerraformCloudApplyTaskResponse applyTaskResponse =
+              (TerraformCloudApplyTaskResponse) terraformCloudRunTaskResponse;
+          terraformCloudRunOutcome = handleApplyResponse(applyTaskResponse, ambiance);
+          break;
+        default:
+          throw new InvalidRequestException("Unhandled run typ: " + runType.name(), WingsException.USER);
       }
-      TerraformCloudRunOutcomeBuilder terraformCloudRunOutcomeBuilder =
-          TerraformCloudRunOutcome.builder()
-              .detailedExitCode(terraformCloudRunTaskResponse.getDetailedExitCode())
-              .policyChecksFilePath(policyChecksJsonFileId != null && provisionerIdentifier != null
-                      ? TerraformCloudPolicyChecksJsonFunctor.getExpression(provisionerIdentifier)
-                      : null)
-              .jsonFilePath((helper.isExportTfPlanJson(runStepParameters.getSpec()) && tfPlanJsonFileId != null
-                                && provisionerIdentifier != null)
-                      ? TerraformCloudPlanJsonFunctor.getExpression(provisionerIdentifier)
-                      : null)
-              .runId(terraformCloudRunTaskResponse.getRunId());
-
-      if (runType == PLAN) {
-        TerraformCloudPlanSpecParameters planSpecParameters =
-            (TerraformCloudPlanSpecParameters) runStepParameters.getSpec();
-        helper.saveTerraformCloudPlanOutput(planSpecParameters, terraformCloudRunTaskResponse, ambiance);
-      }
-
-      if (runType == TerraformCloudRunType.APPLY || runType == TerraformCloudRunType.PLAN_AND_APPLY
-          || runType == PLAN_AND_DESTROY) {
-        if (runType == TerraformCloudRunType.APPLY) {
-          helper.updateRunDetails(ambiance, terraformCloudRunTaskResponse.getRunId());
-        }
-        terraformCloudRunOutcomeBuilder.outputs(
-            new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())));
-      }
-
       stepResponseBuilder.stepOutcome(
-          StepOutcome.builder().name(OUTCOME_NAME).outcome(terraformCloudRunOutcomeBuilder.build()).build());
+          StepOutcome.builder().name(OUTCOME_NAME).outcome(terraformCloudRunOutcome).build());
     }
     return stepResponseBuilder.build();
+  }
+
+  private TerraformCloudRunOutcome handleApplyResponse(
+      TerraformCloudApplyTaskResponse applyTaskResponse, Ambiance ambiance) {
+    String runId = applyTaskResponse.getRunId();
+    HashMap<String, Object> outputs = new HashMap<>(helper.parseTerraformOutputs(applyTaskResponse.getTfOutput()));
+    helper.updateRunDetails(ambiance, runId);
+    return getTerraformCloudRunOutcome(runId, null, null, null, outputs);
+  }
+
+  private TerraformCloudRunOutcome handlePlanResponse(TerraformCloudPlanTaskResponse planResponse,
+      TerraformCloudPlanSpecParameters planSpecParameters, Ambiance ambiance) {
+    String runId = planResponse.getRunId();
+    String tfPlanJsonFileId = planResponse.getTfPlanJsonFileId();
+    String policyChecksJsonFileId = planResponse.getPolicyChecksJsonFileId();
+    String provisionIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getProvisionerIdentifier());
+    RunDetails runDetails =
+        RunDetails.builder()
+            .runId(runId)
+            .connectorRef(ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getConnectorRef()))
+            .build();
+
+    helper.saveTerraformCloudPlanExecutionDetails(
+        ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionIdentifier, runDetails);
+    helper.saveTerraformCloudPlanOutput(planSpecParameters, runId, ambiance);
+    return getTerraformCloudRunOutcome(runId, policyChecksJsonFileId, tfPlanJsonFileId, provisionIdentifier, null);
+  }
+
+  private TerraformCloudRunOutcome handlePlanAndDestroyResponse(
+      TerraformCloudPlanAndDestroyTaskResponse planAndDestroyResponse,
+      TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters, Ambiance ambiance) {
+    String runId = planAndDestroyResponse.getRunId();
+    HashMap<String, Object> outputs = new HashMap<>(helper.parseTerraformOutputs(planAndDestroyResponse.getTfOutput()));
+    String policyChecksJsonFileId = planAndDestroyResponse.getPolicyChecksJsonFileId();
+    String provisionIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getProvisionerIdentifier());
+    helper.saveTerraformCloudPlanExecutionDetails(ambiance, null, policyChecksJsonFileId, provisionIdentifier, null);
+    return getTerraformCloudRunOutcome(runId, policyChecksJsonFileId, null, provisionIdentifier, outputs);
+  }
+
+  private TerraformCloudRunOutcome handePlanAndApplyResponse(
+      TerraformCloudPlanAndApplyTaskResponse planAndApplyResponse,
+      TerraformCloudPlanAndApplySpecParameters planAndApplySpecParameters, Ambiance ambiance) {
+    String runId = planAndApplyResponse.getRunId();
+    HashMap<String, Object> outputs = new HashMap<>(helper.parseTerraformOutputs(planAndApplyResponse.getTfOutput()));
+    String policyChecksJsonFileId = planAndApplyResponse.getPolicyChecksJsonFileId();
+    String provisionIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(planAndApplySpecParameters.getProvisionerIdentifier());
+    helper.saveTerraformCloudPlanExecutionDetails(ambiance, null, policyChecksJsonFileId, provisionIdentifier, null);
+    return getTerraformCloudRunOutcome(runId, policyChecksJsonFileId, null, provisionIdentifier, outputs);
+  }
+
+  private TerraformCloudRunOutcome handePlanOnlyResponse(TerraformCloudPlanOnlyTaskResponse planOnlyResponse,
+      TerraformCloudPlanOnlySpecParameters planOnlySpecParameters, Ambiance ambiance) {
+    String runId = planOnlyResponse.getRunId();
+    String tfPlanJsonFileId = planOnlyResponse.getTfPlanJsonFileId();
+    String policyChecksJsonFileId = planOnlyResponse.getPolicyChecksJsonFileId();
+    String provisionIdentifier =
+        ParameterFieldHelper.getParameterFieldValue(planOnlySpecParameters.getProvisionerIdentifier());
+    helper.saveTerraformCloudPlanExecutionDetails(
+        ambiance, tfPlanJsonFileId, policyChecksJsonFileId, provisionIdentifier, null);
+    return getTerraformCloudRunOutcome(runId, policyChecksJsonFileId, tfPlanJsonFileId, provisionIdentifier, null);
+  }
+
+  private TerraformCloudRunOutcome getTerraformCloudRunOutcome(String runId, String policyChecksJsonFileId,
+      String tfPlanJsonFileId, String provisionerIdentifier, HashMap<String, Object> outputs) {
+    return TerraformCloudRunOutcome.builder()
+        .policyChecksFilePath(policyChecksJsonFileId != null
+                ? TerraformCloudPolicyChecksJsonFunctor.getExpression(provisionerIdentifier)
+                : null)
+        .jsonFilePath(
+            tfPlanJsonFileId != null ? TerraformCloudPlanJsonFunctor.getExpression(provisionerIdentifier) : null)
+        .outputs(outputs)
+        .runId(runId)
+        .build();
   }
 
   private TaskChainResponse getTaskChainResponse(StepElementParameters stepElementParameters,
@@ -268,7 +367,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
                             .build();
 
     return TaskChainResponse.builder()
-        .chainEnd(terraformCloudTaskParams.getTerraformCloudTaskType() != GET_LAST_APPLIED_RUN)
+        .chainEnd(terraformCloudTaskParams.getTaskType() != GET_LAST_APPLIED_RUN)
         .passThroughData(TerraformCloudPassThroughData.builder().build())
         .taskRequest(TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
             getCommandUnits(runStepParameters.getSpec().getType()), TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
@@ -280,18 +379,39 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
   private TerraformCloudTaskParams getTerraformCloudTaskParams(
       Ambiance ambiance, TerraformCloudRunStepParameters runStepParameters) {
     TerraformCloudRunSpecParameters runSpec = runStepParameters.getSpec();
-    TerraformCloudTaskParams terraformCloudTaskParams = paramsMapper.mapRunSpecToTaskParams(runSpec, ambiance);
-
-    terraformCloudTaskParams.setAccountId(AmbianceUtils.getAccountId(ambiance));
-    terraformCloudTaskParams.setMessage(ParameterFieldHelper.getParameterFieldValue(runStepParameters.getMessage()));
-
+    TerraformCloudTaskParams terraformCloudTaskParams =
+        paramsMapper.mapRunSpecToTaskParams(runStepParameters, ambiance);
     TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
     terraformCloudTaskParams.setTerraformCloudConnectorDTO(terraformCloudConnector);
     terraformCloudTaskParams.setEncryptionDetails(helper.getEncryptionDetail(ambiance, terraformCloudConnector));
-    terraformCloudTaskParams.setEntityId(runSpec.getType() != REFRESH_STATE
-            ? helper.generateFullIdentifier(helper.getProvisionIdentifier(runSpec), ambiance)
-            : null);
     return terraformCloudTaskParams;
+  }
+
+  private TerraformCloudGetLastAppliedTaskParams getTerraformCloudGetLatestAppliedParams(
+      TerraformCloudRunSpecParameters runSpec, Ambiance ambiance) {
+    TerraformCloudRunType type = runSpec.getType();
+    String runId = null;
+    String workspaceId = null;
+    if (type == APPLY) {
+      TerraformCloudApplySpecParameters applySpecParameters = (TerraformCloudApplySpecParameters) runSpec;
+      runId = helper.getPlanRunId(
+          ParameterFieldHelper.getParameterFieldValue(applySpecParameters.getProvisionerIdentifier()), ambiance);
+    } else if (type == PLAN_AND_APPLY) {
+      TerraformCloudPlanAndApplySpecParameters planAndApplySpecParameters =
+          (TerraformCloudPlanAndApplySpecParameters) runSpec;
+      workspaceId = ParameterFieldHelper.getParameterFieldValue(planAndApplySpecParameters.getWorkspace());
+    } else if (type == PLAN_AND_DESTROY) {
+      TerraformCloudPlanAndDestroySpecParameters planAndDestroySpecParameters =
+          (TerraformCloudPlanAndDestroySpecParameters) runSpec;
+      workspaceId = ParameterFieldHelper.getParameterFieldValue(planAndDestroySpecParameters.getWorkspace());
+    }
+    TerraformCloudConnectorDTO terraformCloudConnector = helper.getTerraformCloudConnector(runSpec, ambiance);
+    return TerraformCloudGetLastAppliedTaskParams.builder()
+        .runId(runId)
+        .workspace(workspaceId)
+        .terraformCloudConnectorDTO(terraformCloudConnector)
+        .encryptionDetails(helper.getEncryptionDetail(ambiance, terraformCloudConnector))
+        .build();
   }
 
   private List<String> getCommandUnits(TerraformCloudRunType type) {

@@ -14,5 +14,6 @@ java_library(
     deps = [
         "//:lombok",
         "//332-ci-manager/contracts:module",
+        "//332-ssca/commons:module",
     ],
 )

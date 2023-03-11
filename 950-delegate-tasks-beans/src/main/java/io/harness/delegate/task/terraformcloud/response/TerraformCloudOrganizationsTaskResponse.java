@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraformcloud.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import java.util.Map;
 import lombok.Data;
@@ -21,4 +22,9 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class TerraformCloudOrganizationsTaskResponse extends TerraformCloudDelegateTaskResponse {
   private Map<String, String> organizations;
+
+  @Override
+  public TerraformCloudTaskType getTaskType() {
+    return TerraformCloudTaskType.GET_ORGANIZATIONS;
+  }
 }

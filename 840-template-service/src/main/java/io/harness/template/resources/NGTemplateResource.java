@@ -88,6 +88,7 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 import io.harness.template.services.TemplateVariableCreatorService;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -736,6 +737,9 @@ public class NGTemplateResource {
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
+    if (templateApplyRequestDTO.isGetOnlyFileContent()) {
+      TemplateUtils.setUserFlowContext();
+    }
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId,
@@ -767,6 +771,9 @@ public class NGTemplateResource {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
     log.info("Principal in the applyTemplate resource layer is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
+    if (templateApplyRequestDTO.isGetOnlyFileContent()) {
+      TemplateUtils.setUserFlowContext();
+    }
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
             templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),

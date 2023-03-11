@@ -75,6 +75,7 @@ public class Invite implements PersistentEntity {
   @CreatedDate Long createdAt;
   @Version Long version;
   String inviteToken;
+  String externalId;
   @NonNull @Builder.Default Boolean approved = Boolean.FALSE;
   @Builder.Default Boolean deleted = Boolean.FALSE;
 

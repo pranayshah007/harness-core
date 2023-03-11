@@ -44,13 +44,14 @@ public final class MonitoringSourcePerpetualTask
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_insert_index")
+                 .name("unique_insert_index_v2")
                  .unique(true)
                  .field(MonitoringSourcePerpetualTaskKeys.accountId)
                  .field(MonitoringSourcePerpetualTaskKeys.orgIdentifier)
                  .field(MonitoringSourcePerpetualTaskKeys.projectIdentifier)
                  .field(MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier)
                  .field(MonitoringSourcePerpetualTaskKeys.verificationType)
+                 .field(MonitoringSourcePerpetualTaskKeys.connectorIdentifier)
                  .build())
         .build();
   }

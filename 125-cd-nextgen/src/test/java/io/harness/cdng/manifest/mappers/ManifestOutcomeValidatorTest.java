@@ -9,7 +9,9 @@ package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,6 +27,9 @@ import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
@@ -417,6 +422,55 @@ public class ManifestOutcomeValidatorTest extends CategoryTest {
         ()
             -> ManifestOutcomeValidator.validateStore(gcsStore, ManifestType.HelmChart, "test", false),
         "bucketName: Cannot be empty or null for Gcs store");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testInvalidManifestForInvalidOverridePaths() {
+    HelmChartManifestOutcome helmChartManifest =
+        HelmChartManifestOutcome.builder()
+            .identifier("Test")
+            .chartName(ParameterField.createValueField("TodoList"))
+            .store(GcsStoreConfig.builder()
+                       .connectorRef(ParameterField.createValueField("connector"))
+                       .bucketName(ParameterField.createValueField("bucket"))
+                       .build())
+            .valuesPaths(ParameterField.createValueField(asList(" ", " ")))
+            .build();
+
+    assertInvalidParamsArgsMessage(()
+                                       -> ManifestOutcomeValidator.validate(helmChartManifest, false),
+        "Path for values.yaml files for manifest identifier: Test and manifest type: HelmChart is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty");
+
+    K8sManifestOutcome k8sManifest = K8sManifestOutcome.builder()
+                                         .identifier("Test")
+                                         .valuesPaths(ParameterField.createValueField(asList("path1", " ")))
+                                         .build();
+
+    assertInvalidParamsArgsMessage(()
+                                       -> ManifestOutcomeValidator.validate(k8sManifest, false),
+        "Path for values.yaml files for manifest identifier: Test and manifest type: K8sManifest is not valid. Check in the values.yaml setup in the manifest configuration to make sure it's not empty");
+
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        OpenshiftManifestOutcome.builder()
+            .identifier("Test")
+            .paramsPaths(ParameterField.createValueField(asList(" ", "path1")))
+            .build();
+
+    assertInvalidParamsArgsMessage(()
+                                       -> ManifestOutcomeValidator.validate(openshiftManifestOutcome, false),
+        "Path for params.yaml files for manifest identifier: Test and manifest type: OpenshiftTemplate is not valid. Check in the params.yaml setup in the manifest configuration to make sure it's not empty");
+
+    KustomizeManifestOutcome kustomizeManifestOutcome =
+        KustomizeManifestOutcome.builder()
+            .identifier("Test")
+            .patchesPaths(ParameterField.createValueField(asList("path1", null)))
+            .build();
+
+    assertInvalidParamsArgsMessage(()
+                                       -> ManifestOutcomeValidator.validate(kustomizeManifestOutcome, false),
+        "Path for patches.yaml files for manifest identifier: Test and manifest type: Kustomize is not valid. Check in the params.yaml setup in the manifest configuration to make sure it's not empty");
   }
 
   private void assertInvalidParamsArgsMessage(ThrowableAssert.ThrowingCallable callable, String msg) {

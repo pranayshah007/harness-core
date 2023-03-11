@@ -43,13 +43,13 @@ import org.springframework.stereotype.Service;
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 public class ClickHouseClusterDataService {
-  public static final String AGGREGATED_KEYWORD = "Aggregated";
-  public static final String CLUSTER = "CLUSTER";
-  public static final String KEY = "key";
-  public static final String VALUE = "value";
+  private static final String AGGREGATED_KEYWORD = "Aggregated";
+  private static final String CLUSTER = "CLUSTER";
+  private static final String KEY = "key";
+  private static final String VALUE = "value";
   @Autowired private ClickHouseService clickHouseService;
-  @Autowired ClickHouseConfig clickHouseConfig;
-  @Autowired BatchMainConfig batchMainConfig;
+  @Autowired private ClickHouseConfig clickHouseConfig;
+  @Autowired private BatchMainConfig batchMainConfig;
 
   public void createClickHouseDataBaseIfNotExist() throws Exception {
     clickHouseService.getQueryResult(batchMainConfig.getClickHouseConfig(), ClickHouseConstants.createCCMDBQuery);
@@ -143,15 +143,11 @@ public class ClickHouseClusterDataService {
   }
 
   private static String getClusterDataCreationQuery(String clusterDataTableName) {
-    String clusterDataAggregatedCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataAggregatedCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static String getClusterDataAggregatedCreationQuery(String clusterDataTableName) {
-    String clusterDataCreateQuery =
-        String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
-    return clusterDataCreateQuery;
+    return String.format(ClickHouseConstants.CLUSTER_DATA_AGGREGATED_TABLE_CREATION_QUERY, clusterDataTableName);
   }
 
   private static void getBatchedPreparedStatement(PreparedStatement prepareStatement, ClusterBillingData billingData)

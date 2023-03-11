@@ -477,7 +477,8 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
   BAMBOO_TRIGGER_JOB(TaskGroup.BAMBOO),
   TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4"),
-  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task", true);
+  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task", true),
+  OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags");
 
   private final TaskGroup taskGroup;
   private final String displayName;

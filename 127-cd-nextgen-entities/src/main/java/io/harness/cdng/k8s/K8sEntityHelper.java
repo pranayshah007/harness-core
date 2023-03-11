@@ -69,6 +69,7 @@ public class K8sEntityHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   public static final String CLASS_CAST_EXCEPTION_ERROR =
       "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
+  public static final String K8S_INFRA_NAMESPACE_REGEX_PATTERN = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$";
   public List<EncryptedDataDetail> getEncryptionDataDetails(
       @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
     switch (connectorDTO.getConnectorType()) {

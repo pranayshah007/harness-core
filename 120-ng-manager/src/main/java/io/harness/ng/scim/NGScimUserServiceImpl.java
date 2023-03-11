@@ -79,7 +79,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
-    log.info("NGSCIM: Creating user call for accountId {} with query {}", accountId, userQuery);
+    log.info("NGSCIM: Creating user call for accountId {} with scim user query {}", accountId, userQuery);
     String primaryEmail = getPrimaryEmail(userQuery);
 
     Optional<UserInfo> userInfoOptional = ngUserService.getUserInfoByEmailFromCG(primaryEmail);
@@ -119,6 +119,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
                           .name(userName)
                           .givenName(getGivenNameFromScimUser(userQuery))
                           .familyName(getFamilyNameFromScimUser(userQuery))
+                          .externalId(getExternalIdFromScimUser(userQuery))
                           .inviteType(InviteType.SCIM_INITIATED_INVITE)
                           .build();
 
@@ -280,9 +281,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
       }
 
       String updatedEmail = getPrimaryEmail(scimUser);
-
       if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.UPDATE_EMAILS_VIA_SCIM)
-          && !existingUser.getEmail().equals(updatedEmail)) {
+          && existingUser.getEmail() != null && !existingUser.getEmail().equals(updatedEmail)) {
         userMetadata.setEmail(updatedEmail);
         userMetadata.setExternallyManaged(true);
         log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
@@ -415,6 +415,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
     userResource.setActive(!user.isDisabled());
     userResource.setUserName(user.getEmail());
     userResource.setDisplayName(user.getName());
+    userResource.setExternalId(user.getExternalId());
 
     boolean isJpmcFfOn = ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS);
 
@@ -488,5 +489,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
     return userQuery.getName() != null && userQuery.getName().get(GIVEN_NAME) != null
         ? userQuery.getName().get(FAMILY_NAME).textValue()
         : userQuery.getDisplayName();
+  }
+
+  private String getExternalIdFromScimUser(@NotNull ScimUser userQuery) {
+    return isEmpty(userQuery.getExternalId()) ? null : userQuery.getExternalId();
   }
 }

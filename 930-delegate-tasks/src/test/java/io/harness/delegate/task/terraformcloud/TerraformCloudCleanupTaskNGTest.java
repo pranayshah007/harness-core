@@ -8,7 +8,6 @@
 package io.harness.delegate.task.terraformcloud;
 
 import static io.harness.delegate.task.terraformcloud.TerraformCloudCleanupTaskNG.DISCARD_MESSAGE;
-import static io.harness.delegate.task.terraformcloud.TerraformCloudCleanupTaskNG.IS_DISCARDABLE;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -33,9 +32,9 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.terraformcloud.TerraformCloudApiException;
@@ -46,7 +45,6 @@ import io.harness.terraformcloud.model.RunData;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -87,7 +85,8 @@ public class TerraformCloudCleanupTaskNGTest {
   @Category(UnitTests.class)
   public void testRunSuccessfully() throws IOException {
     RunData initialRunData = new RunData();
-    initialRunData.setAttributes(Attributes.builder().actions(Collections.singletonMap(IS_DISCARDABLE, true)).build());
+    initialRunData.setAttributes(
+        Attributes.builder().actions(Attributes.Actions.builder().isDiscardable(true).build()).build());
     RunData runData = new RunData();
     runData.setAttributes(Attributes.builder().status(DISCARDED).build());
     String runId = "runId";
@@ -121,8 +120,10 @@ public class TerraformCloudCleanupTaskNGTest {
   @Category(UnitTests.class)
   public void testNotDiscardable() throws IOException {
     RunData initialRunData = new RunData();
-    initialRunData.setAttributes(
-        Attributes.builder().status(PENDING).actions(Collections.singletonMap(IS_DISCARDABLE, false)).build());
+    initialRunData.setAttributes(Attributes.builder()
+                                     .status(PENDING)
+                                     .actions(Attributes.Actions.builder().isDiscardable(false).build())
+                                     .build());
 
     String runId = "runId";
     TerraformCloudConnectorDTO terraformCloudConnectorDTO = TerraformCloudConnectorDTO.builder().build();
@@ -155,7 +156,8 @@ public class TerraformCloudCleanupTaskNGTest {
   @Category(UnitTests.class)
   public void testCannotDiscard() throws IOException {
     RunData initialRunData = new RunData();
-    initialRunData.setAttributes(Attributes.builder().actions(Collections.singletonMap(IS_DISCARDABLE, true)).build());
+    initialRunData.setAttributes(
+        Attributes.builder().actions(Attributes.Actions.builder().isDiscardable(true).build()).build());
     RunData runData = new RunData();
     runData.setAttributes(Attributes.builder().status(PENDING).build());
     String runId = "runId";
@@ -190,7 +192,8 @@ public class TerraformCloudCleanupTaskNGTest {
   @Category(UnitTests.class)
   public void testExceptionThrown() throws IOException {
     RunData initialRunData = new RunData();
-    initialRunData.setAttributes(Attributes.builder().actions(Collections.singletonMap(IS_DISCARDABLE, true)).build());
+    initialRunData.setAttributes(
+        Attributes.builder().actions(Attributes.Actions.builder().isDiscardable(true).build()).build());
     String runId = "runId";
     TerraformCloudConnectorDTO terraformCloudConnectorDTO = TerraformCloudConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>();
@@ -225,7 +228,7 @@ public class TerraformCloudCleanupTaskNGTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testUnsupportedParametersType() throws IOException {
-    assertThatThrownBy(() -> task.run(TerraformCloudTaskParams.builder().build()))
+    assertThatThrownBy(() -> task.run(TerraformCloudRefreshTaskParams.builder().build()))
         .isInstanceOf(UnsupportedOperationException.class)
         .hasMessage("Unsupported parameters type");
   }

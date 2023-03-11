@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.dto.DefaultViewIdDto;
+import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
@@ -38,6 +39,7 @@ public interface CEViewService {
       String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<CEView> getAllViews(String accountId);
   List<CEView> getViewByState(String accountId, ViewState viewState);
+  List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids);
   void createDefaultView(String accountId, ViewFieldIdentifier viewFieldIdentifier);
   DefaultViewIdDto getDefaultViewIds(String accountId);
 

@@ -14,6 +14,7 @@ import static java.lang.String.format;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
+import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -22,12 +23,16 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitx.ThreadOperationContext;
+import io.harness.gitx.USER_FLOW;
+import io.harness.manage.GlobalContextManager;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.ThreadOperationContextHelper;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -160,5 +165,21 @@ public class TemplateUtils {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     return IdentifierRefHelper.getIdentifierRefOrThrowException(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
+  }
+
+  public boolean isExecutionFlow() {
+    USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
+    if (user_flow != null) {
+      return user_flow.equals(USER_FLOW.EXECUTION);
+    }
+    return false;
+  }
+
+  public void setUserFlowContext() {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        ThreadOperationContext.builder().userFlow(USER_FLOW.EXECUTION).build());
   }
 }

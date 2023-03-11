@@ -16,6 +16,10 @@ import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.yaml.extended.CIShellType;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.beans.PullPolicy;
+import io.harness.beans.yaml.extended.beans.Shell;
 import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -188,6 +192,26 @@ public class CIPlanCreatorUtils {
       default:
         return ExecutionWrapperConfig.builder().uuid(step.getUuid()).step(step.getNode().getCurrJsonNode()).build();
     }
+  }
+
+  public static ParameterField<CIShellType> getShell(ParameterField<Shell> shellParameterField) {
+    if (ParameterField.isBlank(shellParameterField)) {
+      return ParameterField.ofNull();
+    }
+    return shellParameterField.isExpression()
+        ? ParameterField.createExpressionField(
+            true, shellParameterField.getExpressionValue(), shellParameterField.getInputSetValidator(), true)
+        : ParameterField.createValueField(shellParameterField.getValue().toShellType());
+  }
+
+  public static ParameterField<ImagePullPolicy> getImagePullPolicy(ParameterField<PullPolicy> pullParameterField) {
+    if (ParameterField.isBlank(pullParameterField)) {
+      return ParameterField.ofNull();
+    }
+    return pullParameterField.isExpression()
+        ? ParameterField.createExpressionField(
+            true, pullParameterField.getExpressionValue(), pullParameterField.getInputSetValidator(), true)
+        : ParameterField.createValueField(pullParameterField.getValue().toImagePullPolicy());
   }
 
   public boolean shouldCloneManually(PlanCreationContext ctx, CodeBase codeBase) {

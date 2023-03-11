@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,10 +62,11 @@ public class KustomizeTaskHelper {
 
   @Nonnull
   public List<FileData> build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeBinaryPath,
-      String pluginRootDir, String kustomizeDirPath, LogCallback executionLogCallback) {
+      String pluginRootDir, String kustomizeDirPath, LogCallback executionLogCallback,
+      Map<String, String> commandFlags) {
     CliResponse cliResponse;
     // ToDo: set command-flags correctly
-    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(kustomizeBinaryPath, Collections.emptyMap());
+    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(kustomizeBinaryPath, commandFlags);
     try {
       if (isBlank(pluginRootDir)) {
         cliResponse = kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, executionLogCallback);
@@ -113,7 +115,7 @@ public class KustomizeTaskHelper {
   @NotNull
   public List<FileData> buildForApply(@Nonnull String kustomizeBinaryPath, String pluginRootDir,
       @Nonnull String manifestFilesDirectory, @NotEmpty List<String> filesToApply, boolean useLatestKustomizeVersion,
-      List<String> kustomizePatchesFiles, LogCallback executionLogCallback) {
+      List<String> kustomizePatchesFiles, LogCallback executionLogCallback, Map<String, String> commandFlags) {
     if (isEmpty(filesToApply)) {
       throw new InvalidRequestException("Apply files can't be empty", USER);
     }
@@ -125,7 +127,8 @@ public class KustomizeTaskHelper {
       k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, kustomizePatchesFiles, executionLogCallback);
     }
     String kustomizeDirPath = filesToApply.get(0);
-    return build(manifestFilesDirectory, kustomizeBinaryPath, pluginRootDir, kustomizeDirPath, executionLogCallback);
+    return build(manifestFilesDirectory, kustomizeBinaryPath, pluginRootDir, kustomizeDirPath, executionLogCallback,
+        commandFlags);
   }
 
   private String getMissingResourcePath(String errorMessage) {

@@ -48,6 +48,7 @@ public interface OrganizationClient {
   @GET(ORGANIZATIONS_API)
   Call<ResponseDTO<PageResponse<OrganizationResponse>>> listOrganization(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers,
       @Query(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @Query(value = NGResourceFilterConstants.PAGE_KEY) int page,
       @Query(value = NGResourceFilterConstants.SIZE_KEY) int size,

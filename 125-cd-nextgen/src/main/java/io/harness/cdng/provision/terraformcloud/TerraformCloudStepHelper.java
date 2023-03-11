@@ -49,7 +49,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams;
-import io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -131,13 +130,13 @@ public class TerraformCloudStepHelper {
     return (TerraformCloudConnectorDTO) cdStepHelper.getConnector(connectorRef, ambiance).getConnectorConfig();
   }
 
-  public void saveTerraformCloudPlanOutput(TerraformCloudPlanSpecParameters planSpecParameters,
-      TerraformCloudRunTaskResponse cloudRunTaskResponse, Ambiance ambiance) {
+  public void saveTerraformCloudPlanOutput(
+      TerraformCloudPlanSpecParameters planSpecParameters, String runId, Ambiance ambiance) {
     planSpecParameters.validate();
 
     TerraformCloudPlanOutput terraformCloudPlanOutput =
         TerraformCloudPlanOutput.builder()
-            .runId(cloudRunTaskResponse.getRunId())
+            .runId(runId)
             .terraformCloudConnectorRef(
                 ParameterFieldHelper.getParameterFieldValue(planSpecParameters.getConnectorRef()))
             .build();
@@ -183,19 +182,6 @@ public class TerraformCloudStepHelper {
         throw new InvalidRequestException(format("Can't get provisioner for type: [%s]", runSpec.getType()));
     }
     return ParameterFieldHelper.getParameterFieldValue(provisionerIdentifier);
-  }
-
-  public boolean isExportTfPlanJson(TerraformCloudRunSpecParameters runSpec) {
-    TerraformCloudRunType runType = runSpec.getType();
-    if (runType == PLAN_ONLY) {
-      TerraformCloudPlanOnlySpecParameters planOnlySpecParameters = (TerraformCloudPlanOnlySpecParameters) runSpec;
-      return ParameterFieldHelper.getBooleanParameterFieldValue(planOnlySpecParameters.getExportTerraformPlanJson());
-    } else if (PLAN == runType) {
-      TerraformCloudPlanSpecParameters planSpecParameters = (TerraformCloudPlanSpecParameters) runSpec;
-      return ParameterFieldHelper.getBooleanParameterFieldValue(planSpecParameters.getExportTerraformPlanJson());
-    } else {
-      return false;
-    }
   }
 
   public void saveTerraformCloudPlanExecutionDetails(Ambiance ambiance, String planFileJsonId,

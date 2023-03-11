@@ -18,9 +18,9 @@ import lombok.experimental.FieldNameConstants;
 
 @FieldNameConstants(innerTypeName = "RunDetailsKeys")
 @OwnedBy(CDP)
-@EqualsAndHashCode
-@Builder
 @Data
+@Builder
+@EqualsAndHashCode
 public class RunDetails {
   private String connectorRef;
   private String runId;

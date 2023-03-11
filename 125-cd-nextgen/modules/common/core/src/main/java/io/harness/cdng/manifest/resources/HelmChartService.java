@@ -14,7 +14,8 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 
 public interface HelmChartService {
   HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId, String serviceRef,
-      String manifestPath, String connectorId, String chartName, String region, String bucketName, String folderPath);
+      String manifestPath, String connectorId, String chartName, String region, String bucketName, String folderPath,
+      String lastTag);
 
   HelmManifestInternalDTO locateManifestInService(
       String accountId, String orgId, String projectId, String serviceRef, String manifestPath);

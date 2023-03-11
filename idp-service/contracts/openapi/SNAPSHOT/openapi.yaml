@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: cvtx2sc7fr201
+  id: bzzh06ys7nti1
 info:
   title: IDP
   version: '1.0'
@@ -295,6 +295,66 @@ paths:
         name: accountIdentifier
         in: path
         required: true
+  '/v1/account/{accountIdentifier}/onboarding/access-check':
+    parameters:
+      - name: accountIdentifier
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Identifier field of the account the resource is scoped to
+    get:
+      summary: Check if User is allowed to perform IDP onboarding workflow
+      responses:
+        '200':
+          $ref: '#/components/responses/OnboardingAccessCheckResponse'
+      operationId: onboarding-access-check-v1
+      description: Check if User is allowed to perform IDP onboarding workflow
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - OnboardingResource
+  '/v1/account/{accountIdentifier}/onboarding/harness-entities':
+    parameters:
+      - $ref: '#/components/parameters/AccountIdentifier'
+    get:
+      summary: Get Harness Entities
+      tags:
+        - OnboardingResource
+      responses:
+        '200':
+          $ref: '#/components/responses/HarnessEntitiesResponse'
+      operationId: get-harness-entities-v1
+      description: Get Harness Entities
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/SearchTerm'
+      security:
+        - x-api-key: []
+  '/v1/account/{accountIdentifier}/onboarding/import-harness-entities':
+    parameters:
+      - $ref: '#/components/parameters/AccountIdentifier'
+    post:
+      summary: Import Harness Entities to IDP
+      operationId: import-harness-entities-v1
+      description: Import Harness Entities to IDP
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ImportHarnessEntitiesRequest'
+      tags:
+        - OnboardingResource
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportEntitiesResponse'
 components:
   schemas:
     EnvironmentSecret:
@@ -418,6 +478,149 @@ components:
     NamepsaceResponse:
       $ref: '#/components/schemas/NamespaceInfo'
       description: Namespace response body
+    ImportHarnessEntitiesRequest:
+      title: ImportHarnessEntitiesRequest
+      x-stoplight:
+        id: amr368rxqugif
+      type: object
+      x-examples: {}
+      description: Details of Harness Entities and Catalog Location info
+      properties:
+        catalogConnectorInfo:
+          $ref: '#/components/schemas/CatalogConnectorInfo'
+        entities:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/EntitiesForImport'
+      required:
+        - catalogConnectorInfo
+        - entities
+    CatalogConnectorInfo:
+      title: CatalogConnectorInfo
+      x-stoplight:
+        id: k72jbjtz6j5jh
+      type: object
+      description: Details of IDP catalog connector
+      properties:
+        sourceConnector:
+          $ref: '#/components/schemas/ConnectorDetails'
+        repo:
+          type: string
+        branch:
+          type: string
+        path:
+          type: string
+        infraConnector:
+          $ref: '#/components/schemas/ConnectorDetails'
+      required:
+        - sourceConnector
+        - repo
+        - branch
+        - path
+        - infraConnector
+    OnboardingAccessCheckResponse:
+      title: OnboardingAccessCheckResponse
+      x-stoplight:
+        id: a46k1ggo6ptxc
+      type: object
+      x-examples: {}
+      description: Response to check whether user is allowed to perform IDP onboarding or not
+      properties:
+        access:
+          type: string
+      required:
+        - access
+    HarnessEntitiesResponse:
+      title: HarnessEntitiesResponse
+      x-stoplight:
+        id: 06ugy0j5318dr
+      type: object
+      x-examples: {}
+      description: Response for harness entities mapping with backstage entities
+      properties:
+        orgCount:
+          type: integer
+        projectCount:
+          type: integer
+        serviceCount:
+          type: integer
+        harnessBackstageEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessBackstageEntities'
+      required:
+        - orgCount
+        - projectCount
+        - serviceCount
+        - harnessBackstageEntities
+    ImportEntitiesResponse:
+      title: ImportEntitiesResponse
+      x-stoplight:
+        id: mbqihy6732hau
+      type: object
+      description: Response for import / save harness entities to IDP
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    EntitiesForImport:
+      title: EntitiesForImport
+      x-stoplight:
+        id: 0gdm8g08cv51p
+      type: object
+      description: Details of Harness Entities to import
+      x-examples: {}
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+        entityType:
+          type: string
+      required:
+        - identifier
+        - entityType
+    HarnessBackstageEntities:
+      title: HarnessBackstageEntities
+      x-stoplight:
+        id: 7ox4rwh5ho9ue
+      type: object
+      description: Harness entities mapping with backstage entities
+      properties:
+        name:
+          type: string
+        system:
+          type: string
+        owner:
+          type: string
+        type:
+          type: string
+        identifier:
+          type: string
+        entityType:
+          type: string
+      required:
+        - name
+        - system
+        - owner
+        - type
+        - identifier
+        - entityType
+    ConnectorDetails:
+      title: ConnectorDetails
+      x-stoplight:
+        id: t8ug6b9zgqgup
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          type: string
+      required:
+        - identifier
+        - type
+      description: Connector details containing identifier and type
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -463,6 +666,27 @@ components:
         enum:
           - infra
           - onboarding
+    AccountIdentifier:
+      name: accountIdentifier
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Identifier field of the account the resource is scoped to
+    Order:
+      name: order
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Order on the basis of which sorting is done.
+    SearchTerm:
+      name: search_term
+      in: query
+      required: false
+      schema:
+        type: string
+      description: This would be used to filter resources having attributes matching the search term.
   requestBodies:
     EnvironmentSecretRequest:
       content:
@@ -497,6 +721,13 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoRequest'
+    ImportHarnessEntitiesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
+          examples: {}
+      description: Details of Harness Entities and Catalog Location info
   responses:
     EnvironmentSecretResponse:
       description: Example response
@@ -557,6 +788,38 @@ components:
         application/xml:
           schema:
             $ref: '#/components/schemas/NamepsaceResponse'
+    OnboardingAccessCheckResponse:
+      description: IDP Onboarding AccessCheck response for given user account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OnboardingAccessCheckResponse'
+    HarnessEntitiesResponse:
+      description: Response for harness entities mapping with backstage entities
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HarnessEntitiesResponse'
+          examples: {}
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    ImportEntitiesResponse:
+      description: Response for import / save harness entities to IDP
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ImportEntitiesResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

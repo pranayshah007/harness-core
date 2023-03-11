@@ -545,10 +545,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
     // multiservice with strategy
     final DeploymentStageNode node8 = new DeploymentStageNode();
-    node8.setStrategy(
+    node8.setStrategy(ParameterField.createValueField(
         StrategyConfig.builder()
             .repeat(HarnessForConfig.builder().items(ParameterField.createValueField(List.of("a", "b"))).build())
-            .build());
+            .build()));
     node8.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
             .services(

@@ -298,6 +298,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
           break;
         case MANUAL:
           url = notificationHelper.getManualFreezeUrl(baseUrl, accountId, orgId, projectId, freeze.getIdentifier());
+          break;
         default:
           break;
       }

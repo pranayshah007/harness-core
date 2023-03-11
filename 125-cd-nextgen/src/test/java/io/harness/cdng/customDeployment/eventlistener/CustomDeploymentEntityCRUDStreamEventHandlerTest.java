@@ -19,13 +19,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
+import io.harness.ng.core.entitysetupusage.mappers.EntitySetupUsageEntityToDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -37,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,6 +54,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.data.util.CloseableIterator;
 
 public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTest {
   private static final String ACCOUNT = "accIdentifier";
@@ -65,15 +68,36 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   private static final String RESOURCE_PATH_PREFIX = "customdeployment/";
   private static final String INFRA_RESOURCE_PATH_PREFIX = "infrastructure/";
   private static final String TEMPLATE_RESOURCE_PATH_PREFIX = "template/";
+  private List<EntitySetupUsage> entityList = new ArrayList<>();
+
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Mock InfrastructureEntityService infrastructureEntityService;
   @Spy @InjectMocks CustomDeploymentEntityCRUDEventHandler customDeploymentEntityCRUDEventHandler;
 
+  @Mock EntitySetupUsageEntityToDTO entitySetupUsageEntityToDTO;
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    InfraDefReference infraDefReference = InfraDefReference.builder()
+                                              .identifier(INFRA)
+                                              .accountIdentifier(ACCOUNT)
+                                              .orgIdentifier(ORG)
+                                              .projectIdentifier(PROJECT)
+                                              .envIdentifier(ENV)
+                                              .build();
+    EntitySetupUsage entitySetupUsage =
+        EntitySetupUsage.builder()
+            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
+            .build();
+    entityList.add(entitySetupUsage);
+    EntitySetupUsageDTO entitySetupUsageDTO =
+        EntitySetupUsageDTO.builder()
+            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
+            .build();
+    when(entitySetupUsageEntityToDTO.createEntityReferenceDTO(any())).thenReturn(entitySetupUsageDTO);
   }
   private String readFile(String filename, String folder) {
     String relativePath = RESOURCE_PATH_PREFIX + folder + filename;
@@ -90,27 +114,15 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsolete() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
+
     when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, PROJECT, TEMP, "1");
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(1))
@@ -124,27 +136,14 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsoleteNoEntityUsage() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
     when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(Collections.emptyList());
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(Collections.emptyIterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, PROJECT, TEMP, "1");
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(0))
@@ -157,20 +156,7 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsoleteInfraDoesNotExist() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
     when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
 
@@ -179,8 +165,8 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
 
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
 
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, PROJECT, TEMP, "1");
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
@@ -194,27 +180,14 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsoleteWithStableVersionAccountLevelTemplate() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
     when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, null, null, TEMP, null);
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(1))
@@ -228,27 +201,14 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsoleteWithOrgLevelTemplate() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructure.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
     when(customDeploymentInfrastructureHelper.checkIfInfraIsObsolete(any(), any(), any())).thenCallRealMethod();
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, null, TEMP, null);
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(1))
@@ -262,26 +222,13 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
   @Category(UnitTests.class)
   public void testUpdateInfraAsObsoleteNoUpdateRequired() {
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    InfraDefReference infraDefReference = InfraDefReference.builder()
-                                              .identifier(INFRA)
-                                              .accountIdentifier(ACCOUNT)
-                                              .orgIdentifier(ORG)
-                                              .projectIdentifier(PROJECT)
-                                              .envIdentifier(ENV)
-                                              .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder()
-            .referredByEntity(EntityDetail.builder().entityRef(infraDefReference).build())
-            .build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructureWithDiffVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, null, TEMP, null);
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(0))
@@ -295,24 +242,13 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
     Map<String, String> metadata = new HashMap<>();
     metadata.put("envID", ENV);
     String templateYaml = readFile("template.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .identifier(INFRA)
-                                      .accountIdentifier(ACCOUNT)
-                                      .orgIdentifier(ORG)
-                                      .projectIdentifier(PROJECT)
-                                      .metadata(metadata)
-                                      .build();
-    List<EntitySetupUsageDTO> entityList = new ArrayList<>();
-    EntitySetupUsageDTO entitySetupUsageDTO =
-        EntitySetupUsageDTO.builder().referredByEntity(EntityDetail.builder().entityRef(identifierRef).build()).build();
-    entityList.add(entitySetupUsageDTO);
     String infraYaml = readFile("infrastructureWithDiffVarType.yaml", INFRA_RESOURCE_PATH_PREFIX);
     InfrastructureEntity infrastructure = InfrastructureEntity.builder().accountId(ACCOUNT).yaml(infraYaml).build();
     when(infrastructureEntityService.get(any(), any(), any(), any(), any())).thenReturn(Optional.of(infrastructure));
     when(customDeploymentInfrastructureHelper.getTemplateYaml(any(), any(), any(), any(), any()))
         .thenReturn(templateYaml);
-    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
-        .thenReturn(entityList);
+    when(entitySetupUsageService.streamAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any()))
+        .thenReturn(createCloseableIterator(entityList.iterator()));
     boolean isObsolete = customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, ORG, null, TEMP, null);
     ArgumentCaptor<ArrayList<String>> infraArgumentCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(customDeploymentEntityCRUDEventHandler, times(0))
@@ -361,5 +297,22 @@ public class CustomDeploymentEntityCRUDStreamEventHandlerTest extends CategoryTe
     assertThatThrownBy(
         () -> customDeploymentEntityCRUDEventHandler.updateInfraAsObsolete(ACCOUNT, null, PROJECT, TEMP, null))
         .hasMessage("No org identifier provided.");
+  }
+
+  private <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

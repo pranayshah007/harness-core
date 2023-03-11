@@ -335,7 +335,7 @@ public class InviteServiceImpl implements InviteService {
       if (isPasswordRequired) {
         return getUserInfoSubmitUrl(baseUrl, resourceUrl, email, jwtToken, inviteAcceptResponse);
       } else {
-        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null);
+        createAndInviteNonPasswordUser(accountIdentifier, jwtToken, decodedEmail.trim(), false, true, null, null, null);
         return resourceUrl;
       }
     } else {
@@ -386,13 +386,15 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
-      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String givenName, String familyName) {
+      boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String givenName, String familyName,
+      String externalId) {
     UserInviteDTO userInviteDTO = UserInviteDTO.builder()
                                       .accountId(accountIdentifier)
                                       .email(email)
                                       .name(email)
                                       .givenName(givenName)
                                       .familyName(familyName)
+                                      .externalId(externalId)
                                       .token(jwtToken)
                                       .build();
 
@@ -603,11 +605,11 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(
-            accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(), invite.getFamilyName());
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(),
+            invite.getFamilyName(), invite.getExternalId());
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
-        createAndInviteNonPasswordUser(
-            accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(), invite.getFamilyName());
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
+            invite.getFamilyName(), invite.getExternalId());
       }
       updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
 

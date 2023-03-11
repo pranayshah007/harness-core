@@ -218,6 +218,11 @@ public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAtt
   }
 
   @Override
+  public String fetchSecretValue(String accountId, String secretRecordId) {
+    return null;
+  }
+
+  @Override
   public boolean updateSecretText(String accountId, String uuId, SecretText secretText, boolean validateScopes) {
     throw new UnsupportedOperationException();
   }

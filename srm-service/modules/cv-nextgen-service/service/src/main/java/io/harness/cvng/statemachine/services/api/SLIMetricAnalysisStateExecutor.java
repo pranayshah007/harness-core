@@ -19,11 +19,13 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLIMetricAnalysisTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -59,6 +61,8 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
 
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
   @Inject private MetricService metricService;
 
   @Inject private Clock clock;
@@ -89,7 +93,9 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
     sliRecordService.create(
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
-    sloHealthIndicatorService.upsert(serviceLevelIndicator);
+    SimpleServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     // TODO (this end time won't always be the creation time, i.e in case of recalculation, we need to re-think this.
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
