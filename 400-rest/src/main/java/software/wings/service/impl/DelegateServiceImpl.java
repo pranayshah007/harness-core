@@ -1467,8 +1467,8 @@ public class DelegateServiceImpl implements DelegateService {
     final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
     final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
     // Ng helm delegates always use immutable image irrespective of FF
-    final String delegateDockerImage =
-        immutableDelegateEnabled ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
+    final String delegateDockerImage = immutableDelegateEnabled
+        ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
         : delegateVersionService.getDelegateImageTag(templateParameters.getAccountId(), immutableDelegateEnabled);
     ImmutableMap.Builder<String, String> params =
         ImmutableMap.<String, String>builder()
@@ -1721,7 +1721,8 @@ public class DelegateServiceImpl implements DelegateService {
     final Account account = accountService.get(inquiry.getAccountId());
     if (isNotBlank(inquiry.getDelegateTokenName())) {
       if (isNg) {
-        var tokenDetails = delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
+        var tokenDetails =
+            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
         if (Objects.nonNull(tokenDetails) && tokenDetails.getStatus().equals(REVOKED)) {
           return null;
         }
@@ -3273,7 +3274,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean shouldInstallImmutableDelegate(
       final String accountId, final String delegateType, final boolean isNgDelegate) {
-    if (isNgDelegate) return true;
+    if (isNgDelegate)
+      return true;
     if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType)) {
       return accountService.isImmutableDelegateEnabled(accountId);
     }
@@ -4183,29 +4185,29 @@ public class DelegateServiceImpl implements DelegateService {
 
       final boolean isNgDelegate = true;
       final boolean isImmutable = shouldInstallImmutableDelegate(accountId, KUBERNETES, isNgDelegate);
-      TemplateParametersBuilder templateParametersBuilder = TemplateParameters.builder()
-          .accountId(accountId)
-          .version(version)
-          .managerHost(managerHost)
-          .verificationHost(verificationServiceUrl)
-          .delegateName(delegateSetupDetails.getName())
-          .delegateType(KUBERNETES)
-          .ciEnabled(isCiEnabled)
-          .delegateDescription(delegateSetupDetails.getDescription())
-          .delegateSize(sizeDetails.getSize().name())
-          .delegateReplicas(sizeDetails.getReplicas())
-          .delegateRam(sizeDetails.getRam() / sizeDetails.getReplicas())
-          .delegateCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
-          .delegateRequestsRam(sizeDetails.getRam() / sizeDetails.getReplicas())
-          .delegateRequestsCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
-          .delegateTags(isNotEmpty(delegateSetupDetails.getTags())
-              ? String.join(",", delegateSetupDetails.getTags())
-              : "")
-          .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
-          .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
-          .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
-          .runAsRoot(delegateSetupDetails.getRunAsRoot() == null || delegateSetupDetails.getRunAsRoot())
-          .delegateTokenName(delegateSetupDetails.getTokenName());
+      TemplateParametersBuilder templateParametersBuilder =
+          TemplateParameters.builder()
+              .accountId(accountId)
+              .version(version)
+              .managerHost(managerHost)
+              .verificationHost(verificationServiceUrl)
+              .delegateName(delegateSetupDetails.getName())
+              .delegateType(KUBERNETES)
+              .ciEnabled(isCiEnabled)
+              .delegateDescription(delegateSetupDetails.getDescription())
+              .delegateSize(sizeDetails.getSize().name())
+              .delegateReplicas(sizeDetails.getReplicas())
+              .delegateRam(sizeDetails.getRam() / sizeDetails.getReplicas())
+              .delegateCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
+              .delegateRequestsRam(sizeDetails.getRam() / sizeDetails.getReplicas())
+              .delegateRequestsCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
+              .delegateTags(
+                  isNotEmpty(delegateSetupDetails.getTags()) ? String.join(",", delegateSetupDetails.getTags()) : "")
+              .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
+              .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getExternalUrl())
+              .runAsRoot(delegateSetupDetails.getRunAsRoot() == null || delegateSetupDetails.getRunAsRoot())
+              .delegateTokenName(delegateSetupDetails.getTokenName());
 
       TemplateParameters templateParameters;
       if (isImmutable) {
@@ -4213,8 +4215,7 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         templateParameters = templateParametersBuilder.build();
       }
-      ImmutableMap<String, String> scriptParams =
-          getJarAndScriptRunTimeParamMap(templateParameters, true, isImmutable);
+      ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(templateParameters, true, isImmutable);
 
       File yaml = File.createTempFile(HARNESS_DELEGATE, YAML);
       String templateName = IMMUTABLE_DELEGATE_YAML;
