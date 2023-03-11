@@ -826,6 +826,7 @@ roles:
       permissions:
         - core_license_view
         - core_account_view
+        - core_pipeline_listView
       managed: true
       internal: true
       allowedScopeLevels:
@@ -835,6 +836,7 @@ roles:
       description: Organization Basic
       permissions:
         - core_organization_view
+        - core_pipeline_listView
       managed: true
       internal: true
       allowedScopeLevels:
@@ -844,6 +846,7 @@ roles:
       description: Project Basic
       permissions:
         - core_project_view
+        - core_pipeline_listView
       managed: true
       internal: true
       allowedScopeLevels:
