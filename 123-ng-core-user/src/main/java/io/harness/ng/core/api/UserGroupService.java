@@ -140,4 +140,6 @@ public interface UserGroupService {
   List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups);
 
   Long countUserGroups(String accountIdentifier);
+
+  List<UserGroup> getUserGroupsForUser(String accountIdentifier, String userId);
 }

@@ -52,6 +52,14 @@ public class UserGroupRepositoryCustomImpl implements UserGroupRepositoryCustom 
   }
 
   @Override
+  public List<UserGroup> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    query.limit(500);
+    query.fields().exclude("users").exclude("tags");
+    return mongoTemplate.find(query, UserGroup.class);
+  }
+
+  @Override
   public UserGroup delete(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findAndRemove(query, UserGroup.class);

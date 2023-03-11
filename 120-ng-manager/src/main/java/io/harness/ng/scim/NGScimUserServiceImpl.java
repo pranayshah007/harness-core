@@ -49,6 +49,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -174,6 +175,14 @@ public class NGScimUserServiceImpl implements ScimUserService {
     ScimListResponse<ScimUser> result = ngUserService.searchScimUsersByEmailQuery(accountId, filter, count, startIndex);
     if (result.getTotalResults() > 0) {
       result = removeUsersNotinNG(result, accountId);
+    }
+    // now add the groups for these users
+    if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+      for (ScimUser scimUser : result.getResources()) {
+        log.info("NGSCIM: adding user groups data for each of the user {}, in account {} for search user",
+            scimUser.getId(), accountId);
+        scimUser.setGroups(JsonUtils.asTree(getUserGroupNodesForAGivenUser(scimUser.getId(), accountId)));
+      }
     }
     log.info("NGSCIM: completed search. accountId {}, search query {}, resultSize: {}", accountId, filter,
         result.getTotalResults());
@@ -460,6 +469,11 @@ public class NGScimUserServiceImpl implements ScimUserService {
         }
       };
       userResource.setMeta(JsonUtils.asTree(metaMap));
+
+      // get UserGroups of this user
+      log.info("NGSCIM: adding user groups data for the user {}, in account {}", user.getUuid(), accountId);
+      List<JsonNode> groupsNode = getUserGroupNodesForAGivenUser(user.getUuid(), accountId);
+      userResource.setGroups(JsonUtils.asTree(groupsNode));
     }
     return userResource;
   }
@@ -493,5 +507,21 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   private String getExternalIdFromScimUser(@NotNull ScimUser userQuery) {
     return isEmpty(userQuery.getExternalId()) ? null : userQuery.getExternalId();
+  }
+
+  private List<JsonNode> getUserGroupNodesForAGivenUser(String userId, String accountId) {
+    List<JsonNode> groupsNode = new ArrayList<>();
+    List<UserGroup> userGroups = userGroupService.getUserGroupsForUser(accountId, userId);
+    for (UserGroup userGroup : userGroups) {
+      Map<String, String> userGroupMap = new HashMap<>() {
+        {
+          put("value", userGroup.getIdentifier());
+          put("ref", "");
+          put("display", userGroup.getName());
+        }
+      };
+      groupsNode.add(JsonUtils.asTree(userGroupMap));
+    }
+    return groupsNode;
   }
 }
