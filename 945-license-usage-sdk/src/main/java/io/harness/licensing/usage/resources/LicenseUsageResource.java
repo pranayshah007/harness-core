@@ -48,6 +48,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -174,6 +175,7 @@ public class LicenseUsageResource {
   @POST
   @Path("cd/active-services")
   @ApiOperation(value = "List Active Services in CD Module", nickname = "lisCDActiveServices")
+  @Hidden
   @Operation(operationId = "listCDActiveServices",
       summary =
           "List Active Services with instances, last deployed and licenses consumed details on Account, Organization and Project level",

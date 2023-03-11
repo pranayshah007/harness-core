@@ -384,22 +384,6 @@ public class BudgetGroupUtils {
     return period == YEARLY && budgetBreakdown == MONTHLY;
   }
 
-  public static BudgetGroup getRootBudgetGroup(BudgetGroup budgetGroup) {
-    BudgetGroup rootBudgetGroup = budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), budgetGroup.getAccountId());
-    while (rootBudgetGroup.getParentBudgetGroupId() != null) {
-      rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
-    }
-    return rootBudgetGroup;
-  }
-
-  public static BudgetGroup getRootBudgetGroup(Budget budget) {
-    BudgetGroup rootBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
-    while (rootBudgetGroup.getParentBudgetGroupId() != null) {
-      rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
-    }
-    return rootBudgetGroup;
-  }
-
   public static BudgetGroup updateBudgetGroupAmountOnChildEntityDeletion(
       BudgetGroup budgetGroup, BudgetGroup childBudgetGroup) {
     budgetGroup.setBudgetGroupAmount(
@@ -448,7 +432,6 @@ public class BudgetGroupUtils {
         return BudgetUtils.getRoundedValue(amount * (proportion / 100));
       case EQUAL:
         return BudgetUtils.getRoundedValue(amount * (1 / totalNumberOfChildEntities));
-      case NO_CASCADE:
       default:
         throw new InvalidRequestException(INVALID_CASCADE_TYPE_EXCEPTION);
     }
@@ -770,5 +753,9 @@ public class BudgetGroupUtils {
                                                .build();
     budgetGroupHistory.put(budgetGroup.getStartTime(), currentBudgetCostData);
     return budgetGroupHistory;
+  }
+
+  public static Double getSumGivenTimeAndValueList(List<ValueDataPoint> valueDataPoints) {
+    return valueDataPoints.stream().map(valueDataPoint -> valueDataPoint.getValue()).reduce(0.0D, (a, b) -> a + b);
   }
 }

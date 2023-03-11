@@ -26,4 +26,5 @@ public class GitFileRequestV2 extends ScmBaseRequest {
   Scope scope;
   String connectorRef;
   ScmConnector scmConnector;
+  boolean getOnlyFileContent;
 }

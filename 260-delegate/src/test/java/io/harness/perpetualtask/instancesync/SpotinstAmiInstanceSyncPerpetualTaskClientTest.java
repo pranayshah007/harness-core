@@ -91,7 +91,7 @@ public class SpotinstAmiInstanceSyncPerpetualTaskClientTest extends WingsBaseTes
   @Category(UnitTests.class)
   public void getTaskParams() {
     final SpotinstAmiInstanceSyncPerpetualTaskParams taskParams =
-        (SpotinstAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext(), true);
+        (SpotinstAmiInstanceSyncPerpetualTaskParams) client.getTaskParams(getPerpetualTaskClientContext());
 
     assertThat(taskParams.getRegion()).isEqualTo(US_EAST);
     assertThat(taskParams.getElastigroupId()).isEqualTo(ELASTIGROUP_ID);

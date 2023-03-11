@@ -34,7 +34,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDC)
 public interface NGTemplateService {
-  TemplateEntity create(TemplateEntity templateEntity, boolean setDefaultTemplate, String comments);
+  TemplateEntity create(
+      TemplateEntity templateEntity, boolean setDefaultTemplate, String comments, boolean isNewTemplate);
 
   TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
@@ -81,6 +82,9 @@ public interface NGTemplateService {
 
   boolean validateIdentifierIsUnique(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel);
+
+  boolean validateIsNewTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
 
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
 

@@ -9,17 +9,14 @@ package io.harness.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.sdk.EntityGitDetails;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineExceptionsHelper {
+  public static final String ERROR_PIPELINE_BRANCH_NOT_PROVIDED = "Pipeline branch not provided.";
   public ScmException getScmException(Throwable ex) {
     while (ex != null) {
       if (ex instanceof ScmException) {

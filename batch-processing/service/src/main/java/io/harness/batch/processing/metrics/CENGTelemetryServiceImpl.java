@@ -180,6 +180,15 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
       properties.put("ccm" + recommendationType + "_recommendation_spend", telemetryStat.getTotalMonthlyCost());
       properties.put("ccm" + recommendationType + "_recommendation_saving", telemetryStat.getTotalMonthlySaving());
     }
+    List<RecommendationTelemetryStats> appliedRecommendationTelemetryStats =
+        k8sRecommendationDAO.fetchAppliedRecommendationsTelemetry(accountId);
+    for (RecommendationTelemetryStats telemetryStat : appliedRecommendationTelemetryStats) {
+      String recommendationType = telemetryStat.getType().toLowerCase();
+      properties.put("ccm" + recommendationType + "_applied_recommendation_count", telemetryStat.getCount());
+      properties.put("ccm" + recommendationType + "_applied_recommendation_spend", telemetryStat.getTotalMonthlyCost());
+      properties.put(
+          "ccm" + recommendationType + "_applied_recommendation_saving", telemetryStat.getTotalMonthlySaving());
+    }
     return properties;
   }
 

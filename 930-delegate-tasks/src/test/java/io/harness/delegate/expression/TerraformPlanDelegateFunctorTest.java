@@ -8,6 +8,7 @@
 package io.harness.delegate.expression;
 
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -78,6 +79,86 @@ public class TerraformPlanDelegateFunctorTest extends CategoryTest {
     } finally {
       if (plan != null) {
         FileUtils.deleteQuietly(new File(plan.jsonFilePath()));
+      }
+    }
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainCloudPlanJsonFilePath() throws IOException {
+    final String fileId = "fileId";
+    final String content = "fileContentPlanJson";
+
+    TerraformPlan plan = null;
+    try (PipedInputStream pipedInputStream = new PipedInputStream();
+         PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(pipedOutputStream)) {
+      doReturn(pipedInputStream)
+          .when(delegateFileManager)
+          .downloadByFileId(FileBucket.TERRAFORM_PLAN_JSON, fileId, ACCOUNT_ID);
+      gzipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+      gzipOutputStream.finish();
+
+      plan = delegateFunctor.obtainCloudPlan(fileId, FUNCTOR_TOKEN);
+      assertThat(Files.readAllLines(Paths.get(plan.jsonFilePath()))).isEqualTo(Collections.singletonList(content));
+    } finally {
+      if (plan != null) {
+        FileUtils.deleteQuietly(new File(plan.jsonFilePath()));
+      }
+    }
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainPolicyChecksJsonFilePath() throws IOException {
+    final String fileId = "fileId";
+    final String content = "fileContentPolicyChecksJson";
+
+    TerraformPlan plan = null;
+    try (PipedInputStream pipedInputStream = new PipedInputStream();
+         PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(pipedOutputStream)) {
+      doReturn(pipedInputStream)
+          .when(delegateFileManager)
+          .downloadByFileId(FileBucket.TERRAFORM_CLOUD_POLICY_CHECKS, fileId, ACCOUNT_ID);
+      gzipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+      gzipOutputStream.finish();
+
+      plan = delegateFunctor.obtainPolicyChecks(fileId, FUNCTOR_TOKEN);
+      assertThat(Files.readAllLines(Paths.get(plan.policyChecksJsonFilePath())))
+          .isEqualTo(Collections.singletonList(content));
+    } finally {
+      if (plan != null) {
+        FileUtils.deleteQuietly(new File(plan.policyChecksJsonFilePath()));
+      }
+    }
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainHumanReadablePlanJsonFilePath() throws IOException {
+    final String fileId = "fileId";
+    final String content = "humanReadablePlanJson";
+
+    TerraformPlan plan = null;
+    try (PipedInputStream pipedInputStream = new PipedInputStream();
+         PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream);
+         GZIPOutputStream gzipOutputStream = new GZIPOutputStream(pipedOutputStream)) {
+      doReturn(pipedInputStream)
+          .when(delegateFileManager)
+          .downloadByFileId(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN, fileId, ACCOUNT_ID);
+      gzipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+      gzipOutputStream.finish();
+
+      plan = delegateFunctor.obtainHumanReadablePlan(fileId, FUNCTOR_TOKEN);
+      assertThat(Files.readAllLines(Paths.get(plan.humanReadableFilePath())))
+          .isEqualTo(Collections.singletonList(content));
+    } finally {
+      if (plan != null) {
+        FileUtils.deleteQuietly(new File(plan.humanReadableFilePath()));
       }
     }
   }

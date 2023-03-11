@@ -50,8 +50,9 @@ public class StreamingDestinationsApiUtils {
         return StreamingDetails.StatusEnum.SUCCESS;
       case FAILED:
         return StreamingDetails.StatusEnum.FAILED;
+      default:
+        throw new UnknownEnumTypeException("Streaming status", batchStatus.toString());
     }
-    throw new UnknownEnumTypeException("Streaming status", batchStatus.toString());
   }
 
   private StreamingDestinationStatus getStatusEnum(String status) {

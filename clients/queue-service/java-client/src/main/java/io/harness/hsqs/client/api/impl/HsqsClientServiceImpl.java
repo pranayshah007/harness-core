@@ -62,7 +62,7 @@ public class HsqsClientServiceImpl implements HsqsClientService {
     AckRequest modifiedRequest = ackRequest.withTopic(getTopicName(ackRequest.getTopic()));
     try (AckRequestLogContext context = new AckRequestLogContext(modifiedRequest)) {
       AckResponse ackResponse = NGRestUtils.getGeneralResponse(hsqsClient.ack(modifiedRequest));
-      log.info("Ack response send for messageId: {}", ackResponse.getItemID());
+      log.info("Ack response send for messageId: {}", ackResponse.getItemId());
       return ackResponse;
     }
   }
@@ -73,7 +73,7 @@ public class HsqsClientServiceImpl implements HsqsClientService {
     try (UnAckRequestLogContext context = new UnAckRequestLogContext(modifiedRequest)) {
       UnAckResponse unAckResponse = NGRestUtils.getGeneralResponse(hsqsClient.unack(modifiedRequest));
       log.info("Unack Request sent for topicName {}, subTopic {} and itemId {}", modifiedRequest.getTopic(),
-          modifiedRequest.getSubTopic(), modifiedRequest.getItemID());
+          modifiedRequest.getSubTopic(), modifiedRequest.getItemId());
       return unAckResponse;
     }
   }

@@ -21,9 +21,9 @@ import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
-import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.network.Http;
 import io.harness.persistence.HPersistence;
+import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.app.MainConfiguration;
 import software.wings.service.impl.infra.InfraDownloadService;

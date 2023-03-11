@@ -218,10 +218,10 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   @Override
   public List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String displayName, boolean isGitOps) {
+      String displayName, boolean isGitOps, boolean filterOnArtifact) {
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults =
         instanceService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier, projectIdentifier,
-            envIdentifier, serviceIdentifier, displayName, isGitOps);
+            envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     aggregationResults.forEach(activeServiceInstanceInfoWithEnvType -> {
       activeServiceInstanceInfoWithEnvTypeList.add(activeServiceInstanceInfoWithEnvType);

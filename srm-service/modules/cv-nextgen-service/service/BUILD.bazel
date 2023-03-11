@@ -19,6 +19,7 @@ shared_dependencies = [
     "//930-ng-core-clients:module",
     "//945-account-mgmt:module",
     "//950-wait-engine:module",
+    "//950-opa-client:module",
     "//clients/notification:module",
     "//940-primary-version-manager:module",
     "//940-secret-manager-client:module",

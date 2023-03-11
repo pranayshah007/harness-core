@@ -23,7 +23,7 @@ cp /harness/${MODULE}/config/key.pem .
 cp /harness/${MODULE}/config/cert.pem .
 
 if [[ ${MODULE} == 332-ci-manager ]];then
-  cp /harness/${MODULE}/config/ci-manager-config.yml .
+  cp /harness/${MODULE}/config/ci-manager-config.yml ./config.yml
 else
   cp /harness/${MODULE}/config/config.yml .
 fi
@@ -40,6 +40,10 @@ cp /harness/${MODULE}/config/jfr/default.jfc .
 cp /harness/${MODULE}/config/jfr/profile.jfc .
 cp ../../${MODULE}/service/src/main/resources/jfr/default.jfc .
 cp ../../${MODULE}/service/src/main/resources/jfr/profile.jfc .
+cp ../../${MODULE}/service/src/main/resources/application.yml .
+cp ../../${MODULE}/service/src/main/resources/keystore.jks .
+cp ../../${MODULE}/service/src/main/resources/key.pem .
+cp ../../${MODULE}/service/src/main/resources/cert.pem .
 
 java -jar ${MODULE}-capsule.jar scan-classpath-metadata
 cd ../..

@@ -540,7 +540,21 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK),
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_DEPLOY)
   AWS_LAMBDA_DEPLOY(
-      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY);
+      ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_LAMBDA_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_DEPLOY)
+  AWS_SAM_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_SAM_ROLLBACK)
+  AWS_SAM_ROLLBACK(
+      ModuleType.CD, EntityTypeConstants.AWS_SAM_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SSCA_ORCHESTRATION)
+  SSCA_ORCHESTRATION(ModuleType.CI, EntityTypeConstants.SSCA_ORCHESTRATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.AWS_LAMBDA_ROLLBACK)
+  AWS_LAMBDA_ROLLBACK(ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.AWS_LAMBDA_ROLLBACK),
+  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC),
+  @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD);
 
   private final ModuleType moduleType;
   String yamlName;

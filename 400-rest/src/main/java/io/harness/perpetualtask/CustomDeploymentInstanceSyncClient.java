@@ -50,7 +50,7 @@ public class CustomDeploymentInstanceSyncClient implements PerpetualTaskServiceC
   @Inject private FeatureFlagService featureFlagService;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     final Optional<DeploymentSummary> deploymentSummaryOptional =
         deploymentService.getWithInfraMappingId(getAccountId(clientContext), getInfraMappingId(clientContext));
     if (deploymentSummaryOptional.isPresent()) {

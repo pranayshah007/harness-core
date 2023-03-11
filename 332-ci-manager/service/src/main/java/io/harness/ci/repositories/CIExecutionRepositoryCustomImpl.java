@@ -8,6 +8,7 @@
 package io.harness.repositories;
 
 import io.harness.ci.execution.CIExecutionMetadata;
+import io.harness.ci.execution.CIExecutionMetadata.CIExecutionMetadataKeys;
 
 import com.google.inject.Inject;
 import lombok.AccessLevel;
@@ -26,13 +27,13 @@ public class CIExecutionRepositoryCustomImpl implements CIExecutionRepositoryCus
 
   @Override
   public void updateQueueId(String accountID, String runtimeId, String queueId) {
-    Criteria criteria = Criteria.where(CIExecutionMetadata.CIExecutionMetadataKeys.accountId)
+    Criteria criteria = Criteria.where(CIExecutionMetadataKeys.accountId)
                             .is(accountID)
-                            .and(CIExecutionMetadata.CIExecutionMetadataKeys.stageExecutionId)
+                            .and(CIExecutionMetadataKeys.stageExecutionId)
                             .is(runtimeId);
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(CIExecutionMetadata.CIExecutionMetadataKeys.queueId, queueId);
+    update.set(CIExecutionMetadataKeys.queueId, queueId);
     mongoTemplate.findAndModify(
         query, update, new FindAndModifyOptions().returnNew(true).upsert(true), CIExecutionMetadata.class);
   }

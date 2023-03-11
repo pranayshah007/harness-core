@@ -396,7 +396,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(stateExecutionData.getFilePathsInScript()).contains("/app/sample_application/manifest.yml");
     assertThat(stateExecutionData.getFilePathsInScript()).isNotEmpty();
     assertThat(stateExecutionData.getRenderedScriptString()).isNotEmpty();
-    verify(delegateService, times(1)).queueTask(delegateTask);
+    verify(delegateService, times(1)).queueTaskV2(delegateTask);
   }
 
   @Test
@@ -439,7 +439,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(stateExecutionData.getFilePathsInScript()).contains("/app/sample_application/${manifest}");
     assertThat(stateExecutionData.getFilePathsInScript()).isNotEmpty();
     assertThat(stateExecutionData.getRenderedScriptString()).isNotEmpty();
-    verify(delegateService, times(1)).queueTask(delegateTask);
+    verify(delegateService, times(1)).queueTaskV2(delegateTask);
   }
 
   @Test
@@ -460,7 +460,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(executionResponse.isAsync()).isTrue();
     final PcfPluginStateExecutionData stateExecutionData =
         (PcfPluginStateExecutionData) (executionResponse.getStateExecutionData());
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
   }
 
   @Test
@@ -488,7 +488,7 @@ public class PcfPluginStateTest extends WingsBaseTest {
     assertThat(executionResponse.isAsync()).isTrue();
     final PcfPluginStateExecutionData stateExecutionData =
         (PcfPluginStateExecutionData) (executionResponse.getStateExecutionData());
-    verify(delegateService, times(1)).queueTask(any(DelegateTask.class));
+    verify(delegateService, times(1)).queueTaskV2(any(DelegateTask.class));
   }
 
   @Test

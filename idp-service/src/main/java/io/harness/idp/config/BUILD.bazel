@@ -1,0 +1,29 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+java_library(
+    name = "module",
+    srcs = glob(["**/*.java"]),
+    resources = [],
+    visibility = ["//idp-service:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/ng:module",
+        "//960-persistence/src/main/java/io/harness/persistence/api:module",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "//980-commons/src/main/java/io/harness/morphia:module",
+        "//999-annotations:module",
+        "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
+import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 
@@ -35,6 +36,11 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public SLIMetricType getSLIMetricType() {
     return SLIMetricType.THRESHOLD;
+  }
+
+  @Override
+  public SLIExecutionType getSLIExecutionType() {
+    return SLIExecutionType.WINDOW;
   }
 
   @Override

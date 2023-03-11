@@ -8,13 +8,17 @@
 package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -93,7 +97,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetWithoutIdentifier() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     String yaml = "inputSet:\n"
         + "  name: abc";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -114,7 +118,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testForLengthCheckOnInputSetIdentifiers() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     String yaml = "inputSet:\n"
         + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijhijdsalksdajsdnanfnoaniondna12213123034r78978987879897jkklsa";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -135,7 +139,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetWithNoOrgAndProjectID() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
 
     String inputSetFileWithNoProjOrOrg = "inputSet1.yml";
     String inputSetYamlWithNoProjOrOrg = readFile(inputSetFileWithNoProjOrOrg);
@@ -174,7 +178,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
 
     String inputSetFile = "inputset1-with-org-proj-id.yaml";
     String inputSetYaml = readFile(inputSetFile);
@@ -199,12 +203,12 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetYAMLDiffForNonExistentInputSet() {
-    doReturn(Optional.empty())
+    doThrow(new InvalidRequestException("InputSet with the given ID: inputSetId does not exist or has been deleted"))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getMetadata(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, true);
     assertThatThrownBy(()
                            -> InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService, null, null,
-                               accountId, orgId, projectId, pipelineId, "inputSetId", null, null))
+                               accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false))
         .hasMessageContaining("does not exist or has been deleted")
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -218,17 +222,54 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     doReturn(Optional.of(PipelineEntity.builder().yaml("pipeline: yaml").build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    doReturn(PipelineEntity.builder().yaml("pipeline: yaml").connectorRef("connectorRef").repo("repo").build())
+        .when(pipelineService)
+        .getPipelineMetadata(any(), any(), any(), any(), anyBoolean(), anyBoolean());
     InputSetEntity overlayEntity =
         InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).build();
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
+    doReturn(overlayEntity)
+        .when(inputSetService)
+        .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", null, null);
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false);
+    assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
+    assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetYAMLDiffForOverlayInputSetInDiffRepoComparedToPipeline() {
+    MockedStatic<OverlayInputSetValidationHelper> mockSettings =
+        Mockito.mockStatic(OverlayInputSetValidationHelper.class);
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
+    doReturn(Optional.of(PipelineEntity.builder().yaml("pipeline: yaml").build()))
+        .when(pipelineService)
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+    doReturn(PipelineEntity.builder().yaml("pipeline: yaml").connectorRef("connectorRef").repo("repo1").build())
+        .when(pipelineService)
+        .getPipelineMetadata(any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    InputSetEntity overlayEntity =
+        InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).repo("repo2").build();
+    doReturn(overlayEntity)
+        .when(inputSetService)
+        .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
+    doReturn(Optional.of(overlayEntity))
+        .when(inputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
+    when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+             gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
+        .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
+    InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "defaultBranch", null, false);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     mockSettings.close();
@@ -245,19 +286,25 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     doReturn(Optional.of(PipelineEntity.builder().yaml("pipeline: yaml").build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     InputSetEntity overlayEntity = InputSetEntity.builder()
                                        .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                        .storeType(StoreType.REMOTE)
                                        .build();
+    doReturn(PipelineEntity.builder().yaml("pipeline: yaml").connectorRef("connectorRef").repo("repo").build())
+        .when(pipelineService)
+        .getPipelineMetadata(any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    doReturn(overlayEntity)
+        .when(inputSetService)
+        .getMetadata(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false, false, false);
     when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
              gitSyncSdkService, inputSetService, overlayEntity, "pipeline: yaml"))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, inputSetService,
-        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", null, null);
+        pipelineService, null, accountId, orgId, projectId, pipelineId, "inputSetId", "pipelineBranch", null, false);
     assertThat(yamlDiffDTO.getOldYAML()).isEqualTo("old: yaml");
     assertThat(yamlDiffDTO.getNewYAML()).isEqualTo("new: yaml");
     assertThat(yamlDiffDTO.getGitDetails().getBranch()).isEqualTo("thisBranch");
@@ -279,7 +326,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .yaml("input: set")
                                         .build();
     InputSetYamlDiffDTO yamlDiffForInputSet =
-        InputSetValidationHelper.getYAMLDiffForInputSet(null, inputSetEntity, null, null, "pipeline: yaml");
+        InputSetValidationHelper.getYAMLDiffForInputSet(null, inputSetEntity, "pipeline: yaml");
     assertThat(yamlDiffForInputSet.getOldYAML()).isEqualTo("input: set");
     assertThat(yamlDiffForInputSet.getNewYAML()).isEqualTo("input: setNew");
     assertThat(yamlDiffForInputSet.isInputSetEmpty()).isEqualTo(false);
@@ -300,8 +347,8 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .pipelineIdentifier(pipelineId)
                                         .yaml("input: set")
                                         .build();
-    InputSetYamlDiffDTO yamlDiffForInputSet = InputSetValidationHelper.getYAMLDiffForInputSet(
-        validateAndMergeHelper, inputSetEntity, null, null, "pipeline: yaml");
+    InputSetYamlDiffDTO yamlDiffForInputSet =
+        InputSetValidationHelper.getYAMLDiffForInputSet(validateAndMergeHelper, inputSetEntity, "pipeline: yaml");
     assertThat(yamlDiffForInputSet.isInputSetEmpty()).isEqualTo(true);
     assertThat(yamlDiffForInputSet.isNoUpdatePossible()).isEqualTo(true);
     mockSettings.close();
@@ -313,9 +360,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testGetYAMLDiffForInputSetWithUpdatePossible() {
     MockedStatic<InputSetSanitizer> mockSettings = Mockito.mockStatic(InputSetSanitizer.class);
     when(InputSetSanitizer.sanitizeInputSetAndUpdateInputSetYAML("pipeline: yaml", "input: set")).thenReturn(null);
-    doReturn("new: template")
-        .when(validateAndMergeHelper)
-        .getPipelineTemplate(accountId, orgId, projectId, pipelineId, null, null, null);
+    doReturn("new: template").when(validateAndMergeHelper).getPipelineTemplate("pipeline: yaml", null);
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -323,8 +368,8 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .pipelineIdentifier(pipelineId)
                                         .yaml("input: set")
                                         .build();
-    InputSetYamlDiffDTO yamlDiffForInputSet = InputSetValidationHelper.getYAMLDiffForInputSet(
-        validateAndMergeHelper, inputSetEntity, null, null, "pipeline: yaml");
+    InputSetYamlDiffDTO yamlDiffForInputSet =
+        InputSetValidationHelper.getYAMLDiffForInputSet(validateAndMergeHelper, inputSetEntity, "pipeline: yaml");
     assertThat(yamlDiffForInputSet.isInputSetEmpty()).isEqualTo(true);
     assertThat(yamlDiffForInputSet.isNoUpdatePossible()).isEqualTo(false);
     mockSettings.close();

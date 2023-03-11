@@ -10,6 +10,7 @@ package io.harness.ng.core.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.tasks.CreateExecutionTagsInfoNgTable;
 import io.harness.ng.core.migration.tasks.CreateInfrastructureTimeScaleTable;
 import io.harness.ng.core.migration.tasks.CreateOrganizationTimeScaleTable;
 import io.harness.ng.core.migration.tasks.CreateTagsInfoNgTable;
@@ -37,6 +38,7 @@ public class NGBeansTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(2, CreateTagsTimeScaleTable.class))
         .add(Pair.of(3, CreateInfrastructureTimeScaleTable.class))
         .add(Pair.of(4, CreateTagsInfoNgTable.class))
+        .add(Pair.of(5, CreateExecutionTagsInfoNgTable.class))
         .build();
   }
 }

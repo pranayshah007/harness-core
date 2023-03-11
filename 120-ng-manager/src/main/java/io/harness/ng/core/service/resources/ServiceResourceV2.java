@@ -55,6 +55,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
+import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -98,6 +99,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -111,6 +113,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -179,7 +182,9 @@ public class ServiceResourceV2 {
 
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
-  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
+  public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
+      "List of Service Identifiers for the entities, maximum size of list is 1000.";
+  private static final int MAX_LIMIT = 1000;
 
   @GET
   @Path("{serviceIdentifier}")
@@ -238,7 +243,10 @@ public class ServiceResourceV2 {
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be created") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be created", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -268,8 +276,8 @@ public class ServiceResourceV2 {
   public ResponseDTO<PageResponse<ServiceResponse>>
   createServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(
-          description = "Details of the Services to be created") @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
+      @Parameter(description = "Details of the Services to be created, maximum 1000 services can be created.") @Valid
+      @Max(MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     throwExceptionForNoRequestDTO(serviceRequestDTOs);
     for (ServiceRequestDTO serviceRequestDTO : serviceRequestDTOs) {
       accessControlClient.checkForAccessOrThrow(
@@ -326,7 +334,10 @@ public class ServiceResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be updated", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -351,7 +362,10 @@ public class ServiceResourceV2 {
   upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Service to be updated") @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be upserted", content = {
+        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service upsert payload",
+                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+      }) @Valid ServiceRequestDTO serviceRequestDTO) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -380,7 +394,7 @@ public class ServiceResourceV2 {
   listServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -401,7 +415,9 @@ public class ServiceResourceV2 {
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel,
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
-          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
+      @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
+          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
@@ -428,7 +444,8 @@ public class ServiceResourceV2 {
         serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     });
-    return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
+    return ResponseDTO.newResponse(getNGPageResponse(
+        serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
   }
 
   @GET
@@ -453,7 +470,8 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
+      @Parameter(description = "List of ServicesIds, maximum 1000 ServicesIds can be checked.") @QueryParam(
+          "serviceIdentifiers") @Max(MAX_LIMIT) List<String> serviceIdentifiers,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")

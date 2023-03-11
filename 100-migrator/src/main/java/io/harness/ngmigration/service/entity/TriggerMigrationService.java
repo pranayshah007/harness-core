@@ -15,6 +15,7 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -29,11 +30,15 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.NgMigrationService;
 
+import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.Trigger;
+import software.wings.beans.trigger.TriggerConditionType;
+import software.wings.beans.trigger.WebHookTriggerCondition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.TriggerService;
 
 import com.google.inject.Inject;
@@ -44,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -78,6 +84,36 @@ public class TriggerMigrationService extends NgMigrationService {
     CgEntityNode triggerNode =
         CgEntityNode.builder().id(entityId).type(TRIGGER).entityId(triggerEntityId).entity(trigger).build();
     Set<CgEntityId> children = new HashSet<>();
+
+    // Add workflow/pipeline to discovery
+    children.add(
+        CgEntityId.builder()
+            .id(trigger.getWorkflowId())
+            .type(WorkflowType.ORCHESTRATION.equals(trigger.getWorkflowType()) ? NGMigrationEntityType.WORKFLOW
+                                                                               : NGMigrationEntityType.PIPELINE)
+            .build());
+
+    // Add artifact source
+    if (trigger.getCondition() != null
+        && TriggerConditionType.NEW_ARTIFACT.equals(trigger.getCondition().getConditionType())) {
+      ArtifactTriggerCondition condition = (ArtifactTriggerCondition) trigger.getCondition();
+      if (StringUtils.isNotBlank(condition.getArtifactStreamId())) {
+        children.add(CgEntityId.builder()
+                         .id(condition.getArtifactStreamId())
+                         .type(NGMigrationEntityType.ARTIFACT_STREAM)
+                         .build());
+      }
+    }
+
+    if (trigger.getCondition() != null
+        && TriggerConditionType.WEBHOOK.equals(trigger.getCondition().getConditionType())) {
+      WebHookTriggerCondition condition = (WebHookTriggerCondition) trigger.getCondition();
+      if (StringUtils.isNotBlank(condition.getGitConnectorId())) {
+        children.add(
+            CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(condition.getGitConnectorId()).build());
+      }
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(triggerNode).build();
   }
 

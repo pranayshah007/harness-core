@@ -35,6 +35,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -68,6 +69,9 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(OptionalOutcome.builder().found(true).build())
+        .when(outcomeService)
+        .resolveOptional(any(Ambiance.class), any(RefObject.class));
   }
 
   @Test
@@ -183,7 +187,6 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                                           .setType(ExecutionNodeType.GITOPS_CLUSTERS.getName())
                                           .setStepCategory(StepCategory.STEP)
                                           .build());
-
     doReturn(OptionalOutcome.builder()
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())

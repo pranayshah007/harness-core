@@ -19,10 +19,13 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactoryArtifactStream;
+import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
@@ -45,6 +48,17 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
                 ? generateDockerConfig(artifactoryArtifactStream, connector)
                 : generateGeneticConfig(artifactoryArtifactStream, connector))
         .build();
+  }
+
+  @Override
+  public ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream) {
+    return ArtifactType.ARTIFACTORY_REGISTRY;
+  }
+
+  @Override
+  public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
+    return null;
   }
 
   private ArtifactoryRegistryArtifactConfig generateDockerConfig(

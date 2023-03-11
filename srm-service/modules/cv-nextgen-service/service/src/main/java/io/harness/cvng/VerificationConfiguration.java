@@ -114,6 +114,11 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
 
   private String portalUrl;
+
+  private ServiceHttpClientConfig opaClientConfig;
+
+  private String policyManagerSecret;
+
   /**
    * Instantiates a new Main configuration.
    */

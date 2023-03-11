@@ -14,13 +14,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.resourcegroup.framework.v1.repositories.custom.ResourceGroupRepositoryCustom;
 import io.harness.resourcegroup.v1.model.ResourceGroup;
 
-import java.util.List;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(PL)
 public interface ResourceGroupRepository
     extends PagingAndSortingRepository<ResourceGroup, String>, ResourceGroupRepositoryCustom {
-  List<ResourceGroup> deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+  long deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

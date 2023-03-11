@@ -91,7 +91,6 @@ java_library(
     ],
     resources = [
         "//:resource",
-        "//260-delegate/src/main/java/io/harness/delegate/service/core/k8s/resources:resource",
         "//260-delegate/src/test/resources:resource",
         "//400-rest/src/main/resources:resource",
         "//980-commons/src/main/resources:resource",
@@ -359,7 +358,6 @@ java_library(
         "@maven//:guru_nidi_com_kitfox_svgSalamander",
         "@maven//:guru_nidi_graphviz_java",
         "@maven//:guru_nidi_graphviz_rough",
-        "@maven//:info_jerrinot_subzero_core",
         "@maven//:io_cloudsoft_windows_winrm4j",
         "@maven//:io_cloudsoft_windows_winrm4j_client",
         "@maven//:io_dropwizard_bundles_dropwizard_configurable_assets_bundle",

@@ -33,5 +33,14 @@ public class Attributes {
   @JsonProperty("empty_apply") private boolean emptyApply;
   @JsonProperty("auto-apply") private boolean autoApply;
   @JsonProperty("target-addrs") private List<String> targets;
+  @JsonProperty("has-changes") private boolean hasChanges;
   List<Variable> variables;
+  private Actions actions;
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  @Builder
+  @lombok.Data
+  public static class Actions {
+    @JsonProperty("is-confirmable") boolean isConfirmable;
+    @JsonProperty("is-discardable") boolean isDiscardable;
+  }
 }

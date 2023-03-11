@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.invites.entities.Invite;
 
-import java.util.List;
+import com.mongodb.client.result.DeleteResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -24,5 +24,5 @@ public interface InviteRepositoryCustom {
 
   Invite updateInvite(String inviteId, Update update);
 
-  List<Invite> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

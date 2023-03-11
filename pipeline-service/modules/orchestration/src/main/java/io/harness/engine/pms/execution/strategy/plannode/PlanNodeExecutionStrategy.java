@@ -39,6 +39,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -58,6 +59,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -98,10 +100,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+
+  @Inject private PlanExpansionService planExpansionService;
+
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject PlanExecutionService planExecutionService;
+  @Inject TransactionHelper transactionHelper;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -139,10 +145,15 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
-    // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
-    // for maps Find a better way to do this
-    nodeExecutionService.updateV2(nodeExecutionId,
-        ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+
+    transactionHelper.performTransaction(() -> {
+      // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
+      // for maps Find a better way to do this
+      nodeExecutionService.updateV2(nodeExecutionId,
+          ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+      planExpansionService.addStepInputs(ambiance, resolvedParameters);
+      return resolvedParameters;
+    });
     log.info("Resolved to step parameters");
   }
 

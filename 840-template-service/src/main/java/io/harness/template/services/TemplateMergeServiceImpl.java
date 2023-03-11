@@ -27,6 +27,7 @@ import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -34,7 +35,7 @@ import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
-import io.harness.template.yaml.TemplateYamlUtils;
+import io.harness.template.yaml.TemplateYamlFacade;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -57,6 +58,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+  @Inject private TemplateYamlFacade templateYamlFacade;
 
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
@@ -123,13 +125,14 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     JsonNode updatedJsonNode =
         YamlRefreshHelper.refreshNodeFromSourceNode(originalTemplateInputSetJsonNode, templateInputSetJsonNode);
     return TemplateRetainVariablesResponse.builder()
-        .mergedTemplateInputs(TemplateYamlUtils.writeYamlString(updatedJsonNode))
+        .mergedTemplateInputs(templateYamlFacade.writeYamlString(updatedJsonNode))
         .build();
   }
 
   private TemplateMergeResponseDTO getTemplateMergeResponseDTO(String accountId, String orgId, String projectId,
       String yaml, boolean getMergedYamlWithTemplateField, YamlNode yamlNode,
       Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache, boolean appendInputSetValidator) {
+    log.info("Principal in getTemplateMergeResponseDTO is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     Map<String, Object> resMap;
     if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
       templateCacheMap.putAll(
@@ -148,11 +151,11 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     List<TemplateReferenceSummary> templateReferenceSummaries =
         getTemplateReferenceSummaries(accountId, orgId, projectId, yaml, templateCacheMap);
     return TemplateMergeResponseDTO.builder()
-        .mergedPipelineYaml(TemplateYamlUtils.writeYamlString(resMap))
+        .mergedPipelineYaml(templateYamlFacade.writeYamlString(resMap))
         .templateReferenceSummaries(templateReferenceSummaries)
         .mergedPipelineYamlWithTemplateRef(mergeTemplateInputsInObject == null
                 ? null
-                : TemplateYamlUtils.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
+                : templateYamlFacade.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .cacheResponseMetadata(NGTemplateDtoMapper.getCacheResponse())
         .build();
   }

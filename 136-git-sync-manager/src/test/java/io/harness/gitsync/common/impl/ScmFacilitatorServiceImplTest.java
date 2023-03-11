@@ -604,6 +604,110 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
                                    .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
                                    .build()))
         .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap2 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap2.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).projectIdentifier(projectIdentifier).build())
+            .build());
+
+    ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO =
+        ScmGetBatchFilesByBranchRequestDTO.builder()
+            .accountIdentifier(accountIdentifier)
+            .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap2)
+            .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO.validate())
+        .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap3 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap3.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap3)
+                                             .build();
+    scmGetBatchFilesByBranchRequestDTO.validate();
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap4 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap4.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier("orgIdentifier2")
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap4)
+                                             .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO2 = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO2.validate())
+        .isInstanceOf(InvalidRequestException.class);
+
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap5 =
+        new HashMap<>();
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder().accountIdentifier(accountIdentifier).build())
+            .build());
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier(projectIdentifier)
+                       .build())
+            .build());
+    scmGetFileByBranchRequestDTOMap5.put(getBatchFileRequestIdentifier(UUID.randomUUID().toString()),
+        ScmGetFileByBranchRequestDTO.builder()
+            .scope(Scope.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .projectIdentifier("projectIdentifier2")
+                       .build())
+            .build());
+    scmGetBatchFilesByBranchRequestDTO = ScmGetBatchFilesByBranchRequestDTO.builder()
+                                             .accountIdentifier(accountIdentifier)
+                                             .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap5)
+                                             .build();
+    ScmGetBatchFilesByBranchRequestDTO finalScmGetBatchFilesByBranchRequestDTO3 = scmGetBatchFilesByBranchRequestDTO;
+    assertThatThrownBy(() -> finalScmGetBatchFilesByBranchRequestDTO3.validate())
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

@@ -29,7 +29,6 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.NameAccess;
-import io.harness.serializer.JsonUtils;
 import io.harness.serializer.jackson.PipelineJacksonModule;
 
 import software.wings.ngmigration.CgBasicInfo;
@@ -39,7 +38,6 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -175,23 +173,7 @@ public abstract class NgMigrationService {
 
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
-    if (resp.code() >= 200 && resp.code() < 300) {
-      return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
-    }
-    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
-    Map<String, Object> error = JsonUtils.asObject(
-        resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
-    log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",
-        yamlFile.getType(), resp, error));
-    return MigrationImportSummaryDTO.builder()
-        .errors(Collections.singletonList(
-            ImportError.builder()
-                .message(error.containsKey("message")
-                        ? error.get("message").toString()
-                        : String.format("There was an error creating the %s", yamlFile.getType()))
-                .entity(yamlFile.getCgBasicInfo())
-                .build()))
-        .build();
+    return MigratorUtility.handleEntityMigrationResp(yamlFile, resp);
   }
 
   protected MigrationImportSummaryDTO migrateFile(

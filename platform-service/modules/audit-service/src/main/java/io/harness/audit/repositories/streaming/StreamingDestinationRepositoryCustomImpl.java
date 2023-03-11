@@ -7,9 +7,8 @@
 
 package io.harness.audit.repositories.streaming;
 
-import static io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys.status;
-
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.spec.server.audit.v1.model.StatusWiseCount;
 
 import com.google.inject.Inject;
@@ -55,9 +54,9 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
   @Override
   public List<StatusWiseCount> countByStatus(Criteria criteria) {
     MatchOperation matchStage = Aggregation.match(criteria);
-    GroupOperation groupStage = Aggregation.group(status).count().as("count");
+    GroupOperation groupStage = Aggregation.group(StreamingDestinationKeys.status).count().as("count");
     ProjectionOperation projectStage =
-        Aggregation.project().andInclude("count").andExclude("_id").and("_id").as(status);
+        Aggregation.project().andInclude("count").andExclude("_id").and("_id").as(StreamingDestinationKeys.status);
     Aggregation aggregation = Aggregation.newAggregation(matchStage, groupStage, projectStage);
     return template
         .aggregate(aggregation, template.getCollectionName(StreamingDestination.class), StatusWiseCount.class)

@@ -45,6 +45,7 @@ import io.harness.ngmigration.service.step.pcf.PcfPluginStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfSwapRoutesStepMapperImpl;
+import io.harness.ngmigration.service.step.shellscriptprovisioner.ShellScriptProvisionerStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
 import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
@@ -153,6 +154,7 @@ public class StepMapperFactory {
   @Inject AsgRollingRollbackStepMapperImpl asgRollingRollbackStepMapper;
   @Inject AsgBlueGreenSwapStepMapperImpl asgBlueGreenSwapStepMapper;
   @Inject AsgBlueGreenRollbackStepMapperImpl asgBlueGreenRollbackStepMapper;
+  @Inject ShellScriptProvisionerStepMapperImpl shellScriptProvisionerStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -321,6 +323,8 @@ public class StepMapperFactory {
       case "ASG_AMI_SERVICE_ALB_SHIFT_SETUP":
       case "ASG_AMI_ROLLBACK_ALB_SHIFT_SWITCH_ROUTES":
         return unsupportedStepMapper;
+      case "SHELL_SCRIPT_PROVISION":
+        return shellScriptProvisionerStepMapper;
       default:
         return unsupportedStepMapper;
     }

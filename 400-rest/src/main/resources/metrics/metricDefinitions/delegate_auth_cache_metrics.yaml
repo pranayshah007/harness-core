@@ -10,3 +10,7 @@ metrics:
     metricDefinition: Delegate auth cache miss count
     type: Count
     unit: "1"
+  - metricName: delegate_jwt_decryption_using_account_key
+    metricDefinition: Delegate auth using account_key
+    type: Count
+    unit: "1"

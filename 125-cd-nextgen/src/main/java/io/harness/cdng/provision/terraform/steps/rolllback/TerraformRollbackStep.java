@@ -7,11 +7,18 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
+
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
+
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -160,12 +167,32 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
             TerraformStepHelper.TF_CONFIG_FILES));
       }
 
+      if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CD_TERRAFORM_CLOUD_CLI_NG)) {
+        builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
+        io.harness.delegate.TaskType taskTypeV3 =
+            io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
+        terraformStepHelper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
+      }
+
       builder.backendConfig(rollbackConfig.getBackendConfig())
           .targets(rollbackConfig.getTargets())
           .environmentVariables(rollbackConfig.getEnvironmentVariables() == null
                   ? new HashMap<>()
                   : rollbackConfig.getEnvironmentVariables())
           .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+
+      ParameterField<Boolean> skipTerraformRefreshCommandParameter = stepParametersSpec.getSkipRefreshCommand();
+
+      boolean skipRefreshCommand =
+          ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
+
+      if (skipRefreshCommand) {
+        io.harness.delegate.TaskType taskTypeV4 =
+            io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
+        terraformStepHelper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
+      }
+
+      builder.skipTerraformRefresh(skipRefreshCommand);
 
       TerraformTaskNGParameters terraformTaskNGParameters = builder.build();
       TaskData taskData =

@@ -9,6 +9,7 @@ package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
+import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.expression.SecretString.SECRET_MASK;
 
@@ -90,10 +91,16 @@ public class SettingResourceNg {
     String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
     secretText.setValue(password);
     String secretName = variable.getName() + "-" + accountId + "-SmtpSecret";
+    secretName = secretName.replaceAll("[^a-zA-Z0-9_-]", "-");
     secretText.setName(secretName);
     secretText.setScopedToAccount(true);
     secretText.setKmsId(secretManagerConfig.getUuid());
-    smtpConfig.setPassword(secretManager.saveSecretText(accountId, secretText, true).toCharArray());
+    try {
+      smtpConfig.setPassword(secretManager.saveSecretText(accountId, secretText, true).toCharArray());
+    } catch (SecretManagementException ex) {
+      log.error(" Exception received while setting SMTP password {}", ex);
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, ex, USER);
+    }
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);
     SettingAttribute savedSettingAttribute = settingsService.saveWithPruning(variable, appId, accountId);

@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7
 
 USER root
 

@@ -32,4 +32,5 @@ public class QLUser implements QLObject {
   private Boolean isPasswordExpired;
   private Boolean isImportedFromIdentityProvider;
   private String externalUserId;
+  private Boolean isDisabled;
 }

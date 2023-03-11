@@ -13,14 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
 @OwnedBy(CV)
-@Value
+@Data
 @Builder
 public class NotificationRuleResponse {
   @NotNull private NotificationRuleDTO notificationRule;
-  private boolean enabled;
+  @Builder.Default private boolean enabled = true;
   private Long createdAt;
   private Long lastModifiedAt;
 }

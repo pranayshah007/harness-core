@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 USER root
 
 RUN microdnf install yum
@@ -55,5 +55,5 @@ COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
 RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 
 USER root
-RUN microdnf install -y dnf yum \
+RUN microdnf install -y yum \
 && microdnf clean all

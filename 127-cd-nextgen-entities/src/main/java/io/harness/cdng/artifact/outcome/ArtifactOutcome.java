@@ -30,7 +30,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = CustomArtifactOutcome.class, name = "CustomArtifact"),
       @JsonSubTypes.Type(value = GithubPackagesArtifactOutcome.class, name = "GithubPackageRegistry"),
       @JsonSubTypes.Type(value = AzureArtifactsOutcome.class, name = "AzureArtifacts"),
-      @JsonSubTypes.Type(value = AMIArtifactOutcome.class, name = "AmazonMachineImage")
+      @JsonSubTypes.Type(value = AMIArtifactOutcome.class, name = "AmazonMachineImage"),
+      @JsonSubTypes.Type(value = BambooArtifactOutcome.class, name = "Bamboo")
 })
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary {

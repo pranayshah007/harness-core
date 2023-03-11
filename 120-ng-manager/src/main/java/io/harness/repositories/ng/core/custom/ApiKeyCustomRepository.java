@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.entities.ApiKey;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -29,5 +30,5 @@ public interface ApiKeyCustomRepository {
 
   Map<String, Integer> getApiKeysPerParentIdentifier(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, ApiKeyType apiKeyType, List<String> parentIdentifiers);
-  List<ApiKey> deleteAll(Criteria criteria);
+  DeleteResult deleteAll(Criteria criteria);
 }

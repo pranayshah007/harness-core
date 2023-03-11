@@ -35,6 +35,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisit
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.BambooArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
@@ -89,6 +90,7 @@ import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
+import io.harness.cdng.manifest.yaml.AwsLambdaAliasDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsLambdaDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
@@ -382,8 +384,10 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
     kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
     kryo.register(CfCliVersionNG.class, 140070);
+    kryo.register(BambooArtifactConfig.class, 150070);
     kryo.register(AwsLambdaDefinitionManifest.class, 140071);
     kryo.register(AwsLambdaDefinitionManifestOutcome.class, 140072);
+    kryo.register(AwsLambdaAliasDefinitionManifestOutcome.class, 140073);
 
     // AWS SAM
     kryo.register(AwsSamInfrastructureOutcome.class, 1510001);

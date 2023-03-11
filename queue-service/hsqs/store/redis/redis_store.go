@@ -148,25 +148,27 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 	}
 	index := utils.RandInt(len(subtopics))
 
-	selectedTopic := subtopics[index]
-	s.Logger.Info().Msgf("selected subTopic is %s", selectedTopic)
+	selectedSubTopic := subtopics[index]
+	s.Logger.Info().Msgf("selected subTopic is %s", selectedSubTopic)
 
-	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName, request.MaxWaitDuration)
+	return s.ReadFromStream(ctx, request, selectedSubTopic)
 }
 
 // ReadFromStream helper method to read from subTopic Streams
-func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize int, groupName string, consumerName string, maxWaitDuration time.Duration) ([]*store.DequeueResponse, error) {
+func (s *Store) ReadFromStream(ctx context.Context, request store.DequeueRequest, subTopic string) ([]*store.DequeueResponse, error) {
 
 	// Claim entries for pending items more than retry interval duration for given topic
 	// else return new Messages
 
-	s.Logger.Info().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, batchSize, groupName, consumerName)
+	streamKey := utils.GetSubTopicStreamQueueKey(request.Topic, subTopic)
+
+	s.Logger.Info().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName)
 
 	pendingRequest := &PendingEntriesRequest{
 		Stream:   streamKey,
-		Group:    groupName,
-		Consumer: consumerName,
-		Count:    batchSize,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
+		Count:    request.BatchSize,
 	}
 	pendingEntries, err := s.GetPendingEntries(ctx, pendingRequest)
 
@@ -174,20 +176,13 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 		s.Logger.Info().Msgf("Pending Entries Error received for stream %s with error %s", streamKey, err.Error())
 	}
 	if pendingEntries == nil || len(pendingEntries) == 0 {
-		readRequest := &ReadNewMessagesRequest{
-			Stream:          streamKey,
-			Group:           groupName,
-			Consumer:        consumerName,
-			Count:           batchSize,
-			MaxWaitDuration: maxWaitDuration,
-		}
-		return s.ReadNewMessages(ctx, readRequest)
+		return s.ReadNewMessages(ctx, request, subTopic)
 	}
 
 	claimRequest := &ClaimRequest{
 		Stream:   streamKey,
-		Group:    groupName,
-		Consumer: consumerName,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
 	}
 	claimResponse, err := s.ClaimEntries(ctx, claimRequest, pendingEntries)
 	if err != nil {
@@ -195,14 +190,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	}
 	// If claim entries are errored out or empty result then fetch new messages
 	if claimResponse.Messages == nil || len(claimResponse.Messages) == 0 {
-		readRequest := &ReadNewMessagesRequest{
-			Stream:          streamKey,
-			Group:           groupName,
-			Consumer:        consumerName,
-			Count:           batchSize,
-			MaxWaitDuration: maxWaitDuration,
-		}
-		return s.ReadNewMessages(ctx, readRequest)
+		return s.ReadNewMessages(ctx, request, subTopic)
 	}
 
 	// else return claimed messages
@@ -231,28 +219,21 @@ type PendingEntriesRequest struct {
 	Idle     int
 }
 
-// ReadNewMessagesRequest Request Object for getting new entries from Redis Stream
-type ReadNewMessagesRequest struct {
-	Stream          string
-	Group           string
-	Consumer        string
-	Count           int
-	MaxWaitDuration time.Duration
-}
-
 // ReadNewMessages reads new messages from the stream
-func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) ([]*store.DequeueResponse, error) {
-	if len(r.Stream) == 0 {
+func (s *Store) ReadNewMessages(ctx context.Context, request store.DequeueRequest, subTopic string) ([]*store.DequeueResponse, error) {
+
+	stream := utils.GetSubTopicStreamQueueKey(request.Topic, subTopic)
+	if len(stream) == 0 {
 		return []*store.DequeueResponse{}, nil
 	}
 
-	s.Logger.Info().Msgf("Consumer reading new messages from stream %v", r.Stream)
+	s.Logger.Info().Msgf("Consumer reading new messages from stream %v", stream)
 	xReadGroupArgs := &redis.XReadGroupArgs{
-		Group:    r.Group,
-		Consumer: r.Consumer,
-		Streams:  []string{r.Stream, ">"},
-		Count:    int64(r.Count),
-		Block:    r.MaxWaitDuration * time.Millisecond,
+		Group:    utils.GetConsumerGroupKeyForTopic(request.Topic),
+		Consumer: request.ConsumerName,
+		Streams:  []string{stream, ">"},
+		Count:    int64(request.BatchSize),
+		Block:    request.MaxWaitDuration * time.Millisecond,
 	}
 	result, err := s.Client.XReadGroup(ctx, xReadGroupArgs).Result()
 
@@ -261,11 +242,23 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 	}
 
 	if err != nil {
-		s.Logger.Error().Msgf("Error while fetching new messages from queue %s is %s", r.Stream, err.Error())
+		s.Logger.Error().Msgf("Error while fetching new messages from queue %s is %s", stream, err.Error())
 		return nil, &store.DequeueErrorResponse{ErrorMessage: err.Error()}
 	}
-	messages := MapXStreamToResponse(r.Stream, result)
-	s.Logger.Info().Msgf("Result for new messages from queue %s is %v", r.Stream, len(messages))
+	messages := MapXStreamToResponse(stream, result)
+	s.Logger.Info().Msgf("Result for new messages from queue %s is %v", stream, len(messages))
+	if len(messages) == 0 {
+		val, err := s.Client.XLen(ctx, stream).Result()
+		if err != nil {
+			s.Logger.Error().Msgf("Error while fetching length for stream %s due to %s", stream, err.Error())
+		}
+		if val == int64(0) {
+			_, err := s.Client.SRem(ctx, utils.GetAllSubTopicsFromTopicKey(request.Topic), subTopic).Result()
+			if err != nil {
+				s.Logger.Error().Msgf("Failed Removing empty subTopic %s from Topic %s due to %s", subTopic, request.Topic, err.Error())
+			}
+		}
+	}
 	return messages, nil
 }
 

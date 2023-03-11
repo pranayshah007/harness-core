@@ -20,12 +20,10 @@ import javax.annotation.Nonnull;
 @OwnedBy(CDP)
 public interface KustomizeClient {
   @Nonnull
-  CliResponse build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeDirPath,
-      @Nonnull String kustomizeBinaryPath, @Nonnull LogCallback executionLogCallback)
+  CliResponse build(String manifestFilesDir, String kustomizeDirPath, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
-  CliResponse buildWithPlugins(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeDirPath,
-      @Nonnull String kustomizeBinaryPath, @Nonnull String pluginPath, @Nonnull LogCallback callback)
-      throws InterruptedException, TimeoutException, IOException;
+  CliResponse buildWithPlugins(String manifestFilesDir, String kustomizeDirPath, @Nonnull String pluginPath,
+      @Nonnull LogCallback callback) throws InterruptedException, TimeoutException, IOException;
 }
