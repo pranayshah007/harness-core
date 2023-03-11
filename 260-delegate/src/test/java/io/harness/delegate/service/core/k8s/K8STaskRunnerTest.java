@@ -17,14 +17,11 @@ import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.core.beans.TaskInput;
 import io.harness.rule.Owner;
 
-import software.wings.beans.bash.ShellScriptTaskParametersNG;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
