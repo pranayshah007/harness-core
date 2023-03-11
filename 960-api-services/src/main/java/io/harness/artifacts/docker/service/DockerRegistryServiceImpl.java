@@ -111,7 +111,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
     // Here we ignore tagRegex if it is equal to TAG_REGEX_TO_IGNORE - This is because DockerRegistry triggers are
-    // using tagRegex as "\\*" by default.
+    // using tagRegex as "\\*" by default. Will remove this when triggers are fixed to have correct regex in place
     if (tagRegex != null && !TAG_REGEX_TO_IGNORE.equals(tagRegex)) {
       buildDetails = buildDetails.stream()
                          .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
