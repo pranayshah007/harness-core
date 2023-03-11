@@ -204,8 +204,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
-      kubernetesConfig =
-          containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequest.getK8sInfraDelegateConfig());
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          commandRequest.getK8sInfraDelegateConfig(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
@@ -521,8 +521,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Override
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequest.getK8sInfraDelegateConfig());
+    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        commandRequest.getK8sInfraDelegateConfig(), logCallback);
     try {
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(

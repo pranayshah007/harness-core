@@ -79,7 +79,8 @@ public class K8sApiClientTest extends CategoryTest {
     K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder().resourceIds(Collections.emptyList()).build();
     boolean result = k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
-    verify(k8sClientHelper, times(0)).createKubernetesApiClient(any(K8sInfraDelegateConfig.class));
+    verify(k8sClientHelper, times(0))
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
   }
 
   @Test
@@ -92,7 +93,9 @@ public class K8sApiClientTest extends CategoryTest {
     ApiClient apiClient = new ApiClient();
 
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
-    doReturn(apiClient).when(k8sClientHelper).createKubernetesApiClient(any(K8sInfraDelegateConfig.class));
+    doReturn(apiClient)
+        .when(k8sClientHelper)
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -131,7 +134,9 @@ public class K8sApiClientTest extends CategoryTest {
     ApiClient apiClient = new ApiClient();
 
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
-    doReturn(apiClient).when(k8sClientHelper).createKubernetesApiClient(any(K8sInfraDelegateConfig.class));
+    doReturn(apiClient)
+        .when(k8sClientHelper)
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -171,7 +176,9 @@ public class K8sApiClientTest extends CategoryTest {
     ApiClient apiClient = new ApiClient();
 
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
-    doReturn(apiClient).when(k8sClientHelper).createKubernetesApiClient(any(K8sInfraDelegateConfig.class));
+    doReturn(apiClient)
+        .when(k8sClientHelper)
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));

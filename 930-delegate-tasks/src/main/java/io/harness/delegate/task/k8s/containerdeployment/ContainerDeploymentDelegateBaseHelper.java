@@ -121,7 +121,7 @@ public class ContainerDeploymentDelegateBaseHelper {
     return controllers.size();
   }
 
-  public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO) {
+  public KubernetesConfig createKubernetesConfig(K8sInfraDelegateConfig clusterConfigDTO, LogCallback logCallback) {
     if (clusterConfigDTO instanceof DirectK8sInfraDelegateConfig) {
       return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
           ((DirectK8sInfraDelegateConfig) clusterConfigDTO).getKubernetesClusterConfigDTO(),
@@ -168,7 +168,7 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig));
+    return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig, null));
   }
 
   public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
@@ -177,7 +177,7 @@ public class ContainerDeploymentDelegateBaseHelper {
 
   public KubernetesConfig decryptAndGetKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
-    return createKubernetesConfig(k8sInfraDelegateConfig);
+    return createKubernetesConfig(k8sInfraDelegateConfig, null);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {

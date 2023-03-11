@@ -99,7 +99,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig);
+        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
 
     ApiException apiException = new ApiException("Failed to get release history secret");
     InvalidRequestException exception =
