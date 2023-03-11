@@ -149,13 +149,13 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
     YamlNode envNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.environment");
     if (envNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("env node in Resolved templates yaml is null");
       return;
     }
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
@@ -299,6 +299,7 @@ public class EnvironmentRefreshHelper {
 
     // ex. use from stage
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null) {
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
       return;
     }
 
@@ -312,6 +313,9 @@ public class EnvironmentRefreshHelper {
       JsonNode serviceOverrideInputs, JsonNode serviceRefInResolvedTemplatesYaml,
       JsonNode envRefInResolvedTemplatesYaml) {
     if (serviceRefInResolvedTemplatesYaml == null || envRefInResolvedTemplatesYaml == null) {
+      if (serviceOverrideInputs != null) {
+        envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
+      }
       log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
@@ -347,7 +351,7 @@ public class EnvironmentRefreshHelper {
     YamlNode serviceNodeInResolvedTemplatesYaml =
         YamlNodeUtils.goToPathUsingFqn(stageYamlNodeInResolvedTemplatesYaml, "spec.service");
     if (serviceNodeInResolvedTemplatesYaml == null) {
-      log.warn("Env node in Resolved templates yaml is null");
+      log.warn("service node in Resolved templates yaml is null");
       return;
     }
     YamlNode envNodeInResolvedTemplatesYaml =
@@ -358,6 +362,7 @@ public class EnvironmentRefreshHelper {
     }
     if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
         || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      envObjectNode.remove(YamlTypes.SERVICE_OVERRIDE_INPUTS);
       log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
