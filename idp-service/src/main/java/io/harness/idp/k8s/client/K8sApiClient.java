@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.net.ConnectException;
 import java.util.HashMap;
@@ -110,7 +111,7 @@ public class K8sApiClient implements K8sClient {
         return coreV1Api.readNamespacedSecret(secretName, namespace, null);
       } catch (ApiException e) {
         if (e.getCode() == 404) {
-          throw new NotFoundException(format("%s/Secret/%s not found", namespace, secretName));
+          return createSecret(coreV1Api, namespace, secretName);
         }
         ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
         String errorMessage = format(
@@ -119,6 +120,50 @@ public class K8sApiClient implements K8sClient {
       }
     });
     return secretSupplier.get();
+  }
+
+  private V1Secret createSecret(CoreV1Api coreV1Api, String namespace, String secretName) {
+    if (isBlank(secretName)) {
+      throw new InvalidRequestException("Secret name is empty");
+    }
+    final Supplier<V1Secret> secretSupplier = Retry.decorateSupplier(retry, () -> {
+      V1Secret secret = new V1Secret();
+      V1ObjectMeta metadata = new V1ObjectMeta();
+      metadata.setNamespace(namespace);
+      metadata.setName(secretName);
+      secret.setMetadata(metadata);
+      try {
+        return coreV1Api.createNamespacedSecret(namespace, secret, null, null, null, null);
+      } catch (ApiException e) {
+        ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
+        String errorMessage = format("Failed to create %s/Secret/%s. Code: %s, message: %s", namespace, secretName,
+            ex.getCode(), ex.getMessage());
+        throw new InvalidRequestException(errorMessage, ex, USER);
+      }
+    });
+    return secretSupplier.get();
+  }
+
+  private V1ConfigMap createConfigMap(CoreV1Api coreV1Api, String namespace, String configMapName) {
+    if (isBlank(configMapName)) {
+      throw new InvalidRequestException("ConfigMap name is empty");
+    }
+    final Supplier<V1ConfigMap> config = Retry.decorateSupplier(retry, () -> {
+      V1ConfigMap configMap = new V1ConfigMap();
+      V1ObjectMeta metadata = new V1ObjectMeta();
+      metadata.setNamespace(namespace);
+      metadata.setName(configMapName);
+      configMap.setMetadata(metadata);
+      try {
+        return coreV1Api.createNamespacedConfigMap(namespace, configMap, null, null, null, null);
+      } catch (ApiException e) {
+        ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
+        String errorMessage = format("Failed to create %s/ConfigMap/%s. Code: %s, message: %s", namespace,
+            configMapName, ex.getCode(), ex.getMessage());
+        throw new InvalidRequestException(errorMessage, ex, USER);
+      }
+    });
+    return config.get();
   }
 
   private V1Secret replaceSecret(CoreV1Api coreV1Api, V1Secret secret) {
@@ -149,7 +194,7 @@ public class K8sApiClient implements K8sClient {
         return coreV1Api.readNamespacedConfigMap(configMapName, namespace, null);
       } catch (ApiException e) {
         if (e.getCode() == 404) {
-          throw new NotFoundException(format("%s/ConfigMap/%s not found", namespace, configMapName));
+          return createConfigMap(coreV1Api, namespace, configMapName);
         }
         ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
         String message = format("Failed to get %s/ConfigMap/%s. Code: %s, message: %s", namespace, configMapName,

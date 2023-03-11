@@ -113,6 +113,20 @@ public class EnvironmentSecretApiImpl implements EnvironmentSecretApi {
   }
 
   @Override
+  public Response syncEnvironmentSecrets(String harnessAccount) {
+    List<EnvironmentSecret> secrets = environmentSecretService.findByAccountIdentifier(harnessAccount);
+    try {
+      environmentSecretService.syncK8sSecret(secrets, harnessAccount);
+    } catch (Exception e) {
+      log.error("Could not create all environment secrets", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @Override
   public Response updateEnvironmentSecret(
       String secretIdentifier, @Valid EnvironmentSecretRequest body, String harnessAccount) {
     EnvironmentSecret secret;

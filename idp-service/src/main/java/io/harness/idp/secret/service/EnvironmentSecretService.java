@@ -16,15 +16,12 @@ import java.util.Optional;
 public interface EnvironmentSecretService {
   Optional<EnvironmentSecret> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
   List<EnvironmentSecret> findByAccountIdentifier(String accountIdentifier);
-  EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
-      throws Exception;
-  List<EnvironmentSecret> saveAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String harnessAccount)
-      throws Exception;
-  EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier)
-      throws Exception;
-  List<EnvironmentSecret> updateAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String accountIdentifier)
-      throws Exception;
-  void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) throws Exception;
+  EnvironmentSecret saveAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier);
+  List<EnvironmentSecret> saveAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String harnessAccount);
+  EnvironmentSecret updateAndSyncK8sSecret(EnvironmentSecret environmentSecret, String accountIdentifier);
+  List<EnvironmentSecret> updateAndSyncK8sSecrets(List<EnvironmentSecret> requestSecrets, String accountIdentifier);
+  void deleteMulti(List<String> secretIdentifiers, String accountIdentifier);
   void processSecretUpdate(EntityChangeDTO entityChangeDTO);
-  void delete(String secretIdentifier, String harnessAccount) throws Exception;
+  void delete(String secretIdentifier, String harnessAccount);
+  void syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier);
 }

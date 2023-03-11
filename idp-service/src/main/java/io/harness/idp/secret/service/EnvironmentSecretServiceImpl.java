@@ -43,7 +43,6 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
-  private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
   private EnvironmentSecretRepository environmentSecretRepository;
   private K8sClient k8sClient;
   @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
@@ -110,7 +109,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public void delete(String secretIdentifier, String accountIdentifier) throws Exception {
+  public void delete(String secretIdentifier, String accountIdentifier) {
     EnvironmentSecretEntity environmentSecretEntity = EnvironmentSecretEntity.builder().id(secretIdentifier).build();
     Optional<EnvironmentSecretEntity> envSecretOpt =
         environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(secretIdentifier, accountIdentifier);
@@ -124,7 +123,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) throws Exception {
+  public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) {
     Iterable<EnvironmentSecretEntity> secrets = environmentSecretRepository.findAllById(secretIdentifiers);
     List<String> envNames =
         Streams.stream(secrets).map(EnvironmentSecretEntity::getEnvName).collect(Collectors.toList());
@@ -146,6 +145,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     }
   }
 
+  @Override
   public void syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) {
     Map<String, byte[]> secretData = new HashMap<>();
     for (EnvironmentSecret environmentSecret : environmentSecrets) {
