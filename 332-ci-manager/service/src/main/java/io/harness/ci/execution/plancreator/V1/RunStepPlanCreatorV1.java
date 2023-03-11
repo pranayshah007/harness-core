@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.V1.ScriptStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -58,12 +59,8 @@ public class RunStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<ScriptStepNode>
                          .envVariables(scriptStepInfo.getEnvs())
                          .resources(scriptStepInfo.getResources())
                          .retry(scriptStepInfo.getRetry())
-                         .shell(scriptStepInfo.getShell() == null
-                                 ? ParameterField.ofNull()
-                                 : ParameterField.createValueField(scriptStepInfo.getShell().toShellType()))
-                         .imagePullPolicy(scriptStepInfo.getPull() == null
-                                 ? ParameterField.ofNull()
-                                 : ParameterField.createValueField(scriptStepInfo.getPull().toImagePullPolicy()))
+                         .shell(CIPlanCreatorUtils.getShell(scriptStepInfo.getShell()))
+                         .imagePullPolicy(CIPlanCreatorUtils.getImagePullPolicy(scriptStepInfo.getPull()))
                          .runAsUser(scriptStepInfo.getUser())
                          .privileged(scriptStepInfo.getPrivileged())
                          .reports(ParameterField.createValueField(

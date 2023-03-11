@@ -61,6 +61,7 @@ import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
@@ -1073,6 +1074,9 @@ public class HelmTaskHelperBase {
         } catch (Exception ex) {
           String errorMsg = format("Failed to fetch yaml file from %s manifest", helmFetchFileConfig.getIdentifier());
           logCallback.saveExecutionLog(errorMsg + ExceptionUtils.getMessage(ex), WARN);
+          if (ex instanceof NoSuchFileException && helmFetchFileConfig.isSucceedIfFileNotFound()) {
+            continue;
+          }
           throw ex;
         }
       }
@@ -1575,5 +1579,22 @@ public class HelmTaskHelperBase {
     } else {
       throw new InvalidArgumentsException("Invalid oci base path cannot be empty");
     }
+  }
+
+  public String getChartName(HelmChartManifestDelegateConfig manifestDelegateConfig) {
+    if (isNotEmpty(manifestDelegateConfig.getChartName())) {
+      return manifestDelegateConfig.getChartName();
+    }
+
+    if (manifestDelegateConfig.getStoreDelegateConfig() instanceof GitStoreDelegateConfig) {
+      String folderPath = ((GitStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getPaths().get(0);
+      String modifiedPath = (folderPath.lastIndexOf('/') == folderPath.length() - 1)
+          ? folderPath.substring(0, folderPath.length() - 1)
+          : folderPath;
+      return modifiedPath.substring(modifiedPath.lastIndexOf('/') + 1);
+    }
+
+    log.warn("Chart name not found");
+    return "";
   }
 }

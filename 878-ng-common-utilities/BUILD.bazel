@@ -19,6 +19,7 @@ java_library(
         "//910-delegate-service-driver:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
+        "//940-feature-flag:module",
         "//942-enforcement-sdk:module",
         "//945-account-mgmt:module",
         "//959-timeout-engine:module",
@@ -48,6 +49,7 @@ java_library(
     deps = [
         "module",
         "//:lombok",
+        "//940-feature-flag:module",
         "//960-persistence:module",
         "//960-persistence:supporter-test",
         "//980-commons:module",

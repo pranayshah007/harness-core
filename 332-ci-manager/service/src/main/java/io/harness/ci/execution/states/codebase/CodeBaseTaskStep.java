@@ -160,9 +160,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+      ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {
-        ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
         String branch = manualExecutionSource.getBranch();
         String prNumber = manualExecutionSource.getPrNumber();
         String tag = manualExecutionSource.getTag();
@@ -181,8 +181,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
               .build();
         }
       } else {
+        if (isNotEmpty(manualExecutionSource.getPrNumber())) {
+          throw new CIStageExecutionException(
+              "PR build type is not supported when api access is disabled in git connector or clone codebase is false");
+        }
         String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
-        codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource, repoUrl);
+        codebaseSweepingOutput = buildManualCodebaseSweepingOutput(manualExecutionSource, repoUrl);
       }
     } else if (executionSource.getType() == WEBHOOK) {
       codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);

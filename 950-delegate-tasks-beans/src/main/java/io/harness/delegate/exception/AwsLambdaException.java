@@ -20,4 +20,8 @@ public class AwsLambdaException extends Exception {
   public AwsLambdaException(String message) {
     super(message);
   }
+
+  public AwsLambdaException(String message, Exception exception) {
+    super(message);
+  }
 }

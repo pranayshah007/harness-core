@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
+// TODO: PLG-2014 update PmsRedisConsumer -> RedisMessageConsumerTask for generic usage
 @Slf4j
 public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements PmsRedisConsumer {
   @Inject private PersistentLocker persistentLocker;

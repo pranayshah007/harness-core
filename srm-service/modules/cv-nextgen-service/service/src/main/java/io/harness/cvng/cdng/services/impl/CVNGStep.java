@@ -40,6 +40,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -58,6 +59,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PolicyEvalUtils;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -95,6 +97,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   @Inject private SideKickService sideKickService;
   @Inject
   private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+
+  @Inject private OpaServiceClient opaServiceClient;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -443,4 +447,13 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+
+  @Override
+  public StepResponse postAsyncValidate(
+      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+    if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
+      return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
+    }
+    return stepResponse;
+  }
 }

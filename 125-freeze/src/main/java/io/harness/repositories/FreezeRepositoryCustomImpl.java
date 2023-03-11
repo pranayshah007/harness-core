@@ -60,34 +60,40 @@ public class FreezeRepositoryCustomImpl implements FreezeRepositoryCustom {
   @Override
   public Optional<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String freezeId) {
-    final Criteria criteria = Criteria.where(FreezeConfigEntityKeys.projectIdentifier)
-                                  .is(projectIdentifier)
-                                  .and(FreezeConfigEntityKeys.orgIdentifier)
-                                  .is(orgIdentifier)
-                                  .and(FreezeConfigEntityKeys.accountId)
-                                  .is(accountId)
-                                  .and(FreezeConfigEntityKeys.identifier)
-                                  .is(freezeId);
+    final Criteria criteria =
+        getCriteria(accountId, orgIdentifier, projectIdentifier).and(FreezeConfigEntityKeys.identifier).is(freezeId);
     FreezeConfigEntity eg = mongoTemplate.findOne(new Query(criteria), FreezeConfigEntity.class);
     return Optional.ofNullable(eg);
   }
 
   @Override
+  public List<FreezeConfigEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> freezeIdList) {
+    final Criteria criteria = getCriteria(accountId, orgIdentifier, projectIdentifier)
+                                  .and(FreezeConfigEntityKeys.identifier)
+                                  .in(freezeIdList);
+    return mongoTemplate.find(new Query(criteria), FreezeConfigEntity.class);
+  }
+
+  @Override
   public Optional<FreezeConfigEntity> findGlobalByAccountIdAndOrgIdentifierAndProjectIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, FreezeStatus freezeStatus) {
-    final Criteria criteria = Criteria.where(FreezeConfigEntityKeys.projectIdentifier)
-                                  .is(projectIdentifier)
-                                  .and(FreezeConfigEntityKeys.orgIdentifier)
-                                  .is(orgIdentifier)
-                                  .and(FreezeConfigEntityKeys.accountId)
-                                  .is(accountId)
-                                  .and(FreezeConfigEntityKeys.type)
-                                  .is(FreezeType.GLOBAL);
+    final Criteria criteria =
+        getCriteria(accountId, orgIdentifier, projectIdentifier).and(FreezeConfigEntityKeys.type).is(FreezeType.GLOBAL);
     if (freezeStatus != null) {
       criteria.and(FreezeConfigEntityKeys.status).is(freezeStatus);
     }
     FreezeConfigEntity eg = mongoTemplate.findOne(new Query(criteria), FreezeConfigEntity.class);
     return Optional.ofNullable(eg);
+  }
+
+  private Criteria getCriteria(String accountId, String orgIdentifier, String projectIdentifier) {
+    return Criteria.where(FreezeConfigEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(FreezeConfigEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(FreezeConfigEntityKeys.accountId)
+        .is(accountId);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

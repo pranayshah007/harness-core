@@ -38,7 +38,9 @@ import io.harness.config.DatadogConfig;
 import io.harness.config.PublisherConfiguration;
 import io.harness.config.WorkersConfiguration;
 import io.harness.configuration.DeployMode;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
+import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.delegate.beans.StartupMode;
@@ -85,11 +87,14 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.springdata.SpringPersistenceModule;
@@ -241,6 +246,8 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
+import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RedissonClient;
 import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
@@ -451,6 +458,44 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
   public void addModules(final MainConfiguration configuration, List<Module> modules) {
     modules.add(new ProviderModule() {
       @Provides
+      @Named("delegate")
+      @Singleton
+      public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
+        return new MockedRLocalCacheMap<>();
+      }
+
+      @Provides
+      @Named("delegate_group")
+      @Singleton
+      public RLocalCachedMap<String, DelegateGroup> getDelegateGroupCache(DelegateRedissonCacheManager cacheManager) {
+        return new MockedRLocalCacheMap<>();
+      }
+
+      @Provides
+      @Named("delegates_from_group")
+      @Singleton
+      public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(
+          DelegateRedissonCacheManager cacheManager) {
+        return new MockedRLocalCacheMap<>();
+      }
+
+      @Provides
+      @Singleton
+      @Named("enableRedisForDelegateService")
+      boolean isEnableRedisForDelegateService() {
+        return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("redissonClient")
+      RedissonClient redissonClient() {
+        return new MockedRedissonClient();
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
@@ -596,6 +641,13 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
       @Override
       public FeatureFlagConfig featureFlagConfig() {
         return configuration.getFeatureFlagConfig();
+      }
+    });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(DelegateCache.class).to(DelegateCacheImpl.class).in(Singleton.class);
       }
     });
   }

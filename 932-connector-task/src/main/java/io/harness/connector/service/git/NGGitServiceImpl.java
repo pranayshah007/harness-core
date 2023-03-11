@@ -136,7 +136,7 @@ public class NGGitServiceImpl implements NGGitService {
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
             .build();
-    return gitClientV2.fetchFilesByPath(fetchFilesByPathRequest);
+    return gitClientV2.fetchFilesByPath(identifier, fetchFilesByPathRequest);
   }
 
   @Override

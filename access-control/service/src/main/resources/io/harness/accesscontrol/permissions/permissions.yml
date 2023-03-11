@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 48
+version: 49
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1129,6 +1129,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: chaos_chaosexperiment_execute
+    name: Execute a Chaos Experiment
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: chaos_chaosgameday_view
     name: View a Chaos GameDay
     status: ACTIVE
@@ -1334,6 +1342,12 @@ permissions:
       - account
   - identifier: ccm_cloudAssetGovernanceRule_delete
     name: Delete a CCM Governance Rule
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRule_execute
+    name: Enforce a CCM Governance  Rule
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

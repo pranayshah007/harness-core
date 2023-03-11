@@ -131,6 +131,7 @@ public class TerraformStepDataGenerator {
                                      .varFiles(varFilesMap)
                                      .isTerraformCloudCli(ParameterField.createValueField(false))
                                      .build())
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
                            .build())
         .build();
   }
@@ -212,6 +213,7 @@ public class TerraformStepDataGenerator {
                                      .isTerraformCloudCli(ParameterField.createValueField(false))
                                      .varFiles(varFilesMap)
                                      .build())
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
                            .build())
         .build();
   }
@@ -376,6 +378,7 @@ public class TerraformStepDataGenerator {
                            .environmentVariables(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
                            .backendConfig(terraformBackendConfig)
                            .isTerraformCloudCli(ParameterField.createValueField(false))
+                           .skipTerraformRefresh(ParameterField.createValueField(false))
                            .build())
         .build();
   }

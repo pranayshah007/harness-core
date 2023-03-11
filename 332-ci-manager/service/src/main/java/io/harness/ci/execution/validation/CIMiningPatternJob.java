@@ -40,6 +40,7 @@ public class CIMiningPatternJob {
   private static final int CACHE_UPDATE_PERIOD = 10;
   private static final String MINING_PATTERENS_FILE = "suspiciousMiningPatterns.txt";
   private static final String VALID_DOMAINS_FILE = "validDomains.txt";
+  private static final String WHITE_LISTED_DOMAINS_FILE = "whiteListedDomains.txt";
 
   private final LoadingCache<String, Set<String>> maliciousMiningPatternsCache =
       CacheBuilder.newBuilder()
@@ -47,7 +48,7 @@ public class CIMiningPatternJob {
           .build(new CacheLoader<String, Set<String>>() {
             @Override
             public Set<String> load(String blank) {
-              return initializeMiningPatterens();
+              return initializeMiningPatterns();
             }
           });
 
@@ -58,6 +59,16 @@ public class CIMiningPatternJob {
             @Override
             public Set<String> load(String blank) {
               return initializeValidDomains();
+            }
+          });
+
+  private final LoadingCache<String, Set<String>> whiteListedDomains =
+      CacheBuilder.newBuilder()
+          .expireAfterWrite(CACHE_UPDATE_PERIOD, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Set<String>>() {
+            @Override
+            public Set<String> load(String blank) {
+              return initializeWhiteListedDomains();
             }
           });
 
@@ -77,7 +88,15 @@ public class CIMiningPatternJob {
     }
   }
 
-  private Set<String> initializeMiningPatterens() {
+  public Set<String> getWhiteListed() {
+    try {
+      return whiteListedDomains.get("");
+    } catch (Exception e) {
+      return new HashSet<>();
+    }
+  }
+
+  private Set<String> initializeMiningPatterns() {
     Set<String> maliciousMiningPatterns = new HashSet<>();
 
     try {
@@ -97,6 +116,7 @@ public class CIMiningPatternJob {
 
     } catch (Exception e) {
       log.error("Error initialize mining patterns for CI hosted");
+      return maliciousMiningPatterns;
     }
 
     log.info("Successfully initialize mining patterns. Set size {}", maliciousMiningPatterns.size());
@@ -123,10 +143,38 @@ public class CIMiningPatternJob {
 
     } catch (Exception e) {
       log.error("Error initialize valid domains set for CI hosted");
+      return validDomains;
     }
 
     log.info("Successfully initialize valid domains. Set size {}", validDomains.size());
     return validDomains;
+  }
+
+  private Set<String> initializeWhiteListedDomains() {
+    Set<String> whiteListed = new HashSet<>();
+
+    try {
+      byte[] fileContent = downloadFromGCS(WHITE_LISTED_DOMAINS_FILE);
+
+      String[] patterns = new String(fileContent, StandardCharsets.UTF_8).split("\n");
+
+      if (patterns == null || patterns.length != 0) {
+        whiteListed.clear();
+      }
+
+      for (String pattern : patterns) {
+        if (isNotEmpty(pattern)) {
+          whiteListed.add(pattern.trim());
+        }
+      }
+
+    } catch (Exception e) {
+      log.error("Error initialize white listed domains set for CI hosted");
+      return whiteListed;
+    }
+
+    log.info("Successfully initialize white listed domains. Set size {}", whiteListed.size());
+    return whiteListed;
   }
 
   private byte[] downloadFromGCS(String fileName) {

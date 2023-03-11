@@ -664,7 +664,7 @@ public class EntitySetupUsageServiceImplTest extends EntitySetupUsageTestBase {
   @Owner(developers = OwnerRule.VLAD)
   @Category(UnitTests.class)
   public void verifyListAllWhenReferreByTypeIsEmpty() {
-    List<EntitySetupUsageDTO> result = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
+    List<String> result = entitySetupUsageService.listAllReferredEntityIdentifiersPerReferredEntityScope(
         Scope.of(accountIdentifier, null, null), referredByEntityName, EntityType.FILES, null, null, null);
     assertThat(result).isEmpty();
   }

@@ -29,6 +29,7 @@ public class ServiceSectionStepParameters implements StepParameters {
 
   @Override
   public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(ServiceSectionStepParameters.builder().serviceRef(serviceRef).build());
+    return RecastOrchestrationUtils.pruneRecasterAdditions(
+        ServiceSectionStepParameters.builder().serviceRef(serviceRef).build());
   }
 }

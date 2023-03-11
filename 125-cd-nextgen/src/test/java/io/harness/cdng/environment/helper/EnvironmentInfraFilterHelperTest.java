@@ -132,7 +132,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().filters(ParameterField.createValueField(Arrays.asList(envFilter))).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = getEnv("env1");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
@@ -150,7 +150,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public void shouldProcessEnvInfraFilteringForEnvFilterWithNoInfrasFoundInEnv() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = getEnv("env1");
     FilterYaml infraFilter = FilterYaml.builder()
                                  .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
                                  .type(FilterType.all)
@@ -180,7 +180,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public void shouldProcessEnvInfraFilteringForEnvFilterWithSuccess() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = getEnv("env1");
     FilterYaml infraFilter = FilterYaml.builder()
                                  .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
                                  .type(FilterType.all)
@@ -218,8 +218,8 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public void shouldProcessEnvInfraFilteringForEnvFilterForMultipleInfra() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
-    Environment env2 = Environment.builder().identifier("env2").build();
+    Environment env1 = getEnv("env1");
+    Environment env2 = getEnv("env2");
     FilterYaml infraFilter = FilterYaml.builder()
                                  .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
                                  .type(FilterType.all)
@@ -269,7 +269,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                                     .build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = getEnv("env1");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
@@ -309,7 +309,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                                      .build();
     EnvironmentsYaml environmentsYaml =
         EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml, envYaml2))).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
+    Environment env1 = getEnv("env1");
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
@@ -350,8 +350,8 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   public void shouldProcessEnvInfraFilteringForEnvGroupForEnvFilter() {
     FilterYaml envFilter =
         FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
-    Environment env1 = Environment.builder().identifier("env1").build();
-    Environment env2 = Environment.builder().identifier("env2").build();
+    Environment env1 = getEnv("env1");
+    Environment env2 = getEnv("env2");
     FilterYaml infraFilter = FilterYaml.builder()
                                  .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
                                  .type(FilterType.all)
@@ -363,8 +363,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .envGroupRef(ParameterField.createValueField("EG_1"))
             .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
             .build();
-    EnvironmentGroupEntity envGroupEntity =
-        EnvironmentGroupEntity.builder().envIdentifiers(Arrays.asList("env1", "env2")).build();
+    EnvironmentGroupEntity envGroupEntity = getEnvGroup();
 
     doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
     doReturn(Optional.of(envGroupEntity)).when(environmentGroupService).get(ACC_ID, ORG_ID, PROJ_ID, "EG_1", false);
@@ -389,6 +388,19 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     EnvironmentYamlV2 environmentYamlV2 = envGroupYaml.getEnvironments().getValue().get(0);
     assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue()).isNotNull();
     assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().size()).isEqualTo(2);
+  }
+
+  private EnvironmentGroupEntity getEnvGroup() {
+    return EnvironmentGroupEntity.builder()
+        .accountId(ACC_ID)
+        .orgIdentifier(ORG_ID)
+        .projectIdentifier(PROJ_ID)
+        .envIdentifiers(Arrays.asList("env1", "env2"))
+        .build();
+  }
+
+  private EnvironmentGroupEntity getAccountLevelEnvGroup(List<String> envIdentifiers) {
+    return EnvironmentGroupEntity.builder().accountId(ACC_ID).envIdentifiers(envIdentifiers).build();
   }
 
   @Test
@@ -592,6 +604,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .build();
   }
 
+  private Cluster getAccountCluster(String clusterRef, String envRef) {
+    return Cluster.builder().accountId(ACC_ID).clusterRef(clusterRef).envRef(envRef).build();
+  }
+
   private Environment getEnv(String id) {
     return Environment.builder()
         .accountId(ACC_ID)
@@ -600,6 +616,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .identifier(id)
         .type(EnvironmentType.Production)
         .build();
+  }
+
+  private Environment getAccountEnv(String id) {
+    return Environment.builder().accountId(ACC_ID).identifier(id).type(EnvironmentType.Production).build();
   }
 
   @Test
@@ -631,5 +651,202 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                                     ACC_ID, ORG_ID, PROJ_ID, null, envGroupYaml, ServiceDefinitionType.KUBERNETES))
         .hasMessageContaining(
             "Pipeline contains filters but Feature Flag: [CDS_FILTER_INFRA_CLUSTERS_ON_TAGS] is disabled. Please enable the FF or remove Filters.");
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldProcessAccountLevelEnvInfraFilteringForEnvFilter() {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    Environment env1 = getAccountEnv("env1");
+    FilterYaml infraFilter = FilterYaml.builder()
+                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
+                                 .type(FilterType.all)
+                                 .build();
+    InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder()
+            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
+            .build();
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(Arrays.asList(infra1))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(
+        ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES);
+
+    assertThat(environmentsYaml.getValues()).isNotNull();
+    assertThat(environmentsYaml.getValues().getValue()).isNotNull();
+    assertThat(environmentsYaml.getValues().getValue().size()).isEqualTo(1);
+    EnvironmentYamlV2 environmentYamlV2 = environmentsYaml.getValues().getValue().get(0);
+    assertThat(environmentYamlV2.getEnvironmentRef().getValue()).isEqualTo("account.env1");
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue()).isNotNull();
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().size()).isEqualTo(1);
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier().getValue())
+        .isEqualTo("infra1");
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldProcessAccountLevelEnvInfraFilteringForEnvFilterForMultipleInfra() {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    Environment env1 = getAccountEnv("env1");
+    Environment env2 = getAccountEnv("env2");
+    FilterYaml infraFilter = FilterYaml.builder()
+                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
+                                 .type(FilterType.all)
+                                 .build();
+    InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
+    InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder()
+            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
+            .build();
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env2", ServiceDefinitionType.KUBERNETES);
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(
+        ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES);
+
+    assertThat(environmentsYaml.getValues()).isNotNull();
+    assertThat(environmentsYaml.getValues().getValue()).isNotNull();
+    assertThat(environmentsYaml.getValues().getValue().size()).isEqualTo(2);
+    EnvironmentYamlV2 environmentYamlV2 = environmentsYaml.getValues().getValue().get(0);
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue()).isNotNull();
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldProcessAccountLevelEnvInfraFilteringForInfraFilterWithSingleEnv() {
+    FilterYaml infraFilter = FilterYaml.builder()
+                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
+                                 .type(FilterType.all)
+                                 .build();
+    InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
+    InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
+    EnvironmentYamlV2 envYaml = EnvironmentYamlV2.builder()
+                                    .filters(ParameterField.createValueField(Arrays.asList(infraFilter)))
+                                    .environmentRef(ParameterField.createValueField("account.env1"))
+                                    .build();
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder().values(ParameterField.createValueField(Arrays.asList(envYaml))).build();
+    Environment env1 = getAccountEnv("env1");
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(
+        ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES);
+
+    EnvironmentYamlV2 environmentYamlV2 = environmentsYaml.getValues().getValue().get(0);
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue()).isNotNull();
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldProcessEnvInfraFilteringForAccountLevelEnvGroupForEnvFilter() {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    Environment env1 = getAccountEnv("env1");
+    Environment env2 = getAccountEnv("env2");
+    FilterYaml infraFilter = FilterYaml.builder()
+                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
+                                 .type(FilterType.all)
+                                 .build();
+    InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
+    InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
+    EnvironmentGroupYaml envGroupYaml =
+        EnvironmentGroupYaml.builder()
+            .envGroupRef(ParameterField.createValueField("account.EG_1"))
+            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
+            .build();
+    EnvironmentGroupEntity envGroupEntity = getAccountLevelEnvGroup(Arrays.asList("env1", "env2"));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(Optional.of(envGroupEntity))
+        .when(environmentGroupService)
+        .get(ACC_ID, ORG_ID, PROJ_ID, "account.EG_1", false);
+    doReturn(Arrays.asList(env1, env2))
+        .when(environmentService)
+        .fetchesNonDeletedEnvironmentFromListOfIdentifiers(ACC_ID, null, null, Arrays.asList("env1", "env2"));
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env1", ServiceDefinitionType.KUBERNETES);
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "account.env2", ServiceDefinitionType.KUBERNETES);
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(
+        ACC_ID, ORG_ID, PROJ_ID, null, envGroupYaml, ServiceDefinitionType.KUBERNETES);
+
+    assertThat(envGroupYaml.getEnvironments()).isNotNull();
+    assertThat(envGroupYaml.getEnvironments().getValue()).isNotNull();
+    assertThat(envGroupYaml.getEnvironments().getValue().size()).isEqualTo(2);
+    EnvironmentYamlV2 environmentYamlV2 = envGroupYaml.getEnvironments().getValue().get(0);
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue()).isNotNull();
+    assertThat(environmentYamlV2.getInfrastructureDefinitions().getValue().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldfilterEnvsAndClustersForAccountLevelEnvFilter() throws IOException {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    FilterYaml clusterFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.gitOpsClusters))).type(FilterType.all).build();
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder()
+            .filters(ParameterField.createValueField(Arrays.asList(envFilter, clusterFilter)))
+            .build();
+    Environment env1 = getAccountEnv("env1");
+    Cluster c1 = getAccountCluster("account.c1", "env1");
+    io.harness.gitops.models.Cluster gitopsCluster1 = new io.harness.gitops.models.Cluster("c1", "c1");
+    gitopsCluster1.setAccountIdentifier(ACC_ID);
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(new PageImpl<>(Arrays.asList(env1))).when(environmentService).list(any(), any());
+    doReturn(Arrays.asList(c1))
+        .when(clusterService)
+        .listAcrossEnv(0, 1000, ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("account.env1"));
+    Call call = mock(Call.class);
+    doReturn(call).when(gitopsResourceClient).listClusters(any());
+    doReturn(Response.success(PageResponse.builder().content(Arrays.asList(gitopsCluster1)).build()))
+        .when(call)
+        .execute();
+
+    List<EnvClusterRefs> envClusterRefs = environmentInfraFilterHelper.filterEnvsAndClusters(
+        environmentsYaml, Collections.emptyList(), ACC_ID, ORG_ID, PROJ_ID);
+
+    assertThat(envClusterRefs).hasSize(1);
+    assertThat(envClusterRefs.get(0).getEnvRef()).isEqualTo("account.env1");
+    assertThat(envClusterRefs.get(0).getClusterRefs()).hasSize(1);
+    assertThat(envClusterRefs.get(0).getClusterRefs()).contains("account.c1");
   }
 }

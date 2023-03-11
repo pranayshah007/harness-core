@@ -44,10 +44,14 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.rule.Owner;
+import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
+import io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
@@ -87,6 +91,9 @@ public class PipelinesApiImplTest extends CategoryTest {
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
   String project = randomAlphabetic(10);
+  String branch = randomAlphabetic(10);
+  String repo = randomAlphabetic(10);
+  String connectorRef = randomAlphabetic(10);
   int page = 0;
   int limit = 1;
   PipelineEntity entity;
@@ -364,5 +371,25 @@ public class PipelinesApiImplTest extends CategoryTest {
     assertEquals(org, responseBody.getOrg());
     assertEquals(project, responseBody.getProject());
     assertTrue(responseBody.isValid());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfig() {
+    GitMoveDetails gitMoveDetails = new GitMoveDetails();
+    gitMoveDetails.setBranchName(branch);
+    gitMoveDetails.setRepoName(repo);
+    gitMoveDetails.setConnectorRef(connectorRef);
+    PipelineMoveConfigRequestBody pipelineMoveConfigRequestBody = new PipelineMoveConfigRequestBody();
+    pipelineMoveConfigRequestBody.setGitDetails(gitMoveDetails);
+    pipelineMoveConfigRequestBody.setMoveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE);
+    pipelineMoveConfigRequestBody.setPipelineIdentifier(identifier);
+    doReturn(PipelineCRUDResult.builder().pipelineEntity(entity).build())
+        .when(pmsPipelineService)
+        .moveConfig(any(), any(), any(), any(), any());
+    Response response = pipelinesApiImpl.moveConfig(org, project, identifier, pipelineMoveConfigRequestBody, account);
+    PipelineMoveConfigResponseBody responseBody = (PipelineMoveConfigResponseBody) response.getEntity();
+    assertEquals(identifier, responseBody.getPipelineIdentifier());
   }
 }

@@ -7,25 +7,47 @@
 
 package io.harness.idp.gitintegration.implementation;
 
-import io.harness.beans.DecryptedSecretValue;
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.gitintegration.GitIntegrationConstants;
+import io.harness.idp.gitintegration.GitIntegrationUtil;
 import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.math3.util.Pair;
 
+@OwnedBy(HarnessTeam.IDP)
 public class GitlabConnectorProcessor extends ConnectorProcessor {
   @Override
-  public List<EnvironmentSecret> getConnectorSecretsInfo(
+  public String getInfraConnectorType(String accountIdentifier, String connectorIdentifier) {
+    Optional<ConnectorDTO> connectorDTO =
+        NGRestUtils.getResponse(connectorResourceClient.get(connectorIdentifier, accountIdentifier, null, null));
+    if (connectorDTO.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Connector not found for identifier: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
+    }
+
+    ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnectorInfo();
+    GitlabConnectorDTO config = (GitlabConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    return config.getExecuteOnDelegate() ? CATALOG_INFRA_CONNECTOR_TYPE_PROXY : CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
+  }
+
+  @Override
+  public Pair<ConnectorInfoDTO, List<EnvironmentSecret>> getConnectorSecretsInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(
         connectorResourceClient.get(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
@@ -59,17 +81,12 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    EnvironmentSecret tokenEnvironmentSecret = new EnvironmentSecret();
-    tokenEnvironmentSecret.secretIdentifier(tokenSecretIdentifier);
-    tokenEnvironmentSecret.setEnvName(GitIntegrationConstants.GITLAB_TOKEN);
-    DecryptedSecretValue tokenDecryptedSecretValue = ngSecretService.getDecryptedSecretValue(
-        accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
-    if (tokenDecryptedSecretValue == null) {
-      throw new InvalidRequestException(String.format(
-          "Token Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
-    }
-    tokenEnvironmentSecret.setDecryptedValue(tokenDecryptedSecretValue.getDecryptedValue());
-    resultList.add(tokenEnvironmentSecret);
-    return resultList;
+    resultList.add(GitIntegrationUtil.getEnvironmentSecret(ngSecretService, accountIdentifier, orgIdentifier,
+        projectIdentifier, tokenSecretIdentifier, connectorIdentifier, GitIntegrationConstants.GITLAB_TOKEN));
+    return new Pair<>(connectorInfoDTO, resultList);
   }
+
+  @Override
+  public void performPushOperation(
+      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, List<String> locationToPush) {}
 }

@@ -8,7 +8,6 @@
 package io.harness.delegate.authenticator;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -74,6 +73,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
+  @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
 
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
@@ -178,11 +178,9 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateAuthV2Token(accountId, tokenString, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateAuthV2Token(accountId, tokenString, delegateToken.getValue());
-          }
+          decryptDelegateAuthV2Token(
+              accountId, tokenString, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
+
           return;
         } catch (Exception e) {
           log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
@@ -242,11 +240,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
         DelegateToken delegateToken = iterator.next();
         log.info("Token name : " + delegateToken.getName());
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-          }
+          decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
           if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
             setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
           }
@@ -270,11 +264,7 @@ public class DelegateServiceTokenAuthenticatorImpl implements DelegateTokenAuthe
       return false;
     }
     try {
-      if (delegateToken.isNg()) {
-        decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-      } else {
-        decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-      }
+      decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
       if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
         setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
       }

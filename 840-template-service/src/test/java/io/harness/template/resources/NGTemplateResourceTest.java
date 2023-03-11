@@ -37,6 +37,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
+import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -66,6 +67,7 @@ import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -486,5 +488,29 @@ public class NGTemplateResourceTest extends CategoryTest {
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
     assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesV2WithExecutionFlow() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder()
+            .mergedPipelineYaml(yaml)
+            .cacheResponseMetadata(CacheResponseMetadataDTO.builder().cacheState(CacheState.VALID_CACHE).build())
+            .build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true, false);
+
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder()
+                .originalEntityYaml(yaml)
+                .checkForAccess(true)
+                .getOnlyFileContent(true)
+                .build(),
+            "true", false);
+    assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
   }
 }

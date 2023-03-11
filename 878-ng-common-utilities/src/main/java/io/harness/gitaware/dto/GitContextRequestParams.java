@@ -30,4 +30,5 @@ public class GitContextRequestParams {
   String newBranchName;
   boolean loadFromCache;
   EntityType entityType;
+  boolean getOnlyFileContent;
 }

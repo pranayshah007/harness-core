@@ -21,6 +21,8 @@ import software.wings.service.intfc.AccountService;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,12 +30,20 @@ public class AddIsCrossGenerationAccessEnabledToAccountMigration implements Migr
   @Inject private WingsPersistence wingsPersistence;
   @Inject private AccountService accountService;
 
+  private static final List<String> PROD_ACCOUNT_ID_LIST =
+      Arrays.asList("WvvS1AaWR5Kuqeeb2jqGrw", "SNM_3IzhRa6SFPz6DIV7aA", "vpCkHKsDSxK9_KYfjCTMKA");
+
   @Override
   public void migrate() {
     log.info("Starting the migration to add new isCrossGenerationAccessEnabled field into all the accounts");
 
     Query<Account> accountsQuery =
-        wingsPersistence.createQuery(Account.class).field(AccountKeys.isCrossGenerationAccessEnabled).doesNotExist();
+        wingsPersistence.createQuery(Account.class)
+            .field(AccountKeys.uuid)
+            .hasAnyOf(
+                PROD_ACCOUNT_ID_LIST) // Adding this filter to restrict this migration to only 3 accounts in PROD env.
+            .field(AccountKeys.isCrossGenerationAccessEnabled)
+            .doesNotExist();
 
     try (HIterator<Account> records = new HIterator<>(accountsQuery.fetch())) {
       while (records.hasNext()) {

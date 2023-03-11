@@ -22,6 +22,7 @@ import io.harness.cdng.infra.yaml.AsgInfrastructure.AsgInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -284,5 +285,34 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                  .build();
 
     assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testK8sAwsInfraMapperEmptyValues() {
+    K8sAwsInfrastructure emptyNamespace = K8sAwsInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .namespace(ParameterField.createValueField(""))
+                                              .releaseName(ParameterField.createValueField("release"))
+                                              .cluster(ParameterField.createValueField("cluster"))
+                                              .build();
+    assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAwsInfrastructure emptyReleaseName = K8sAwsInfrastructure.builder()
+                                                .connectorRef(ParameterField.createValueField("connectorId"))
+                                                .namespace(ParameterField.createValueField("namespace"))
+                                                .releaseName(ParameterField.createValueField(""))
+                                                .cluster(ParameterField.createValueField("cluster"))
+                                                .build();
+    assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAwsInfrastructure emptyClusterName = K8sAwsInfrastructure.builder()
+                                                .connectorRef(ParameterField.createValueField("connectorId"))
+                                                .namespace(ParameterField.createValueField("namespace"))
+                                                .releaseName(ParameterField.createValueField("release"))
+                                                .cluster(ParameterField.createValueField(""))
+                                                .build();
+    assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
   }
 }

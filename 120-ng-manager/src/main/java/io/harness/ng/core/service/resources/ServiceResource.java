@@ -48,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -87,6 +88,8 @@ public class ServiceResource {
   private final ServiceEntityService serviceEntityService;
   private final ServiceEntityManagementService serviceEntityManagementService;
 
+  private static final int MAX_LIMIT = 1000;
+
   @GET
   @Path("{serviceIdentifier}")
   @ApiOperation(value = "Gets a Service by identifier", nickname = "getService")
@@ -118,8 +121,8 @@ public class ServiceResource {
   @POST
   @Path("/batch")
   @ApiOperation(value = "Create Services", nickname = "createServices")
-  public ResponseDTO<PageResponse<ServiceResponseDTO>> createServices(
-      @QueryParam("accountId") String accountId, @NotNull @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
+  public ResponseDTO<PageResponse<ServiceResponseDTO>> createServices(@QueryParam("accountId") String accountId,
+      @NotNull @Valid @Max(MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> {
@@ -170,8 +173,9 @@ public class ServiceResource {
   @GET
   @ApiOperation(value = "Gets Service list for a project", nickname = "getServiceListForProject")
   public ResponseDTO<PageResponse<ServiceResponseDTO>> listServicesForProject(
-      @QueryParam("page") @DefaultValue("0") int page, @QueryParam("size") @DefaultValue("100") int size,
-      @QueryParam("accountId") String accountId, @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam("page") @DefaultValue("0") int page,
+      @QueryParam("size") @DefaultValue("100") @Max(MAX_LIMIT) int size, @QueryParam("accountId") String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers, @QueryParam("sort") List<String> sort) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);

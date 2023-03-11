@@ -8,8 +8,8 @@
 package io.harness.cdng.provision.terraformcloud.resources.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
-import static io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.GET_ORGANIZATIONS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.GET_WORKSPACES;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialDTO;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetOrganizationsTaskParams;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse;
 import io.harness.encryption.Scope;
@@ -124,11 +125,11 @@ public class TerraformCloudResourceServiceImplTest extends CategoryTest {
     verify(secretManagerClientService).getEncryptionDetails(any(), any());
 
     DelegateTaskRequest delegateTaskRequest = requestCaptor.getValue();
-    TerraformCloudTaskParams taskParams = (TerraformCloudTaskParams) delegateTaskRequest.getTaskParameters();
+    TerraformCloudGetOrganizationsTaskParams taskParams =
+        (TerraformCloudGetOrganizationsTaskParams) delegateTaskRequest.getTaskParameters();
 
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo(TaskType.TERRAFORM_CLOUD_TASK_NG.name());
-    assertThat(taskParams.getTerraformCloudTaskType()).isEqualTo(GET_ORGANIZATIONS);
-    assertThat(taskParams.getOrganization()).isNull();
+    assertThat(taskParams.getTaskType()).isEqualTo(GET_ORGANIZATIONS);
     assertThat(taskParams.getEncryptionDetails()).isEqualTo(encryptedDataDetails);
     assertThat(taskParams.getTerraformCloudConnectorDTO()).isEqualTo(terraformCloudConnectorDTO);
     assertThat(organizations.getOrganizations().size()).isEqualTo(1);
@@ -241,10 +242,11 @@ public class TerraformCloudResourceServiceImplTest extends CategoryTest {
     verify(secretManagerClientService).getEncryptionDetails(any(), any());
 
     DelegateTaskRequest delegateTaskRequest = requestCaptor.getValue();
-    TerraformCloudTaskParams taskParams = (TerraformCloudTaskParams) delegateTaskRequest.getTaskParameters();
+    TerraformCloudGetWorkspacesTaskParams taskParams =
+        (TerraformCloudGetWorkspacesTaskParams) delegateTaskRequest.getTaskParameters();
 
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo(TaskType.TERRAFORM_CLOUD_TASK_NG.name());
-    assertThat(taskParams.getTerraformCloudTaskType()).isEqualTo(GET_WORKSPACES);
+    assertThat(taskParams.getTaskType()).isEqualTo(GET_WORKSPACES);
     assertThat(taskParams.getOrganization()).isEqualTo("tfCloudOrg");
     assertThat(taskParams.getEncryptionDetails()).isEqualTo(encryptedDataDetails);
     assertThat(taskParams.getTerraformCloudConnectorDTO()).isEqualTo(terraformCloudConnectorDTO);
