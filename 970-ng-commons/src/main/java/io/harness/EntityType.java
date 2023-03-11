@@ -552,7 +552,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.AWS_LAMBDA_ROLLBACK)
   AWS_LAMBDA_ROLLBACK(ModuleType.CD, EntityTypeConstants.AWS_LAMBDA_ROLLBACK, IdentifierRef.class,
       EntityYamlRootNames.AWS_LAMBDA_ROLLBACK),
-  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC);
+  GITOPS_SYNC(ModuleType.CD, EntityTypeConstants.GITOPS_SYNC, IdentifierRef.class, EntityYamlRootNames.GITOPS_SYNC),
+  @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
+  BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -17,10 +17,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class FullyQualifiedIdentifierHelperTest extends CategoryTest {
+  public static final String ACC_ID = "ACC_ID";
+  public static final String ORG_ID = "ORG_ID";
+  public static final String PROJ_ID = "PROJ_ID";
+
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
@@ -83,5 +88,20 @@ public class FullyQualifiedIdentifierHelperTest extends CategoryTest {
                            -> FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
                                null, randomAlphabetic(10), null, connectorIdentifier))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldFetchScopeWiseIds() {
+    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(
+        ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("ref1", "org.ref2", "account.ref3"));
+    assertThat(scopeWiseIds).isNotNull();
+    assertThat(scopeWiseIds.getAccountScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getAccountScopedIds()).contains("ref3");
+    assertThat(scopeWiseIds.getOrgScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getOrgScopedIds()).contains("ref2");
+    assertThat(scopeWiseIds.getProjectScopedIds()).hasSize(1);
+    assertThat(scopeWiseIds.getProjectScopedIds()).contains("ref1");
   }
 }

@@ -12,8 +12,9 @@ import static io.harness.NGDateUtils.getLocalDateOrThrow;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
-import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
+import io.harness.cd.CDLicenseType;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 
 import java.time.LocalDate;
 import lombok.experimental.UtilityClass;
@@ -21,16 +22,16 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class ServiceInstancesDateUsageMapper {
-  public static ServiceInstancesDateUsageFetchData buildServiceInstancesDateUsageFetchData(
-      String accountIdentifier, ServiceInstancesDateUsageParams serviceInstancesDateUsageParams) {
-    LocalDate fromDate =
-        getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, serviceInstancesDateUsageParams.getFromDate());
-    LocalDate toDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, serviceInstancesDateUsageParams.getToDate());
-    return ServiceInstancesDateUsageFetchData.builder()
+  public static LicenseDateUsageFetchData buildServiceInstancesDateUsageFetchData(
+      String accountIdentifier, LicenseDateUsageParams licenseDateUsageParams, CDLicenseType licenseType) {
+    LocalDate fromDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getFromDate());
+    LocalDate toDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getToDate());
+    return LicenseDateUsageFetchData.builder()
         .accountIdentifier(accountIdentifier)
         .fromDate(fromDate)
         .toDate(toDate)
-        .reportType(serviceInstancesDateUsageParams.getReportType())
+        .reportType(licenseDateUsageParams.getReportType())
+        .licenseType(licenseType)
         .build();
   }
 }

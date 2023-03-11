@@ -382,6 +382,20 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     assertExpressions(variableCreationResponseList, data.getEnvFqnIndex(), data.getExpectedEnvFqn(), keys);
     assertExpressions(variableCreationResponseList, data.getInfraFqnIndex(), data.getExpectedInfraFqn(), keys);
     assertExpressions(variableCreationResponseList, data.getSvcFqnIndex(), data.getExpectedSvcFqn(), keys);
+
+    assertDependencies(
+        variableCreationResponseList, data.getExecutionDependencyIndex(), data.getExecutionDependencyValue());
+    assertDependencies(
+        variableCreationResponseList, data.getProvisionerDependencyIndex(), data.getProvisionerDependencyValue());
+  }
+
+  private void assertDependencies(
+      List<VariableCreationResponse> variableCreationResponseList, int index, String expectedValue) {
+    if (index > -1) {
+      assertThat(
+          variableCreationResponseList.get(index).getDependencies().getDependenciesMap().containsValue(expectedValue))
+          .isTrue();
+    }
   }
 
   private void assertExpressions(List<VariableCreationResponse> variableCreationResponses, int index,
@@ -408,10 +422,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
+            .provisionerDependencyIndex(-1)
             .expectedInfraFqn(List.of())
             .envFqnIndex(0)
             .svcFqnIndex(1)
             .infraFqnIndex(-1)
+            .executionDependencyIndex(2)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
     TestData data2 =
@@ -441,6 +458,9 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .envFqnIndex(0)
             .infraFqnIndex(1)
             .svcFqnIndex(2)
+            .provisionerDependencyIndex(-1)
+            .executionDependencyIndex(3)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
     TestData data3 =
@@ -462,9 +482,12 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
+            .provisionerDependencyIndex(-1)
             .envFqnIndex(0)
             .infraFqnIndex(1)
             .svcFqnIndex(2)
+            .executionDependencyIndex(3)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
     TestData data4 =
@@ -495,14 +518,17 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
+            .provisionerDependencyIndex(-1)
             .envFqnIndex(0)
             .infraFqnIndex(1)
             .svcFqnIndex(2)
+            .executionDependencyIndex(3)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
     TestData data5 =
         TestData.builder()
-            .pipelineYamlFile("pipelineWithV2ServiceEnvInfrastructureDefinition.yaml")
+            .pipelineYamlFile("pipelineWithV2ServiceEnvInfrastructureDefinitionProvisioner.yaml")
             .serviceYamlFile("serviceV2.yaml")
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
@@ -528,9 +554,13 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
-            .envFqnIndex(0)
-            .infraFqnIndex(1)
-            .svcFqnIndex(2)
+            .provisionerDependencyIndex(0)
+            .envFqnIndex(1)
+            .infraFqnIndex(2)
+            .svcFqnIndex(3)
+            .provisionerDependencyValue("pipeline/stages/[0]/stage/spec/environment/provisioner/steps/[0]/step")
+            .executionDependencyIndex(4)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
 
     TestData data6 =
@@ -561,9 +591,12 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",
                 "infra.infrastructureKey", "infra.connector"))
+            .provisionerDependencyIndex(-1)
             .envFqnIndex(0)
             .infraFqnIndex(1)
             .svcFqnIndex(2)
+            .executionDependencyIndex(3)
+            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
             .build();
     return new Object[][] {{data1}, {data2}, {data3}, {data4}, {data5}, {data6}};
   }
@@ -579,9 +612,14 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     int svcFqnIndex;
     int envFqnIndex;
     int infraFqnIndex;
+    int executionDependencyIndex;
+    int provisionerDependencyIndex;
 
     List<String> expectedSvcFqn;
     List<String> expectedEnvFqn;
     List<String> expectedInfraFqn;
+
+    String executionDependencyValue;
+    String provisionerDependencyValue;
   }
 }

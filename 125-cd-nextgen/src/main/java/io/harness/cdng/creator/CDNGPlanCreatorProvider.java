@@ -59,6 +59,8 @@ import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVaria
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
+import io.harness.cdng.bamboo.BambooBuildStepVariableCreator;
+import io.harness.cdng.bamboo.BambooCreateStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepFilterJsonCreator;
 import io.harness.cdng.chaos.ChaosStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepVariableCreator;
@@ -474,6 +476,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GoogleFunctionsRollbackStepPlanCreator());
     // Terraform Cloud
     planCreators.add(new TerraformCloudRunStepPlanCreator());
+    planCreators.add(new BambooCreateStepPlanCreator());
     planCreators.add(new TerraformCloudRollbackStepPlanCreator());
 
     // AWS Lambda
@@ -558,6 +561,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AzureWebAppRollbackStepVariableCreator());
     variableCreators.add(new FetchInstanceScriptStepVariableCreator());
     variableCreators.add(new JenkinsBuildStepVariableCreator());
+    variableCreators.add(new BambooBuildStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     // ECS
     variableCreators.add(new EcsRollingDeployStepVariableCreator());
@@ -1009,6 +1013,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
             .build();
 
+    StepInfo bambooBuildStepInfo =
+        StepInfo.newBuilder()
+            .setName("Bamboo Build")
+            .setType(StepSpecTypeConstants.BAMBOO_BUILD)
+            .setFeatureRestrictionName(FeatureRestrictionName.BAMBOO_BUILD.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
+            .build();
+
     StepInfo azureCreateARMResources =
         StepInfo.newBuilder()
             .setName("Create Azure ARM Resources")
@@ -1299,7 +1311,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                                           .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                                           .build())
-                                     .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
+                                     .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
                                      .build();
     StepInfo awsSamDeploy =
         StepInfo.newBuilder()
@@ -1326,7 +1338,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .addAllCategory(TERRAFORM_CLOUD_CATEGORY)
                                  .setFolderPath(TERRAFORM_CLOUD_STEP_METADATA)
                                  .build())
-            .setFeatureFlag(FeatureName.TERRAFORM_CLOUD.name())
+            .setFeatureFlag(FeatureName.CDS_TERRAFORM_CLOUD.name())
             .build();
 
     StepInfo awsLambdaRollback =
@@ -1370,6 +1382,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(azureWebAppSwapSlot);
     stepInfos.add(azureWebAppRollback);
     stepInfos.add(jenkinsBuildStepInfo);
+    stepInfos.add(bambooBuildStepInfo);
     stepInfos.add(ecsRollingDeploy);
     stepInfos.add(ecsRollingRollack);
     stepInfos.add(ecsCanaryDeploy);

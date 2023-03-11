@@ -13,6 +13,7 @@ import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -83,10 +84,12 @@ public class BackgroundStepInfoV1 extends CIAbstractStepInfo implements WithConn
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell")
+  ParameterField<Shell> shell;
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
-  PullPolicy pull;
+  ParameterField<PullPolicy> pull;
 
   @Builder
   @ConstructorProperties({"uuid", "run", "envs", "entrypoint", "args", "ports", "network", "image", "resources",
@@ -95,7 +98,8 @@ public class BackgroundStepInfoV1 extends CIAbstractStepInfo implements WithConn
       ParameterField<Map<String, ParameterField<String>>> envs, ParameterField<String> entrypoint,
       ParameterField<List<String>> args, ParameterField<List<String>> ports, ParameterField<String> network,
       ParameterField<String> image, ContainerResource resources, ParameterField<Boolean> privileged,
-      ParameterField<Integer> user, Shell shell, PullPolicy pull, ParameterField<List<Volume>> volumes) {
+      ParameterField<Integer> user, ParameterField<Shell> shell, ParameterField<PullPolicy> pull,
+      ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.envs = envs;

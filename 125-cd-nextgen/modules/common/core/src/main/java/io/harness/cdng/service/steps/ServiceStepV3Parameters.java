@@ -40,6 +40,6 @@ public class ServiceStepV3Parameters implements StepParameters {
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
   @Override
   public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
+    return RecastOrchestrationUtils.pruneRecasterAdditions(Map.of("service", serviceRef.fetchFinalValue()));
   }
 }

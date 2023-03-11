@@ -24,10 +24,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Data
 @OwnedBy(CDC)
 @Builder(toBuilder = true)
+@NoArgsConstructor
 @AllArgsConstructor
 @RecasterAlias("io.harness.steps.shellscript.ShellScriptSourceWrapper")
 public class ShellScriptSourceWrapper {

@@ -12,24 +12,34 @@ import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.anomaly.AnomalyFeedbackDTO;
 import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
 import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
-import io.harness.ccm.commons.entities.anomaly.AnomalyWidget;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
+import io.harness.ccm.views.entities.CEView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import lombok.NonNull;
 
 public interface AnomalyService {
-  List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery);
   List<AnomalyData> listAnomalies(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, @NonNull List<CCMFilter> ruleFilters);
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds);
+  List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery,
+      @NonNull List<CCMFilter> ruleFilters, Set<String> allowedAnomaliesIds, boolean alwaysAllowed);
   List<FilterStatsDTO> getAnomalyFilterStats(@NonNull String accountIdentifier, List<String> anomalyColumnsList);
   List<PerspectiveAnomalyData> listPerspectiveAnomalies(
-      @NonNull String accountIdentifier, String perspectiveId, PerspectiveQueryDTO perspectiveQuery);
+      @NonNull String accountIdentifier, @NonNull CEView perspective, PerspectiveQueryDTO perspectiveQuery);
   Boolean updateAnomalyFeedback(@NonNull String accountIdentifier, String anomalyId, AnomalyFeedbackDTO feedback);
-  List<AnomalySummary> getAnomalySummary(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery);
-  List<AnomalySummary> getAnomalySummary(List<AnomalyData> anomalies, AnomalyWidget widget);
-  List<AnomalyWidgetData> getAnomalyWidgetData(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery);
+  List<AnomalySummary> getAnomalySummary(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds);
+  List<AnomalyWidgetData> getAnomalyWidgetData(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Set<String> allowedAnomaliesIds);
+  Set<String> listAllowedAnomaliesIds(
+      @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives);
+  HashMap<String, CEView> listAllowedAnomaliesIdAndPerspectives(
+      @NonNull String accountIdentifier, Set<String> allowedFolderIds, List<CEView> perspectives);
+  List<AnomalyData> addPerspectiveInfo(
+      List<AnomalyData> anomalyData, HashMap<String, CEView> allowedAnomaliesIdAndPerspectives);
 }

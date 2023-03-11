@@ -11,12 +11,17 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.SecretNGVariable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +34,7 @@ public class SscaOrchestrationPluginUtils {
   public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
   public static final String PLUGIN_SBOMDESTINATION = "PLUGIN_SBOMDESTINATION";
   public static final String SKIP_NORMALISATION = "SKIP_NORMALISATION";
+  public static final String ATTESTATION_PRIVATE_KEY = "COSIGN_PASSWORD";
 
   public static Map<String, String> getSscaOrchestrationStepEnvVariables(
       SscaOrchestrationStepInfo stepInfo, String identifier) {
@@ -50,6 +56,20 @@ public class SscaOrchestrationPluginUtils {
     envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
     envMap.put(SKIP_NORMALISATION, "true");
     return envMap;
+  }
+
+  public static Map<String, SecretNGVariable> getSscaOrchestrationSecretVars(SscaOrchestrationStepInfo stepInfo) {
+    Map<String, SecretNGVariable> secretNGVariableMap = new HashMap<>();
+    if (stepInfo.getAttestation() != null && stepInfo.getAttestation().getPrivateKey() != null) {
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(stepInfo.getAttestation().getPrivateKey());
+      secretNGVariableMap.put(ATTESTATION_PRIVATE_KEY,
+          SecretNGVariable.builder()
+              .type(NGVariableType.SECRET)
+              .value(ParameterField.createValueField(secretRefData))
+              .name(ATTESTATION_PRIVATE_KEY)
+              .build());
+    }
+    return secretNGVariableMap;
   }
 
   private static String getFormat(SscaOrchestrationStepInfo stepInfo) {

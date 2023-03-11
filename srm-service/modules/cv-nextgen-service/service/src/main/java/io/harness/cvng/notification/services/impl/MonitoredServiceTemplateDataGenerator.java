@@ -22,12 +22,13 @@ public abstract class MonitoredServiceTemplateDataGenerator<T extends MonitoredS
     return MONITORED_SERVICE_NAME;
   }
 
+  private static final String MONITORED_SERVICE_URL_FORMAT =
+      "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&notificationTime=%s";
+
   @Override
   public String getUrl(
       String baseUrl, ProjectParams projectParams, String identifier, NotificationRuleType type, Long endTime) {
-    return String.format(
-        "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&endTime=%s&duration=FOUR_HOURS",
-        baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME, projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), identifier, endTime);
+    return String.format(MONITORED_SERVICE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(), MODULE_NAME,
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier, endTime);
   }
 }

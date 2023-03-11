@@ -8,6 +8,11 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.SKIP_REFRESH_COMMAND;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TERRAFORM_CLOUD_CLI;
+
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V3;
+import static software.wings.beans.TaskType.TERRAFORM_TASK_NG_V4;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -42,6 +47,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -141,7 +147,9 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
     if (isTerraformCloudCli) {
       helper.checkIfTerraformCloudCliIsEnabled(FeatureName.CD_TERRAFORM_CLOUD_CLI_NG, true, ambiance);
-      helper.checkIfDelegateSupportsCloudCli(ambiance);
+      io.harness.delegate.TaskType taskTypeV3 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V3.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV3, TERRAFORM_CLOUD_CLI);
     }
 
     helper.validateDestroyStepConfigFilesInline(parameters);
@@ -155,6 +163,18 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     if (!isTerraformCloudCli) {
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()));
     }
+
+    ParameterField<Boolean> skipTerraformRefreshCommandParameter =
+        parameters.getConfiguration().getIsSkipTerraformRefresh();
+    boolean skipRefreshCommand =
+        ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommandParameter);
+    if (skipRefreshCommand) {
+      io.harness.delegate.TaskType taskTypeV4 =
+          io.harness.delegate.TaskType.newBuilder().setType(TERRAFORM_TASK_NG_V4.name()).build();
+      helper.checkIfTaskIsSupportedByDelegate(ambiance, taskTypeV4, SKIP_REFRESH_COMMAND);
+    }
+
+    builder.skipTerraformRefresh(skipRefreshCommand);
 
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.currentStateFileId(helper.getLatestFileId(entityId))
@@ -283,6 +303,9 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
           helper.getFileStoreFetchFilesConfig(terraformConfig.getFileStoreConfig().toFileStorageStoreConfig(), ambiance,
               TerraformStepHelper.TF_CONFIG_FILES));
     }
+
+    ParameterField<Boolean> skipTerraformRefreshCommand = parameters.getConfiguration().getIsSkipTerraformRefresh();
+    builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
 
     TerraformTaskNGParameters terraformTaskNGParameters = builder.build();
     TaskData taskData =

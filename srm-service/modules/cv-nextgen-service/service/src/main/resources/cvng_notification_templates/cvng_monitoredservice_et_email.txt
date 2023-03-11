@@ -1,49 +1,81 @@
 subject: Harness SRM
 body: "<html>
-<div style=\"display: block !important; align-items: flex-start; border-style: solid; border-top-color: #c31f17; border-top-width: 5px; border-bottom-color: #c31f17; border-bottom-width: 5px; width: 600px; height: auto; margin-top: 3px;\">
-  <span style=\"width: 550px; height: 20px; font-weight: 600;
-                     font-size: 13px; line-height: 20px; color: #cf2318; margin-left: 16px; display: block !important; padding-top: 15.5px !important;\">
-    ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has observed new error events.</span>
-  <span style=\"width: 550px; height: 20px; font-weight: 600;
-                     font-size: 13px; line-height: 20px; margin-bottom: 20px; margin-left: 16px; margin-top: 16px; display:block !important; padding-bottom: 20px !important;\">
-    Monitored Service ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has detected new <span style=\"color: #cf2318;\">${NOTIFICATION_EVENT_TRIGGER_LIST}</span> events for code errors.</span>
-  <div style=\"margin-left: 16px; margin-top: 10px; display: block !important;
-                      padding-top: 20px;\">
-    <div>
-      <span style=\"color: #4f5162;\">Environment </span>
-      <span style=\"font-weight: bold; color: black;\">${ENVIRONMENT_NAME}</span>
-    </div>
-    <div>
-      <span style=\"color: #4f5162;\">Project Name </span>
-      <span style=\"font-weight: bold; color: black;\">${PROJECT_NAME}</span>
-    </div>
-    <div>
-      <span style=\"color: #4f5162;\">Organization Name </span>
-      <span style=\"font-weight: bold; color: black;\">${ORG_NAME}</span>
-    </div>
-    <div>
-      <span style=\"color: #4f5162;\">Account Name </span>
-      <span style=\"font-weight: bold; color: black;\">${ACCOUNT_NAME}</span>
-    </div>
-  </div>
-  <div style=\"width: 568px !important; height: 0px !important; border: 1px solid #b0b1c4 !important;
-                      flex: none !important; order: 0 !important; align-self: stretch !important;
-                      flex-grow: 0 !important; margin: 16px !important;\"></div>
-  <div style=\"margin-left: 16px; display: block !important;\">
-    ${EMAIL_FORMATTED_VERSION_LIST}
-  </div>
-  <div style=\"width: 568px !important; height: 0px !important; border: 1px solid #b0b1c4 !important;
-                      flex: none !important; order: 0 !important; align-self: stretch !important;
-                      flex-grow: 0 !important; margin: 16px !important; margin-top: 0px !important;\"></div>
-  <div style=\"width: 520px; margin-left: 16px; display: block !important;\">
-    <div style=\"margin-bottom: 8.5px\">
-      <span style=\"color: #4f5162;\">Notification Name </span>
-      <span>${EMAIL_NOTIFICATION_NAME_HYPERLINK}</span>
-    </div>
-    <div style=\"margin-bottom: 32px\">
-      <span style=\"color: #4f5162;\">Trigger: </span>
-      <span>When new events (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code errors.</span>
-    </div>
-  </div>
-</div>
-</html>"
+        <div
+          style=\"
+            margin: 15px;
+            padding: 20px 0px 20px 0px;
+            font-size: small;
+            display: flex;
+            justify-content: center;
+            background-color: #f2f2f2;
+            width: 100%;
+          \"
+        >
+          <div
+            style=\"
+              width: 600px;
+              border: 1px solid #B0B1C3;
+              border-top-width: 8px;
+              border-top-style: solid;
+              border-top-color: #e43326;
+              padding-bottom: 7px;
+              border-bottom-width: 8px;
+              border-bottom-style: solid;
+              border-bottom-color: #e43326;
+              background-color: #FFFFFF;
+              margin: auto;
+            \"
+          >
+
+            <div style=\"font-size: 15px; padding: 15px;\">
+              <p style=\"color: #e43326; font-weight: 600;\">
+                  Monitored Service has observed error events.
+              </p>
+              <p style=\"color: #0b0b0d; font-weight: 600\">
+                Monitored Service ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has
+                observed error events for code errors
+              </p>
+
+              <div>${EMAIL_FORMATTED_VERSION_LIST}</div>
+
+              <hr style=\"border-top: 1px solid #b0b1c3\" />
+              <div>
+                <div style=\"margin-bottom: 8.5px\">
+                  <span style=\"color: #6b6d85\">Notification Name </span>
+                  <span>${EMAIL_NOTIFICATION_NAME_HYPERLINK}</span>
+                </div>
+                <div style=\"margin-bottom: 8.5px\">
+                  <span style=\"color: #6b6d85\">Trigger </span>
+                  <span
+                    >When new, critical and resurfaced events with the event type
+                    (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code
+                    errors.</span
+                  >
+                </div>
+              </div>
+              <hr style=\"border-top: 1px solid #b0b1c3\" />
+              <div style=\"width: 100%;\">
+                  <div>
+                      <div style=\"float:left; width: 45%;\">
+                          <div style=\"color: #6b6d85\">Account Name</div>
+                          <p style=\"margin-top: 0\">${ACCOUNT_NAME}</p>
+                      </div>
+                      <div style=\"float:left; width: 45%;\">
+                          <div style=\"color: #6b6d85\">Organization Name</div>
+                          <p style=\"margin-top: 0\">${ORG_NAME}</p>
+                      </div>
+                  </div>
+                  <div>
+                      <div style=\"float:left; width: 45%;\">
+                          <div style=\"color: #6b6d85\">Project Name</div>
+                          <p style=\"margin-top: 0\">${PROJECT_NAME}</p>
+                      </div>
+                      <div style=\"float:left; width: 45%;\">
+                          <div style=\"color: #6b6d85\">Environment</div>
+                          <p style=\"margin-top: 0\">${ENVIRONMENT_NAME}</p>
+                      </div>
+                  </div>
+            </div>
+          </div>
+        </div>
+      </html>"

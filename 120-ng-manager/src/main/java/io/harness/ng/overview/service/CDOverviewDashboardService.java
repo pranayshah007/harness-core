@@ -106,7 +106,7 @@ public interface CDOverviewDashboardService {
   InstanceGroupedByEnvironmentList getInstanceGroupedByEnvironmentList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String environmentId);
   InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String environmentId, String displayName);
+      String projectIdentifier, String serviceId, String environmentId, String displayName, boolean filterOnArtifact);
 
   InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);

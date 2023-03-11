@@ -24,7 +24,9 @@ import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -68,10 +70,11 @@ public class AwsLambdaRollbackTaskCommandHandler {
         return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
 
       } else {
-        CreateFunctionResponse createFunctionResponse = awsLambdaTaskHelper.rollbackFunction(
-            awsLambdaRollbackRequest.getFunctionName(), awsLambdaRollbackRequest.getAwsLambdaInfraConfig(),
-            awsLambdaRollbackRequest.getFunctionCode(), awsLambdaRollbackRequest.getFunctionConfiguration(),
-            awsLambdaRollbackRequest.getQualifier(), executionLogCallback);
+        CreateFunctionResponse createFunctionResponse =
+            awsLambdaTaskHelper.rollbackFunction(awsLambdaRollbackRequest.getFunctionName(),
+                awsLambdaRollbackRequest.getAwsLambdaInfraConfig(), awsLambdaRollbackRequest.getFunctionCode(),
+                awsLambdaRollbackRequest.getFunctionConfiguration(), awsLambdaRollbackRequest.getQualifier(),
+                executionLogCallback, awsLambdaRollbackRequest.getAwsLambdaFunctionAliasDefinitionContents());
         executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
         return AwsLambdaRollbackResponse.builder()
@@ -85,13 +88,18 @@ public class AwsLambdaRollbackTaskCommandHandler {
             .build();
       }
     } catch (AwsLambdaException exception) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
       executionLogCallback.saveExecutionLog(
-          exception.getLocalizedMessage(), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+          sanitizedException.getMessage(), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       return AwsLambdaRollbackResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
     } catch (Exception exception) {
-      executionLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      executionLogCallback.saveExecutionLog(color(format("%n Rollback Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidArgumentsException(String.valueOf(exception));
+      return AwsLambdaRollbackResponse.builder()
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .build();
     }
   }
 }

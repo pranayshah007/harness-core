@@ -8,7 +8,6 @@
 package io.harness.delegate.authenticator;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -20,6 +19,7 @@ import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
@@ -84,6 +84,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private AgentMtlsVerifier agentMtlsVerifier;
+  @Inject private DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -204,11 +205,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateAuthV2Token(accountId, tokenString, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateAuthV2Token(accountId, tokenString, delegateToken.getValue());
-          }
+          decryptDelegateAuthV2Token(
+              accountId, tokenString, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
           return;
         } catch (Exception e) {
           log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
@@ -275,6 +273,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       throw new InvalidRequestException("Access denied", USER_ADMIN);
     }
     decryptDelegateToken(encryptedJWT, accountKey);
+    delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_DECRYPTION_USING_ACCOUNT_KEY);
   }
 
   private boolean decryptJWTDelegateToken(String accountId, DelegateTokenStatus status, EncryptedJWT encryptedJWT,
@@ -300,11 +299,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       while (iterator.hasNext()) {
         DelegateToken delegateToken = iterator.next();
         try {
-          if (delegateToken.isNg()) {
-            decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-          } else {
-            decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-          }
+          decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
           if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
             setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
           }
@@ -328,11 +323,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       return false;
     }
     try {
-      if (delegateToken.isNg()) {
-        decryptDelegateToken(encryptedJWT, decodeBase64ToString(delegateToken.getValue()));
-      } else {
-        decryptDelegateToken(encryptedJWT, delegateToken.getValue());
-      }
+      decryptDelegateToken(encryptedJWT, delegateTokenEncryptDecrypt.getDelegateTokenValue(delegateToken));
       if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
         setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
       }

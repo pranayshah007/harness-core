@@ -9,7 +9,6 @@ package io.harness.cdng.aws.lambda;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 
@@ -19,6 +18,7 @@ import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.aws.lambda.beans.AwsLambdaHarnessStoreFilesResult;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -49,6 +49,7 @@ import io.harness.delegate.task.aws.lambda.request.AwsLambdaPrepareRollbackReque
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaCommandResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
@@ -57,7 +58,10 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -93,13 +97,16 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Slf4j
@@ -144,19 +151,11 @@ public class AwsLambdaHelper extends CDStepHelper {
         .build();
   }
 
-  public ManifestOutcome getAwsLambdaManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
+  public List<ManifestOutcome> getAwsLambdaManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes) {
     // Filter only Aws Lambda supported manifest types
-    List<ManifestOutcome> awsLambdaManifests =
-        manifestOutcomes.stream()
-            .filter(
-                manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
-            .collect(Collectors.toList());
-
-    // Check if Aws Lambda Manifests are empty
-    if (isEmpty(awsLambdaManifests)) {
-      throw new InvalidRequestException("Aws Lambda Manifest is mandatory.", USER);
-    }
-    return awsLambdaManifests.get(0);
+    return manifestOutcomes.stream()
+        .filter(manifestOutcome -> ManifestType.AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
+        .collect(Collectors.toList());
   }
 
   public TaskChainResponse executeNextLink(Ambiance ambiance, StepElementParameters stepElementParameters,
@@ -204,6 +203,9 @@ public class AwsLambdaHelper extends CDStepHelper {
       return TaskChainResponse.builder().passThroughData(awsLambdaStepExceptionPassThroughData).chainEnd(true).build();
     }
 
+    List<String> awsLambdaFunctionAliasDefinitionContents =
+        getManifestContentsOfManifestType(awsLambdaStepPassThroughData, ManifestType.AwsLambdaFunctionAliasDefinition);
+
     AwsLambdaPrepareRollbackOutcome awsLambdaPrepareRollbackOutcome =
         AwsLambdaPrepareRollbackOutcome.builder()
             .awsLambdaDeployManifestContent(awsLambdaPrepareRollbackResponse.getManifestContent())
@@ -211,6 +213,7 @@ public class AwsLambdaHelper extends CDStepHelper {
             .functionName(awsLambdaPrepareRollbackResponse.getFunctionName())
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .awsLambdaFunctionAliasDefinitionContents(awsLambdaFunctionAliasDefinitionContents)
             .functionCode(awsLambdaPrepareRollbackResponse.getFunctionCode())
             .functionConfiguration(awsLambdaPrepareRollbackResponse.getFunctionConfiguration())
             .build();
@@ -233,13 +236,19 @@ public class AwsLambdaHelper extends CDStepHelper {
               .build();
       return TaskChainResponse.builder().passThroughData(awsLambdaStepExceptionPassThroughData).chainEnd(true).build();
     }
-    String manifestContent = getManifestContentFromGitResponse(gitTaskResponse, ambiance);
+
+    Map<String, List<String>> manifestFileContentsMap = getManifestContentFromGitResponse(gitTaskResponse, ambiance);
+    Map<String, List<String>> harnessManifestFileContentsMap =
+        awsLambdaStepPassThroughData.getManifestFileContentsMap();
+    for (Map.Entry<String, List<String>> entry : harnessManifestFileContentsMap.entrySet()) {
+      manifestFileContentsMap.put(entry.getKey(), entry.getValue());
+    }
 
     // Add manifestContent
     AwsLambdaStepPassThroughData awsLambdaStepPassThroughDataWithManifestContent =
         AwsLambdaStepPassThroughData.builder()
-            .manifestContent(manifestContent)
-            .manifestsOutcome(awsLambdaStepPassThroughData.getManifestsOutcome())
+            .manifestFileContentsMap(manifestFileContentsMap)
+            .manifestsOutcomes(awsLambdaStepPassThroughData.getManifestsOutcomes())
             .infrastructureOutcome(awsLambdaStepPassThroughData.getInfrastructureOutcome())
             .unitProgressData(gitTaskResponse.getUnitProgressData())
             .build();
@@ -252,13 +261,18 @@ public class AwsLambdaHelper extends CDStepHelper {
       AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 
+    List<String> awsLambdaFunctionDefinitionContents =
+        getManifestContentsOfManifestType(awsLambdaStepPassThroughData, ManifestType.AwsLambdaFunctionDefinition);
+
+    validateAwsLambdaFunctionDefinitionContents(awsLambdaFunctionDefinitionContents);
+
     AwsLambdaPrepareRollbackRequest awsLambdaPrepareRollbackRequest =
         AwsLambdaPrepareRollbackRequest.builder()
             .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_PREPARE_ROLLBACK)
             .commandName(AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .awsLambdaInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
-            .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
+            .awsLambdaDeployManifestContent(awsLambdaFunctionDefinitionContents.get(0))
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
             .build();
@@ -267,9 +281,44 @@ public class AwsLambdaHelper extends CDStepHelper {
         TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG, ambiance, awsLambdaStepPassThroughData, false);
   }
 
-  private String getManifestContentFromGitResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
-    String manifestContent = gitTaskResponse.getGitFetchFilesResults().get(0).getFiles().get(0).getFileContent();
-    return engineExpressionService.renderExpression(ambiance, manifestContent);
+  private List<String> getManifestContentsOfManifestType(
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, String manifestType) {
+    List<ManifestOutcome> manifestOutcomes = awsLambdaStepPassThroughData.getManifestsOutcomes();
+
+    List<String> manifestContentsOfManifestType = new ArrayList<>();
+
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      if (manifestOutcome.getType().equals(manifestType)) {
+        List<String> fileContentsList =
+            awsLambdaStepPassThroughData.getManifestFileContentsMap().get(manifestOutcome.getIdentifier());
+        if (CollectionUtils.isNotEmpty(fileContentsList)) {
+          manifestContentsOfManifestType.add(fileContentsList.get(0));
+        }
+      }
+    }
+
+    return manifestContentsOfManifestType;
+  }
+
+  private Map<String, List<String>> getManifestContentFromGitResponse(
+      GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
+    Map<String, List<String>> manifestFileContentsMap = new HashMap<>();
+
+    List<GitFetchFilesResult> gitFetchFilesResults = gitTaskResponse.getGitFetchFilesResults();
+
+    for (GitFetchFilesResult gitFetchFilesResult : gitFetchFilesResults) {
+      List<String> manifestContentList = new ArrayList<>();
+
+      for (GitFile gitFile : gitFetchFilesResult.getFiles()) {
+        String manifestContent = gitFile.getFileContent();
+        manifestContent = engineExpressionService.renderExpression(ambiance, manifestContent);
+        manifestContentList.add(manifestContent);
+      }
+
+      manifestFileContentsMap.put(gitFetchFilesResult.getIdentifier(), manifestContentList);
+    }
+
+    return manifestFileContentsMap;
   }
 
   public StepResponse handleStepFailureException(
@@ -336,10 +385,103 @@ public class AwsLambdaHelper extends CDStepHelper {
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    ManifestOutcome awsLambdaManifestOutcome = getAwsLambdaManifestOutcome(manifestsOutcome.values());
+    List<ManifestOutcome> awsLambdaManifestOutcomeList = getAwsLambdaManifestOutcome(manifestsOutcome.values());
+    validateAwsLambdaManifestOutcomes(awsLambdaManifestOutcomeList);
 
-    return prepareManifestGitFetchTask(
-        infrastructureOutcome, ambiance, stepElementParameters, awsLambdaManifestOutcome);
+    LogCallback logCallback = getLogCallback(AwsLambdaCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+    List<AwsLambdaHarnessStoreFilesResult> harnessStoreFilesResultList =
+        getHarnessStoreManifestFilesContent(ambiance, awsLambdaManifestOutcomeList, logCallback);
+
+    TaskChainResponse taskChainResponse = null;
+    Map<String, List<String>> harnessManifestFilesContentMap =
+        getManifestContentFromHarnessStore(harnessStoreFilesResultList, ambiance);
+    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData =
+        AwsLambdaStepPassThroughData.builder()
+            .manifestsOutcomes(awsLambdaManifestOutcomeList)
+            .infrastructureOutcome(infrastructureOutcome)
+            .manifestFileContentsMap(harnessManifestFilesContentMap)
+            .build();
+
+    if (isAnyGitManifest(awsLambdaManifestOutcomeList)) {
+      taskChainResponse = prepareManifestGitFetchTask(infrastructureOutcome, ambiance, stepElementParameters,
+          awsLambdaManifestOutcomeList, awsLambdaStepPassThroughData);
+    } else {
+      taskChainResponse = prepareManifestHarnessStoreTask(
+          ambiance, stepElementParameters, infrastructureOutcome, awsLambdaStepPassThroughData, logCallback);
+    }
+
+    return taskChainResponse;
+  }
+
+  private TaskChainResponse prepareManifestHarnessStoreTask(Ambiance ambiance, StepElementParameters stepParameters,
+      InfrastructureOutcome infrastructureOutcome, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData,
+      LogCallback logCallback) {
+    TaskChainResponse taskChainResponse = null;
+    UnitProgressData unitProgressData = getCommandUnitProgressData(
+        AwsLambdaCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+    logCallback.saveExecutionLog("Done.. ", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    taskChainResponse =
+        executePrepareRollbackTask(ambiance, stepParameters, awsLambdaStepPassThroughData, unitProgressData);
+    return taskChainResponse;
+  }
+
+  private Map<String, List<String>> getManifestContentFromHarnessStore(
+      List<AwsLambdaHarnessStoreFilesResult> harnessStoreFilesResultList, Ambiance ambiance) {
+    Map<String, List<String>> manifestFileContentsMap = new HashMap<>();
+
+    for (AwsLambdaHarnessStoreFilesResult harnessStoreFilesResult : harnessStoreFilesResultList) {
+      List<String> manifestContentList = new ArrayList<>();
+
+      for (String fileContent : harnessStoreFilesResult.getFilesContent()) {
+        fileContent = engineExpressionService.renderExpression(ambiance, fileContent);
+        manifestContentList.add(fileContent);
+      }
+
+      manifestFileContentsMap.put(harnessStoreFilesResult.getIdentifier(), manifestContentList);
+    }
+
+    return manifestFileContentsMap;
+  }
+
+  private List<AwsLambdaHarnessStoreFilesResult> getHarnessStoreManifestFilesContent(
+      Ambiance ambiance, List<ManifestOutcome> manifestOutcomeList, LogCallback logCallback) {
+    List<AwsLambdaHarnessStoreFilesResult> harnessStoreFilesResultList = new ArrayList<>();
+
+    for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
+      if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
+        List<String> manifestContent = fetchFilesContentFromLocalStore(ambiance, manifestOutcome, logCallback);
+        AwsLambdaHarnessStoreFilesResult harnessStoreFilesResult = AwsLambdaHarnessStoreFilesResult.builder()
+                                                                       .filesContent(manifestContent)
+                                                                       .manifestType(manifestOutcome.getType())
+                                                                       .identifier(manifestOutcome.getIdentifier())
+                                                                       .build();
+        harnessStoreFilesResultList.add(harnessStoreFilesResult);
+      }
+    }
+    return harnessStoreFilesResultList;
+  }
+
+  public void validateAwsLambdaManifestOutcomes(List<ManifestOutcome> awsLambdaManifestOutcomeList) {
+    List<ManifestOutcome> awsLambdaFunctionDefinitionManifests =
+        getManifestOutcomesByType(awsLambdaManifestOutcomeList, ManifestType.AwsLambdaFunctionDefinition);
+
+    if (CollectionUtils.isEmpty(awsLambdaFunctionDefinitionManifests)) {
+      throw new InvalidRequestException(
+          format("AWS Native Lambda deployment expects at least one manifest of type AWS Lambda Function Definition.\n"
+              + "Please configure it in Harness Service."));
+    }
+  }
+
+  public List<ManifestOutcome> getManifestOutcomesByType(List<ManifestOutcome> manifestOutcomes, String manifestType) {
+    List<ManifestOutcome> manifestOutcomesOfManifestType = null;
+
+    if (CollectionUtils.isNotEmpty(manifestOutcomes) && StringUtils.isNotEmpty(manifestType)) {
+      manifestOutcomesOfManifestType = manifestOutcomes.stream()
+                                           .filter(manifestOutcome -> manifestType.equals(manifestOutcome.getType()))
+                                           .collect(Collectors.toList());
+    }
+
+    return manifestOutcomesOfManifestType;
   }
 
   private ManifestsOutcome resolveAwsLambdaManifestsOutcome(Ambiance ambiance) {
@@ -370,20 +512,21 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ManifestOutcome manifestOutcome) {
-    if (!ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
-      throw new InvalidRequestException("Invalid kind of storeConfig for Aws Lambda step", USER);
+      StepElementParameters stepElementParameters, List<ManifestOutcome> awsLambdaManifestOutcomeList,
+      AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
+    List<GitRequestFileConfig> gitRequestFileConfigs = new ArrayList<>();
+
+    for (ManifestOutcome manifestOutcome : awsLambdaManifestOutcomeList) {
+      if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
+        GitRequestFileConfig currentGitRequestFileConfig =
+            getGitFetchFilesConfigFromManifestOutcome(manifestOutcome, ambiance);
+
+        gitRequestFileConfigs.add(currentGitRequestFileConfig);
+      }
     }
 
-    GitRequestFileConfig gitRequestFileConfig = getGitFetchFilesConfigFromManifestOutcome(manifestOutcome, ambiance);
-
-    AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = AwsLambdaStepPassThroughData.builder()
-                                                                    .manifestsOutcome(manifestOutcome)
-                                                                    .infrastructureOutcome(infrastructureOutcome)
-                                                                    .build();
-
     return getGitFetchFileTaskResponse(
-        ambiance, true, stepElementParameters, awsLambdaStepPassThroughData, gitRequestFileConfig);
+        ambiance, false, stepElementParameters, awsLambdaStepPassThroughData, gitRequestFileConfigs);
   }
 
   private GitRequestFileConfig getGitFetchFilesConfigFromManifestOutcome(
@@ -414,12 +557,12 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
       StepElementParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData,
-      GitRequestFileConfig gitRequestFileConfig) {
+      List<GitRequestFileConfig> gitRequestFileConfigs) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
     GitTaskNGRequest gitTaskNGRequest = GitTaskNGRequest.builder()
                                             .accountId(accountId)
-                                            .gitRequestFileConfigs(Collections.singletonList(gitRequestFileConfig))
+                                            .gitRequestFileConfigs(gitRequestFileConfigs)
                                             .shouldOpenLogStream(shouldOpenLogStream)
                                             .commandUnitName(AwsLambdaCommandUnitConstants.fetchManifests.toString())
                                             .closeLogStream(true)
@@ -457,20 +600,36 @@ public class AwsLambdaHelper extends CDStepHelper {
       AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 
+    List<String> awsLambdaFunctionDefinitionContents =
+        getManifestContentsOfManifestType(awsLambdaStepPassThroughData, ManifestType.AwsLambdaFunctionDefinition);
+
+    validateAwsLambdaFunctionDefinitionContents(awsLambdaFunctionDefinitionContents);
+
+    List<String> awsLambdaFunctionAliasDefinitionContents =
+        getManifestContentsOfManifestType(awsLambdaStepPassThroughData, ManifestType.AwsLambdaFunctionAliasDefinition);
+
     AwsLambdaDeployRequest awsLambdaDeployRequest =
         AwsLambdaDeployRequest.builder()
             .awsLambdaCommandTypeNG(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY)
             .commandName(AWS_LAMBDA_DEPLOY_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .awsLambdaInfraConfig(getInfraConfig(infrastructureOutcome, ambiance))
-            .awsLambdaDeployManifestContent(awsLambdaStepPassThroughData.getManifestContent())
+            .awsLambdaDeployManifestContent(awsLambdaFunctionDefinitionContents.get(0))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .awsLambdaArtifactConfig(awsLambdaEntityHelper.getAwsLambdaArtifactConfig(
                 getArtifactOutcome(ambiance), AmbianceUtils.getNgAccess(ambiance)))
+            .awsLambdaAliasManifestContent(awsLambdaFunctionAliasDefinitionContents)
             .build();
 
     return queueTask(stepParameters, awsLambdaDeployRequest, TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG, ambiance,
         awsLambdaStepPassThroughData, true);
+  }
+
+  public void validateAwsLambdaFunctionDefinitionContents(List<String> awsLambdaFunctionDefinitionContents) {
+    if (CollectionUtils.isEmpty(awsLambdaFunctionDefinitionContents)) {
+      throw new InvalidRequestException(
+          "AWS Lambda Function Definition Manifest is not configured. Please configure in Harness Service.");
+    }
   }
 
   private ArtifactOutcome getArtifactOutcome(Ambiance ambiance) {

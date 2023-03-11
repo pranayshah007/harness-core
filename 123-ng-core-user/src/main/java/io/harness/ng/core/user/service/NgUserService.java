@@ -33,6 +33,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PL)
 public interface NgUserService {
@@ -78,7 +79,7 @@ public interface NgUserService {
 
   List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds);
 
-  Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable);
+  CloseableIterator<UserMembership> streamUserMemberships(Criteria criteria);
 
   void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source);

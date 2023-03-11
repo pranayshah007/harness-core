@@ -23,6 +23,7 @@ import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -110,6 +111,11 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.AWS_LAMBDA:
         validateAwsLambdaInfrastructure((AwsLambdaInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.KUBERNETES_AWS:
+        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
+        validateK8sAwsInfrastructure(k8sAwsInfrastructure);
         break;
 
       default:
@@ -333,6 +339,22 @@ public class InfrastructureValidator {
     if (ParameterField.isNull(infrastructure.getRegion())
         || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
       throw new InvalidArgumentsException(Pair.of(AWS_REGION, CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+  }
+
+  private void validateK8sAwsInfrastructure(K8sAwsInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getNamespace())
+        || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
+      throw new InvalidArgumentsException(Pair.of("namespace", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getReleaseName())) {
+      throw new InvalidArgumentsException(Pair.of("releaseName", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    if (ParameterField.isNull(infrastructure.getCluster())
+        || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
+      throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 }

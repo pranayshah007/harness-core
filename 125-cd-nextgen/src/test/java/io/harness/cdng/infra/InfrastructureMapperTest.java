@@ -34,6 +34,7 @@ import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
+import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -51,6 +52,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -495,6 +497,32 @@ public class InfrastructureMapperTest extends CategoryTest {
     InfrastructureOutcome infrastructureOutcome =
         infrastructureMapper.toOutcome(asgInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testK8sAwsInfraMapper() {
+    K8sAwsInfrastructure k8sAwsInfrastructure = K8sAwsInfrastructure.builder()
+                                                    .connectorRef(ParameterField.createValueField("connectorId"))
+                                                    .namespace(ParameterField.createValueField("namespace"))
+                                                    .releaseName(ParameterField.createValueField("release"))
+                                                    .cluster(ParameterField.createValueField("cluster"))
+                                                    .build();
+
+    K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome =
+        K8sAwsInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .namespace("namespace")
+            .releaseName("release")
+            .cluster("cluster")
+            .environment(environment)
+            .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
+            .build();
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        k8sAwsInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(k8sAwsInfrastructureOutcome);
   }
 
   @Test

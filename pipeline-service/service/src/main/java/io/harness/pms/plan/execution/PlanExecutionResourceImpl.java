@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
@@ -23,12 +24,14 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -49,14 +52,19 @@ import io.harness.pms.stages.StageExecutionResponse;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
+import io.harness.utils.PipelineGitXHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -79,6 +87,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
@@ -88,9 +98,22 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId,
         orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser);
     return ResponseDTO.newResponse(planExecutionResponseDto);
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  public ResponseDTO<PlanExecutionResponseDto> runPostExecutionRollback(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String planExecutionId) {
+    // pipelineIdentifier needed for access control check
+    PlanExecution planExecution =
+        pipelineExecutor.startPostExecutionRollback(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+    return ResponseDTO.newResponse(PlanExecutionResponseDto.builder().planExecution(planExecution).build());
   }
 
   @Override
@@ -265,6 +288,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()),
         PipelineRbacPermissions.PIPELINE_EXECUTE);
 
+    checkIfInterruptIsDeprecated(accountId, executionInterruptType);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, null));
   }
@@ -274,6 +298,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<InterruptDTO> handleStageInterrupt(@NotNull String accountId, @NotNull String orgId,
       @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
+    checkIfInterruptIsDeprecated(accountId, executionInterruptType);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId));
   }
@@ -393,5 +418,16 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
             accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
     String rootParentId = pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId();
     return ResponseDTO.newResponse(retryExecutionHelper.getRetryLatestExecutionId(rootParentId));
+  }
+
+  private void checkIfInterruptIsDeprecated(String accountId, PlanExecutionInterruptType interruptType) {
+    Set<PlanExecutionInterruptType> deprecatedInterrupts = new HashSet<>();
+    deprecatedInterrupts.add(PlanExecutionInterruptType.PAUSE);
+    deprecatedInterrupts.add(PlanExecutionInterruptType.RESUME);
+    if (deprecatedInterrupts.contains(interruptType)
+        && pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_DEPRECATE_PAUSE_INTERRUPT_NG)) {
+      throw new InvalidRequestException(
+          "The given interrupt type is deprecated. Please contact Harness for further support.");
+    }
   }
 }

@@ -363,6 +363,7 @@ io.harness.plancreator.strategy.AxisConfig
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.v1.MatrixConfigV1
+io.harness.plancreator.strategy.v1.ForConfigV1
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.v1.StrategyConfigV1
 io.harness.plancreator.strategy.HarnessForConfig
@@ -731,7 +732,6 @@ io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudStorageArtifactSummary
 io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome
 io.harness.cdng.provision.terraformcloud.output.TerraformCloudPlanOutput
-io.harness.cdng.provision.terraformcloud.output.TerraformCloudConfigSweepingOutput
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndApplySpecParameters
 io.harness.cdng.provision.terraformcloud.params.TerraformCloudPlanAndDestroySpecParameters
@@ -744,6 +744,7 @@ io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanAndDestroySp
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanOnlySpec
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudPlanSpec
 io.harness.cdng.provision.terraformcloud.runspecs.TerraformCloudRefreshSpec
+io.harness.cdng.provision.terraformcloud.TerraformCloudPassThroughData
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepInfo
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepNode
 io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepParameters
@@ -817,3 +818,10 @@ io.harness.cdng.provision.terraform.TerraformCloudCliPlanExecutionData
 io.harness.cdng.provision.terraform.TerraformCloudCliExecutionData
 io.harness.cdng.provision.terraform.TerraformCloudCliStepConfiguration
 io.harness.cdng.provision.terraform.TerraformCloudCliStepConfigurationParameters
+io.harness.cdng.bamboo.BambooBuildSpecParameters
+io.harness.cdng.bamboo.BambooBuildStepNode
+io.harness.cdng.pipeline.stepinfo.BambooBuildStepInfo
+io.harness.cdng.bamboo.BambooBuildOutcome
+io.harness.cdng.infra.yaml.K8sAwsInfrastructure
+io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sAwsInfraMapping

@@ -210,6 +210,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
                                             .targetInstances(k8sCanaryDeployResponse.getCurrentInstances())
                                             .canaryWorkload(k8sCanaryDeployResponse.getCanaryWorkload())
                                             .canaryWorkloadDeployed(k8sCanaryDeployResponse.isCanaryWorkloadDeployed())
+                                            .manifest(executionPassThroughData.getK8sGitFetchInfo())
                                             .build();
 
     executionSweepingOutputService.consume(

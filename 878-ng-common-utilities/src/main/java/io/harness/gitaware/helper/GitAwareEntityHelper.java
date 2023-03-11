@@ -66,13 +66,14 @@ public class GitAwareEntityHelper {
     String connectorRef = gitContextRequestParams.getConnectorRef();
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
+    boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
@@ -116,7 +117,7 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }
@@ -250,7 +251,7 @@ public class GitAwareEntityHelper {
       String connectorRef = getFileGitContextRequestParams.getConnectorRef();
       boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
       EntityType entityType = getFileGitContextRequestParams.getEntityType();
-
+      boolean getOnlyFileContent = getFileGitContextRequestParams.isGetOnlyFileContent();
       contextMap = GitSyncLogContextHelper.setContextMap(
           scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
 
@@ -263,6 +264,7 @@ public class GitAwareEntityHelper {
                                                 .loadFromCache(loadFromCache)
                                                 .entityType(entityType)
                                                 .contextMap(contextMap)
+                                                .getOnlyFileContent(getOnlyFileContent)
                                                 .build();
 
       scmGetBatchFilesRequestMap.put(remoteTemplateRequestEntry.getKey(), scmGetFileRequest);

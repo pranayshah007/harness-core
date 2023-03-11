@@ -1,0 +1,26 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+java_library(
+    name = "module",
+    srcs = glob(["**/*.java"]),
+    resources = [],
+    visibility = ["//idp-service:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
+        "//idp-service/src/main/java/io/harness/idp/namespace:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)

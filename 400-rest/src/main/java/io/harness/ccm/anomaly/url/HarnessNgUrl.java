@@ -156,35 +156,34 @@ public class HarnessNgUrl {
   }
 
   private static String fieldToFieldNameMapping(String field) {
-    switch (field) {
-      case "gcpProduct":
+    switch (field.toLowerCase()) {
+      case "gcpproduct":
         return "Product";
-      case "gcpProjectId":
+      case "gcpprojectid":
         return "Project";
-      case "gcpSKUDescription":
-      case "gcpSkuDescription":
+      case "gcpskudescription":
         return "SKUs";
-      case "clusterName":
+      case "clustername":
         return "Cluster Name";
       case "namespace":
         return "Namespace";
-      case "workloadName":
+      case "workloadname":
         return "Workload";
-      case "awsUsageAccountId":
+      case "awsusageaccountid":
         return "Account";
-      case "awsServiceCode":
+      case "awsservicecode":
         return "Service";
-      case "awsInstancetype":
+      case "awsinstancetype":
         return "Instance Type";
-      case "awsUsageType":
+      case "awsusagetype":
         return "Usage Type";
-      case "workloadType":
+      case "workloadtype":
         return "Workload Type";
-      case "azureSubscriptionGuid":
+      case "azuresubscriptionguid":
         return "Subscription ID";
-      case "azureMeterCategory":
+      case "azuremetercategory":
         return "Meter category";
-      case "azureResourceGroup":
+      case "azureresourcegroup":
         return "Resource group name";
       default:
         throw new InternalError("Invalid field");

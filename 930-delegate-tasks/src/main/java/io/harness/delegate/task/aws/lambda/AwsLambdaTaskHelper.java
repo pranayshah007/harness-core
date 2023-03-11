@@ -8,16 +8,26 @@
 package io.harness.delegate.task.aws.lambda;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
-import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
-import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_EXPLANATION;
+import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.JENKINS_ARTIFACT_DOWNLOAD_HINT;
+import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
+import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static software.amazon.awssdk.services.lambda.model.State.FAILED;
@@ -25,25 +35,49 @@ import static software.amazon.awssdk.services.lambda.model.State.INACTIVE;
 import static software.amazon.awssdk.services.lambda.model.State.PENDING;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.artifactory.ArtifactoryConfigRequest;
+import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.lambda.AwsLambdaClient;
+import io.harness.beans.DecryptableEntity;
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.data.structure.UUIDGenerator;
+import io.harness.connector.helper.DecryptionHelper;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.exception.AwsLambdaException;
+import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionWithActiveVersions.AwsLambdaFunctionWithActiveVersionsBuilder;
-import io.harness.eraro.ErrorCode;
-import io.harness.eraro.Level;
-import io.harness.exception.FileCreationException;
+import io.harness.delegate.task.nexus.NexusMapper;
+import io.harness.delegate.utils.NexusVersion;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.nexus.NexusRequest;
+import io.harness.pcf.PivotalClientApiException;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.YamlUtils;
+
+import software.wings.beans.JenkinsConfig;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+import software.wings.helpers.ext.jenkins.Jenkins;
+import software.wings.helpers.ext.nexus.NexusService;
+import software.wings.service.impl.jenkins.JenkinsUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -53,26 +87,27 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.util.Strings;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.model.AliasConfiguration;
+import software.amazon.awssdk.services.lambda.model.CreateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.CreateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionRequest;
 import software.amazon.awssdk.services.lambda.model.CreateFunctionResponse;
 import software.amazon.awssdk.services.lambda.model.DeleteFunctionRequest;
@@ -91,6 +126,8 @@ import software.amazon.awssdk.services.lambda.model.ListVersionsByFunctionRespon
 import software.amazon.awssdk.services.lambda.model.PackageType;
 import software.amazon.awssdk.services.lambda.model.PublishVersionRequest;
 import software.amazon.awssdk.services.lambda.model.PublishVersionResponse;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasRequest;
+import software.amazon.awssdk.services.lambda.model.UpdateAliasResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeRequest;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionCodeResponse;
 import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationRequest;
@@ -101,18 +138,33 @@ import software.amazon.awssdk.services.lambda.model.UpdateFunctionConfigurationR
 public class AwsLambdaTaskHelper {
   @Inject private AwsLambdaClient awsLambdaClient;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
+
+  @Inject private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private DecryptionHelper decryptionHelper;
+  @Inject private NexusMapper nexusMapper;
+  @Inject private NexusService nexusService;
+  @Inject private JenkinsUtils jenkinsUtil;
+  @Inject private ArtifactoryRequestMapper artifactoryRequestMapper;
+  @Inject private ArtifactoryNgService artifactoryNgService;
+
+  private final List<AwsLambdaArtifactType> ZIP_DOWNLOAD_SUPPORTED_ARTIFACTS = Arrays.asList(
+      AwsLambdaArtifactType.NEXUS_PACKAGE, AwsLambdaArtifactType.JENKINS, AwsLambdaArtifactType.ARTIFACTORY);
+  private final String NEXUS_FAILED_DOWNLOAD_EXPLANATION = "Unable to download nexus artifact due to: ";
+  private final String NEXUS_FAILED_DOWNLOAD_HINT =
+      "Review artifact configuration and nexus connector details. For any intermittent network I/O issues please check delegate connectivity with Nexus server";
+
   private YamlUtils yamlUtils = new YamlUtils();
 
   private final String ACTIVE_LAST_UPDATE_STATUS = "Successful";
   private final String FAILED_LAST_UPDATE_STATUS = "Failed";
-  private final String TEMP_ARTIFACT_FILE = "tempArtifactFile";
 
   long TIMEOUT_IN_SECONDS = 60 * 60L;
   long WAIT_SLEEP_IN_SECONDS = 10L;
 
   public CreateFunctionResponse deployFunction(AwsLambdaInfraConfig awsLambdaInfraConfig,
-      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent, LogCallback logCallback) {
+      AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent,
+      List<String> awsLambdaAliasManifestContent, LogCallback logCallback) {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     CreateFunctionRequest.Builder createFunctionRequestBuilder =
@@ -120,7 +172,14 @@ public class AwsLambdaTaskHelper {
 
     CreateFunctionRequest createFunctionRequest = (CreateFunctionRequest) createFunctionRequestBuilder.build();
 
+    if (isEmpty(createFunctionRequest.functionName())) {
+      logCallback.saveExecutionLog(
+          format("%nFunction Name not found from function definition manifest."), LogLevel.ERROR);
+      throw new InvalidRequestException("Function Name not found from function definition manifest.");
+    }
+
     String functionName = createFunctionRequest.functionName();
+
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
 
@@ -130,21 +189,92 @@ public class AwsLambdaTaskHelper {
                                           awsLambdaFunctionsInfraConfig.getRegion()),
               getFunctionRequest);
 
+      CreateFunctionResponse function;
+
       if (existingFunction.isEmpty()) {
-        return createFunction(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig,
+        function = createFunction(awsLambdaArtifactConfig, logCallback, awsLambdaFunctionsInfraConfig,
             createFunctionRequestBuilder, functionName);
       } else {
-        return updateFunctionWithArtifact(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
+        function = updateFunctionWithArtifact(awsLambdaArtifactConfig, awsLambdaManifestContent, logCallback,
             awsLambdaFunctionsInfraConfig, existingFunction.get());
       }
+
+      // create or update alias
+      if (CollectionUtils.isNotEmpty(awsLambdaAliasManifestContent)) {
+        createOrUpdateAlias(awsLambdaAliasManifestContent, function.functionName(), function.version(),
+            awsLambdaFunctionsInfraConfig, logCallback);
+      }
+
+      return function;
     } catch (Exception e) {
       log.error(e.getMessage());
       throw new InvalidRequestException(e.getMessage());
     }
   }
 
+  private void createOrUpdateAlias(List<String> awsLambdaAliasManifestContent, String functionName,
+      String functionVersion, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, LogCallback logCallback) {
+    logCallback.saveExecutionLog(
+        format("%nCreate or Update Aliases for function %s with version %s. %n", functionName, functionVersion),
+        LogLevel.INFO);
+
+    AwsInternalConfig awsInternalConfig = getAwsInternalConfig(
+        awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(), awsLambdaFunctionsInfraConfig.getRegion());
+
+    ListAliasesRequest listAliasesRequest =
+        (ListAliasesRequest) ListAliasesRequest.builder().functionName(functionName).build();
+
+    ListAliasesResponse listAliasesResponse = awsLambdaClient.listAliases(awsInternalConfig, listAliasesRequest);
+
+    Set<String> alreadyPresentAliases =
+        new HashSet<>(listAliasesResponse.aliases()
+                          .stream()
+                          .map(aliasConfiguration -> { return aliasConfiguration.name(); })
+                          .collect(Collectors.toList()));
+
+    for (String aliasContent : awsLambdaAliasManifestContent) {
+      CreateAliasRequest.Builder aliasRequestBuilder =
+          parseYamlAsObject(aliasContent, CreateAliasRequest.serializableBuilderClass());
+      CreateAliasRequest createAliasRequest =
+          (CreateAliasRequest) aliasRequestBuilder.functionName(functionName).functionVersion(functionVersion).build();
+
+      String alias = createAliasRequest.name();
+
+      if (!alreadyPresentAliases.contains(alias)) {
+        logCallback.saveExecutionLog(format("%nCreating Alias %s for function %s with version %s. %n",
+                                         createAliasRequest.name(), functionName, functionVersion),
+            LogLevel.INFO);
+
+        CreateAliasResponse createAliasResponse = awsLambdaClient.createAlias(awsInternalConfig, createAliasRequest);
+        logCallback.saveExecutionLog(format("%nCreated Alias %s for function %s with version %s. %n",
+                                         createAliasRequest.name(), functionName, functionVersion),
+            LogLevel.INFO);
+      } else {
+        logCallback.saveExecutionLog(format("%nUpdating Alias %s for function %s with version %s. %n",
+                                         createAliasRequest.name(), functionName, functionVersion),
+            LogLevel.INFO);
+
+        UpdateAliasRequest updateAliasRequest = (UpdateAliasRequest) UpdateAliasRequest.builder()
+                                                    .name(alias)
+                                                    .functionName(createAliasRequest.functionName())
+                                                    .functionVersion(createAliasRequest.functionVersion())
+                                                    .description(createAliasRequest.description())
+                                                    .build();
+
+        UpdateAliasResponse updateAliasResponse = awsLambdaClient.updateAlias(awsInternalConfig, updateAliasRequest);
+
+        logCallback.saveExecutionLog(format("%nUpdated Alias %s for function %s with version %s. %n",
+                                         createAliasRequest.name(), functionName, functionVersion),
+            LogLevel.INFO);
+      }
+    }
+
+    logCallback.saveExecutionLog(format("%nDone Creating Aliases"), LogLevel.INFO);
+  }
+
   public CreateFunctionResponse rollbackFunction(String functionName, AwsLambdaInfraConfig awsLambdaInfraConfig,
-      String functionCode, String functionConfiguration, String qualifier, LogCallback logCallback) {
+      String functionCode, String functionConfiguration, String qualifier, LogCallback logCallback,
+      List<String> awsLambdaFunctionAliasDefinitionContents) throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     GetFunctionRequest getFunctionRequest =
@@ -154,17 +284,22 @@ public class AwsLambdaTaskHelper {
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
 
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
         logCallback.saveExecutionLog(
             format("Updating Function: %s in region: %s with same configuration and code as in qualifier:%s %n",
                 functionName, awsLambdaFunctionsInfraConfig.getRegion(), qualifier, LogLevel.INFO));
 
-        return updateFunctionForRollback(functionConfiguration, logCallback, awsLambdaFunctionsInfraConfig,
-            functionName, existingFunctionOptional.get(), functionCode);
+        CreateFunctionResponse createFunctionResponse = updateFunctionForRollback(functionConfiguration, logCallback,
+            awsLambdaFunctionsInfraConfig, functionName, existingFunctionOptional.get(), functionCode);
+        // create or update alias
+        if (CollectionUtils.isNotEmpty(awsLambdaFunctionAliasDefinitionContents)) {
+          createOrUpdateAlias(awsLambdaFunctionAliasDefinitionContents, createFunctionResponse.functionName(),
+              createFunctionResponse.version(), awsLambdaFunctionsInfraConfig, logCallback);
+        }
+        return createFunctionResponse;
       } catch (Exception e) {
         throw new InvalidRequestException(e.getMessage());
       }
@@ -187,7 +322,7 @@ public class AwsLambdaTaskHelper {
 
   private CreateFunctionResponse updateFunctionWithArtifact(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
       String awsLambdaManifestContent, LogCallback logCallback,
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, GetFunctionResponse function) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, GetFunctionResponse function) throws IOException {
     String functionName = function.configuration().functionName();
     String functionCodeSha = function.configuration().codeSha256();
     logCallback.saveExecutionLog(format("Function: [%s] already exists. Update and Publish.", functionName));
@@ -222,28 +357,29 @@ public class AwsLambdaTaskHelper {
   }
 
   private void updateFunctionCodeWithArtifact(AwsLambdaArtifactConfig awsLambdaArtifactConfig, LogCallback logCallback,
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName,
-      String existingFunctionCodeSha) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName, String existingFunctionCodeSha)
+      throws IOException {
     FunctionCode functionCode;
-    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
 
-    UpdateFunctionCodeRequest.Builder updateFunctionCodeRequest;
+    UpdateFunctionCodeRequest.Builder updateFunctionCodeRequest =
+        UpdateFunctionCodeRequest.builder().functionName(functionName);
 
     if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
-      updateFunctionCodeRequest = UpdateFunctionCodeRequest.builder()
-                                      .functionName(functionName)
-                                      .s3Bucket(functionCode.s3Bucket())
-                                      .s3Key(functionCode.s3Key());
-    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
       updateFunctionCodeRequest =
-          UpdateFunctionCodeRequest.builder().functionName(functionName).imageUri(functionCode.imageUri());
+          UpdateFunctionCodeRequest.builder().functionName(functionName).zipFile(functionCode.zipFile());
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+      updateFunctionCodeRequest.imageUri(functionCode.imageUri());
 
+    } else if (ZIP_DOWNLOAD_SUPPORTED_ARTIFACTS.contains(awsLambdaArtifactConfig.getAwsLambdaArtifactType())) {
+      updateFunctionCodeRequest.zipFile(functionCode.zipFile());
     } else {
       throw new InvalidRequestException("Not Support ArtifactConfig Type");
     }
 
     if (isFunctionCodeUpdateNeeded(awsLambdaFunctionsInfraConfig, updateFunctionCodeRequest, existingFunctionCodeSha)) {
       // Update Function Code
+      updateFunctionCodeRequest.dryRun(false).publish(true);
       UpdateFunctionCodeResponse updateFunctionCodeResponse =
           awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                  awsLambdaFunctionsInfraConfig.getRegion()),
@@ -260,7 +396,7 @@ public class AwsLambdaTaskHelper {
     }
   }
 
-  private boolean isFunctionCodeUpdateNeeded(AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
+  protected boolean isFunctionCodeUpdateNeeded(AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
       UpdateFunctionCodeRequest.Builder updateFunctionCodeRequest, String existingFunctionCodeSha) {
     UpdateFunctionCodeResponse updateFunctionCodeResponseDryRun =
         awsLambdaClient.updateFunctionCode(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
@@ -269,22 +405,206 @@ public class AwsLambdaTaskHelper {
     return !updateFunctionCodeResponseDryRun.codeSha256().equals(existingFunctionCodeSha);
   }
 
-  protected FunctionCode prepareFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig) {
+  /**
+   *
+   * @param awsLambdaArtifactConfig Configuration information about the artifact source
+   * @param logCallback
+   * @return FunctionCode AWS object that contains the zip blob for package type artifacts and image uri for ECR
+   *     artifacts
+   * @throws IOException
+   */
+  protected FunctionCode prepareFunctionCode(AwsLambdaArtifactConfig awsLambdaArtifactConfig, LogCallback logCallback)
+      throws IOException {
     if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
       AwsLambdaS3ArtifactConfig awsLambdaS3ArtifactConfig = (AwsLambdaS3ArtifactConfig) awsLambdaArtifactConfig;
       return FunctionCode.builder()
-          .s3Bucket(awsLambdaS3ArtifactConfig.getBucketName())
-          .s3Key(awsLambdaS3ArtifactConfig.getFilePath())
+          .zipFile(awsLambdaTaskHelperBase.downloadArtifactFromS3BucketAndPrepareSdkBytes(
+              awsLambdaS3ArtifactConfig, logCallback))
+          .build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaCustomArtifactConfig) {
+      AwsLambdaCustomArtifactConfig awsLambdaCustomArtifactConfig =
+          (AwsLambdaCustomArtifactConfig) awsLambdaArtifactConfig;
+      return FunctionCode.builder()
+          .s3Bucket(awsLambdaCustomArtifactConfig.getBucketName())
+          .s3Key(awsLambdaCustomArtifactConfig.getFilePath())
           .build();
     } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
       AwsLambdaEcrArtifactConfig awsLambdaEcrArtifactConfig = (AwsLambdaEcrArtifactConfig) awsLambdaArtifactConfig;
       return FunctionCode.builder().imageUri(awsLambdaEcrArtifactConfig.getImage()).build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaNexusArtifactConfig) {
+      AwsLambdaNexusArtifactConfig awsLambdaNexusArtifactConfig =
+          (AwsLambdaNexusArtifactConfig) awsLambdaArtifactConfig;
+      return FunctionCode.builder()
+          .zipFile(SdkBytes.fromInputStream(downloadFromNexus(awsLambdaNexusArtifactConfig, logCallback)))
+          .build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaJenkinsArtifactConfig) {
+      AwsLambdaJenkinsArtifactConfig awsLambdaJenkinsArtifactConfig =
+          (AwsLambdaJenkinsArtifactConfig) awsLambdaArtifactConfig;
+      return FunctionCode.builder()
+          .zipFile(SdkBytes.fromInputStream(downloadFromJenkins(awsLambdaJenkinsArtifactConfig, logCallback)))
+          .build();
+    } else if (awsLambdaArtifactConfig instanceof AwsLambdaArtifactoryArtifactConfig) {
+      AwsLambdaArtifactoryArtifactConfig awsLambdaArtifactoryArtifactConfig =
+          (AwsLambdaArtifactoryArtifactConfig) awsLambdaArtifactConfig;
+      return FunctionCode.builder()
+          .zipFile(SdkBytes.fromInputStream(downloadFromArtifactory(awsLambdaArtifactoryArtifactConfig, logCallback)))
+          .build();
     }
     throw new InvalidRequestException("Not Support ArtifactConfig Type");
   }
 
-  public DeleteFunctionResponse deleteFunction(
-      AwsLambdaInfraConfig awsLambdaInfraConfig, String functionName, LogCallback logCallback) throws Exception {
+  private InputStream downloadFromNexus(AwsLambdaNexusArtifactConfig artifactConfig, LogCallback logCallback) {
+    if (!(artifactConfig.getConnectorConfig() instanceof NexusConnectorDTO)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Configure nexus connector for nexus configuration",
+          format("Unexpected connector type '%s' for nexus configuration",
+              artifactConfig.getConnectorConfig().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("connectorConfig",
+              format("Invalid connector type '%s', expected '%s'",
+                  artifactConfig.getConnectorConfig().getClass().getSimpleName(),
+                  NexusConnectorDTO.class.getSimpleName()))));
+    }
+
+    NexusConnectorDTO nexusConnectorDTO = (NexusConnectorDTO) artifactConfig.getConnectorConfig();
+    decryptEntity(
+        decryptionHelper, nexusConnectorDTO.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
+
+    NexusVersion nexusVersion = getNexusVersion(nexusConnectorDTO);
+    String artifactUrl = artifactConfig.getArtifactUrl();
+    NexusRequest nexusRequest =
+        nexusMapper.toNexusRequest(nexusConnectorDTO, artifactConfig.isCertValidationRequired(), artifactUrl);
+
+    try {
+      String artifactName =
+          getNexusArtifactFileName(nexusVersion, artifactConfig.getRepositoryFormat(), artifactConfig.getMetadata());
+      logCallback.saveExecutionLog(
+          color(format("Downloading artifact '%s' from nexus url '%s'", artifactName, artifactUrl), LogColor.White,
+              LogWeight.Bold));
+
+      return nexusService.downloadArtifactByUrl(nexusRequest, artifactName, artifactUrl).getValue();
+    } catch (WingsException e) {
+      WingsException sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      logCallback.saveExecutionLog(format(
+          "Failed to download artifact '%s' due to: %s", artifactUrl, ExceptionUtils.getMessage(sanitizedException)));
+      throw sanitizedException;
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      String message = ExceptionUtils.getMessage(sanitizedException);
+      log.error("Failure in downloading artifact from Nexus", sanitizedException);
+      logCallback.saveExecutionLog(format(
+          "Failed to download artifact '%s' due to: %s", artifactUrl, ExceptionUtils.getMessage(sanitizedException)));
+      throw NestedExceptionUtils.hintWithExplanationException(NEXUS_FAILED_DOWNLOAD_HINT,
+          NEXUS_FAILED_DOWNLOAD_EXPLANATION + message, new PivotalClientApiException(message));
+    }
+  }
+
+  private InputStream downloadFromJenkins(AwsLambdaJenkinsArtifactConfig artifactConfig, LogCallback logCallback) {
+    validateJenkinsArtifact(artifactConfig, logCallback);
+    Pair<String, InputStream> pair = null;
+
+    try {
+      JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
+      decryptEntity(
+          decryptionHelper, jenkinsConnectorDto.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
+
+      logCallback.saveExecutionLog(
+          color(format("Downloading jenkins artifact: %s/job/%s/%s/artifact/%s", jenkinsConnectorDto.getJenkinsUrl(),
+                    artifactConfig.getJobName(), artifactConfig.getBuild(), artifactConfig.getArtifactPath()),
+              White, Bold));
+      Jenkins jenkins = configureJenkins((JenkinsConnectorDTO) artifactConfig.getConnectorConfig());
+      if (!isNull(jenkins)) {
+        pair = jenkins.downloadArtifact(
+            artifactConfig.getJobName(), artifactConfig.getBuild(), artifactConfig.getArtifactPath());
+      }
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in downloading jenkins artifact ", sanitizedException);
+      logCallback.saveExecutionLog(
+          "Failed to download jenkins artifact. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(JENKINS_ARTIFACT_DOWNLOAD_HINT,
+          format(JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION, artifactConfig.getIdentifier()),
+          new InvalidArgumentsException(format(JENKINS_ARTIFACT_DOWNLOAD_FAILED, artifactConfig.getIdentifier())));
+    }
+    if (pair != null) {
+      return pair.getRight();
+    } else {
+      throw new InvalidArgumentsException(format(JENKINS_ARTIFACT_DOWNLOAD_FAILED, artifactConfig.getIdentifier()));
+    }
+  }
+
+  private InputStream downloadFromArtifactory(
+      AwsLambdaArtifactoryArtifactConfig artifactConfig, LogCallback logCallback) {
+    if (!(artifactConfig.getConnectorConfig() instanceof ArtifactoryConnectorDTO)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Configure artifactory connector for artifactory configuration",
+          format("Unexpected connector type '%s' for artifactory configuration",
+              artifactConfig.getConnectorConfig().getClass().getSimpleName()),
+          new InvalidArgumentsException(Pair.of("connectorConfig",
+              format("Invalid connector type '%s', expected '%s'",
+                  artifactConfig.getConnectorConfig().getClass().getSimpleName(),
+                  ArtifactoryConnectorDTO.class.getSimpleName()))));
+    }
+
+    ArtifactoryConnectorDTO artifactoryConnector = (ArtifactoryConnectorDTO) artifactConfig.getConnectorConfig();
+    decryptEntity(
+        decryptionHelper, artifactoryConnector.getDecryptableEntities(), artifactConfig.getEncryptedDataDetails());
+    ArtifactoryConfigRequest artifactoryConfigRequest =
+        artifactoryRequestMapper.toArtifactoryRequest(artifactoryConnector);
+    String artifactPath = artifactConfig.getArtifactPaths().get(0);
+    logCallback.saveExecutionLog(color(format("Downloading artifact '%s' from artifactory server %s", artifactPath,
+                                           artifactoryConfigRequest.getArtifactoryUrl()),
+        LogColor.White, LogWeight.Bold));
+
+    return artifactoryNgService.downloadArtifacts(artifactoryConfigRequest, artifactConfig.getRepository(),
+        artifactConfig.toMetadata(), ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
+  }
+
+  private Jenkins configureJenkins(JenkinsConnectorDTO jenkinsConnectorDto) {
+    JenkinsAuthType authType = jenkinsConnectorDto.getAuth().getAuthType();
+    Jenkins jenkins = null;
+    if (JenkinsAuthType.USER_PASSWORD.equals(authType)) {
+      JenkinsUserNamePasswordDTO jenkinsUserNamePasswordDTO =
+          (JenkinsUserNamePasswordDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
+                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+                                        .username(jenkinsUserNamePasswordDTO.getUsername())
+                                        .password(jenkinsUserNamePasswordDTO.getPasswordRef().getDecryptedValue())
+                                        .build();
+      jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
+    } else if (JenkinsAuthType.BEARER_TOKEN.equals(authType)) {
+      JenkinsBearerTokenDTO jenkinsBearerTokenDTO =
+          (JenkinsBearerTokenDTO) jenkinsConnectorDto.getAuth().getCredentials();
+      JenkinsConfig jenkinsConfig = JenkinsConfig.builder()
+                                        .jenkinsUrl(jenkinsConnectorDto.getJenkinsUrl())
+                                        .token(jenkinsBearerTokenDTO.getTokenRef().getDecryptedValue())
+                                        .authMechanism(JenkinsUtils.TOKEN_FIELD)
+                                        .build();
+      jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
+    }
+    return jenkins;
+  }
+
+  private void validateJenkinsArtifact(AwsLambdaJenkinsArtifactConfig artifactConfig, LogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(artifactConfig.getArtifactPath())) {
+      logCallback.saveExecutionLog("artifact Path is blank", ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, artifactConfig.getIdentifier()),
+          new InvalidArgumentsException("not able to find artifact Path"));
+    }
+  }
+
+  protected void decryptEntity(DecryptionHelper decryptionHelper, List<DecryptableEntity> decryptableEntities,
+      List<EncryptedDataDetail> encryptedDataDetails) {
+    if (isNotEmpty(decryptableEntities)) {
+      for (DecryptableEntity decryptableEntity : decryptableEntities) {
+        decryptionHelper.decrypt(decryptableEntity, encryptedDataDetails);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(decryptableEntity, encryptedDataDetails);
+      }
+    }
+  }
+
+  public DeleteFunctionResponse deleteFunction(AwsLambdaInfraConfig awsLambdaInfraConfig, String functionName,
+      LogCallback logCallback) throws AwsLambdaException {
     AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig = (AwsLambdaFunctionsInfraConfig) awsLambdaInfraConfig;
 
     GetFunctionRequest getFunctionRequest =
@@ -293,14 +613,13 @@ public class AwsLambdaTaskHelper {
     Optional<GetFunctionResponse> existingFunctionOptional =
         getAwsLambdaFunctionFromAws(awsLambdaFunctionsInfraConfig, getFunctionRequest);
 
+    logCallback.saveExecutionLog(format("Deleting Function: %s in region: %s %n", functionName,
+        awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
-        logCallback.saveExecutionLog(format("Deleting Function: %s in region: %s %n", functionName,
-            awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
         return awsLambdaClient.deleteFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                                   awsLambdaFunctionsInfraConfig.getRegion()),
             (DeleteFunctionRequest) DeleteFunctionRequest.builder().functionName(functionName).build());
@@ -312,24 +631,23 @@ public class AwsLambdaTaskHelper {
 
   private CreateFunctionResponse createFunction(AwsLambdaArtifactConfig awsLambdaArtifactConfig,
       LogCallback logCallback, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig,
-      CreateFunctionRequest.Builder createFunctionRequestBuilder, String functionName) {
+      CreateFunctionRequest.Builder createFunctionRequestBuilder, String functionName) throws IOException {
     CreateFunctionResponse createFunctionResponse;
     FunctionCode functionCode;
 
     logCallback.saveExecutionLog(format("Creating Function: %s in region: %s %n", functionName,
         awsLambdaFunctionsInfraConfig.getRegion(), LogLevel.INFO));
 
-    functionCode = prepareFunctionCode(awsLambdaArtifactConfig);
+    functionCode = prepareFunctionCode(awsLambdaArtifactConfig, logCallback);
     createFunctionRequestBuilder.code(functionCode);
     createFunctionRequestBuilder.publish(true);
 
-    if (awsLambdaArtifactConfig instanceof AwsLambdaS3ArtifactConfig) {
-      createFunctionRequestBuilder.packageType(PackageType.ZIP);
-    } else if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
+    if (awsLambdaArtifactConfig instanceof AwsLambdaEcrArtifactConfig) {
       createFunctionRequestBuilder.packageType(PackageType.IMAGE);
     } else {
-      throw new InvalidRequestException("Not Support ArtifactConfig Type");
+      createFunctionRequestBuilder.packageType(PackageType.ZIP);
     }
+
     createFunctionResponse =
         awsLambdaClient.createFunction(getAwsInternalConfig(awsLambdaFunctionsInfraConfig.getAwsConnectorDTO(),
                                            awsLambdaFunctionsInfraConfig.getRegion()),
@@ -400,57 +718,6 @@ public class AwsLambdaTaskHelper {
     logCallback.saveExecutionLog(format("Updated Function ARN: [%s]", updateFunctionCodeResponse.functionArn()));
   }
 
-  /**
-   * Download the previous version of artifact from S3 and prepare SdkBytes
-   * @param funcCodeLocation Presigned URL to download file from S3
-   * @param logCallback Used for logging
-   * @return SdkBytes Aws Object that is required to update function for .zip packages
-   * @throws IOException
-   */
-  private SdkBytes downloadArtifactZipAndPrepareSdkBytes(String funcCodeLocation, LogCallback logCallback)
-      throws IOException {
-    // Create directory for downloading files
-    String baseDir = "./aws-lambda-working-dir/";
-    String workingDir = baseDir + UUIDGenerator.generateUuid();
-    String artifactDir = Paths.get(workingDir).toString();
-
-    createDirectoryIfDoesNotExist(artifactDir);
-    waitForDirectoryToBeAccessibleOutOfProcess(artifactDir, 10);
-    String artifactFilePath = Paths.get(artifactDir, TEMP_ARTIFACT_FILE).toAbsolutePath().toString();
-
-    File tempArtifact = new File(artifactFilePath);
-
-    if (!tempArtifact.createNewFile()) {
-      log.error("Failed to create new file");
-      logCallback.saveExecutionLog("Failed to create a file for s3 object", ERROR);
-      throw new FileCreationException("Failed to create file " + tempArtifact.getCanonicalPath(), null,
-          ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
-    }
-
-    // Call S3 with presigned url to fetch file
-    InputStream is;
-    try {
-      OkHttpClient client = new OkHttpClient();
-      Request request = new Request.Builder().url(funcCodeLocation).build();
-      Response response = client.newCall(request).execute();
-      if (!response.isSuccessful()) {
-        throw new InvalidRequestException("Failed to download file.");
-      }
-      FileOutputStream fos = new FileOutputStream(tempArtifact);
-      fos.write(response.body().bytes());
-      fos.close();
-
-      is = new FileInputStream(tempArtifact);
-    } catch (Exception ex) {
-      log.error("Unable to download file from S3. Rollback failed");
-      throw new InvalidRequestException("Unable to download file from S3. Rollback failed", ex);
-    } finally {
-      deleteDirectoryAndItsContentIfExists(artifactDir);
-    }
-
-    return SdkBytes.fromInputStream(is);
-  }
-
   private UpdateFunctionCodeRequest getUpdateFunctionCodeRequest(String functionName, FunctionCodeLocation funcCodeLoc,
       String functionConfiguration, LogCallback logCallback,
       AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) throws IOException {
@@ -460,7 +727,8 @@ public class AwsLambdaTaskHelper {
       // Fetch Existing function to get functions code location
       GetFunctionResponse function =
           fetchExistingFunctionWithFunctioArn(functionConfiguration, awsLambdaFunctionsInfraConfig);
-      builder.zipFile(downloadArtifactZipAndPrepareSdkBytes(function.code().location(), logCallback));
+      builder.zipFile(awsLambdaTaskHelperBase.downloadArtifactZipAndPrepareSdkBytesForRollback(
+          function.code().location(), logCallback));
     } else if (funcCodeLoc.repositoryType().equals("ECR")) {
       builder.imageUri(funcCodeLoc.imageUri());
     } else {
@@ -632,7 +900,7 @@ public class AwsLambdaTaskHelper {
   }
 
   public AwsLambdaFunctionWithActiveVersions getAwsLambdaFunctionWithActiveVersions(
-      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) {
+      AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig, String functionName) throws AwsLambdaException {
     GetFunctionRequest getFunctionRequest =
         (GetFunctionRequest) GetFunctionRequest.builder().functionName(functionName).build();
 
@@ -647,9 +915,8 @@ public class AwsLambdaTaskHelper {
     }
 
     if (existingFunctionOptional.isEmpty()) {
-      throw new AwsLambdaException(
-          new Exception(format("Cannot find any function with function name: %s in region: %s %n", functionName,
-              awsLambdaFunctionsInfraConfig.getRegion())));
+      throw new AwsLambdaException(format("Cannot find any function with function name: %s in region: %s %n",
+          functionName, awsLambdaFunctionsInfraConfig.getRegion()));
     } else {
       try {
         List<String> activeVersions = getActiveVersions(functionName, awsLambdaFunctionsInfraConfig);

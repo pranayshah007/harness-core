@@ -173,6 +173,7 @@ public interface YamlTypes {
   String INPUTS = "inputs";
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
+  String BAMBOO_BUILD = StepSpecTypeConstants.BAMBOO_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
