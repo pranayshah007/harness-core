@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -98,6 +99,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
   private static DockerInternalConfig dockerConfig;
   private static DockerInternalConfig harborConfig;
   private static DockerRegistryToken dockerRegistryToken;
+  private static DockerRegistryToken acrDockerRegistryToken;
   private static DockerRegistryRestClient dockerRegistryRestClient;
   private static DockerImageTagResponse dockerImageTagResponse;
   private static DockerImageTagResponse dockerImageTagResponsePaginated;
@@ -106,6 +108,8 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
   public void before() {
     dockerRegistryToken = new DockerRegistryToken();
     dockerRegistryToken.setToken("dockerRegistryToken");
+    acrDockerRegistryToken = new DockerRegistryToken();
+    acrDockerRegistryToken.setAccess_token("dockerRegistryToken");
 
     url = "http://localhost:" + wireMockRule.port() + "/";
     dockerConfig =
@@ -265,6 +269,26 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testValidateCredentialForDockerAcr() {
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+    doReturn(true).when(dockerRegistryUtils).isAcrContainerRegistry(any());
+    wireMockRule.stubFor(get(urlEqualTo("/v2"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Www-Authenticate",
+                                 "Bearer realm=\"http://localhost:" + wireMockRule.port()
+                                     + "/oauth2/token\",service=\"test.azurecr.io\",scope=\"somevalue\"")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2"))
+            .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(new HashMap<String, String>()))));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(acrDockerRegistryToken))));
+    assertThat(dockerRegistryService.validateCredentials(dockerConfig)).isTrue();
+  }
+
+  @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testGetBuildDetailsWithException() {
@@ -318,6 +342,36 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     wireMockRule.stubFor(
         get(urlEqualTo("/v2/image/tags/list"))
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+    List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
+    assertThat(builds).isNotNull();
+    assertThat(builds.size()).isEqualTo(2);
+    assertThat(builds.get(0).getNumber()).isEqualTo("tag1");
+    assertThat(builds.get(0).getBuildUrl()).isEqualTo(url + "image/tags/tag1");
+    assertThat(builds.get(0).getMetadata().get("tag")).isEqualTo("tag1");
+    assertThat(builds.get(0).getMetadata().get("image")).isEqualTo(Http.getDomainWithPort(url) + "/image:tag1");
+    assertThat(builds.get(1).getNumber()).isEqualTo("tag2");
+    assertThat(builds.get(1).getBuildUrl()).isEqualTo(url + "image/tags/tag2");
+    assertThat(builds.get(1).getMetadata().get("tag")).isEqualTo("tag2");
+    assertThat(builds.get(1).getMetadata().get("image")).isEqualTo(Http.getDomainWithPort(url) + "/image:tag2");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsForAcr() {
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+    doReturn(true).when(dockerRegistryUtils).isAcrContainerRegistry(any());
+    wireMockRule.stubFor(get(urlEqualTo("/v2/image/tags/list"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Www-Authenticate",
+                                 "Bearer realm=\"http://localhost:" + wireMockRule.port()
+                                     + "/oauth2/token\",service=\"test.azurecr.io\",scope=\"somevalue\"")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2/image/tags/list"))
+            .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(acrDockerRegistryToken))));
     List<BuildDetailsInternal> builds = dockerRegistryService.getBuilds(dockerConfig, "image", 10);
     assertThat(builds).isNotNull();
     assertThat(builds.size()).isEqualTo(2);
@@ -432,6 +486,28 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     wireMockRule.stubFor(
         get(urlEqualTo("/v2/image/tags/list"))
             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+
+    boolean image = dockerRegistryService.verifyImageName(dockerConfig, "image");
+    assertThat(image).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testVerifyImageNameForAcr() {
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+    doReturn(true).when(dockerRegistryUtils).isAcrContainerRegistry(any());
+    wireMockRule.stubFor(get(urlEqualTo("/v2/image/tags/list"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Www-Authenticate",
+                                 "Bearer realm=\"http://localhost:" + wireMockRule.port()
+                                     + "/oauth2/token\",service=\"test.azurecr.io\",scope=\"somevalue\"")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2/image/tags/list"))
+            .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(acrDockerRegistryToken))));
 
     boolean image = dockerRegistryService.verifyImageName(dockerConfig, "image");
     assertThat(image).isTrue();
