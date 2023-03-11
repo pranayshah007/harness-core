@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.bash;
 
+import static io.harness.shell.ScriptType.BASH;
+
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
@@ -16,8 +18,6 @@ import software.wings.core.executors.bash.BashExecutorFactory;
 
 import com.google.inject.Inject;
 import lombok.RequiredArgsConstructor;
-
-import static io.harness.shell.ScriptType.BASH;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class BashScriptTaskHandler {

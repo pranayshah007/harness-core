@@ -41,8 +41,8 @@ public class BashScriptTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException {
     final ShellScriptTaskParametersNG scriptParameters = (ShellScriptTaskParametersNG) parameters;
 
-    log.info("Shell script task parameters: accountId - {}, workingDir - {}",
-        scriptParameters.getAccountId(), scriptParameters.getWorkingDirectory());
+    log.info("Shell script task parameters: accountId - {}, workingDir - {}", scriptParameters.getAccountId(),
+        scriptParameters.getWorkingDirectory());
 
     final var executeCommandResponse = bashScriptTaskHandler.handle(scriptParameters);
 
