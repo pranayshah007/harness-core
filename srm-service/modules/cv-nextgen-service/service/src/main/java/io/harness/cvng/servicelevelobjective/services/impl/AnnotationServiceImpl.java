@@ -11,7 +11,6 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
-import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationBuilder;
 import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationKeys;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.persistence.HPersistence;
