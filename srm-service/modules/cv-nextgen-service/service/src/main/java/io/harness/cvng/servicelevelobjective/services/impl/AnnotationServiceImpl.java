@@ -12,6 +12,7 @@ import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationBuilder;
+import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationKeys;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.persistence.HPersistence;
 
@@ -24,8 +25,7 @@ public class AnnotationServiceImpl implements AnnotationService {
 
   @Override
   public AnnotationResponse create(ProjectParams projectParams, AnnotationDTO annotationDTO) {
-    AnnotationBuilder annotationBuilder = getAnnotationFromAnnotationDTOBuilder(projectParams, annotationDTO);
-    Annotation annotation = annotationBuilder.build();
+    Annotation annotation = getAnnotationFromAnnotationDTO(projectParams, annotationDTO);
     hPersistence.save(annotation);
     return AnnotationResponse.builder()
         .annotationDTO(annotationDTO)
@@ -39,7 +39,7 @@ public class AnnotationServiceImpl implements AnnotationService {
     Annotation annotation = getEntity(annotationId);
     validateUpdate(annotation, annotationDTO);
     UpdateOperations<Annotation> updateOperations = hPersistence.createUpdateOperations(Annotation.class);
-    updateOperations.set(Annotation.AnnotationKeys.message, annotationDTO.getMessage());
+    updateOperations.set(AnnotationKeys.message, annotationDTO.getMessage());
     hPersistence.update(annotation, updateOperations);
     Annotation updatedAnnotation = getEntity(annotationId);
     return AnnotationResponse.builder()
@@ -61,8 +61,7 @@ public class AnnotationServiceImpl implements AnnotationService {
     Preconditions.checkArgument(expression, "Can not update the start/end time.");
   }
 
-  private AnnotationBuilder getAnnotationFromAnnotationDTOBuilder(
-      ProjectParams projectParams, AnnotationDTO annotationDTO) {
+  private Annotation getAnnotationFromAnnotationDTO(ProjectParams projectParams, AnnotationDTO annotationDTO) {
     return Annotation.builder()
         .accountId(projectParams.getAccountIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
@@ -70,7 +69,8 @@ public class AnnotationServiceImpl implements AnnotationService {
         .sloIdentifier(annotationDTO.getSloIdentifier())
         .message(annotationDTO.getMessage())
         .startTime(annotationDTO.getStartTime())
-        .endTime(annotationDTO.getEndTime());
+        .endTime(annotationDTO.getEndTime())
+        .build();
   }
 
   private Annotation getEntity(String annotationId) {
