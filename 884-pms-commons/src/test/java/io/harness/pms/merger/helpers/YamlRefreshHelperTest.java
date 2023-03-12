@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.pms.merger.helpers.YamlRefreshHelper.refreshNodeFromSourceNode;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -147,5 +148,52 @@ public class YamlRefreshHelperTest extends CategoryTest {
     assertThat(convertToYaml(refreshNodeFromSourceNode(convertYamlToJsonNode(yamlToValidate),
                    convertYamlToJsonNode("field: <+input>.allowedValues(a,b,c)"))))
         .isEqualTo("field: \"<+input>.allowedValues(a,b,c)\"");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testRefreshNodeFromSourceNodeWithUseFromStage() throws IOException {
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: \"Deployment\"\nspec:\n  service:\n    serviceRef: \"<+input>\"\n    serviceInputs: \"<+input>\"\n"),
+            convertYamlToJsonNode(
+                "type: \"Deployment\"\nspec:\n  service:\n    serviceRef: \"<+input>\"\n    serviceInputs: \"<+input>\"\n"))))
+        .isEqualTo(
+            "type: \"Deployment\"\nspec:\n  service:\n    serviceRef: \"<+input>\"\n    serviceInputs: \"<+input>\"");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode("type: Deployment\nspec:\n  service:\n    serviceRef: prod_service\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceRef: <+input>\n    serviceInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: \"Deployment\"\nspec:\n  service:\n    serviceRef: \"prod_service\"\n    serviceInputs: \"<+input>\"");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceInputs:\n      serviceDefinition:\n        type: Kubernetes\n        spec:\n          variables:\n            - name: ghcgh\n              type: String\n              value: ewfrvgdbgr\n    serviceRef: two\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceRef: <+input>\n    serviceInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: \"Deployment\"\nspec:\n  service:\n    serviceRef: \"two\"\n    serviceInputs:\n      serviceDefinition:\n        type: \"Kubernetes\"\n        spec:\n          variables:\n          - name: \"ghcgh\"\n            type: \"String\"\n            value: \"ewfrvgdbgr\"");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode("type: Deployment\nspec:\n  service:\n    useFromStage:\n      stage: s1\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceRef: <+input>\n    serviceInputs: <+input>\n"))))
+        .isEqualTo("type: \"Deployment\"\nspec:\n  service:\n    useFromStage:\n      stage: \"s1\"");
+
+    assertThat(
+        convertToYaml(refreshNodeFromSourceNode(
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceInputs:\n      serviceDefinition:\n        type: Kubernetes\n        spec:\n          variables:\n            - name: ghcgh\n              type: String\n              value: ewfrvgdbgr\n"),
+            convertYamlToJsonNode(
+                "type: Deployment\nspec:\n  service:\n    serviceRef: fixedService\n    serviceInputs: <+input>\n"))))
+        .isEqualTo(
+            "type: \"Deployment\"\nspec:\n  service:\n    serviceInputs:\n      serviceDefinition:\n        type: \"Kubernetes\"\n        spec:\n          variables:\n          - name: \"ghcgh\"\n            type: \"String\"\n            value: \"ewfrvgdbgr\"");
   }
 }

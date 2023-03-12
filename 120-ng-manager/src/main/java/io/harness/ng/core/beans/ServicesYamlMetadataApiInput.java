@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,5 +23,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ServicesYamlMetadataApiInput {
-  @NotNull @Max(1000) List<String> serviceIdentifiers;
+  @NotNull List<String> serviceIdentifiers;
 }

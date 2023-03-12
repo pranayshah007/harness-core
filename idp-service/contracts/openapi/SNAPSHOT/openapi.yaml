@@ -49,6 +49,22 @@ paths:
         - EnvironmentSecret
       x-internal: true
     parameters: []
+  /v1/environment-secrets/sync:
+    parameters: []
+    put:
+      summary: ''
+      operationId: sync-environment-secrets
+      description: Synchronize all environment secrets mapping for a given account
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      tags:
+        - EnvironmentSecret
+      responses:
+        '204':
+          description: No Content
   '/v1/environment-secrets/{environment-secret}':
     parameters:
       - $ref: '#/components/parameters/EnvironmentSecret'
