@@ -13,4 +13,8 @@ import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
 
 public interface AnnotationService {
   AnnotationResponse create(ProjectParams projectParams, AnnotationDTO annotationDTO);
+
+  AnnotationResponse update(String annotationId, AnnotationDTO annotationDTO);
+
+  boolean delete(String annotationId);
 }

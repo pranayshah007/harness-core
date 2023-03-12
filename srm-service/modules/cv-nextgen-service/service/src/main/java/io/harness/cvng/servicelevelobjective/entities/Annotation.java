@@ -13,11 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UpdatedByAware;
+import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -46,16 +47,18 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "annotations")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class Annotation implements PersistentEntity, AccountAccess, UpdatedAtAware, CreatedAtAware, CreatedByAware {
+public class Annotation
+    implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware, CreatedByAware, UpdatedByAware {
   @NotNull private String accountId;
   private String orgIdentifier;
   private String projectIdentifier;
   @NotNull private String sloIdentifier;
-  @Id private String annotationId;
+  @Id private String uuid;
   @NotNull @Size(max = 1000) private String message;
   @NotNull private long startTime;
   @NotNull private long endTime;
   @SchemaIgnore private EmbeddedUser createdBy;
+  @SchemaIgnore private EmbeddedUser lastUpdatedBy;
   private long createdAt;
   private long lastUpdatedAt;
 }

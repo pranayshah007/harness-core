@@ -32,10 +32,10 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "Annotation", description = "This is the Annotation entity defined in Harness")
 @EqualsAndHashCode()
 public class AnnotationDTO implements YamlDTO {
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
-  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
+  @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String orgIdentifier;
+  @ApiModelProperty(required = true) @EntityIdentifier(allowBlank = true) String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String sloIdentifier;
-  @Size(max = 1000) String message;
+  @NotNull @Size(min = 1, max = 1000) String message;
   @ApiModelProperty(required = true) @NotNull long startTime;
   @ApiModelProperty(required = true) @NotNull long endTime;
 }

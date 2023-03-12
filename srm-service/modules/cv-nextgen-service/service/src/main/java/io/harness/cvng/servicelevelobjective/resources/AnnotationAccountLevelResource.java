@@ -8,7 +8,7 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
-import static io.harness.cvng.core.services.CVNextGenConstants.ANNOTATION_PROJECT_PATH;
+import static io.harness.cvng.core.services.CVNextGenConstants.ANNOTATION_ACCOUNT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -41,8 +41,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import retrofit2.http.Body;
 
-@Api(value = ANNOTATION_PROJECT_PATH, tags = "Annotation")
-@Path(ANNOTATION_PROJECT_PATH)
+@Api(value = ANNOTATION_ACCOUNT_PATH, tags = "Annotation")
+@Path(ANNOTATION_ACCOUNT_PATH)
 @Produces("application/json")
 @ExposeInternalException
 @NextGenManagerAuth
@@ -68,7 +68,7 @@ import retrofit2.http.Body;
               schema = @Schema(implementation = ErrorDTO.class))
     })*/
 @OwnedBy(HarnessTeam.CV)
-public class AnnotationProjectLevelResource {
+public class AnnotationAccountLevelResource {
   @Inject AnnotationService annotationService;
 
   public static final String SLO = "SLO";
@@ -76,10 +76,11 @@ public class AnnotationProjectLevelResource {
   public static final String DELETE_PERMISSION = "chi_slo_delete";
 
   @POST
+  @Consumes("application/json")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "saves annotation message", nickname = "saveAnnotation")
-  public RestResponse<AnnotationResponse> saveAnnotation(@Valid @BeanParam ProjectPathParams projectPathParams,
+  @ApiOperation(value = "saves annotation", nickname = "saveAccountLevelAnnotation")
+  public RestResponse<AnnotationResponse> saveAccountLevelAnnotation(@BeanParam ProjectPathParams projectPathParams,
       @Parameter(
           description = "Details of the annotation to be saved") @NotNull @Valid @Body AnnotationDTO annotationDTO) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
@@ -91,10 +92,10 @@ public class AnnotationProjectLevelResource {
   @Timed
   @ExceptionMetered
   @Path(RESOURCE_IDENTIFIER_PATH)
-  @ApiOperation(value = "updates annotation message", nickname = "updateAnnotationMessage")
+  @ApiOperation(value = "updates annotation message", nickname = "updateAccountLevelAnnotationMessage")
   @NGAccessControlCheck(resourceType = SLO, permission = EDIT_PERMISSION)
-  public RestResponse<AnnotationResponse> updateAnnotationMessage(
-      @Valid @BeanParam ResourcePathParams resourcePathParams,
+  public RestResponse<AnnotationResponse> updateAccountLevelAnnotationMessage(
+      @BeanParam ResourcePathParams resourcePathParams,
       @Parameter(
           description = "Details of the annotation to be updated") @NotNull @Valid @Body AnnotationDTO annotationDTO) {
     return new RestResponse<>(annotationService.update(resourcePathParams.getIdentifier(), annotationDTO));
@@ -104,9 +105,9 @@ public class AnnotationProjectLevelResource {
   @Timed
   @ExceptionMetered
   @Path(RESOURCE_IDENTIFIER_PATH)
-  @ApiOperation(value = "delete annotation", nickname = "deleteAnnotation")
+  @ApiOperation(value = "delete annotation", nickname = "deleteAccountLevelAnnotation")
   @NGAccessControlCheck(resourceType = SLO, permission = DELETE_PERMISSION)
-  public RestResponse<Boolean> deleteDowntimeData(@Valid @BeanParam ResourcePathParams resourcePathParams) {
+  public RestResponse<Boolean> deleteAccountLevelAnnotation(@BeanParam ResourcePathParams resourcePathParams) {
     return new RestResponse<>(annotationService.delete(resourcePathParams.getIdentifier()));
   }
 }
