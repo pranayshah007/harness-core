@@ -11945,7 +11945,8 @@
           ]
         },
         "serviceRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?=\\s*\\S).*$"
         },
         "useFromStage": {
           "$ref": "#/definitions/ServiceUseFromStageV2"

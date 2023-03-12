@@ -470,8 +470,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of ServicesIds, maximum 1000 ServicesIds can be checked.") @QueryParam(
-          "serviceIdentifiers") @Max(MAX_LIMIT) List<String> serviceIdentifiers,
+      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
