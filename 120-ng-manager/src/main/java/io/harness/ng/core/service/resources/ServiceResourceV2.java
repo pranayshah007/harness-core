@@ -115,6 +115,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -277,7 +278,7 @@ public class ServiceResourceV2 {
   createServices(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the Services to be created, maximum 1000 services can be created.") @Valid
-      @Max(MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
+      @Size(max = MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     throwExceptionForNoRequestDTO(serviceRequestDTOs);
     for (ServiceRequestDTO serviceRequestDTO : serviceRequestDTOs) {
       accessControlClient.checkForAccessOrThrow(
@@ -470,7 +471,8 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
+      @Parameter(description = "List of ServicesIds") @QueryParam("serviceIdentifiers") @Size(
+          max = MAX_LIMIT) List<String> serviceIdentifiers,
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
