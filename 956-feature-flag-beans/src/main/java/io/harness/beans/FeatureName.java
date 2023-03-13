@@ -628,7 +628,9 @@ public enum FeatureName {
       HarnessTeam.PL),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
-  PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", HarnessTeam.PLG);
+  PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", HarnessTeam.PLG),
+  CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
+      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
