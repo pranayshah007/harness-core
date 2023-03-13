@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStepNode> extends ChildrenPlanCreator<T> {
-  public static final String CONTAINER_STEP_GROUP = "Container Step Group";
   @Inject KryoSerializer kryoSerializer;
 
   @Override public abstract Map<String, Set<String>> getSupportedTypes();
@@ -87,7 +86,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, T config, List<String> childrenNodeIds) {
     config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
-    config.setName(CONTAINER_STEP_GROUP);
+    config.setName(config.getName());
 
     StepGroupStepParameters stepGroupStepParameters =
         StepGroupStepParameters.builder()
