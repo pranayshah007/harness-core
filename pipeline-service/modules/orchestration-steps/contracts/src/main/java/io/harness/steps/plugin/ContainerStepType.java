@@ -7,15 +7,7 @@
 
 package io.harness.steps.plugin;
 
-import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-public interface IContainerStepSpec {
-  void setName(String name);
-  void setIdentifier(String identifier);
-  ContainerStepInfra getInfrastructure();
-  @JsonIgnore String getIdentifier();
-
-  @JsonIgnore ContainerStepType getType();
-}
+@OwnedBy(HarnessTeam.SSCA) public enum ContainerStepType { RUN_CONTAINER, CD_SSCA_ORCHESTRATION }

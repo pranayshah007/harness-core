@@ -62,8 +62,10 @@ import io.harness.steps.container.utils.ContainerStepResolverUtils;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.container.utils.SecretUtils;
 import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.plugin.IContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -92,16 +94,16 @@ public class ContainerStepInitHelper {
   @Inject SecretUtils secretUtils;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
-      ContainerStepInfo containerStepInfo, Ambiance ambiance, String logPrefix) {
-    ContainerK8sInfra infrastructure = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
-
-    if (infrastructure == null) {
+      IContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
+    ContainerStepInfra infra = containerStepInfo.getInfrastructure();
+    if (infra == null) {
       throw new ContainerStepExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() != KUBERNETES_DIRECT) {
-      throw new ContainerStepExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
+    if (infra.getType() != KUBERNETES_DIRECT) {
+      throw new ContainerStepExecutionException(format("Invalid infrastructure type: %s", infra.getType()));
     }
+    ContainerK8sInfra infrastructure = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
 
     ContainerDetailsSweepingOutput k8PodDetails = ContainerDetailsSweepingOutput.builder()
                                                       .stepIdentifier(containerStepInfo.getIdentifier())
@@ -112,7 +114,7 @@ public class ContainerStepInitHelper {
     return buildK8DirectTaskParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix);
   }
 
-  private CIK8InitializeTaskParams buildK8DirectTaskParams(ContainerStepInfo containerStepInfo,
+  private CIK8InitializeTaskParams buildK8DirectTaskParams(IContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra infrastructure, Ambiance ambiance,
       String logPrefix) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -126,7 +128,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepInfo containerStepInfo,
+  private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(IContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
@@ -170,7 +172,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(ContainerStepInfo containerStepInfo,
+  private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(IContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra infrastructure, Ambiance ambiance,
       List<PodVolume> volumes, String logPrefix) {
     Map<String, String> volumeToMountPath = k8sPodInitUtils.getVolumeToMountPath(volumes);
@@ -210,7 +212,7 @@ public class ContainerStepInitHelper {
     return Pair.of(setupAddOnContainerParams, containerParams);
   }
 
-  private List<ContainerDefinitionInfo> getContainerDefinitionInfos(ContainerStepInfo containerStepInfo,
+  private List<ContainerDefinitionInfo> getContainerDefinitionInfos(IContainerStepSpec containerStepInfo,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       OSType os, NGAccess ngAccess, Map<String, String> commonEnvVars, ConnectorDetails harnessInternalImageConnector,
       List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
@@ -335,7 +337,7 @@ public class ContainerStepInitHelper {
   }
 
   private List<ContainerDefinitionInfo> getStepContainerDefinitions(
-      ContainerStepInfo initializeStepInfo, ContainerK8sInfra infrastructure, Ambiance ambiance) {
+      IContainerStepSpec initializeStepInfo, ContainerK8sInfra infrastructure, Ambiance ambiance) {
     OSType os = k8sPodInitUtils.getOS(infrastructure);
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
@@ -374,6 +376,16 @@ public class ContainerStepInitHelper {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinitions(
+      IContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
+    switch (containerStepInfo.getType()) {
+      case RUN_CONTAINER:
+        return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);
+      default:
+        throw new ContainerStepExecutionException("Container step initialization not handled");
+    }
+  }
+
+  private ContainerDefinitionInfo createStepContainerDefinition(
       ContainerStepInfo runStepInfo, PortFinder portFinder, String accountId, OSType os) {
     if (runStepInfo.getImage() == null) {
       throw new ContainerStepExecutionException("image can't be empty in k8s infrastructure");

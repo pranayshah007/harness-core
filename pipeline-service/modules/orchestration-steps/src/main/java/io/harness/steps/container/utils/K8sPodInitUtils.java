@@ -86,7 +86,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
-import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.plugin.IContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
@@ -519,7 +519,7 @@ public class K8sPodInitUtils {
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.SECRETS).build();
   }
 
-  public Pair<Integer, Integer> getStepRequest(ContainerStepInfo containerStepInfo, String accountId) {
+  public Pair<Integer, Integer> getStepRequest(IContainerStepSpec containerStepInfo, String accountId) {
     ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
     Integer containerCpuLimit =
         getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);

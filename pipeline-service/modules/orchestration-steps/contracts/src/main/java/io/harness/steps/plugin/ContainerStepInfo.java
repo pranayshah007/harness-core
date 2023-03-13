@@ -168,4 +168,10 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  @JsonIgnore
+  public ContainerStepType getType() {
+    return ContainerStepType.RUN_CONTAINER;
+  }
 }
