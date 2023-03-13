@@ -10,9 +10,14 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
+import io.harness.cvng.servicelevelobjective.entities.Annotation;
+
+import java.util.List;
 
 public interface AnnotationService {
   AnnotationResponse create(ProjectParams projectParams, AnnotationDTO annotationDTO);
+
+  List<Annotation> get(ProjectParams projectParams, String sloIdentifier);
 
   AnnotationResponse update(String annotationId, AnnotationDTO annotationDTO);
 
