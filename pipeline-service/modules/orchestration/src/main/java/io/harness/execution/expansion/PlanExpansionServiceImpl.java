@@ -7,7 +7,6 @@
 package io.harness.execution.expansion;
 
 import io.harness.beans.FeatureName;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -53,20 +52,6 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
-  public void addNameAndIdentifier(NodeExecution nodeExecution) {
-    if (shouldSkipUpdate(nodeExecution.getAmbiance())) {
-      return;
-    }
-    Update update = new Update();
-    String key = getExpansionPathUsingLevels(nodeExecution.getAmbiance());
-    String nameKey = String.format("%s.%s", key, PlanExpansionConstants.NAME);
-    String identifierKey = String.format("%s.%s", key, PlanExpansionConstants.IDENTIFIER);
-    update.set(nameKey, nodeExecution.getName());
-    update.set(identifierKey, nodeExecution.getIdentifier());
-    planExecutionExpansionRepository.update(nodeExecution.getPlanExecutionId(), update);
-  }
-
-  @Override
   public void addOutcomes(Ambiance ambiance, String name, PmsOutcome outcome) {
     if (shouldSkipUpdate(ambiance) || outcome == null) {
       return;
@@ -84,11 +69,12 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
-  public Map<String, Object> resolveExpression(Ambiance ambiance, String expression) {
+  public Map<String, Object> resolveExpressions(Ambiance ambiance, List<String> expressions) {
     if (shouldUseExpandedJsonFunctor(ambiance)) {
       Criteria criteria = Criteria.where("planExecutionId").is(ambiance.getPlanExecutionId());
       Query query = new Query(criteria);
-      query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression);
+      expressions.forEach(expression
+          -> query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression));
       return JsonUtils.asMap(planExecutionExpansionRepository.find(query).getExpandedJson().toJson());
     }
     return null;

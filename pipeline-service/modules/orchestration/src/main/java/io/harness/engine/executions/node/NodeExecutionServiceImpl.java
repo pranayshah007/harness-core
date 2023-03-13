@@ -366,7 +366,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
-        planExpansionService.addNameAndIdentifier(nodeExecution1);
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
@@ -388,7 +387,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     } else {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
-        planExpansionService.addNameAndIdentifier(nodeExecution);
         return mongoTemplate.save(nodeExecution);
       });
       if (savedNodeExecution != null) {

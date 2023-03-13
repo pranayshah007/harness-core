@@ -6,12 +6,12 @@
  */
 package io.harness.execution.expansion;
 
-import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.List;
 import java.util.Map;
 
 public interface PlanExpansionService {
@@ -21,13 +21,6 @@ public interface PlanExpansionService {
    * @param stepInputs
    */
   void addStepInputs(Ambiance ambiance, PmsStepParameters stepInputs);
-
-  /**
-   * Adds name and identifier for a given node in its execution expansion
-   *
-   * @param nodeExecution
-   */
-  void addNameAndIdentifier(NodeExecution nodeExecution);
 
   /**
    * Adds outcome for a given node in its execution json
@@ -43,14 +36,7 @@ public interface PlanExpansionService {
    */
   void create(String planExecutionId);
 
-  /**
-   * Takes in the expression and the plan execution id and resolves the expression
-   *
-   * @param ambiance
-   * @param expression
-   * @return
-   */
-  Map<String, Object> resolveExpression(Ambiance ambiance, String expression);
+  Map<String, Object> resolveExpressions(Ambiance ambiance, List<String> expressions);
 
   /**
    * Updates the status for given nodeExecution in Ambiance

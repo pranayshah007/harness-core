@@ -20,7 +20,9 @@ import java.util.Date;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.Wither;
 import org.bson.Document;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(PIPELINE)
@@ -59,6 +61,8 @@ public class PlanExecutionExpansion {
    *
    */
   Document expandedJson;
+
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
 
   @FdIndex String planExecutionId;
 

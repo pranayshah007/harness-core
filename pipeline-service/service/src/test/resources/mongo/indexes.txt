@@ -77,6 +77,8 @@ pipelinesPMS {"name": "accountId_orgId_projectId_name_repo_identifier_idx", "bac
 pipelinesPMS {"name": "accountId_organizationId_projectId_lastUpdatedAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "lastUpdatedAt": 1, "projectIdentifier": 1}
 pipelinesPMS {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 pipelinesPMS {"name": "unique_accountId_organizationId_projectId_pipelineId_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
+planExecutionExpansions {"name": "planExecutionId_1", "background": true} {"planExecutionId": 1}
+planExecutionExpansions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 planExecutions {"name": "accountId_status_createdAt_idx", "background": true} {"setupAbstractions.accountId": 1, "status": 1, "createdAt": 1}
 planExecutions {"name": "exec_tag_status_idx", "background": true} {"metadata.triggerInfo.triggeredBy.extraInfo.execution_trigger_tag_needed_for_abort": 1, "status": 1, "createdAt": -1}
 planExecutions {"name": "status_idx", "background": true} {"status": 1}
