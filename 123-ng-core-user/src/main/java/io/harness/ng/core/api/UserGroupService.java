@@ -19,6 +19,7 @@ import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserInfo;
 import io.harness.ng.core.user.entities.UserGroup;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
@@ -32,6 +33,7 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 /**
  * This interface exposes methods needed for User Group operations.
@@ -59,8 +61,6 @@ public interface UserGroupService {
 
   List<String> getUserIds(List<String> emails);
 
-  List<String> getUserEmails(List<String> uuids);
-
   Page<UserGroup> list(String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm,
       UserGroupFilterType filterType, Pageable pageable);
 
@@ -76,7 +76,7 @@ public interface UserGroupService {
   PageResponse<UserMetadataDTO> listUsersInUserGroup(
       Scope scope, String userGroupIdentifier, UserFilter userFilter, PageRequest pageRequest);
 
-  List<UserMetadataDTO> getUsersInUserGroup(Scope scope, String userGroupIdentifier);
+  CloseableIterator<UserMetadata> getUsersInUserGroup(Scope scope, String userGroupIdentifier);
 
   UserGroup delete(Scope scope, String identifier);
 
