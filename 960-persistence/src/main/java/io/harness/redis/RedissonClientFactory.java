@@ -237,23 +237,23 @@ public class RedissonClientFactory {
           }
         }
       } else {
-        NatMapper natMapper = new NatMapper() {
-          @Override
-          public RedisURI map(RedisURI uri) {
-            if (uri.getHost().equals("10.108.2.227")) {
-              return new RedisURI(uri.getScheme(), "127.0.0.1", 26380);
-            }
-
-            if (uri.getHost().equals("10.108.6.148")) {
-              return new RedisURI(uri.getScheme(), "127.0.0.1", 26381);
-            }
-            if (uri.getHost().equals("10.108.12.237")) {
-              return new RedisURI(uri.getScheme(), "127.0.0.1", 26379);
-            }
-            return uri;
-          }
-        };
-        config.useSentinelServers().setNatMapper(natMapper);
+        //        NatMapper natMapper = new NatMapper() {
+        //          @Override
+        //          public RedisURI map(RedisURI uri) {
+        //            if (uri.getHost().equals("10.108.2.227")) {
+        //              return new RedisURI(uri.getScheme(), "127.0.0.1", 26380);
+        //            }
+        //
+        //            if (uri.getHost().equals("10.108.6.148")) {
+        //              return new RedisURI(uri.getScheme(), "127.0.0.1", 26381);
+        //            }
+        //            if (uri.getHost().equals("10.108.12.237")) {
+        //              return new RedisURI(uri.getScheme(), "127.0.0.1", 26379);
+        //            }
+        //            return uri;
+        //          }
+        //        };
+        //        config.useSentinelServers().setNatMapper(natMapper);
         config.useSentinelServers().setMasterName(redisConfig.getMasterName());
         for (String sentinelUrl : redisConfig.getSentinelUrls()) {
           config.useSentinelServers().addSentinelAddress(sentinelUrl);
