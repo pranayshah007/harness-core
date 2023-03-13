@@ -1113,7 +1113,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                        .addAllCategory(TERRAGRUNT_CATEGORY)
                                                        .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                        .build())
-                                  .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                   .build();
 
     StepInfo terragruntApply = StepInfo.newBuilder()
@@ -1124,7 +1123,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                         .addAllCategory(TERRAGRUNT_CATEGORY)
                                                         .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                         .build())
-                                   .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                    .build();
 
     StepInfo terragruntDestroy = StepInfo.newBuilder()
@@ -1135,7 +1133,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addAllCategory(TERRAGRUNT_CATEGORY)
                                                           .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                           .build())
-                                     .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                      .build();
 
     StepInfo terragruntRollback = StepInfo.newBuilder()
@@ -1146,7 +1143,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                            .addAllCategory(TERRAGRUNT_CATEGORY)
                                                            .addFolderPaths(TERRAGRUNT_STEP_METADATA)
                                                            .build())
-                                      .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
     StepInfo elastigroupBGStageSetup =
         StepInfo.newBuilder()
