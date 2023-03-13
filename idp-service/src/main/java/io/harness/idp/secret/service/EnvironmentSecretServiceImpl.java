@@ -110,7 +110,6 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
 
   @Override
   public void delete(String secretIdentifier, String accountIdentifier) {
-    EnvironmentSecretEntity environmentSecretEntity = EnvironmentSecretEntity.builder().id(secretIdentifier).build();
     Optional<EnvironmentSecretEntity> envSecretOpt =
         environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(secretIdentifier, accountIdentifier);
     if (envSecretOpt.isEmpty()) {
@@ -119,7 +118,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     }
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET,
         Collections.singletonList(envSecretOpt.get().getEnvName()));
-    environmentSecretRepository.delete(environmentSecretEntity);
+    environmentSecretRepository.delete(envSecretOpt.get());
   }
 
   @Override
