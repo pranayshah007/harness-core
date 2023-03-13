@@ -268,6 +268,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -1723,7 +1724,7 @@ public class DelegateServiceImpl implements DelegateService {
       if (isNg) {
         var tokenDetails =
             delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
-        if (Objects.nonNull(tokenDetails) && tokenDetails.getStatus().equals(REVOKED)) {
+        if (Objects.isNull(tokenDetails) && tokenDetails.getStatus().equals(REVOKED)) {
           return null;
         }
         return delegateNgTokenService.getDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
