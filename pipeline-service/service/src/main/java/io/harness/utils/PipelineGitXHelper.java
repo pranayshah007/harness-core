@@ -18,7 +18,6 @@ import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.gitx.ThreadOperationContext;
 import io.harness.gitx.USER_FLOW;
 import io.harness.manage.GlobalContextManager;
 
@@ -84,11 +83,11 @@ public class PipelineGitXHelper {
     return false;
   }
 
-  public void setUserFlowContext() {
+  public void setUserFlowContext(USER_FLOW userFlow) {
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());
     }
     GlobalContextManager.upsertGlobalContextRecord(
-        ThreadOperationContext.builder().userFlow(USER_FLOW.EXECUTION).build());
+        ThreadOperationContextHelper.getThreadOperationContext().withUserFlow(userFlow));
   }
 }
