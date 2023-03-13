@@ -33,8 +33,9 @@ import io.dropwizard.lifecycle.Managed;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
 import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 
 @OwnedBy(PL)
 @Singleton
@@ -45,9 +46,20 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
   private static final String LOCK_PREFIX = "locks";
   private static final String ERROR_MESSAGE = "Failed to acquire distributed lock for %s";
 
+  public static class RedissonClient extends Redisson {
+    protected RedissonClient(Config config) {
+      super(config);
+    }
+
+    public int getAvailableSlaves() {
+      return connectionManager.getEntry("test").getAvailableSlaves();
+    }
+  }
+
   @Inject
   RedisPersistentLocker(@Named("lock") RedisConfig redisLockConfig) {
-    this.client = RedissonClientFactory.getClient(redisLockConfig);
+    Config clientConfig = RedissonClientFactory.getClientConfig(redisLockConfig);
+    this.client = new RedissonClient(clientConfig);
     String envNamespace = redisLockConfig.getEnvNamespace();
     this.lockNamespace = EmptyPredicate.isEmpty(envNamespace) ? LOCK_PREFIX.concat(":")
                                                               : String.format("%s:%s:", envNamespace, LOCK_PREFIX);
@@ -62,7 +74,9 @@ public class RedisPersistentLocker implements PersistentLocker, HealthMonitor, M
     try {
       name = getLockName(name);
       RLock lock = client.getLock(name);
+
       boolean locked = lock.tryLock(0, timeout.toMillis(), TimeUnit.MILLISECONDS);
+      log.info("Total available slaves: {}", client.getAvailableSlaves());
       if (locked) {
         log.debug("Lock acquired on {} for timeout {}", name, timeout);
         return RedisAcquiredLock.builder().lock(lock).build();

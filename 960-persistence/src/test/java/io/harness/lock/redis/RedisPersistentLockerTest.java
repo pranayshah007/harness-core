@@ -8,7 +8,6 @@
 package io.harness.lock.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.redis.RedisReadMode.SLAVE;
 import static io.harness.rule.OwnerRule.RAMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,23 +15,22 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.PersistenceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.lock.AcquiredLock;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedisReadMode;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.redisson.api.RLock;
@@ -46,17 +44,17 @@ public class RedisPersistentLockerTest extends PersistenceTestBase {
   private RedisPersistentLocker redisPersistentLocker;
   private RedissonClient client;
 
-  @Before
-  public void setup() {
-    initMocks(this);
-    mockStatic(RedissonClientFactory.class);
-    RedisConfig config = mock(RedisConfig.class);
-    when(config.isSentinel()).thenReturn(true);
-    when(config.getReadMode()).thenReturn(SLAVE);
-    client = mock(RedissonClient.class);
-    when(RedissonClientFactory.getClient(any())).thenReturn(client);
-    redisPersistentLocker = new RedisPersistentLocker(config);
-  }
+  //  @Before
+  //  public void setup() {
+  //    initMocks(this);
+  //    mockStatic(RedissonClientFactory.class);
+  //    RedisConfig config = mock(RedisConfig.class);
+  //    when(config.isSentinel()).thenReturn(true);
+  //    when(config.getReadMode()).thenReturn(SLAVE);
+  //    client = mock(RedissonClient.class);
+  //    when(RedissonClientFactory.getClient(any())).thenReturn(client);
+  //    redisPersistentLocker = new RedisPersistentLocker(config);
+  //  }
 
   @Test
   @Owner(developers = RAMA)
@@ -136,5 +134,26 @@ public class RedisPersistentLockerTest extends PersistenceTestBase {
     }
 
     verify(rLock, times(1)).tryLock(anyLong(), anyLong(), any(TimeUnit.class));
+  }
+
+  @Test
+  @Owner(developers = RAMA)
+  @Category(UnitTests.class)
+  public void test() throws InterruptedException {
+    RedisConfig redisConfig = new RedisConfig();
+
+    redisConfig.setSentinel(true);
+    redisConfig.setNettyThreads(16);
+    redisConfig.setUseScriptCache(true);
+    redisConfig.setSentinelUrls(Lists.newArrayList("redis://127.0.0.1:26380"));
+    redisConfig.setReadMode(RedisReadMode.MASTER);
+    redisConfig.setMasterName("harness-redis");
+    RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
+    RLock test = redissonClient.getLock("test");
+    boolean b = test.tryLock(0, 1, TimeUnit.SECONDS);
+    if (b == true) {
+      test.unlock();
+    }
+    assertThat(b).isTrue();
   }
 }

@@ -6,6 +6,7 @@ startup --macos_qos_class=utility
 # Add properties that are specific to local bazel  build
 
 build --disk_cache=~/.bazel-dirs/cache
+build --announce_rc
 
 build --symlink_prefix=/
 build --experimental_convenience_symlinks=ignore
