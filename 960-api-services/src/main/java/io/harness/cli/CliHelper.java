@@ -78,7 +78,7 @@ public class CliHelper {
         // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
         // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
 
-        process.descendants().collect(Collectors.toList()).forEach(ProcessHandle::destroyForcibly);
+        process.descendants().collect(Collectors.toList()).forEach(ProcessHandle::destroy);
         ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
         try {
           process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
