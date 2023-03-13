@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -76,6 +77,8 @@ public class CliHelper {
         // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
         // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
         // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
+
+        process.descendants().collect(Collectors.toList()).forEach(ProcessHandle::destroyForcibly);
         ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
         try {
           process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
