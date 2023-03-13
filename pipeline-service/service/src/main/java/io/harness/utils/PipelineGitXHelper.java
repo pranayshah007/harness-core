@@ -63,6 +63,7 @@ public class PipelineGitXHelper {
       if (isNotEmpty(entityGitDetails.getParentEntityRepoName())) {
         gitEntityInfo.setParentEntityRepoName(entityGitDetails.getParentEntityRepoName());
       }
+      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     }
   }
 
