@@ -97,6 +97,7 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
@@ -244,6 +245,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(LogFeedbackEntity.class);
     set.add(LogFeedbackHistoryEntity.class);
     set.add(RequestServiceLevelIndicator.class);
+    set.add(Annotation.class);
   }
 
   @Override
