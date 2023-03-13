@@ -10,17 +10,26 @@ package io.harness.delegate.task.terraformcloud;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Getter;
+
+@Getter
 @OwnedBy(HarnessTeam.CDP)
 public enum TerraformCloudTaskType {
-  VALIDATE,
-  GET_ORGANIZATIONS,
-  GET_WORKSPACES,
-  RUN_REFRESH_STATE,
-  RUN_PLAN_ONLY,
-  RUN_PLAN_AND_APPLY,
-  RUN_PLAN_AND_DESTROY,
-  RUN_PLAN,
-  RUN_APPLY,
-  ROLLBACK,
-  GET_LAST_APPLIED_RUN
+  VALIDATE("Validate connection"),
+  GET_ORGANIZATIONS("Get organizations"),
+  GET_WORKSPACES("Get workspaces"),
+  RUN_REFRESH_STATE("Refresh state"),
+  RUN_PLAN_ONLY("Plan only"),
+  RUN_PLAN_AND_APPLY("Plan and Apply"),
+  RUN_PLAN_AND_DESTROY("Plan and Destroy"),
+  RUN_PLAN("Plan"),
+  RUN_APPLY("Apply"),
+  ROLLBACK("Rollback"),
+  GET_LAST_APPLIED_RUN("Get last applied run");
+
+  private final String displayName;
+
+  TerraformCloudTaskType(String displayName) {
+    this.displayName = displayName;
+  }
 }

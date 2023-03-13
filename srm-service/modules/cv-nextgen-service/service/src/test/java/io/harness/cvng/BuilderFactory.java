@@ -285,6 +285,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -572,6 +573,7 @@ public class BuilderFactory {
 
   public DatadogLogCVConfigBuilder datadogLogCVConfigBuilder() {
     return DatadogLogCVConfig.builder()
+        .uuid(UUID.randomUUID().toString())
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
@@ -1624,6 +1626,7 @@ public class BuilderFactory {
         .baselineVerificationJobInstanceId(generateUuid())
         .duration(RuntimeParameter.builder().value("15m").build());
   }
+
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {
       BuilderFactory builder = unsafeBuild();

@@ -21,6 +21,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserMembership;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.scim.PatchRequest;
@@ -74,10 +75,12 @@ public interface NgUserService {
 
   List<UserMetadataDTO> getUserMetadata(List<String> userIds);
 
+  CloseableIterator<UserMetadata> streamUserMetadata(List<String> userIds);
+
   void addServiceAccountToScope(
       String serviceAccountId, Scope scope, RoleBinding roleBinding, UserMembershipUpdateSource source);
 
-  List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds);
+  List<String> getUserIdsByEmails(List<String> emailIds);
 
   CloseableIterator<UserMembership> streamUserMemberships(Criteria criteria);
 

@@ -170,19 +170,32 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       variableOverrides.removeIf(Objects::isNull);
       Set<String> variableKeys = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
-      int emptyOverrides = 0;
+      int emptyOverrideNames = 0;
+      int nullOverrideValues = 0;
+      String nullOverrideValuesList = "";
       for (NGVariable variableOverride : variableOverrides) {
         if (StringUtils.isBlank(variableOverride.getName())) {
-          emptyOverrides++;
+          emptyOverrideNames++;
         } else if (!variableKeys.add(variableOverride.getName())) {
           duplicates.add(variableOverride.getName());
         }
+
+        if (variableOverride.fetchValue().fetchFinalValue() == null) {
+          nullOverrideValues++;
+          nullOverrideValuesList = nullOverrideValuesList + " " + variableOverride.getName();
+        }
       }
-      if (emptyOverrides != 0) {
-        String plural = emptyOverrides == 1 ? "" : "s";
+      if (emptyOverrideNames != 0) {
+        String plural = emptyOverrideNames == 1 ? "" : "s";
         throw new InvalidRequestException(
             String.format("Empty variable name%s for %s variable override%s in service ref: [%s]", plural,
-                emptyOverrides, plural, requestServiceOverride.getServiceRef()));
+                emptyOverrideNames, plural, requestServiceOverride.getServiceRef()));
+      }
+      if (nullOverrideValues != 0) {
+        String plural = nullOverrideValues == 1 ? "" : "s";
+        throw new InvalidRequestException(
+            String.format("value%s not provided for %s variable override%s%s in service ref: [%s]", plural,
+                nullOverrideValues, plural, nullOverrideValuesList, requestServiceOverride.getServiceRef()));
       }
       if (!duplicates.isEmpty()) {
         throw new InvalidRequestException(String.format("Duplicate Service overrides provided: [%s] for service: [%s]",

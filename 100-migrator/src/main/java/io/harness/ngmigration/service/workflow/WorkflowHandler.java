@@ -94,6 +94,7 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
+
   public List<CgEntityId> getReferencedEntities(StepMapperFactory stepMapperFactory, Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
     Map<String, String> stepIdToServiceIdMap = getStepIdToServiceIdMap(workflow);
@@ -102,6 +103,20 @@ public abstract class WorkflowHandler {
       referencedEntities.add(
           CgEntityId.builder().id(workflow.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
     }
+
+    List<String> serviceIds = workflow.getOrchestrationWorkflow().getServiceIds();
+    if (EmptyPredicate.isNotEmpty(serviceIds)) {
+      referencedEntities.addAll(
+          serviceIds.stream()
+              .map(serviceId -> CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(serviceId).build())
+              .collect(Collectors.toList()));
+    }
+
+    if (StringUtils.isNotBlank(workflow.getEnvId())) {
+      referencedEntities.add(
+          CgEntityId.builder().id(workflow.getEnvId()).type(NGMigrationEntityType.ENVIRONMENT).build());
+    }
+
     if (EmptyPredicate.isEmpty(steps)) {
       return referencedEntities;
     }

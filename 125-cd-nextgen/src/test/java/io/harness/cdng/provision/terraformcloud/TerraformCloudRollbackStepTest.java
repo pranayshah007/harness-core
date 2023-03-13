@@ -154,7 +154,7 @@ public class TerraformCloudRollbackStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terraform Cloud Task NG"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terraform Cloud Task NG : Rollback"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformCloudRollbackTaskParams params =

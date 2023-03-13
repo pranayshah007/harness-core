@@ -72,4 +72,10 @@ public class StringNGVariable implements NGVariable {
         ? ParameterField.createValueField(defaultValue)
         : value;
   }
+
+  @JsonIgnore
+  @Override
+  public ParameterField<?> fetchValue() {
+    return value;
+  }
 }

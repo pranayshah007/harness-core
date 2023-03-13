@@ -27,7 +27,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -65,11 +64,8 @@ import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
@@ -140,15 +136,6 @@ public class TerragruntStepHelper {
 
   public static StepType addStepType(String yamlType) {
     return StepType.newBuilder().setType(yamlType).setStepCategory(StepCategory.STEP).build();
-  }
-
-  public void checkIfTerragruntFeatureIsEnabled(Ambiance ambiance, String step) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TERRAGRUNT_PROVISION_NG)) {
-      throw new AccessDeniedException(
-          format("'%s' is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.", step,
-              AmbianceUtils.getAccountId(ambiance), FeatureName.TERRAGRUNT_PROVISION_NG.name()),
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
   }
 
   public static void addConnectorRef(
