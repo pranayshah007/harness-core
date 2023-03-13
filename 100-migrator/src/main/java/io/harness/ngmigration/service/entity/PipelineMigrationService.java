@@ -8,8 +8,11 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.PIPELINE;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.lang.String.format;
@@ -64,6 +67,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
+import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -73,6 +77,8 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.PipelineService;
 import software.wings.sm.StateType;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -229,7 +235,7 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities);
+            stage = buildWorkflowStage(pipeline.getAccountId(), stageElement, entities, migratedEntities);
           }
         } else {
           stage = buildApprovalStage(stageElement);
@@ -342,15 +348,40 @@ public class PipelineMigrationService extends NgMigrationService {
     return null;
   }
 
-  private StageElementWrapperConfig buildWorkflowStage(
-      String accountId, PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  private StageElementWrapperConfig buildWorkflowStage(String accountId, PipelineStageElement stageElement,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     // TODO: Handle Skip condition
     String workflowId = stageElement.getProperties().get("workflowId").toString();
     // Throw error if the stage is using canary or multi WFs.
-    NGYamlFile wfTemplate = migratedEntities.get(CgEntityId.builder().id(workflowId).type(WORKFLOW).build());
-    if (wfTemplate == null) {
+    CgEntityId workflowEntityId = CgEntityId.builder().id(workflowId).type(WORKFLOW).build();
+    if (!migratedEntities.containsKey(workflowEntityId) || !entities.containsKey(workflowEntityId)) {
       log.error("The workflow was not migrated, aborting pipeline migration {}", workflowId);
       return null;
+    }
+
+    NGYamlFile wfTemplate = migratedEntities.get(workflowEntityId);
+    Workflow workflow = (Workflow) entities.get(workflowEntityId).getEntity();
+
+    String stageServiceRef = RUNTIME_INPUT;
+    JsonNode serviceInputs = null;
+    if (StringUtils.isNotBlank(getServiceId(workflow))) {
+      CgEntityId serviceEntityId = CgEntityId.builder().id(getServiceId(workflow)).type(SERVICE).build();
+      if (migratedEntities.containsKey(serviceEntityId)) {
+        NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
+        serviceInputs = migrationTemplateUtils.getServiceInput(serviceDetails, accountId);
+        if (serviceInputs != null) {
+          serviceInputs = serviceInputs.get("serviceInputs");
+          stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
+        }
+      }
+    }
+
+    String stageEnvRef = RUNTIME_INPUT;
+    if (StringUtils.isNotBlank(workflow.getEnvId())) {
+      CgEntityId envEntityId = CgEntityId.builder().id(workflow.getEnvId()).type(ENVIRONMENT).build();
+      if (migratedEntities.containsKey(envEntityId)) {
+        stageEnvRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(envEntityId).getNgEntityDetail());
+      }
     }
 
     if (wfTemplate.getYaml() instanceof PipelineConfig) {
@@ -375,10 +406,24 @@ public class PipelineMigrationService extends NgMigrationService {
       return null;
     }
 
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId);
+
+    if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
+      String serviceRef = templateInputs.at("/spec/service/serviceRef").asText();
+      if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(stageServiceRef)) {
+        ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
+        service.put("serviceRef", stageServiceRef);
+        service.set("serviceInputs", serviceInputs);
+      }
+      String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
+      if (RUNTIME_INPUT.equals(envRef)) {
+        ObjectNode service = (ObjectNode) templateInputs.get("spec").get("environment");
+        service.put("environmentRef", stageEnvRef);
+      }
+    }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
-    templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId));
+    templateLinkConfig.setTemplateInputs(templateInputs);
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());
@@ -387,6 +432,13 @@ public class PipelineMigrationService extends NgMigrationService {
     templateStageNode.setTemplate(templateLinkConfig);
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
+  }
+
+  private String getServiceId(Workflow workflow) {
+    if (workflow == null || EmptyPredicate.isEmpty(workflow.getServices()) || workflow.getServices().size() > 1) {
+      return null;
+    }
+    return workflow.getServices().get(0).getUuid();
   }
 
   @Override

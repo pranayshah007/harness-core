@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
+import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 
@@ -48,4 +49,9 @@ public interface ServiceResourceClient {
   Call<ResponseDTO<ServiceResponse>> getService(@Path("serviceIdentifier") String serviceIdentifier,
       @Query("accountIdentifier") String accountId, @Query("orgIdentifier") String orgIdentifier,
       @Query("projectIdentifier") String projectIdentifier);
+
+  @GET(SERVICE_API + "/runtimeInputs/{serviceIdentifier}")
+  Call<ResponseDTO<NGEntityTemplateResponseDTO>> getServiceRuntimeInputs(
+      @Path("serviceIdentifier") String serviceIdentifier, @Query("accountIdentifier") String accountId,
+      @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier);
 }
