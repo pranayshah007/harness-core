@@ -518,16 +518,17 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   }
 
   @Override
-  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(
-      String accountId, String orgId, String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+  public ResponseDTO<PipelineValidationUUIDResponseBody> startPipelineValidationEvent(String accountId, String orgId,
+      String projectId, String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCacheHeader) {
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipelineId));
     }
-    PipelineValidationEvent pipelineValidationEvent =
-        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD);
+    boolean loadFromCache = GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCacheHeader);
+    PipelineValidationEvent pipelineValidationEvent = pipelineAsyncValidationService.startEvent(
+        pipelineEntity.get(), gitEntityBasicInfo.getBranch(), Action.CRUD, loadFromCache);
     PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
         PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
     return ResponseDTO.newResponse(pipelineValidationUUIDResponseBody);

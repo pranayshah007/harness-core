@@ -332,9 +332,9 @@ public class PipelinesApiImplTest extends CategoryTest {
     doReturn(Optional.of(entity)).when(pmsPipelineService).getPipeline(account, org, project, "pipeline", false, false);
     doReturn(PipelineValidationEvent.builder().uuid("abc1").build())
         .when(pipelineAsyncValidationService)
-        .startEvent(entity, null, Action.CRUD);
+        .startEvent(entity, null, Action.CRUD, false);
     Response response =
-        pipelinesApiImpl.startPipelineValidationEvent(org, project, "pipeline", account, null, null, null, null, null);
+        pipelinesApiImpl.startPipelineValidationEvent(org, project, "pipeline", account, null, null, null, false, null);
     PipelineValidationUUIDResponseBody responseBody = (PipelineValidationUUIDResponseBody) response.getEntity();
     assertThat(responseBody.getUuid()).isEqualTo("abc1");
   }

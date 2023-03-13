@@ -191,7 +191,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
     }
     PipelineValidationEvent pipelineValidationEvent =
-        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD);
+        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD, loadFromCache);
     PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
         PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
     return Response.ok().entity(pipelineValidationUUIDResponseBody).build();

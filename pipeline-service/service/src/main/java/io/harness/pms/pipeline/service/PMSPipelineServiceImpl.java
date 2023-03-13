@@ -415,7 +415,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       validationUUID = optionalEvent.get().getUuid();
     } else {
       PipelineValidationEvent newEvent =
-          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD);
+          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
       validationUUID = newEvent.getUuid();
     }
     return PipelineGetResult.builder()
