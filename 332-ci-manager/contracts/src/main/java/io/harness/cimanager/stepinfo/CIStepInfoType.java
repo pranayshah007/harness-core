@@ -39,6 +39,7 @@ public enum CIStepInfoType {
   SECURITY(CI_LITE_ENGINE, "Security"),
   AQUA_TRIVY(CI_LITE_ENGINE, "AquaTrivy"),
   AWS_ECR(CI_LITE_ENGINE, "AWSECR"),
+  AWS_SECURITY_HUB(CI_LITE_ENGINE, "AWSSecurityHub"),
   BANDIT(CI_LITE_ENGINE, "Bandit"),
   BLACKDUCK(CI_LITE_ENGINE, "BlackDuck"),
   BRAKEMAN(CI_LITE_ENGINE, "Brakeman"),

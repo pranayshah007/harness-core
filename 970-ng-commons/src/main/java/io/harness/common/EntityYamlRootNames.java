@@ -98,6 +98,7 @@ public class EntityYamlRootNames {
 
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
+  public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
   public static final String BANDIT = "Bandit";
   public static final String BLACKDUCK = "BlackDuck";
   public static final String BRAKEMAN = "Brakeman";

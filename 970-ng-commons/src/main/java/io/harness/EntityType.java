@@ -232,6 +232,10 @@ public enum EntityType {
   AQUA_TRIVY(ModuleType.STO, EntityTypeConstants.AQUA_TRIVY, IdentifierRef.class, EntityYamlRootNames.AQUA_TRIVY),
   @JsonProperty(EntityTypeConstants.AWS_ECR)
   AWS_ECR(ModuleType.STO, EntityTypeConstants.AWS_ECR, IdentifierRef.class, EntityYamlRootNames.AWS_ECR),
+
+  @JsonProperty(EntityTypeConstants.AWS_SECURITY_HUB)
+  AWS_SECURITY_HUB(
+      ModuleType.STO, EntityTypeConstants.AWS_SECURITY_HUB, IdentifierRef.class, EntityYamlRootNames.AWS_SECURITY_HUB),
   @JsonProperty(EntityTypeConstants.BANDIT)
   BANDIT(ModuleType.STO, EntityTypeConstants.BANDIT, IdentifierRef.class, EntityYamlRootNames.BANDIT),
   @JsonProperty(EntityTypeConstants.BLACKDUCK)
