@@ -9,20 +9,20 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 
 import java.util.List;
 
 public interface LogFeedbackService {
-  LogFeedback create(ProjectParams projectParams, LogFeedback logFeedback);
+  LogFeedback create(ProjectPathParams projectParams, LogFeedback logFeedback);
 
-  LogFeedback update(ProjectParams projectParams, String feedbackId, LogFeedback logFeedback);
+  LogFeedback update(ProjectPathParams projectParams, String feedbackId, LogFeedback logFeedback);
 
-  boolean delete(ProjectParams projectParams, String feedbackId);
+  boolean delete(ProjectPathParams projectParams, String feedbackId);
 
-  LogFeedback get(ProjectParams projectParams, String feedbackId);
+  LogFeedback get(ProjectPathParams projectParams, String feedbackId);
 
-  List<LogFeedbackHistory> history(ProjectParams projectParams, String feedbackId);
+  List<LogFeedbackHistory> history(ProjectPathParams projectParams, String feedbackId);
 
   List<LogFeedback> list(String envIdentifier, String serviceIdentifier);
 }

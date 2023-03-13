@@ -13,7 +13,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.LOG_FEEDBACK_RESO
 
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.rest.RestResponse;
@@ -51,7 +51,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @ApiOperation(value = "saves log data collected for verification", nickname = "saveLogFeedback")
   public RestResponse<LogFeedback> saveLogFeedback(
-      @BeanParam @Valid ProjectParams projectParams, @NotNull @Valid @Body LogFeedback logFeedback) {
+      @BeanParam @Valid ProjectPathParams projectParams, @NotNull @Valid @Body LogFeedback logFeedback) {
     return new RestResponse<>(logFeedbackService.create(projectParams, logFeedback));
   }
 
@@ -60,7 +60,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "updateLogFeedback")
-  public RestResponse<LogFeedback> updateLogFeedback(@BeanParam @Valid ProjectParams projectParams,
+  public RestResponse<LogFeedback> updateLogFeedback(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId,
       @NotNull @Valid @Body io.harness.cvng.core.beans.LogFeedback logFeedback) {
     return new RestResponse<>(logFeedbackService.update(projectParams, logFeedbackId, logFeedback));
@@ -71,7 +71,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "getLogFeedback")
-  public RestResponse<LogFeedback> getLogFeedback(@BeanParam @Valid ProjectParams projectParams,
+  public RestResponse<LogFeedback> getLogFeedback(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId) {
     return new RestResponse<>(logFeedbackService.get(projectParams, logFeedbackId));
   }
@@ -81,7 +81,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @Path(LOG_FEEDBACK_ID_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "deleteLogFeedback")
-  public RestResponse<Boolean> deleteLogFeedback(@BeanParam @Valid ProjectParams projectParams,
+  public RestResponse<Boolean> deleteLogFeedback(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId) {
     return new RestResponse<>(logFeedbackService.delete(projectParams, logFeedbackId));
   }
@@ -91,7 +91,7 @@ public class LogFeedbackResource {
   @ExceptionMetered
   @Path(LOG_FEEDBACK_HISTORY_RESOURCE_PATH)
   @ApiOperation(value = "saves log data collected for verification", nickname = "getFeedbackHistory")
-  public RestResponse<List<LogFeedbackHistory>> getFeedbackHistory(@BeanParam @Valid ProjectParams projectParams,
+  public RestResponse<List<LogFeedbackHistory>> getFeedbackHistory(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId) {
     return new RestResponse<>(logFeedbackService.history(projectParams, logFeedbackId));
   }
