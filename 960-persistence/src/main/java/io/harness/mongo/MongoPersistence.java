@@ -141,7 +141,7 @@ public class MongoPersistence implements HPersistence {
   @Inject
   public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore,
       HarnessConnectionPoolListener harnessConnectionPoolListener) {
-    datastoreMap = new HashMap<>();
+    datastoreMap = new ConcurrentHashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
     this.harnessConnectionPoolListener = harnessConnectionPoolListener;
   }
