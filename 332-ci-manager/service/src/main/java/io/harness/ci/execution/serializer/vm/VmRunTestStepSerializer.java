@@ -126,6 +126,12 @@ public class VmRunTestStepSerializer {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runTestStepBuilder.connector(connectorDetails);
+
+      runTestStepBuilder.privileged(
+          RunTimeInputHandler.resolveBooleanParameter(runTestsStepInfo.getPrivileged(), false));
+      if (runTestsStepInfo.getRunAsUser() != null && runTestsStepInfo.getRunAsUser().getValue() != null) {
+        runTestStepBuilder.runAsUser(runTestsStepInfo.getRunAsUser().getValue().toString());
+      }
     }
 
     runTestStepBuilder.parallelizeTests(resolveBooleanParameter(runTestsStepInfo.getEnableTestSplitting(), false));
