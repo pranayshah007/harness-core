@@ -267,7 +267,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
 
     String tfPolicyCheckFileId = policyCheckInternal(
         url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
-    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
+    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData.getId(), commandUnitsProgress);
     return TerraformCloudPlanAndApplyTaskResponse.builder()
         .runId(runData.getId())
         .tfOutput(output)
@@ -286,7 +286,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
 
     String tfPolicyCheckFileId = policyCheckInternal(
         url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
-    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
+    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData.getId(), commandUnitsProgress);
     return TerraformCloudPlanAndDestroyTaskResponse.builder()
         .runId(runData.getId())
         .tfOutput(output)
@@ -341,7 +341,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
     String lastAppliedRunId = terraformCloudTaskHelper.getLastAppliedRunId(url, token, workspaceId);
     if (lastAppliedRunId == null || lastAppliedRunId.equals(runId)) {
       logCallback.saveExecutionLog(
-          "No run wasn't applied in this stage. Therefore skipping rollback.", INFO, CommandExecutionStatus.SKIPPED);
+          "No run wasn't applied in this stage. Therefore skipping rollback.", INFO, CommandExecutionStatus.SUCCESS);
       return TerraformCloudRollbackTaskResponse.builder().build();
     }
 
@@ -359,7 +359,7 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
 
     String tfPolicyCheckFileId = policyCheckInternal(
         url, token, runData.getId(), taskParameters.getAccountId(), taskParameters.getEntityId(), commandUnitsProgress);
-    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData, commandUnitsProgress);
+    String output = applyInternal(url, token, taskParameters.isPolicyOverride(), runData.getId(), commandUnitsProgress);
 
     return TerraformCloudRollbackTaskResponse.builder()
         .policyChecksJsonFileId(tfPolicyCheckFileId)
@@ -394,15 +394,24 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private String applyInternal(
-      String url, String token, boolean isPolicyOverride, RunData runData, CommandUnitsProgress commandUnitsProgress) {
+      String url, String token, boolean isPolicyOverride, String runId, CommandUnitsProgress commandUnitsProgress) {
     LogCallback logCallback = getLogCallback(TerraformCloudCommandUnit.APPLY.getDisplayName(), commandUnitsProgress);
+    RunData runData = terraformCloudTaskHelper.getRun(url, token, runId);
     if (runData.getAttributes().getStatus() == RunStatus.POLICY_OVERRIDE) {
       if (isPolicyOverride) {
-        List<PolicyCheckData> policyCheckData =
-            terraformCloudTaskHelper.getPolicyCheckData(url, token, runData.getId());
+        List<PolicyCheckData> policyCheckData = terraformCloudTaskHelper.getPolicyCheckData(url, token, runId);
         terraformCloudTaskHelper.overridePolicy(url, token, policyCheckData, logCallback);
       } else {
-        logCallback.saveExecutionLog(POLICY_OVERRIDE_ERROR_MESSAGE, INFO, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(POLICY_OVERRIDE_ERROR_MESSAGE, INFO, CommandExecutionStatus.RUNNING);
+        try {
+          logCallback.saveExecutionLog(format("Discarding a run: %s", runId), INFO, CommandExecutionStatus.RUNNING);
+          terraformCloudTaskHelper.discardRun(
+              url, token, runId, format("Discard run as [ %s ]", POLICY_OVERRIDE_ERROR_MESSAGE));
+          logCallback.saveExecutionLog(format("Run: %s is discarded", runId), INFO, CommandExecutionStatus.FAILURE);
+        } catch (Exception e) {
+          logCallback.saveExecutionLog(
+              format("Failed to discard run: %s ", runId), INFO, CommandExecutionStatus.FAILURE);
+        }
         throw NestedExceptionUtils.hintWithExplanationException(
             POLICY_OVERRIDE_HINT, POLICY_OVERRIDE_ERROR_MESSAGE, new TerraformCloudException(ERROR_TO_APPLY));
       }
