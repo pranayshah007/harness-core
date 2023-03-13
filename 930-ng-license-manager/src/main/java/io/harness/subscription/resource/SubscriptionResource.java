@@ -199,8 +199,10 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
   retrieveSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(subscriptionService.getSubscription(accountIdentifier));
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+                       @Parameter(required = true, description = "Subscription Identifier for the Entity") @NotNull @PathParam(
+                               SUBSCRIPTION_ID) String subscriptionId) {
+    return ResponseDTO.newResponse(subscriptionService.getSubscription(accountIdentifier, subscriptionId));
   }
 
   @POST

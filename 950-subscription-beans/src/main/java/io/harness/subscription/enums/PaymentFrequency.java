@@ -8,8 +8,8 @@
 package io.harness.subscription.enums;
 
 public enum PaymentFrequency {
-  MONTHLY("monthly"),
-  YEARLY("yearly");
+  MONTHLY("Monthly"),
+  YEARLY("Yearly");
 
   private final String text;
 

@@ -11,6 +11,8 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.subscription.entities.SubscriptionDetail;
 
 import java.util.List;
+
+import io.harness.subscription.enums.PaymentFrequency;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public interface SubscriptionDetailRepository extends CrudRepository<SubscriptionDetail, String> {
   List<SubscriptionDetail> findByAccountIdentifier(String accountIdentifier);
+  List<SubscriptionDetail> findByAccountIdentifierAndPaymentFrequency(String accountIdentifier, String paymentFrequency);
   SubscriptionDetail findBySubscriptionId(String subscriptionId);
   long deleteBySubscriptionId(String subscriptionId);
 }

@@ -37,12 +37,11 @@ public interface StripeHelper {
   Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
   SubscriptionDetailDTO createSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
-  SubscriptionDetailDTO addToSubscription(StripeSubscriptionRequest subscriptionParams, Subscription subscription);
+  SubscriptionDetailDTO addToSubscription(StripeSubscriptionRequest subscriptionParams, SubscriptionDetailDTO subscription);
   SubscriptionDetailDTO updateSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   SubscriptionDetailDTO updateSubscriptionDefaultPayment(StripeSubscriptionRequest stripeSubscriptionRequest);
   void cancelSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   SubscriptionDetailDTO retrieveSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
-  Optional<Subscription> searchSubscription(String accountIdentifier);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
   void payInvoice(String invoiceId);

@@ -19,6 +19,7 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
+import io.harness.subscription.enums.PaymentFrequency;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -45,7 +46,7 @@ public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
 
   @Id @dev.morphia.annotations.Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
-  @NotEmpty protected ModuleType moduleType;
+  protected String paymentFrequency;
   @Trimmed @NotEmpty protected String subscriptionId;
   @Trimmed @NotEmpty protected String customerId;
   protected String status;

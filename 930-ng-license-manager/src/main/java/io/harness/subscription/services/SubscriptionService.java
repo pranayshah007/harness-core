@@ -32,7 +32,7 @@ public interface SubscriptionService {
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId, ModuleType moduleType);
   void cancelAllSubscriptions(String accountIdentifier);
-  SubscriptionDetailDTO getSubscription(String accountIdentifier);
+  SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
   boolean checkSubscriptionExists(String subscriptionId);
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);

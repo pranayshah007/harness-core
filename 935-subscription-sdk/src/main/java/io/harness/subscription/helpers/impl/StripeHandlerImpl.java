@@ -143,13 +143,6 @@ public class StripeHandlerImpl {
     }
   }
 
-  SubscriptionSearchResult searchSubscriptions(SubscriptionSearchParams subscriptionSearchParams) {
-    try {
-      return Subscription.search(subscriptionSearchParams);
-    } catch (StripeException e) {
-      throw new InvalidRequestException("Unable to list subscriptions", e);
-    }
-  }
   PriceSearchResult searchPrices(PriceSearchParams priceSearchParams) {
     try {
       return Price.search(priceSearchParams);
