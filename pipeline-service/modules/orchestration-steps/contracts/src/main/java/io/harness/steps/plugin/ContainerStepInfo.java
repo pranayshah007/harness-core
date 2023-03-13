@@ -69,7 +69,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
 public class ContainerStepInfo extends ContainerBaseStepInfo
-    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters, IContainerStepSpec {
+    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters, ContainerStepSpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

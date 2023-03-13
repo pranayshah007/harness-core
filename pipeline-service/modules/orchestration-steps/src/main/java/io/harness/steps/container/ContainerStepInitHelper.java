@@ -62,7 +62,7 @@ import io.harness.steps.container.utils.ContainerStepResolverUtils;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.container.utils.SecretUtils;
 import io.harness.steps.plugin.ContainerStepInfo;
-import io.harness.steps.plugin.IContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
@@ -94,7 +94,7 @@ public class ContainerStepInitHelper {
   @Inject SecretUtils secretUtils;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
-      IContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
+      ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
     ContainerStepInfra infra = containerStepInfo.getInfrastructure();
     if (infra == null) {
       throw new ContainerStepExecutionException("Input infrastructure can not be empty");
@@ -114,7 +114,7 @@ public class ContainerStepInitHelper {
     return buildK8DirectTaskParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix);
   }
 
-  private CIK8InitializeTaskParams buildK8DirectTaskParams(IContainerStepSpec containerStepInfo,
+  private CIK8InitializeTaskParams buildK8DirectTaskParams(ContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra infrastructure, Ambiance ambiance,
       String logPrefix) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -128,7 +128,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(IContainerStepSpec containerStepInfo,
+  private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
@@ -172,7 +172,7 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(IContainerStepSpec containerStepInfo,
+  private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStepContainers(ContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra infrastructure, Ambiance ambiance,
       List<PodVolume> volumes, String logPrefix) {
     Map<String, String> volumeToMountPath = k8sPodInitUtils.getVolumeToMountPath(volumes);
@@ -212,7 +212,7 @@ public class ContainerStepInitHelper {
     return Pair.of(setupAddOnContainerParams, containerParams);
   }
 
-  private List<ContainerDefinitionInfo> getContainerDefinitionInfos(IContainerStepSpec containerStepInfo,
+  private List<ContainerDefinitionInfo> getContainerDefinitionInfos(ContainerStepSpec containerStepInfo,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       OSType os, NGAccess ngAccess, Map<String, String> commonEnvVars, ConnectorDetails harnessInternalImageConnector,
       List<SecretVariableDetails> secretVariableDetails, List<CIK8ContainerParams> containerParams) {
@@ -337,7 +337,7 @@ public class ContainerStepInitHelper {
   }
 
   private List<ContainerDefinitionInfo> getStepContainerDefinitions(
-      IContainerStepSpec initializeStepInfo, ContainerK8sInfra infrastructure, Ambiance ambiance) {
+      ContainerStepSpec initializeStepInfo, ContainerK8sInfra infrastructure, Ambiance ambiance) {
     OSType os = k8sPodInitUtils.getOS(infrastructure);
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
@@ -376,7 +376,7 @@ public class ContainerStepInitHelper {
   }
 
   private ContainerDefinitionInfo createStepContainerDefinitions(
-      IContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
+      ContainerStepSpec containerStepInfo, PortFinder portFinder, String accountId, OSType os) {
     switch (containerStepInfo.getType()) {
       case RUN_CONTAINER:
         return createStepContainerDefinition((ContainerStepInfo) containerStepInfo, portFinder, accountId, os);

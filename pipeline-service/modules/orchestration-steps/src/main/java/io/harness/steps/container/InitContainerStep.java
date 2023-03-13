@@ -40,7 +40,7 @@ import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepInfo;
-import io.harness.steps.plugin.IContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -123,7 +123,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     String logPrefix = getLogPrefix(ambiance);
-    IContainerStepSpec containerStepInfo = (IContainerStepSpec) stepElementParameters.getSpec();
+    ContainerStepSpec containerStepInfo = (ContainerStepSpec) stepElementParameters.getSpec();
     CIInitializeTaskParams buildSetupTaskParams =
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();

@@ -11,7 +11,7 @@ import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public interface IContainerStepSpec {
+public interface ContainerStepSpec {
   void setName(String name);
   void setIdentifier(String identifier);
   ContainerStepInfra getInfrastructure();
