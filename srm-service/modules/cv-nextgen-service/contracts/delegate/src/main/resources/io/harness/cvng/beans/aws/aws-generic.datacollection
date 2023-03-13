@@ -1,2 +1,2 @@
-Var response = sync-call-aws(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, awsQueryParams=Env:queryMap)
+Var response = sync-call-aws(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, method=GET, region=Env:region, serviceName=Env:serviceName, secretAccessKey=Env:awsSecretKey, accessKeyId=Env:awsAccessKey, securityToken=Env:awsSecurityToken, awsQueryParams=Env:queryMap)
 return Var:response

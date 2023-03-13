@@ -35,4 +35,12 @@ public class Attributes {
   @JsonProperty("target-addrs") private List<String> targets;
   @JsonProperty("has-changes") private boolean hasChanges;
   List<Variable> variables;
+  private Actions actions;
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  @Builder
+  @lombok.Data
+  public static class Actions {
+    @JsonProperty("is-confirmable") boolean isConfirmable;
+    @JsonProperty("is-discardable") boolean isDiscardable;
+  }
 }

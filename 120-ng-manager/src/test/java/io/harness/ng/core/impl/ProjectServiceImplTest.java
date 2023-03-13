@@ -43,7 +43,6 @@ import static org.springframework.data.domain.Pageable.unpaged;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -81,6 +80,7 @@ import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -107,6 +107,7 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -443,9 +444,9 @@ public class ProjectServiceImplTest extends CategoryTest {
             .userId(user)
             .scope(Scope.builder().accountIdentifier("accId1").orgIdentifier("orgId2").projectIdentifier("id2").build())
             .build();
-    doReturn(new PageImpl<>(Arrays.asList(userMembership1, userMembership2)))
+    doReturn(createCloseableIterator(Arrays.asList(userMembership1, userMembership2).iterator()))
         .when(ngUserService)
-        .listUserMemberships(any(), any());
+        .streamUserMemberships(any());
     doReturn(projects).when(projectService).list(any());
     doReturn(new PageImpl<>(projects, Pageable.unpaged(), 100)).when(projectRepository).findAll(any(), any());
     PageResponse<ProjectDTO> projectsResponse =
@@ -479,9 +480,9 @@ public class ProjectServiceImplTest extends CategoryTest {
             .userId(user)
             .scope(Scope.builder().accountIdentifier("accId1").orgIdentifier("orgId2").projectIdentifier("id2").build())
             .build();
-    doReturn(new PageImpl<>(Arrays.asList(userMembership1, userMembership2)))
+    doReturn(createCloseableIterator(Arrays.asList(userMembership1, userMembership2).iterator()))
         .when(ngUserService)
-        .listUserMemberships(any(), any());
+        .streamUserMemberships(any());
     doReturn(projects).when(projectService).list(any());
     doReturn(projects).when(projectRepository).findAll((Criteria) any());
     List<ProjectDTO> projectsResponse = projectService.listProjectsForUser(user, "account");
@@ -548,5 +549,22 @@ public class ProjectServiceImplTest extends CategoryTest {
     verify(projectRepository, times(1))
         .findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
             accountIdentifier, orgIdentifier, projectIdentifier, true);
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

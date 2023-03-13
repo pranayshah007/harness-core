@@ -56,7 +56,7 @@ public class IACMServiceUtils {
   public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
     Call<JsonObject> connectorCall =
-        iacmServiceClient.getStackInfo(org, projectId, stackID, generateJWTToken(), accountId);
+        iacmServiceClient.getStackInfo(org, projectId, stackID, generateJWTToken(accountId, org, projectId), accountId);
 
     Response<JsonObject> response;
 
@@ -117,9 +117,9 @@ public class IACMServiceUtils {
         log.error("Could not read error body {}", response.errorBody());
       }
 
-      throw new GeneralException(String.format(
-          "Could not fetch token from IACM service. status code = %s, message = %s, response = %s", response.code(),
-          response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
+      throw new GeneralException(
+          String.format("Could not fetch token from IACM service. status code = %s, message = %s, response = %s",
+              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
     }
 
     if (response.body() == null) {
@@ -130,8 +130,8 @@ public class IACMServiceUtils {
 
   public StackVariables[] getIacmStackEnvs(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating request to IACM service for env retrieval: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonArray> connectorCall =
-        iacmServiceClient.getStackVariables(org, projectId, stackID, generateJWTToken(), accountId);
+    Call<JsonArray> connectorCall = iacmServiceClient.getStackVariables(
+        org, projectId, stackID, generateJWTToken(accountId, org, projectId), accountId);
     Response<JsonArray> response;
 
     try {
@@ -181,7 +181,8 @@ public class IACMServiceUtils {
                                                  .pipeline_stage_execution_id(ambiance.getStageExecutionId())
                                                  .project_id(ngAccess.getProjectIdentifier())
                                                  .stack_id(stackId)
-                                                 .token(generateJWTToken())
+                                                 .token(generateJWTToken(ngAccess.getAccountIdentifier(),
+                                                     ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()))
                                                  .build();
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     try {
@@ -208,7 +209,9 @@ public class IACMServiceUtils {
                               .build();
 
     Call<JsonObject> connectorCall = iacmServiceClient.postIACMExecution(ngAccess.getOrgIdentifier(),
-        ngAccess.getProjectIdentifier(), execution, generateJWTToken(), ngAccess.getAccountIdentifier());
+        ngAccess.getProjectIdentifier(), execution,
+        generateJWTToken(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()),
+        ngAccess.getAccountIdentifier());
     Response<JsonObject> response;
 
     try {
@@ -233,8 +236,9 @@ public class IACMServiceUtils {
     }
   }
 
-  private String generateJWTToken() {
-    return JWTTokenServiceUtils.generateJWTToken(ImmutableMap.of("type", "APIKey", "name", "IACM"),
+  private String generateJWTToken(String accountId, String orgId, String projectId) {
+    return JWTTokenServiceUtils.generateJWTToken(
+        ImmutableMap.of("accountId", accountId, "orgId", orgId, "projectId", projectId),
         minutes(120).toStandardDuration().getMillis(), iacmServiceConfig.getGlobalToken());
   }
 }

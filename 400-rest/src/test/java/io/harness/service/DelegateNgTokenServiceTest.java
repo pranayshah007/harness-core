@@ -8,9 +8,12 @@
 package io.harness.service;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -32,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.DEL)
@@ -42,6 +47,7 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
   @Inject private HPersistence persistence;
   @Inject private OutboxService outboxService;
   @InjectMocks @Inject private DelegateNgTokenServiceImpl delegateNgTokenService;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Before
   public void setUp() {
@@ -120,6 +126,7 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     DelegateTokenDetails delegateTokenDetails =
         delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName2, null);
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
     String result = delegateNgTokenService.getDelegateTokenValue(TEST_ACCOUNT_ID, tokenName1);
     assertThat(result).isEqualTo(decodeBase64ToString(delegateTokenDetails.getValue()));
   }
@@ -144,5 +151,15 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
         delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
     DelegateTokenDetails result = delegateNgTokenService.upsertDefaultToken(TEST_ACCOUNT_ID, null, true);
     assertThat(result.getValue()).isEqualTo(delegateTokenDetails.getValue());
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegateTokensEncryptedTokenId() {
+    String tokenName1 = delegateNgTokenService.getDefaultTokenName(null);
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
+    assertThat(delegateNgTokenService.getDelegateTokenValue(TEST_ACCOUNT_ID, tokenName1)).isNotNull();
   }
 }

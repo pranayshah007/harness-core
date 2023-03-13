@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import static java.lang.String.format;
 
@@ -61,13 +62,15 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
     return response;
   }
 
-  private void validateStrategy(StrategyConfig strategy) {
-    if (strategy != null
-        && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
-            || (strategy.getParallelism() != null
-                && (strategy.getParallelism().getValue() != null
-                    || strategy.getParallelism().getExpressionValue() != null))
-            || strategy.getRepeat() == null || ParameterField.isNull(strategy.getRepeat().getItems()))) {
+  private void validateStrategy(ParameterField<StrategyConfig> strategy) {
+    if (isNotNull(strategy) && strategy.getValue() != null
+        && ((isNotNull(strategy.getValue().getMatrixConfig())
+                && strategy.getValue().getMatrixConfig().getValue() != null)
+            || (strategy.getValue().getParallelism() != null
+                && (strategy.getValue().getParallelism().getValue() != null
+                    || strategy.getValue().getParallelism().getExpressionValue() != null))
+            || strategy.getValue().getRepeat() == null
+            || ParameterField.isNull(strategy.getValue().getRepeat().getItems()))) {
       throw new InvalidYamlException("Command step support repeat strategy with items syntax.");
     }
   }

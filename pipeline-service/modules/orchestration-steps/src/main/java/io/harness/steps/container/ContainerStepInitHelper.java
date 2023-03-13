@@ -384,7 +384,7 @@ public class ContainerStepInitHelper {
     }
     String identifier = runStepInfo.getIdentifier().replace("_", "");
     Integer port = portFinder.getNextPort();
-    String containerName = format("%s%s", STEP_PREFIX, identifier);
+    String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
     Map<String, String> stepEnvVars = new HashMap<>();
     Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameter(

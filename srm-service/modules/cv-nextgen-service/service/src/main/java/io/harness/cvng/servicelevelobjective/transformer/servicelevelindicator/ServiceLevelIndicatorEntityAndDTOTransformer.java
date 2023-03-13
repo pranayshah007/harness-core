@@ -11,6 +11,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -18,8 +19,7 @@ import java.util.Map;
 public class ServiceLevelIndicatorEntityAndDTOTransformer {
   @Inject private Map<String, ServiceLevelIndicatorTransformer> serviceLevelIndicatorFQDITransformerMapBinder;
 
-  @Inject
-  private Map<String, ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
+  @Inject private Map<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
 
   public ServiceLevelIndicator getEntity(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
       String monitoredServiceIndicator, String healthSourceIndicator, boolean isEnabled) {

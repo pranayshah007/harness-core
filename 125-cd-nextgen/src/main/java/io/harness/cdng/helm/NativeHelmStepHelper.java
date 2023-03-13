@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -269,7 +270,17 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
           "There can be only a single manifest. Select one from " + String.join(", ", HELM_SUPPORTED_MANIFEST_TYPES),
           USER);
     }
-    return helmManifests.get(0);
+
+    ManifestOutcome helmChartManifest = helmManifests.get(0);
+    if (ManifestStoreType.HARNESS.equals(helmChartManifest.getStore().getKind())) {
+      if (manifestOutcomes.stream().anyMatch(
+              manifestOutcome -> ManifestStoreType.InheritFromManifest.equals(manifestOutcome.getStore().getKind()))) {
+        throw new InvalidRequestException(format(
+            "InheritFromManifest store type is not supported with Manifest identifier: %s, Manifest type: %s, Manifest store type: %s",
+            helmChartManifest.getIdentifier(), helmChartManifest.getType(), helmChartManifest.getStore().getKind()));
+      }
+    }
+    return helmChartManifest;
   }
 
   private List<ManifestOutcome> getOrderedManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {

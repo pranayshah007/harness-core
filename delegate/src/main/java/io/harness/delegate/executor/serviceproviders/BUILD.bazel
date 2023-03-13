@@ -11,15 +11,19 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//890-sm-delegate/src/main/java/io/harness/secrets:module",
         "//920-delegate-agent-beans:module",
         "//920-delegate-agent-beans/src/main/proto:920_delegate_agent_beans_java_proto",
         "//930-delegate-tasks:module",
+        "//931-encryption-service/src/java/io/harness/secrets:module",
         "//950-delegate-tasks-beans:module",
         "//957-cg-beans:module",
         "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog:module",
         "//957-cg-beans/src/main/java/software/wings/verification:module",
         "//959-file-service-commons/src/main/java/io/harness/delegate/beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "@maven//:com_google_inject_guice",
+        "@maven//:org_hibernate_validator_hibernate_validator",
     ],
 )
 

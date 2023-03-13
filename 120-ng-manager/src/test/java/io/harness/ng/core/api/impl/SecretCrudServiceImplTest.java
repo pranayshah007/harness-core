@@ -15,10 +15,12 @@ import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.VLAD;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
@@ -63,6 +65,7 @@ import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
@@ -88,6 +91,7 @@ import com.amazonaws.util.StringInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -897,6 +901,52 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.of(Secret.builder().build()));
     secretCrudService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTO);
     verify(ngSecretServiceV2, times(1)).get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldPassSecretDtoValidation() {
+    List<WinRmCommandParameter> parameters =
+        Arrays.asList(WinRmCommandParameter.builder().parameter("name").value("value").build());
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.WinRmCredentials)
+                                  .spec(WinRmCredentialsSpecDTO.builder().parameters(parameters).build())
+                                  .build();
+    assertThatCode(() -> secretCrudService.validateSecretDtoSpec(secretDTOV2)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldPassSecretDtoValidationEmptyParameters() {
+    List<WinRmCommandParameter> parameters = Arrays.asList(WinRmCommandParameter.builder().build());
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.WinRmCredentials)
+                                  .spec(WinRmCredentialsSpecDTO.builder().parameters(parameters).build())
+                                  .build();
+    assertThatCode(() -> secretCrudService.validateSecretDtoSpec(secretDTOV2)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void shouldFailSecretDtoValidation() {
+    List<WinRmCommandParameter> parameters =
+        Arrays.asList(WinRmCommandParameter.builder().parameter("name1").value("value1").build(),
+            WinRmCommandParameter.builder().parameter("name1").value("value2").build(),
+            WinRmCommandParameter.builder().parameter("name2").value("value1").build(),
+            WinRmCommandParameter.builder().parameter("name2").value("value2").build(),
+            WinRmCommandParameter.builder().parameter("name3").value("value1").build(),
+            WinRmCommandParameter.builder().parameter("name3").value("value2").build());
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.WinRmCredentials)
+                                  .spec(WinRmCredentialsSpecDTO.builder().parameters(parameters).build())
+                                  .build();
+
+    assertThatThrownBy(() -> secretCrudService.validateSecretDtoSpec(secretDTOV2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Command parameter names must be unique, however duplicate(s) found: name1, name2, name3");
   }
 
   private void verifyForSuperSubScope(Criteria expectedCriteria, Criteria resultCriteria, String orgId,

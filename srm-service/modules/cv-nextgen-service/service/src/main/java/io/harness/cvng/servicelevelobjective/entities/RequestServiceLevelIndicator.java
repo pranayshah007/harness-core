@@ -85,13 +85,9 @@ public class RequestServiceLevelIndicator extends ServiceLevelIndicator {
     public void setUpdateOperations(UpdateOperations<RequestServiceLevelIndicator> updateOperations,
         RequestServiceLevelIndicator requestServiceLevelIndicator) {
       setCommonOperations(updateOperations, requestServiceLevelIndicator);
-      updateOperations
-          .set(RequestServiceLevelIndicator.RequestServiceLevelIndicatorKeys.eventType,
-              requestServiceLevelIndicator.getEventType())
-          .set(RequestServiceLevelIndicator.RequestServiceLevelIndicatorKeys.metric1,
-              requestServiceLevelIndicator.getMetric1())
-          .set(RequestServiceLevelIndicator.RequestServiceLevelIndicatorKeys.metric2,
-              requestServiceLevelIndicator.getMetric2());
+      updateOperations.set(RequestServiceLevelIndicatorKeys.eventType, requestServiceLevelIndicator.getEventType())
+          .set(RequestServiceLevelIndicatorKeys.metric1, requestServiceLevelIndicator.getMetric1())
+          .set(RequestServiceLevelIndicatorKeys.metric2, requestServiceLevelIndicator.getMetric2());
     }
   }
 }

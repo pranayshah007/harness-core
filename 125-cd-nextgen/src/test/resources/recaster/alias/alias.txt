@@ -822,3 +822,6 @@ io.harness.cdng.bamboo.BambooBuildSpecParameters
 io.harness.cdng.bamboo.BambooBuildStepNode
 io.harness.cdng.pipeline.stepinfo.BambooBuildStepInfo
 io.harness.cdng.bamboo.BambooBuildOutcome
+io.harness.cdng.infra.yaml.K8sAwsInfrastructure
+io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome
+io.harness.cdng.infra.beans.K8sAwsInfraMapping

@@ -48,6 +48,7 @@ public class UserInfo {
   boolean externallyManaged;
   String givenName;
   String familyName;
+  String externalId;
   long createdAt;
   long lastUpdatedAt;
 

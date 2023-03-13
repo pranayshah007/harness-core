@@ -53,4 +53,5 @@ public class TerraformExecuteStepRequest {
   boolean isTfPlanDestroy;
   String accountId;
   boolean isTerraformCloudCli;
+  boolean skipTerraformRefresh; // NG
 }

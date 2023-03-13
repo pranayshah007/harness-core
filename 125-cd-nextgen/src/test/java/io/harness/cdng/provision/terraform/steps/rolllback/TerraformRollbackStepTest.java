@@ -124,8 +124,10 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testObtainTaskDestroyScenario() {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
-    TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+    TerraformRollbackStepParameters rollbackSpec = TerraformRollbackStepParameters.builder()
+                                                       .provisionerIdentifier(ParameterField.createValueField("id"))
+                                                       .skipRefreshCommand(ParameterField.createValueField(true))
+                                                       .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -161,6 +163,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test
@@ -169,8 +172,10 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testObtainTaskApplyScenario() {
     Ambiance ambiance =
         Ambiance.newBuilder().setPlanExecutionId("executionId").putSetupAbstractions("accountId", "accId").build();
-    TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+    TerraformRollbackStepParameters rollbackSpec = TerraformRollbackStepParameters.builder()
+                                                       .provisionerIdentifier(ParameterField.createValueField("id"))
+                                                       .skipRefreshCommand(ParameterField.createValueField(true))
+                                                       .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
@@ -207,6 +212,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test

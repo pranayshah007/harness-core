@@ -105,16 +105,22 @@ public class MonitoringSourcePerpetualTaskServiceImpl
             .filter(MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, monitoringSourceIdentifier)
             .asList();
 
-    monitoringSourcePerpetualTasks.forEach(monitoringSourcePerpetualTask -> {
-      if (isNotEmpty(monitoringSourcePerpetualTask.getPerpetualTaskId())) {
-        deletePerpetualTasks(
-            accountId, monitoringSourcePerpetualTask.getPerpetualTaskId(), monitoringSourcePerpetualTask.isDemo());
-      }
-      hPersistence.delete(monitoringSourcePerpetualTask);
-    });
-    log.info(String.format(
-        "Deleted Monitoring Source perpetual task for monitored service identifier %s, accountIdentifier %s, orgIdentifier %s, projectIdentifier: %s",
-        monitoringSourceIdentifier, accountId, orgIdentifier, projectIdentifier));
+    deleteTasks(accountId, monitoringSourcePerpetualTasks);
+  }
+
+  @Override
+  public void deleteTask(String accountId, String orgIdentifier, String projectIdentifier,
+      String monitoringSourceIdentifier, String connectorIdentfier) {
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class, excludeAuthority)
+            .filter(MonitoringSourcePerpetualTaskKeys.accountId, accountId)
+            .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier)
+            .filter(MonitoringSourcePerpetualTaskKeys.projectIdentifier, projectIdentifier)
+            .filter(MonitoringSourcePerpetualTaskKeys.monitoringSourceIdentifier, monitoringSourceIdentifier)
+            .filter(MonitoringSourcePerpetualTaskKeys.connectorIdentifier, connectorIdentfier)
+            .asList();
+
+    deleteTasks(accountId, monitoringSourcePerpetualTasks);
   }
 
   @Override
@@ -253,5 +259,21 @@ public class MonitoringSourcePerpetualTaskServiceImpl
     } else {
       verificationManagerService.deletePerpetualTask(accountId, perpetualTaskId);
     }
+  }
+
+  private void deleteTasks(String accountId, List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks) {
+    monitoringSourcePerpetualTasks.forEach(monitoringSourcePerpetualTask -> {
+      if (isNotEmpty(monitoringSourcePerpetualTask.getPerpetualTaskId())) {
+        deletePerpetualTasks(
+            accountId, monitoringSourcePerpetualTask.getPerpetualTaskId(), monitoringSourcePerpetualTask.isDemo());
+      }
+      hPersistence.delete(monitoringSourcePerpetualTask);
+      log.info(String.format(
+          "Deleted Monitoring Source perpetual task for monitoring source identifier %s, accountIdentifier %s, "
+              + "orgIdentifier %s, projectIdentifier: %s, connectorIdentifier:%s, verificationType:%s",
+          monitoringSourcePerpetualTask.getMonitoringSourceIdentifier(), accountId,
+          monitoringSourcePerpetualTask.getOrgIdentifier(), monitoringSourcePerpetualTask.getProjectIdentifier(),
+          monitoringSourcePerpetualTask.getConnectorIdentifier(), monitoringSourcePerpetualTask.getVerificationType()));
+    });
   }
 }

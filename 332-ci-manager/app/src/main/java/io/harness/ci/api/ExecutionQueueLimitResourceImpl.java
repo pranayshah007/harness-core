@@ -12,12 +12,10 @@ import io.harness.ci.pipeline.executions.beans.ExecutionQueueLimitResource;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;
-import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import java.util.Optional;
 
-@NextGenManagerAuth
 public class ExecutionQueueLimitResourceImpl implements ExecutionQueueLimitResource {
   @Inject ExecutionQueueLimitRepository executionQueueLimitRepository;
 

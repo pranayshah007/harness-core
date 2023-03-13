@@ -8,7 +8,6 @@
 package io.harness.beans.stages;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;

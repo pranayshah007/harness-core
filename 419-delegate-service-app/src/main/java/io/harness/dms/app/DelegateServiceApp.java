@@ -11,7 +11,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.resources.DummyResource;
+import io.harness.delegate.resources.DelegateServiceVersionInfoResource;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.dms.health.DelegateServiceHealthResource;
 import io.harness.dms.module.DelegateServiceModule;
@@ -73,7 +73,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
   }
 
   private void registerResources(Environment environment, Injector injector) {
-    environment.jersey().register(injector.getInstance(DummyResource.class));
+    environment.jersey().register(injector.getInstance(DelegateServiceVersionInfoResource.class));
     environment.jersey().register(injector.getInstance(DelegateServiceHealthResource.class));
   }
 

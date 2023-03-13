@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 public interface NGRegexValidatorConstants {
   String IDENTIFIER_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$";
   String PIPELINE_IDENTIFIER_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$";
+  String NON_EMPTY_STRING_PATTERN = "^(?=\\s*\\S).*$";
   String VARIABLE_NAME_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$";
   String NAME_PATTERN = "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$";
   String TIMEOUT_PATTERN =
