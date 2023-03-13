@@ -29,7 +29,7 @@ public class IdentifierRefHelper {
   public final String IDENTIFIER_REF_DELIMITER = "\\."; // check if this is the correct delimiter
   public static final int MAX_RESULT_THRESHOLD_FOR_SPLIT = 2;
   private static final String GENERIC_IDENTIFIER_REFERENCE_HELP =
-      "Valid references must be one of the following formats { id, org.id, account.id }  for scope { project, organisation, account } respectively";
+      "Valid references must be one of the following formats [ id, org.id, account.id ]  for scope [ project, organisation, account ] respectively";
 
   public IdentifierRef createIdentifierRefWithUnknownScope(String accountId, String orgIdentifier,
       String projectIdentifier, String unknownIdentifier, Map<String, String> metadata) {
