@@ -60,8 +60,10 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
+  @JsonProperty("managerServiceSecret") private String managerServiceSecret;
   @JsonProperty("backstageHttpClientConfig") private ServiceHttpClientConfig backstageHttpClientConfig;
   @JsonProperty("backstageServiceSecret") private String backstageServiceSecret;
   @JsonProperty("idpServiceSecret") private String idpServiceSecret;

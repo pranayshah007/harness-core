@@ -793,13 +793,6 @@ if [[ "" != "$DELEGATE_REDIS_URL" ]]; then
   export DELEGATE_REDIS_URL; yq -i '.redisDelegateConfig.redisUrl=env(DELEGATE_REDIS_URL)' $CONFIG_FILE
 fi
 
-if [[ "$REDIS_SENTINEL" == "true" ]]; then
-  yq -i '.redisLockConfig.sentinel=true' $CONFIG_FILE
-  yq -i '.redisDelegateConfig.sentinel=true' $CONFIG_FILE
-  yq -i '.redisAtmosphereConfig.sentinel=true' $CONFIG_FILE
-  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
-fi
-
 if [[ "" != "$REDIS_MASTER_NAME" ]]; then
   export REDIS_MASTER_NAME; yq -i '.redisLockConfig.masterName=env(REDIS_MASTER_NAME)' $CONFIG_FILE
   export REDIS_MASTER_NAME; yq -i '.redisDelegateConfig.masterName=env(REDIS_MASTER_NAME)' $CONFIG_FILE
@@ -827,39 +820,60 @@ fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.redisLockConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
-  export REDIS_ENV_NAMESPACE; yq -i '.redisDelegateConfig.envNamespace=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
+  export REDIS_NETTY_THREADS; yq -i '.redisDelegateConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.redisAtmosphereConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
-
-  export REDIS_NETTY_THREADS; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_NETTY_THREADS; yq -i '.sentinelServersConfig.masterConnectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+    export REDIS_NETTY_THREADS; yq -i '.sentinelServersConfig.slaveConnectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_NETTY_THREADS; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisLockConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisDelegateConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisAtmosphereConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_CONNECTION_POOL_SIZE; yq -i '.sentinelServersConfig.masterConnectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+    export REDIS_CONNECTION_POOL_SIZE; yq -i '.sentinelServersConfig.slaveConnectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then
   export REDIS_RETRY_INTERVAL; yq -i '.redisLockConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $CONFIG_FILE
   export REDIS_RETRY_INTERVAL; yq -i '.redisDelegateConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $CONFIG_FILE
   export REDIS_RETRY_INTERVAL; yq -i '.redisAtmosphereConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $CONFIG_FILE
-  export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_RETRY_INTERVAL; yq -i '.sentinelServersConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_RETRY_INTERVAL; yq -i '.singleServerConfig.retryInterval=env(REDIS_RETRY_INTERVAL)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_RETRY_ATTEMPTS" ]]; then
   export REDIS_RETRY_ATTEMPTS; yq -i '.redisLockConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $CONFIG_FILE
   export REDIS_RETRY_ATTEMPTS; yq -i '.redisDelegateConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $CONFIG_FILE
   export REDIS_RETRY_ATTEMPTS; yq -i '.redisAtmosphereConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $CONFIG_FILE
-  export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_RETRY_ATTEMPTS; yq -i '.sentinelServersConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_RETRY_ATTEMPTS; yq -i '.singleServerConfig.retryAttempts=env(REDIS_RETRY_ATTEMPTS)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_TIMEOUT" ]]; then
   export REDIS_TIMEOUT; yq -i '.redisLockConfig.timeout=env(REDIS_TIMEOUT)' $CONFIG_FILE
   export REDIS_TIMEOUT; yq -i '.redisDelegateConfig.timeout=env(REDIS_TIMEOUT)' $CONFIG_FILE
   export REDIS_TIMEOUT; yq -i '.redisAtmosphereConfig.timeout=env(REDIS_TIMEOUT)' $CONFIG_FILE
-  export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_TIMEOUT; yq -i '.sentinelServersConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_TIMEOUT; yq -i '.singleServerConfig.timeout=env(REDIS_TIMEOUT)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
@@ -871,15 +885,34 @@ fi
 
 if [[ "" != "$REDIS_SUBSCRIPTIONS_PER_CONNECTION" ]]; then
   export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.redisAtmosphereConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $CONFIG_FILE
-  export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.singleServerConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.sentinelServersConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_SUBSCRIPTIONS_PER_CONNECTION; yq -i '.singleServerConfig.subscriptionsPerConnection=env(REDIS_SUBSCRIPTIONS_PER_CONNECTION)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE" ]]; then
-  export REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.subscriptionConnectionPoolSize=env(REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE; yq -i '.sentinelServersConfig.subscriptionConnectionPoolSize=env(REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.subscriptionConnectionPoolSize=env(REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
+  fi
 fi
 
 if [[ "" != "$REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE" ]]; then
-  export REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.singleServerConfig.subscriptionConnectionMinimumIdleSize=env(REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.sentinelServersConfig.subscriptionConnectionMinimumIdleSize=env(REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.singleServerConfig.subscriptionConnectionMinimumIdleSize=env(REDIS_SUBSCRIPTION_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
+  fi
+fi
+
+if [[ "$REDIS_SENTINEL" == "true" ]]; then
+  yq -i '.redisLockConfig.sentinel=true' $CONFIG_FILE
+  yq -i '.redisDelegateConfig.sentinel=true' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.sentinel=true' $CONFIG_FILE
+  yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_NAMESPACE" ]]; then

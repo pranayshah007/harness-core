@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -122,7 +123,7 @@ public class ServiceResource {
   @Path("/batch")
   @ApiOperation(value = "Create Services", nickname = "createServices")
   public ResponseDTO<PageResponse<ServiceResponseDTO>> createServices(@QueryParam("accountId") String accountId,
-      @NotNull @Valid @Max(MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
+      @NotNull @Valid @Size(max = MAX_LIMIT) List<ServiceRequestDTO> serviceRequestDTOs) {
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> {

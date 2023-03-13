@@ -54,7 +54,7 @@ public class Annotation
   private String projectIdentifier;
   @NotNull private String sloIdentifier;
   @Id private String uuid;
-  @NotNull @Size(max = 1000) private String message;
+  @NotNull @Size(min = 1, max = 1000) private String message;
   @NotNull private long startTime;
   @NotNull private long endTime;
   @SchemaIgnore private EmbeddedUser createdBy;

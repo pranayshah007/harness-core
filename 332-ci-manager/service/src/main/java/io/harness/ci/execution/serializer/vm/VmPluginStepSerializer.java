@@ -162,6 +162,9 @@ public class VmPluginStepSerializer {
       }
     }
     pluginStepBuilder.privileged(RunTimeInputHandler.resolveBooleanParameter(pluginStepInfo.getPrivileged(), false));
+    if (pluginStepInfo.getRunAsUser() != null && pluginStepInfo.getRunAsUser().getValue() != null) {
+      pluginStepBuilder.runAsUser(pluginStepInfo.getRunAsUser().getValue().toString());
+    }
     return pluginStepBuilder.build();
   }
 

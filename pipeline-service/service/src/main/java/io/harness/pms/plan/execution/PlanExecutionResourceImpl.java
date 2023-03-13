@@ -61,7 +61,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -145,11 +144,11 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> rerunStagesWithRuntimeInputYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
-      @ResourceIdentifier @NotEmpty String pipelineIdentifier,
-      @NotNull
-
-      String originalExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse,
-      RunStageRequestDTO runStageRequestDTO) {
+      @ResourceIdentifier @NotEmpty String pipelineIdentifier, @NotNull String originalExecutionId,
+      GitEntityFindInfoDTO gitEntityBasicInfo, boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     return ResponseDTO.newResponse(pipelineExecutor.rerunStagesWithRuntimeInputYaml(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId, runStageRequestDTO, false, false));
   }
@@ -162,6 +161,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
             pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, false, false);
@@ -173,9 +175,11 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> rerunPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
-
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
             pipelineIdentifier, moduleType, originalExecutionId, inputSetPipelineYaml, true, false);
@@ -264,6 +268,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
           required = true) boolean useFQNIfErrorResponse,
       @RequestBody(required = true, description = "InputSet reference details") @NotNull
       @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
+    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+      PipelineGitXHelper.setUserFlowContext();
+    }
     PlanExecutionResponseDto planExecutionResponseDto =
         pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgIdentifier, projectIdentifier,
             pipelineIdentifier, moduleType, originalExecutionId, mergeInputSetRequestDTO.getInputSetReferences(),
@@ -421,9 +428,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   }
 
   private void checkIfInterruptIsDeprecated(String accountId, PlanExecutionInterruptType interruptType) {
-    Set<PlanExecutionInterruptType> deprecatedInterrupts = new HashSet<>();
-    deprecatedInterrupts.add(PlanExecutionInterruptType.PAUSE);
-    deprecatedInterrupts.add(PlanExecutionInterruptType.RESUME);
+    Set<PlanExecutionInterruptType> deprecatedInterrupts =
+        Set.of(PlanExecutionInterruptType.PAUSE, PlanExecutionInterruptType.RESUME);
     if (deprecatedInterrupts.contains(interruptType)
         && pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_DEPRECATE_PAUSE_INTERRUPT_NG)) {
       throw new InvalidRequestException(

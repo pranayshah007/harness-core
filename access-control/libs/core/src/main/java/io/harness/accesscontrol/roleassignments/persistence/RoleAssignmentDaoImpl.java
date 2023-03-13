@@ -110,6 +110,18 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
     return roleAssignmentRepository.deleteMulti(createCriteriaFromFilter(roleAssignmentFilter, false));
   }
 
+  @Override
+  public long deleteMulti(String scopeIdentifier, List<String> identifiers) {
+    return roleAssignmentRepository.deleteMulti(createCriteriaForBulkDelete(scopeIdentifier, identifiers));
+  }
+
+  private Criteria createCriteriaForBulkDelete(String scopeIdentifier, List<String> roleAssignmentThatCanBeDeleted) {
+    return Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
+        .is(scopeIdentifier)
+        .and(RoleAssignmentDBOKeys.identifier)
+        .in(roleAssignmentThatCanBeDeleted);
+  }
+
   private Criteria createCriteriaFromFilter(RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
     Criteria criteria = new Criteria();
 

@@ -221,7 +221,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                         -> helmTaskHelperBase.addRepo("vault", "vault", "https://helm-server", "admin",
                             "secret-text".toCharArray(), "/home", V3, 9000L, "", null))
         .withMessageContaining(
-            "Failed to add helm repo. Executed command v3/helm repo add vault https://helm-server --username admin --password *******");
+            "Failed to add helm repo. Exit Code = [1]. Executed command = [v3/helm repo add vault https://helm-server --username admin --password ******* ].");
   }
 
   private void testAddRepoIfProcessExecException() {
@@ -617,7 +617,8 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                            -> helmTaskHelperBase.addChartMuseumRepo(
                                REPO_NAME, REPO_DISPLAY_NAME, port, chartDirectory, V3, timeoutInMillis, "", null))
         .isInstanceOf(HelmClientException.class)
-        .hasMessageContaining("Failed to add helm repo. Executed command");
+        .hasMessageContaining(
+            "Failed to add helm repo. Exit Code = [1]. Executed command = [v3/helm repo add helm_charts http://127.0.0.1:1234 ]. Output: [Something went wrong]");
   }
 
   @Test

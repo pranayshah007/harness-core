@@ -34,7 +34,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
-import io.harness.steps.plugin.IContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
@@ -165,9 +165,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field) {
-    if (field.getStepSpecType() instanceof IContainerStepSpec) {
-      ((IContainerStepSpec) field.getStepSpecType()).setName(field.getName());
-      ((IContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
+    if (field.getStepSpecType() instanceof ContainerStepSpec) {
+      ((ContainerStepSpec) field.getStepSpecType()).setName(field.getName());
+      ((ContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
     }
     return super.createPlanForField(ctx, field);
   }
