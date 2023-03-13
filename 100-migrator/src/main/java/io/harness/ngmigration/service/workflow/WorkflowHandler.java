@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.getRollbackPhases;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
@@ -46,6 +47,7 @@ import io.harness.steps.customstage.CustomStageConfig;
 import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.wait.WaitStepNode;
+import io.harness.when.beans.StageWhenCondition;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
@@ -177,10 +179,16 @@ public abstract class WorkflowHandler {
     return true;
   }
 
+  private static JsonNode getSkipCondition() {
+    StageWhenCondition whenCondition =
+        StageWhenCondition.builder().condition(RUNTIME_INPUT).pipelineStatus(SUCCESS).build();
+    return JsonPipelineUtils.asTree(whenCondition);
+  }
+
   public List<NGVariable> getVariables(Workflow workflow) {
     List<Variable> variables = workflow.getOrchestrationWorkflow().getUserVariables();
     if (EmptyPredicate.isEmpty(variables)) {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
@@ -454,7 +462,7 @@ public abstract class WorkflowHandler {
     return expressions;
   }
 
-  private ParameterField<String> wrapNot(String condition) {
+  public static ParameterField<String> wrapNot(String condition) {
     if (StringUtils.isBlank(condition)) {
       return ParameterField.ofNull();
     }
@@ -569,6 +577,7 @@ public abstract class WorkflowHandler {
                                            .put("spec", getDeploymentStageConfig(context, steps, rollbackSteps))
                                            .put("failureStrategies", getDefaultFailureStrategy())
                                            .put("variables", getVariables(context.getWorkflow()))
+                                           .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }
@@ -612,6 +621,7 @@ public abstract class WorkflowHandler {
                                            .put("spec", customStageConfig)
                                            .put("failureStrategies", getDefaultFailureStrategy())
                                            .put("variables", getVariables(workflow))
+                                           .put("when", getSkipCondition())
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }
@@ -730,6 +740,7 @@ public abstract class WorkflowHandler {
             .put("spec", getDeploymentStageConfig(context, stepGroupWrappers, rollbackStepGroupWrappers))
             .put("failureStrategies", getDefaultFailureStrategy())
             .put("variables", getVariables(context.getWorkflow()))
+            .put("when", getSkipCondition())
             .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }

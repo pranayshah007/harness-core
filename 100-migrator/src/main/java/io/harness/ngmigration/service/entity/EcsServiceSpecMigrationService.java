@@ -31,6 +31,7 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
@@ -98,7 +99,7 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     EcsServiceSpecification serviceSpecification = (EcsServiceSpecification) entities.get(entityId).getEntity();
-    NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities);
+    NGYamlFile yamlFile = getYamlFile(serviceSpecification, inputDTO, entities, migratedEntities);
     if (yamlFile == null) {
       return null;
     }
@@ -106,10 +107,11 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
   }
 
   private NGYamlFile getYamlFile(EcsServiceSpecification serviceSpecification, MigrationInputDTO inputDTO,
-      Map<CgEntityId, CgEntityNode> entities) {
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (StringUtils.isBlank(serviceSpecification.getServiceSpecJson())) {
       return null;
     }
+    MigratorExpressionUtils.render(entities, migratedEntities, serviceSpecification, inputDTO.getCustomExpressions());
     byte[] fileContent = serviceSpecification.getServiceSpecJson().getBytes(StandardCharsets.UTF_8);
     CgEntityNode serviceNode = entities.get(
         CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(serviceSpecification.getServiceId()).build());
@@ -159,8 +161,8 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     return true;
   }
 
-  public List<ManifestConfigWrapper> getServiceSpec(
-      Set<CgEntityId> serviceSpecIds, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
+  public List<ManifestConfigWrapper> getServiceSpec(Set<CgEntityId> serviceSpecIds, MigrationInputDTO inputDTO,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (isEmpty(serviceSpecIds)) {
       return new ArrayList<>();
     }
@@ -169,7 +171,7 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         EcsServiceSpecification specification = (EcsServiceSpecification) configNode.getEntity();
-        NGYamlFile file = getYamlFile(specification, inputDTO, entities);
+        NGYamlFile file = getYamlFile(specification, inputDTO, entities, migratedEntities);
         if (file != null) {
           manifestConfigWrappers.add(getConfigFileWrapper(specification, file));
         }

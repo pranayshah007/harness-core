@@ -36,6 +36,7 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
@@ -64,10 +65,13 @@ import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
+import software.wings.beans.TemplateExpression;
 import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -83,6 +87,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +96,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
@@ -364,14 +371,15 @@ public class PipelineMigrationService extends NgMigrationService {
 
     String stageServiceRef = RUNTIME_INPUT;
     JsonNode serviceInputs = null;
-    if (StringUtils.isNotBlank(getServiceId(workflow))) {
-      CgEntityId serviceEntityId = CgEntityId.builder().id(getServiceId(workflow)).type(SERVICE).build();
+    String serviceId = getServiceId(workflow, stageElement);
+    if (StringUtils.isNotBlank(serviceId)) {
+      CgEntityId serviceEntityId = CgEntityId.builder().id(serviceId).type(SERVICE).build();
       if (migratedEntities.containsKey(serviceEntityId)) {
         NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
+        stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
         serviceInputs = migrationTemplateUtils.getServiceInput(serviceDetails, accountId);
         if (serviceInputs != null) {
           serviceInputs = serviceInputs.get("serviceInputs");
-          stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
         }
       }
     }
@@ -408,12 +416,39 @@ public class PipelineMigrationService extends NgMigrationService {
 
     JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId);
 
+    // Set common runtime inputs
+    if (templateInputs != null) {
+      String whenInput = templateInputs.at("/when/condition").asText();
+      if (RUNTIME_INPUT.equals(whenInput)) {
+        String when = "true";
+        Map<String, Object> properties = stageElement.getProperties();
+        if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disabled")) {
+          boolean disabled = (Boolean) properties.get("disabled");
+          if (Boolean.TRUE.equals(disabled)) {
+            when = "false";
+          }
+        }
+        if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disableAssertion")) {
+          String assertion = (String) properties.get("disableAssertion");
+          if (StringUtils.isNotBlank(assertion)) {
+            assertion = (String) MigratorExpressionUtils.render(entities, migratedEntities, assertion, new HashMap<>());
+            when = WorkflowHandler.wrapNot(assertion).getValue();
+          }
+          ObjectNode whenNode = (ObjectNode) templateInputs.get("when");
+          whenNode.put("condition", when);
+        }
+      }
+    }
+
+    // Set Deployment specific runtime inputs
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
       String serviceRef = templateInputs.at("/spec/service/serviceRef").asText();
       if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(stageServiceRef)) {
         ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
         service.put("serviceRef", stageServiceRef);
-        service.set("serviceInputs", serviceInputs);
+        if (serviceInputs == null) {
+          service.remove("serviceInputs");
+        }
       }
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
       if (RUNTIME_INPUT.equals(envRef)) {
@@ -434,11 +469,70 @@ public class PipelineMigrationService extends NgMigrationService {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
   }
 
-  private String getServiceId(Workflow workflow) {
-    if (workflow == null || EmptyPredicate.isEmpty(workflow.getServices()) || workflow.getServices().size() > 1) {
+  private String getServiceId(Workflow workflow, PipelineStageElement stageElement) {
+    if (workflow == null || EmptyPredicate.isEmpty(workflow.getServices())) {
       return null;
     }
-    return workflow.getServices().get(0).getUuid();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhases())
+        || orchestrationWorkflow.getWorkflowPhases().size() > 1) {
+      return null;
+    }
+    WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);
+    String serviceExpression = getExpression(workflowPhase, "serviceId");
+    Map<String, String> workflowVariables = MapUtils.emptyIfNull(stageElement.getWorkflowVariables());
+    if (StringUtils.isBlank(serviceExpression)) {
+      return workflowPhase.getServiceId();
+    }
+    String serviceId = workflowVariables.get(serviceExpression);
+    if (StringUtils.isNotBlank(serviceId) && !isExpression(serviceId)) {
+      return serviceId;
+    }
+    return null;
+  }
+
+  private String getInfra(Workflow workflow, PipelineStageElement stageElement) {
+    if (workflow == null) {
+      return null;
+    }
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (EmptyPredicate.isEmpty(orchestrationWorkflow.getWorkflowPhases())
+        || orchestrationWorkflow.getWorkflowPhases().size() > 1) {
+      return null;
+    }
+    WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);
+    String infraExpression = getExpression(workflowPhase, "infraDefinitionId");
+    Map<String, String> workflowVariables = MapUtils.emptyIfNull(stageElement.getWorkflowVariables());
+    if (StringUtils.isBlank(infraExpression)) {
+      return workflowPhase.getInfraDefinitionId();
+    }
+    String infraId = workflowVariables.get(infraExpression);
+    if (StringUtils.isNotBlank(infraId) && !isExpression(infraId)) {
+      return infraId;
+    }
+    return null;
+  }
+
+  private static String getExpression(WorkflowPhase workflowPhase, String field) {
+    List<TemplateExpression> templateExpressions =
+        ListUtils.defaultIfNull(workflowPhase.getTemplateExpressions(), new ArrayList<>());
+    return templateExpressions.stream()
+        .filter(te -> StringUtils.isNoneBlank(te.getExpression(), te.getFieldName()))
+        .filter(te -> field.equals(te.getFieldName()))
+        .map(TemplateExpression::getExpression)
+        .filter(PipelineMigrationService::isExpression)
+        .map(te -> te.substring(2, te.length() - 1))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private static boolean isExpression(String str) {
+    if (StringUtils.isBlank(str)) {
+      return false;
+    }
+    return str.startsWith("${") && str.endsWith("}");
   }
 
   @Override

@@ -340,7 +340,7 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ManifestConfigWrapper> manifestConfigWrapperList =
         manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities, service);
     List<ManifestConfigWrapper> ecsServiceSpecs =
-        ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities);
+        ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities, migratedEntities);
     List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(taskDefs, inputDTO, entities);
     List<StartupScriptConfiguration> startupScriptConfigurations =
         amiStartupScriptMigrationService.getStartupScriptConfiguration(startupScriptDefs, inputDTO, entities);

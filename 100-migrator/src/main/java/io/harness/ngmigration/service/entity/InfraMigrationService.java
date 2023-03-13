@@ -230,7 +230,8 @@ public class InfraMigrationService extends NgMigrationService {
                                        .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
                                        .collect(Collectors.toSet());
     List<ElastigroupConfiguration> elastigroupConfigurations =
-        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(
+            infraSpecIds, inputDTO, entities, migratedEntities);
 
     Infrastructure infraSpec =
         infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);
