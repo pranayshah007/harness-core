@@ -57,6 +57,7 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.changestreams.controllers.PlgEventConsumerController;
 import io.harness.changestreams.redisconsumers.ModuleLicensesRedisEventConsumer;
+import io.harness.changestreams.redisconsumers.ModuleLicensesSnapshotRedisEventConsumer;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
@@ -667,6 +668,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     PlgEventConsumerController plgEventConsumerController = injector.getInstance(PlgEventConsumerController.class);
     plgEventConsumerController.register(injector.getInstance(ModuleLicensesRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getModuleLicensesStreaming().getThreads());
+    plgEventConsumerController.register(injector.getInstance(ModuleLicensesSnapshotRedisEventConsumer.class),
+        appConfig.getDebeziumConsumersConfigs().getModuleLicensesSnapshot().getThreads());
   }
 
   private void registerYamlSdk(Injector injector) {

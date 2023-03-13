@@ -182,6 +182,8 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  @JsonProperty("eventsFrameworkSnapshotDebezium")
+  private EventsFrameworkConfiguration eventsFrameworkSnapshotConfiguration;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
   @JsonProperty(value = "ngIteratorsConfig") private NgIteratorsConfig ngIteratorsConfig;

@@ -16,4 +16,5 @@ import lombok.Data;
 public class DebeziumConsumersConfig {
   DebeziumConsumerConfig planExecutionsSummaryStreaming;
   DebeziumConsumerConfig moduleLicensesStreaming;
+  DebeziumConsumerConfig moduleLicensesSnapshot;
 }

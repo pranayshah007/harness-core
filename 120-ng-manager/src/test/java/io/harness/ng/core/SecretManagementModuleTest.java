@@ -205,10 +205,12 @@ public class SecretManagementModuleTest extends CategoryTest {
         return mock(FeatureFlagService.class);
       }
     });
-    modules.add(new EventsFrameworkModule(EventsFrameworkConfiguration.builder()
-                                              .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
-                                              .build(),
-        DebeziumConsumersConfig.builder().build()));
+    EventsFrameworkConfiguration eventsFrameworkConfiguration =
+        EventsFrameworkConfiguration.builder()
+            .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
+            .build();
+    modules.add(new EventsFrameworkModule(
+        eventsFrameworkConfiguration, eventsFrameworkConfiguration, DebeziumConsumersConfig.builder().build()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
