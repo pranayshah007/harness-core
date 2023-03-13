@@ -20,6 +20,7 @@ public class OutcomeExpressionConstants {
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
+  public final String ARTIFACT = "artifact";
   public final String MANIFESTS = "manifests";
   public final String INFRASTRUCTURE_OUTCOME = "stage.spec.infrastructure.output";
   public final String INFRASTRUCTURE_GROUP = "infrastructureGroup";

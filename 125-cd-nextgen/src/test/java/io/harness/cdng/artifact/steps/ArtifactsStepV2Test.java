@@ -307,15 +307,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
-    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(expressionResolver, never()).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
-    ArtifactsStepV2SweepingOutput output = captor.getValue();
-
-    assertThat(output.getArtifactConfigMap()).isEmpty();
-    assertThat(output.getPrimaryArtifactTaskId()).isNull();
-    assertThat(response.getCallbackIdsCount()).isEqualTo(0);
+    assertThat(response.getCallbackIdsCount()).isZero();
   }
 
   @Test
