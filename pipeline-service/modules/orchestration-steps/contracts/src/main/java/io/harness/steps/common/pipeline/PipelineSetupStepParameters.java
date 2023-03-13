@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.plancreator.flowcontrol.FlowControlConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.tags.TagUtils;
@@ -47,13 +48,16 @@ public class PipelineSetupStepParameters implements StepParameters {
   ParameterField<Map<String, Object>> properties;
   @SkipAutoEvaluation ParameterField<Map<String, Object>> variables;
 
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
   String executionId;
   int sequenceId;
 
   @Builder(builderMethodName = "newBuilder")
   public PipelineSetupStepParameters(String childNodeID, String name, String identifier, FlowControlConfig flowControl,
       ParameterField<String> description, Map<String, String> tags, NGProperties properties,
-      List<NGVariable> originalVariables, String executionId, int sequenceId) {
+      List<NGVariable> originalVariables, String executionId, int sequenceId,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.childNodeID = childNodeID;
     this.name = name;
     this.identifier = identifier;
@@ -64,6 +68,7 @@ public class PipelineSetupStepParameters implements StepParameters {
     this.variables = ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(originalVariables));
     this.executionId = executionId;
     this.sequenceId = sequenceId;
+    this.delegateSelectors = delegateSelectors;
   }
 
   public static PipelineSetupStepParameters getStepParameters(
@@ -81,6 +86,6 @@ public class PipelineSetupStepParameters implements StepParameters {
     return new PipelineSetupStepParameters(childNodeID, infoConfig.getName(), infoConfig.getIdentifier(),
         infoConfig.getFlowControl(), SdkCoreStepUtils.getParameterFieldHandleValueNull(infoConfig.getDescription()),
         infoConfig.getTags(), infoConfig.getProperties(), infoConfig.getVariables(), ctx.getExecutionUuid(),
-        ctx.getRunSequence());
+        ctx.getRunSequence(), infoConfig.getDelegateSelectors());
   }
 }

@@ -25,12 +25,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class EnvironmentSetupUsagePublisher {
   @Inject @Named(SETUP_USAGE) private Producer producer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
+
   public void publishEnvironmentEntitySetupUsage(EntityDetailProtoDTO referredByEntityDetail,
       Set<EntityDetailProtoDTO> referredEntities, String accountId, Set<String> entityTypeProtoEnums) {
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities =
@@ -47,13 +50,15 @@ public class EnvironmentSetupUsagePublisher {
                                                            .addAllReferredEntities(entityDetailProtoDTOs)
                                                            .setDeleteOldReferredByRecords(true)
                                                            .build();
-      producer.send(
+      String messageId = producer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", accountId,
                   EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
+      log.info("Emitted event with referred by entity with message id {} for entityreference {} and accountId {}",
+          messageId, entityReferenceDTO, accountId);
     }
     if (entityTypeProtoEnums != null) {
       for (String key : entityTypeProtoEnums) {
@@ -62,13 +67,15 @@ public class EnvironmentSetupUsagePublisher {
                                                              .setReferredByEntity(referredByEntityDetail)
                                                              .setDeleteOldReferredByRecords(true)
                                                              .build();
-        producer.send(
+        String messageId = producer.send(
             Message.newBuilder()
                 .putAllMetadata(
                     ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, key,
                         EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                 .setData(entityReferenceDTO.toByteString())
                 .build());
+        log.info("Emitted  event with id {} for entityreference {} and accountId {}", messageId, entityReferenceDTO,
+            accountId);
       }
     }
   }
@@ -79,10 +86,13 @@ public class EnvironmentSetupUsagePublisher {
                                                          .setDeleteOldReferredByRecords(true)
                                                          .build();
     // Send Events for all referredEntitiesType to delete them
-    producer.send(Message.newBuilder()
-                      .putAllMetadata(ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.ACTION,
-                          EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
-                      .setData(entityReferenceDTO.toByteString())
-                      .build());
+    String messageId = producer.send(
+        Message.newBuilder()
+            .putAllMetadata(ImmutableMap.of("accountId", accountId, EventsFrameworkMetadataConstants.ACTION,
+                EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+            .setData(entityReferenceDTO.toByteString())
+            .build());
+    log.info("Emitted delete event with id {} for entityreference {} and accountId {}", messageId, entityReferenceDTO,
+        accountId);
   }
 }

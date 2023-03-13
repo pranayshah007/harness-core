@@ -7,29 +7,26 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import static io.harness.cvng.CVConstants.SLI_METRIC_TYPE;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 
-import io.harness.cvng.servicelevelobjective.beans.slimetricspec.SLIMetricSpec;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+@SuperBuilder
 @Data
-@Builder
-public class ServiceLevelIndicatorSpec {
-  @JsonProperty(SLI_METRIC_TYPE) SLIMetricType type;
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLI_METRIC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      visible = true)
-  @Valid
-  @NotNull
-  SLIMetricSpec spec;
-  SLIMissingDataType sliMissingDataType;
-
-  public SLIMetricType getType() {
-    return spec.getType();
-  }
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = WindowBasedServiceLevelIndicatorSpec.class, name = "Window")
+  , @JsonSubTypes.Type(value = RequestBasedServiceLevelIndicatorSpec.class, name = "Request"),
+})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+public abstract class ServiceLevelIndicatorSpec {
+  @JsonIgnore public abstract SLIExecutionType getType();
 }

@@ -108,6 +108,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
+  String SERVICE_USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
@@ -173,6 +174,7 @@ public interface YamlTypes {
   String INPUTS = "inputs";
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
+  String BAMBOO_BUILD = StepSpecTypeConstants.BAMBOO_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";

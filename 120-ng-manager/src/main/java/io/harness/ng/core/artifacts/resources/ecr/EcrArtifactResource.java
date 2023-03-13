@@ -229,6 +229,9 @@ public class EcrArtifactResource {
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(region)) {
         region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
+        if (isEmpty(region)) {
+          throw new InvalidRequestException("Please input a valid region.");
+        }
       }
       if (isEmpty(ecrConnectorIdentifier)) {
         ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();

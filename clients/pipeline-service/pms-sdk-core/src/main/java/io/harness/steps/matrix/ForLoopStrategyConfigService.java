@@ -253,7 +253,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(harnessForConfig.getMaxConcurrency())) {
-      maxConcurrency = harnessForConfig.getMaxConcurrency().getValue();
+      maxConcurrency = Double.valueOf(String.valueOf(harnessForConfig.getMaxConcurrency().getValue())).intValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }

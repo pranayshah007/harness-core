@@ -96,7 +96,7 @@ public class WinRMCredentialController {
     List<WinRmCommandParameter> parameters = new ArrayList<>();
     for (QLWinRmCommandParameter parameter : commandParameters) {
       WinRmCommandParameter commandParameter =
-          new WinRmCommandParameter(parameter.getParameter(), parameter.getValue());
+          WinRmCommandParameter.builder().parameter(parameter.getParameter()).value(parameter.getValue()).build();
       parameters.add(commandParameter);
     }
     return parameters;

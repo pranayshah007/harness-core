@@ -16,7 +16,6 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
-import static io.harness.beans.steps.CIStepInfoType.SSCA_ORCHESTRATION;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
@@ -92,6 +91,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -191,6 +191,15 @@ public class PluginSettingUtils {
             (SscaOrchestrationStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+    }
+  }
+
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step) {
+    switch (step.getNonYamlInfo().getStepInfoType()) {
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
+      default:
+        return new HashMap<>();
     }
   }
 

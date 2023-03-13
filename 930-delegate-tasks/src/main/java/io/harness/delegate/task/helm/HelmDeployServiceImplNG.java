@@ -204,8 +204,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       prevVersion = getPrevReleaseVersion(helmCliResponse);
 
-      kubernetesConfig =
-          containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequest.getK8sInfraDelegateConfig());
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          commandRequest.getK8sInfraDelegateConfig(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
 
@@ -227,8 +227,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // call listReleases method
       HelmListReleaseResponseNG helmListReleaseResponseNG = listReleases(commandRequest);
-
-      log.info(helmListReleaseResponseNG.getOutput());
+      logCallback.saveExecutionLog(helmListReleaseResponseNG.getOutput() + "\n");
 
       // if list release failed due to unknown exception:
       if (helmListReleaseResponseNG.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
@@ -377,7 +376,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private boolean checkIfReleasePurgingNeeded(HelmInstallCommandRequestNG commandRequest) {
     HelmListReleaseResponseNG commandResponse = listReleases(commandRequest);
-    log.info(commandResponse.getOutput());
+    commandRequest.getLogCallback().saveExecutionLog(commandResponse.getOutput() + "\n");
 
     if (commandResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       if (isEmpty(commandResponse.getReleaseInfoList())) {
@@ -522,8 +521,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Override
   public HelmCommandResponseNG rollback(HelmRollbackCommandRequestNG commandRequest) throws Exception {
     LogCallback logCallback = commandRequest.getLogCallback();
-    kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequest.getK8sInfraDelegateConfig());
+    kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        commandRequest.getK8sInfraDelegateConfig(), logCallback);
     try {
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
@@ -904,7 +903,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           continue;
         }
 
-        Path filePath = Paths.get(directoryPath, manifestFile.getFileName());
+        Path filePath = Paths.get(directoryPath, manifestFile.getFilePath());
         Path parent = filePath.getParent();
         if (parent == null) {
           throw new InvalidRequestException("Failed to create file at path " + filePath.toString());
@@ -1094,18 +1093,28 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           Paths.get(commandRequest.getWorkingDir(), CHARTS_YAML_KEY).toString());
     }
 
+    if (isNotEmpty(helmChartManifestDelegateConfig.getSubChartName()) && helmChartInfo != null) {
+      helmChartInfo.setSubChartName(helmChartManifestDelegateConfig.getSubChartName());
+      String parentChartName = helmTaskHelperBase.getChartName(helmChartManifestDelegateConfig);
+      helmChartInfo.setName(parentChartName);
+    }
+
     try {
       switch (manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         case GIT:
           GitStoreDelegateConfig gitStoreDelegateConfig =
               (GitStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
-          helmChartInfo.setRepoUrl(gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+          if (helmChartInfo != null) {
+            helmChartInfo.setRepoUrl(gitStoreDelegateConfig.getGitConfigDTO().getUrl());
+          }
           break;
         case HTTP_HELM:
         case GCS_HELM:
         case S3_HELM:
         case OCI_HELM:
-          helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
+          if (helmChartInfo != null) {
+            helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
+          }
           break;
         case CUSTOM_REMOTE:
         case HARNESS:

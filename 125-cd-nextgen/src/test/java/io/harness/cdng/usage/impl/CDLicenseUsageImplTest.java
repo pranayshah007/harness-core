@@ -7,6 +7,7 @@
 
 package io.harness.cdng.usage.impl;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
 import static io.harness.rule.OwnerRule.IVAN;
@@ -16,11 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cd.CDLicenseType;
@@ -28,11 +30,12 @@ import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageDTO;
-import io.harness.cdng.usage.dto.ServiceInstancesDateUsageParams;
+import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
+import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
@@ -42,7 +45,7 @@ import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -58,7 +61,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,12 +72,13 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 public class CDLicenseUsageImplTest extends CategoryTest {
   private static final String ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG = "Account Identifier cannot be null or empty";
 
@@ -773,8 +777,9 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsageInvalidAccountArgument() {
-    assertThatThrownBy(
-        () -> cdLicenseUsage.getServiceInstancesDateUsage(null, ServiceInstancesDateUsageParams.builder().build()))
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.getLicenseDateUsage(
+                               null, LicenseDateUsageParams.builder().build(), CDLicenseType.SERVICE_INSTANCES))
         .hasMessage(ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG)
         .isInstanceOf(InvalidArgumentsException.class);
   }
@@ -784,12 +789,13 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsageNotValidaFromDate() {
     assertThatThrownBy(()
-                           -> cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
-                               ServiceInstancesDateUsageParams.builder()
+                           -> cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
+                               LicenseDateUsageParams.builder()
                                    .fromDate("2022-14-01")
                                    .toDate("2022-01-08")
-                                   .reportType(ServiceInstanceReportType.DAILY)
-                                   .build()))
+                                   .reportType(LicenseDateUsageReportType.DAILY)
+                                   .build(),
+                               CDLicenseType.SERVICE_INSTANCES))
         .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-01")
         .isInstanceOf(InvalidArgumentsException.class);
   }
@@ -799,12 +805,13 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsageNotValidaToDate() {
     assertThatThrownBy(()
-                           -> cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
-                               ServiceInstancesDateUsageParams.builder()
+                           -> cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
+                               LicenseDateUsageParams.builder()
                                    .fromDate("2022-01-01")
                                    .toDate("2022-14-08")
-                                   .reportType(ServiceInstanceReportType.DAILY)
-                                   .build()))
+                                   .reportType(LicenseDateUsageReportType.DAILY)
+                                   .build(),
+                               CDLicenseType.SERVICE_INSTANCES))
         .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-08")
         .isInstanceOf(InvalidArgumentsException.class);
   }
@@ -813,28 +820,68 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetServiceInstancesDateUsage() {
-    when(utils.fetchServiceInstancesDateUsage(any())).thenReturn(getDailyServiceUsage());
+    when(utils.fetchLicenseDateUsage(any())).thenReturn(getDailyServiceUsage());
+    ArgumentCaptor<LicenseDateUsageFetchData> licenseDateUsageFetchDataArgumentCaptor =
+        ArgumentCaptor.forClass(LicenseDateUsageFetchData.class);
 
-    ServiceInstancesDateUsageDTO serviceInstancesDateUsage =
-        cdLicenseUsage.getServiceInstancesDateUsage(accountIdentifier,
-            ServiceInstancesDateUsageParams.builder()
-                .fromDate("2022-01-01")
-                .toDate("2022-01-08")
-                .reportType(ServiceInstanceReportType.DAILY)
-                .build());
+    LicenseDateUsageDTO serviceInstancesDateUsage = cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
+        LicenseDateUsageParams.builder()
+            .fromDate("2022-01-01")
+            .toDate("2022-01-08")
+            .reportType(LicenseDateUsageReportType.DAILY)
+            .build(),
+        CDLicenseType.SERVICE_INSTANCES);
+
+    verify(utils, times(1)).fetchLicenseDateUsage(licenseDateUsageFetchDataArgumentCaptor.capture());
 
     assertThat(serviceInstancesDateUsage).isNotNull();
-    assertThat(serviceInstancesDateUsage.getServiceInstancesUsage().size()).isEqualTo(7);
-    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getServiceInstancesUsage();
+    assertThat(serviceInstancesDateUsage.getLicenseUsage().size()).isEqualTo(8);
+    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getLicenseUsage();
     Integer serviceInstancesFirstDay = serviceInstances.get("2022-01-01");
     assertThat(serviceInstancesFirstDay).isEqualTo(1);
     Integer serviceInstancesLastDay = serviceInstances.get("2022-01-07");
     assertThat(serviceInstancesLastDay).isEqualTo(10);
+
+    LicenseDateUsageFetchData value = licenseDateUsageFetchDataArgumentCaptor.getValue();
+    assertThat(value.getLicenseType()).isEqualTo(CDLicenseType.SERVICE_INSTANCES);
+    assertThat(value.getReportType()).isEqualTo(LicenseDateUsageReportType.DAILY);
+    assertThat(value.getFromDate()).isEqualTo("2022-01-01");
+    assertThat(value.getToDate()).isEqualTo("2022-01-08");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.IVAN)
+  @Category(UnitTests.class)
+  public void testGetServicesDateUsage() {
+    when(utils.fetchLicenseDateUsage(any())).thenReturn(getDailyServiceUsage());
+    ArgumentCaptor<LicenseDateUsageFetchData> licenseDateUsageFetchDataArgumentCaptor =
+        ArgumentCaptor.forClass(LicenseDateUsageFetchData.class);
+    LicenseDateUsageDTO serviceInstancesDateUsage = cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
+        LicenseDateUsageParams.builder()
+            .fromDate("2022-01-01")
+            .toDate("2022-01-08")
+            .reportType(LicenseDateUsageReportType.DAILY)
+            .build(),
+        CDLicenseType.SERVICES);
+
+    verify(utils, times(1)).fetchLicenseDateUsage(licenseDateUsageFetchDataArgumentCaptor.capture());
+
+    assertThat(serviceInstancesDateUsage).isNotNull();
+    assertThat(serviceInstancesDateUsage.getLicenseUsage().size()).isEqualTo(8);
+
+    Integer serviceInstancesLastDay = serviceInstancesDateUsage.getLicenseUsage().get("2022-01-08");
+    assertThat(serviceInstancesLastDay).isEqualTo(41);
+
+    LicenseDateUsageFetchData value = licenseDateUsageFetchDataArgumentCaptor.getValue();
+    assertThat(value.getLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+    assertThat(value.getReportType()).isEqualTo(LicenseDateUsageReportType.DAILY);
+    assertThat(value.getFromDate()).isEqualTo("2022-01-01");
+    assertThat(value.getToDate()).isEqualTo("2022-01-08");
   }
 
   @NotNull
   private Map<String, Integer> getDailyServiceUsage() {
-    Map<String, Integer> serviceInstancesUsage = new HashMap<>();
+    Map<String, Integer> serviceInstancesUsage = new LinkedHashMap<>();
     serviceInstancesUsage.put("2022-01-01", 1);
     serviceInstancesUsage.put("2022-01-02", 2);
     serviceInstancesUsage.put("2022-01-03", 3);
@@ -842,6 +889,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     serviceInstancesUsage.put("2022-01-05", 5);
     serviceInstancesUsage.put("2022-01-06", 1);
     serviceInstancesUsage.put("2022-01-07", 10);
+    serviceInstancesUsage.put("2022-01-08", 41);
     return serviceInstancesUsage;
   }
 }

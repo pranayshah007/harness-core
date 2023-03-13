@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/nexus/service/rest/v1/search?sort=version&direction=desc&repository=harness-npm-group&name=npm-app1"
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/nexus/body-get-npm-packages-group-repos-nexus3x.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

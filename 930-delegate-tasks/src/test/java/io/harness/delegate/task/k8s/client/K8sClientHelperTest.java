@@ -110,11 +110,12 @@ public class K8sClientHelperTest extends CategoryTest {
     ApiClient apiCLient = new ApiClient();
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
     doReturn(apiCLient).when(kubernetesHelperService).getApiClient(eq(kubernetesConfig));
 
+    LogCallback logCallback = mock(LogCallback.class);
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
-    ApiClient generatedClient = k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig);
+    ApiClient generatedClient = k8sClientHelper.createKubernetesApiClient(k8sInfraDelegateConfig, logCallback);
     assertThat(generatedClient).isEqualTo(apiCLient);
   }
 

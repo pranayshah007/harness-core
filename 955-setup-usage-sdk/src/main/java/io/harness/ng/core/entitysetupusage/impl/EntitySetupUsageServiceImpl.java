@@ -41,12 +41,14 @@ import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
@@ -106,18 +108,6 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
     Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
     List<EntitySetupUsage> entityReferencesContent = entityReferences.getContent();
     return entityReferencesContent.stream()
-        .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<EntitySetupUsageDTO> listAllReferredUsages(
-      String accountIdentifier, String referredByEntityFQN, EntityType referredEntityType) {
-    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(
-        accountIdentifier, referredByEntityFQN, referredEntityType, null);
-    return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
-        .getContent()
-        .stream()
         .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
         .collect(Collectors.toList());
   }
@@ -282,7 +272,7 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
   }
 
   @Override
-  public List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
+  public List<String> listAllReferredEntityIdentifiersPerReferredEntityScope(Scope scope, String referredEntityFQScope,
       EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort) {
     if (null == referredByEntityType) {
       return Collections.emptyList();
@@ -295,11 +285,22 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
       criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
           scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
     }
-    return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
-        .getContent()
-        .stream()
-        .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
-        .collect(Collectors.toList());
+    return entityReferenceRepository.findAllReferredEntityIds(criteria);
+  }
+
+  @Override
+  public CloseableIterator<EntitySetupUsage> streamAllEntityUsagePerReferredEntityScope(Scope scope,
+      String referredEntityFQScope, EntityType referredEntityType, @NotNull EntityType referredByEntityType,
+      String referredByEntityName) {
+    Criteria criteria;
+    if (EntityType.INFRASTRUCTURE.equals(referredByEntityType)) {
+      criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScopeWithScopeName(
+          scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
+    } else {
+      criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
+          scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
+    }
+    return entityReferenceRepository.stream(criteria);
   }
 
   @Override

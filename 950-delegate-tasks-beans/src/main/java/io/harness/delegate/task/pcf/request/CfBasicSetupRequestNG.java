@@ -44,7 +44,7 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class CfBasicSetupRequestNG extends AbstractTasTaskRequest {
-  String releaseNamePrefix;
+  @Expression(ALLOW_SECRETS) String releaseNamePrefix;
   TasArtifactConfig tasArtifactConfig;
   Integer olderActiveVersionCountToKeep;
   Integer maxCount;

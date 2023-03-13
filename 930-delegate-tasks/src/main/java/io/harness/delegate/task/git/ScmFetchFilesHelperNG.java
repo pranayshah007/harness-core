@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.logging.LogLevel.ERROR;
 
 import static java.util.stream.Collectors.toList;
@@ -27,6 +28,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
+import io.harness.git.GitFetchMetadataLocalThread;
 import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
@@ -63,8 +65,12 @@ public class ScmFetchFilesHelperNG {
 
   public FetchFilesResult fetchFilesFromRepoWithScm(
       GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    return fetchFilesFromRepoWithScm(DEFAULT_FETCH_IDENTIFIER, gitStoreDelegateConfig, filePathList);
+  }
+  public FetchFilesResult fetchFilesFromRepoWithScm(
+      String identifier, GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
-    List<GitFile> gitFiles = fetchFilesFromRepo(useBranch, gitStoreDelegateConfig.getBranch(),
+    List<GitFile> gitFiles = fetchFilesFromRepo(identifier, useBranch, gitStoreDelegateConfig.getBranch(),
         gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
     return FetchFilesResult.builder()
         .files(gitFiles)
@@ -100,11 +106,12 @@ public class ScmFetchFilesHelperNG {
     return commitIds.isEmpty() ? null : commitIds.iterator().next();
   }
 
-  private List<GitFile> fetchFilesFromRepo(
-      boolean useBranch, String branch, String commitId, List<String> filePathList, ScmConnector scmConnector) {
+  private List<GitFile> fetchFilesFromRepo(String identifier, boolean useBranch, String branch, String commitId,
+      List<String> filePathList, ScmConnector scmConnector) {
     FileContentBatchResponse fileBatchContentResponse =
         fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
-
+    String latestCommitSHA = fileBatchContentResponse.getCommitId();
+    GitFetchMetadataLocalThread.putCommitId(identifier, latestCommitSHA);
     List<GitFile> gitFiles =
         fileBatchContentResponse.getFileBatchContentResponse()
             .getFileContentsList()

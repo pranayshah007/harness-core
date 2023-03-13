@@ -313,6 +313,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
+  public List<UserGroup> getUserGroupsForUser(String accountIdentifier, String userId) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(UserGroupKeys.externallyManaged).is(true);
+    criteria.and(UserGroupKeys.users).in(userId);
+    return userGroupRepository.findAll(criteria);
+  }
+
+  @Override
   public List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
     if (isEmpty(userGroups)) {
       return Collections.emptyList();

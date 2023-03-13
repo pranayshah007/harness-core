@@ -420,8 +420,9 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("2.x")
                                     .build();
 
-    assertThatThrownBy(
-        () -> nexusClient.getArtifactsVersions(nexusConfig1, "test1", null, "superApp", RepositoryFormat.docker.name()))
+    assertThatThrownBy(()
+                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, "test1", null, "superApp",
+                               RepositoryFormat.docker.name(), Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
 
     NexusRequest nexusConfig2 = NexusRequest.builder()
@@ -437,8 +438,8 @@ public class NexusClientImplTest extends CategoryTest {
         .when(nexusThreeService)
         .getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
 
-    List<BuildDetailsInternal> response =
-        nexusClient.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+    List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
+        nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
@@ -457,8 +458,9 @@ public class NexusClientImplTest extends CategoryTest {
                                     .version("2.x")
                                     .build();
 
-    assertThatThrownBy(
-        () -> nexusClient.getArtifactsVersions(nexusConfig1, "test1", null, "superApp", RepositoryFormat.docker.name()))
+    assertThatThrownBy(()
+                           -> nexusClient.getDockerArtifactVersions(nexusConfig1, "test1", null, "superApp",
+                               RepositoryFormat.docker.name(), Integer.MAX_VALUE))
         .isInstanceOf(HintException.class);
 
     NexusRequest nexusConfig2 = NexusRequest.builder()
@@ -475,8 +477,8 @@ public class NexusClientImplTest extends CategoryTest {
         .thenThrow(NexusRegistryException.class);
 
     try {
-      List<BuildDetailsInternal> response =
-          nexusClient.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+      List<BuildDetailsInternal> response = nexusClient.getDockerArtifactVersions(
+          nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }
@@ -498,7 +500,8 @@ public class NexusClientImplTest extends CategoryTest {
     when(nexusThreeService.getPackageVersions(nexusConfig2, "test1", null)).thenThrow(NexusRegistryException.class);
 
     try {
-      nexusClient.getArtifactsVersions(nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name());
+      nexusClient.getDockerArtifactVersions(
+          nexusConfig2, "test1", null, "superApp", RepositoryFormat.docker.name(), Integer.MAX_VALUE);
     } catch (NexusRegistryException | HintException ex) {
       assertThat(ex).isInstanceOf(NexusRegistryException.class);
     }
@@ -559,7 +562,7 @@ public class NexusClientImplTest extends CategoryTest {
         .getVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0");
 
     List<BuildDetailsInternal> response =
-        nexusClient.getArtifactsVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0");
+        nexusClient.getArtifactsVersions(nexusConfig1, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
@@ -575,9 +578,10 @@ public class NexusClientImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(nexusThreeService)
-        .getVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0");
+        .getVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
 
-    response = nexusClient.getArtifactsVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0");
+    response =
+        nexusClient.getArtifactsVersions(nexusConfig2, "test1", "groupId", "superApp", "war", "1.0", Integer.MAX_VALUE);
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(3);
   }

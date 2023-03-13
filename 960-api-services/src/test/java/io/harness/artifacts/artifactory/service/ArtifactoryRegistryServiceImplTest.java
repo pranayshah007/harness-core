@@ -122,11 +122,10 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(artifactoryClient)
-        .getArtifactsDetails(
-            artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name());
 
     List<BuildDetailsInternal> response = artifactoryRegistryService.getBuilds(
-        artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);
+        artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name());
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(3);
     for (BuildDetailsInternal bdi : response) {
@@ -150,8 +149,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi1"))
         .when(artifactoryClient)
-        .getArtifactsDetails(
-            artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name());
 
     BuildDetailsInternal response = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(
         artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.docker.name(), "[\\d]{1}.0");
@@ -174,8 +172,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi2"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "super/duper/app", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "super/duper/app", RepositoryFormat.docker.name());
 
     BuildDetailsInternal response =
         artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryInternalConfig, "test2",
@@ -199,8 +196,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi3"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
     BuildDetailsInternal response = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(
         artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "*");
@@ -223,8 +219,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi3"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
     assertThatThrownBy(()
                            -> artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryInternalConfig,
@@ -245,8 +240,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi3"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
     BuildDetailsInternal response = artifactoryRegistryService.verifyBuildNumber(
         artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "b23");
@@ -355,8 +349,8 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
                                                              .build();
 
     assertThatThrownBy(()
-                           -> artifactoryRegistryService.getBuilds(artifactoryInternalConfig, "test1", "superApp",
-                               RepositoryFormat.maven.name(), MAX_NO_OF_TAGS_PER_IMAGE))
+                           -> artifactoryRegistryService.getBuilds(
+                               artifactoryInternalConfig, "test1", "superApp", RepositoryFormat.maven.name()))
         .isInstanceOf(HintException.class);
   }
 
@@ -390,8 +384,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi4"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
     assertThatThrownBy(()
                            -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",
@@ -412,8 +405,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
 
     doReturn(buildDetailsData.get("bdi5"))
         .when(artifactoryClient)
-        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
-            MAX_NO_OF_TAGS_PER_IMAGE);
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name());
 
     assertThatThrownBy(()
                            -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",

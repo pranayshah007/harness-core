@@ -98,7 +98,6 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
                    AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
                    AutoLogContext ignore3 = new WebsocketLogContext(event.getResource().uuid(), OVERRIDE_ERROR)) {
                 log.info("delegate socket disconnected {}", event);
-                Delegate delegate = delegateCache.get(accountId, delegateId, true);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
               }
             }
@@ -148,6 +147,12 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         } else {
           delegateStreamHeartbeatService.process(delegateParams.toBuilder().delegateId(delegateId).build());
         }
+      } catch (WingsException e) {
+        sendError(resource, e.getCode());
+        return;
+      } catch (Exception e) {
+        log.error("Unknown error on socket ", e);
+        return;
       }
     }
   }

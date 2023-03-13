@@ -8,7 +8,7 @@
 package io.harness.kustomize;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.chartmuseum.ChartMuseumConstants.VERSION_PATTERN;
+import static io.harness.kustomize.KustomizeConstants.COMMAND_FLAGS;
 import static io.harness.kustomize.KustomizeConstants.KUSTOMIZE_BINARY_PATH;
 import static io.harness.kustomize.KustomizeConstants.KUSTOMIZE_BUILD_COMMAND;
 import static io.harness.kustomize.KustomizeConstants.KUSTOMIZE_BUILD_COMMAND_WITH_PLUGINS;
@@ -26,80 +26,57 @@ import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.logging.LogCallback;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
 import javax.annotation.Nonnull;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.zeroturnaround.exec.ProcessResult;
 
+@Builder
 @OwnedBy(CDP)
 @Slf4j
-@Singleton
 public class KustomizeClientImpl implements KustomizeClient {
-  private static final Version KUSTOMIZE_DEFAULT_VERSION = Version.parse("0.0.1");
-  @Inject CliHelper cliHelper;
+  private String kustomizeBinaryPath;
+  private Version version;
+  private Map<String, String> commandFlags;
+  private CliHelper cliHelper;
 
   @Override
-  public CliResponse build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeDirPath,
-      @Nonnull String kustomizeBinaryPath, @Nonnull LogCallback executionLogCallback)
+  public CliResponse build(String manifestFilesDir, String kustomizeDirPath, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String buildCommandFlag = getBuildCmdFlag(commandFlags);
     String kustomizeBuildCommand = KUSTOMIZE_BUILD_COMMAND.replace(KUSTOMIZE_BINARY_PATH, kustomizeBinaryPath)
-                                       .replace(KUSTOMIZE_DIR_PATH, kustomizeDirPath);
+                                       .replace(KUSTOMIZE_DIR_PATH, kustomizeDirPath)
+                                       .replace(COMMAND_FLAGS, buildCommandFlag);
     return cliHelper.executeCliCommand(kustomizeBuildCommand, KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(),
-        manifestFilesDirectory, executionLogCallback);
+        manifestFilesDir, executionLogCallback);
   }
 
   @Override
-  public CliResponse buildWithPlugins(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeDirPath,
-      @Nonnull String kustomizeBinaryPath, @Nonnull String pluginPath, @Nonnull LogCallback executionLogCallback)
-      throws InterruptedException, TimeoutException, IOException {
-    String kustomizePluginFlag = isKustomizeVersionGreaterThanV4_0_0(kustomizeBinaryPath)
+  public CliResponse buildWithPlugins(String manifestFilesDir, String kustomizeDirPath, @Nonnull String pluginPath,
+      @Nonnull LogCallback executionLogCallback) throws InterruptedException, TimeoutException, IOException {
+    String buildCommandFlag = getBuildCmdFlag(commandFlags);
+    String kustomizePluginFlag = version.compareTo(Version.parse(KUSTOMIZE_VERSION_V4_0_0)) > 0
         ? KUSTOMIZE_PLUGIN_FLAG_LATEST
         : KUSTOMIZE_PLUGIN_FLAG_VERSION_LT_4_0_1;
+
     String kustomizeBuildCommand =
         KUSTOMIZE_BUILD_COMMAND_WITH_PLUGINS.replace(KUSTOMIZE_BINARY_PATH, kustomizeBinaryPath)
             .replace(KUSTOMIZE_DIR_PATH, kustomizeDirPath)
             .replace(XDG_CONFIG_HOME, pluginPath)
-            .replace(KUSTOMIZE_PLUGIN_FLAG, kustomizePluginFlag);
+            .replace(KUSTOMIZE_PLUGIN_FLAG, kustomizePluginFlag)
+            .replace(COMMAND_FLAGS, buildCommandFlag);
     return cliHelper.executeCliCommand(kustomizeBuildCommand, KUSTOMIZE_COMMAND_TIMEOUT, Collections.emptyMap(),
-        manifestFilesDirectory, executionLogCallback);
+        manifestFilesDir, executionLogCallback);
   }
 
-  private boolean isKustomizeVersionGreaterThanV4_0_0(String kustomizeBinaryPath) {
-    String command = kustomizeBinaryPath + " version";
-    Version version = getVersion(command);
-    return version.compareTo(Version.parse(KUSTOMIZE_VERSION_V4_0_0)) > 0;
-  }
-
-  public Version getVersion(String command) {
-    try {
-      ProcessResult versionResult = cliHelper.executeCommand(command);
-
-      if (versionResult.getExitValue() != 0) {
-        log.warn("Failed to get kustomize version. Exit code: {}, output: {}", versionResult.getExitValue(),
-            versionResult.hasOutput() ? versionResult.outputUTF8() : "no output");
-        return KUSTOMIZE_DEFAULT_VERSION;
-      }
-
-      if (versionResult.hasOutput()) {
-        String versionOutput = versionResult.outputUTF8();
-        Matcher versionMatcher = VERSION_PATTERN.matcher(versionOutput);
-        if (!versionMatcher.find()) {
-          log.warn("No valid KUSTOMIZE version present in output: {}", versionOutput);
-          return KUSTOMIZE_DEFAULT_VERSION;
-        }
-
-        return Version.parse(versionMatcher.group(1));
-      }
-
-    } catch (IOException | InterruptedException | TimeoutException e) {
-      log.error("Failed to get kustomize version", e);
+  public String getBuildCmdFlag(Map<String, String> commandFlags) {
+    if (commandFlags == null) {
+      return "";
     }
-
-    return KUSTOMIZE_DEFAULT_VERSION;
+    return commandFlags.containsKey(KustomizeCommand.BUILD.name()) ? commandFlags.get(KustomizeCommand.BUILD.name())
+                                                                   : "";
   }
 }

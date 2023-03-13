@@ -49,6 +49,16 @@ public class CIStepFilterJsonCreatorV2Test {
             .build();
 
     ciStepFilterJsonCreatorV2.validateStep(context, runStepNode);
+
+    RunStepNode runStepNode1 =
+        RunStepNode.builder()
+            .runStepInfo(RunStepInfo.builder()
+                             .connectorRef(ParameterField.<String>builder().value("connector").build())
+                             .image(ParameterField.<String>builder().expressionValue("<+matrix.image>").build())
+                             .build())
+            .build();
+
+    ciStepFilterJsonCreatorV2.validateStep(context, runStepNode1);
   }
 
   @Test

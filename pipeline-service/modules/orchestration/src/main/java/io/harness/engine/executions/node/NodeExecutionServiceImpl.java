@@ -13,6 +13,7 @@ import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIG
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.SKIPPED;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.springdata.SpringDataMongoUtils.returnNewOptions;
@@ -487,6 +488,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                       .addCriteria(where(NodeExecutionKeys.status).in(allowedStartStatuses));
     Update updateOps =
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+    addFinalStatusOps(updateOps, status);
+
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
@@ -505,6 +508,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     }
     return updatedNodeExecution;
+  }
+
+  // Add additional updateOps based on nodeStatus to be updated
+  // This is done to reduce write conflicts on same record, and send multiple updates at one go.
+  private void addFinalStatusOps(Update updateOps, Status toBeUpdatedNodeStatus) {
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      updateOps.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+      if (toBeUpdatedNodeStatus != EXPIRED) {
+        updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
+      }
+    }
   }
 
   @Override
@@ -720,21 +734,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     InterruptConfig interruptConfig = interruptEffect.getInterruptConfig();
     return interruptConfig.hasIssuedBy() && interruptConfig.getIssuedBy().hasTriggerIssuer()
         && interruptConfig.getIssuedBy().getTriggerIssuer().getAbortPrevConcurrentExecution();
-  }
-
-  @Override
-  public boolean removeTimeoutInstances(String nodeExecutionId) {
-    Update ops = new Update();
-    ops.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
-    // Uses - id index
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
-
-    if (!updateResult.wasAcknowledged()) {
-      log.warn("TimeoutInstanceIds cannot be removed from nodeExecution {}", nodeExecutionId);
-      return false;
-    }
-    return true;
   }
 
   @Override

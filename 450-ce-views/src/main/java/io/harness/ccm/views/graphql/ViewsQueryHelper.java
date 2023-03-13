@@ -35,6 +35,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -397,7 +398,7 @@ public class ViewsQueryHelper {
     return filters.stream()
         .filter(filter
             -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
-                || filter.getRuleFilter() != null
+                || filter.getRuleFilter() != null || filter.getInExpressionFilter() != null
                 || (filter.getIdFilter() != null
                     && filter.getIdFilter().getField().getIdentifier() != ViewFieldIdentifier.BUSINESS_MAPPING))
         .collect(Collectors.toList());
@@ -412,7 +413,7 @@ public class ViewsQueryHelper {
     return filters.stream()
         .filter(filter
             -> filter.getTimeFilter() != null || filter.getViewMetadataFilter() != null
-                || filter.getRuleFilter() != null
+                || filter.getRuleFilter() != null || filter.getInExpressionFilter() != null
                 || (filter.getIdFilter() != null
                     && !filter.getIdFilter().getField().getFieldId().equals(businessMappingId)))
         .collect(Collectors.toList());
@@ -456,6 +457,24 @@ public class ViewsQueryHelper {
       }
     }
     return businessMappingIds;
+  }
+
+  public List<String> getSelectedCostTargetsFromFilters(final List<QLCEViewFilterWrapper> filters,
+      final List<ViewRule> viewRules, final BusinessMapping sharedCostBusinessMapping) {
+    final List<QLCEViewFilterWrapper> businessMappingFilters =
+        getBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
+    List<String> selectedCostTargets = new ArrayList<>();
+    for (final QLCEViewFilterWrapper businessMappingFilter : businessMappingFilters) {
+      if (!selectedCostTargets.isEmpty()) {
+        selectedCostTargets =
+            intersection(selectedCostTargets, Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+      } else {
+        selectedCostTargets.addAll(Arrays.asList(businessMappingFilter.getIdFilter().getValues()));
+      }
+    }
+    selectedCostTargets = intersection(
+        selectedCostTargets, getSelectedCostTargetsFromViewRules(viewRules, sharedCostBusinessMapping.getUuid()));
+    return selectedCostTargets;
   }
 
   public List<String> getSelectedCostTargetsFromViewRules(List<ViewRule> viewRules, String businessMappingId) {

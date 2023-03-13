@@ -8,11 +8,15 @@
 package io.harness.freeze.service;
 
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.entity.FrozenExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FrozenExecutionService {
   void createFrozenExecution(Ambiance ambiance, List<FreezeSummaryResponseDTO> manualFreezeConfigs,
       List<FreezeSummaryResponseDTO> globalFreezeConfigs);
+  Optional<FrozenExecution> getFrozenExecution(
+      String accountId, String orgId, String projectId, String planExecutionId);
 }

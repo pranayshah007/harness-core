@@ -10,17 +10,18 @@ package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 
 public class RatioServiceLevelIndicatorTransformer
-    extends ServiceLevelIndicatorTransformer<RatioServiceLevelIndicator, ServiceLevelIndicatorSpec> {
+    extends ServiceLevelIndicatorTransformer<RatioServiceLevelIndicator, WindowBasedServiceLevelIndicatorSpec> {
   @Override
   public RatioServiceLevelIndicator getEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       boolean isEnabled) {
-    RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec();
+    RatioSLIMetricSpec ratioSLIMetricSpec =
+        (RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec();
     return RatioServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
@@ -40,8 +41,8 @@ public class RatioServiceLevelIndicatorTransformer
   }
 
   @Override
-  protected ServiceLevelIndicatorSpec getSpec(RatioServiceLevelIndicator serviceLevelIndicator) {
-    return ServiceLevelIndicatorSpec.builder()
+  protected WindowBasedServiceLevelIndicatorSpec getSpec(RatioServiceLevelIndicator serviceLevelIndicator) {
+    return WindowBasedServiceLevelIndicatorSpec.builder()
         .type(SLIMetricType.RATIO)
         .spec(RatioSLIMetricSpec.builder()
                   .eventType(serviceLevelIndicator.getEventType())

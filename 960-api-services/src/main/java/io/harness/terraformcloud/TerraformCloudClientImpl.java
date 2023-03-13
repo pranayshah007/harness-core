@@ -165,13 +165,20 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
     executeRestCall(call);
   }
 
+  @Override
+  public TerraformCloudResponse<List<RunData>> getAppliedRuns(String url, String token, String workspaceId)
+      throws IOException {
+    Call<TerraformCloudResponse<List<RunData>>> call =
+        getRestClient(url).getRunsByStatus(getAuthorization(token), workspaceId, "applied");
+    return executeRestCall(call);
+  }
+
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()
                             .client(getOkHttpClient(url))
                             .baseUrl(url)
                             .addConverterFactory(ScalarsConverterFactory.create())
-                            .addConverterFactory(JacksonConverterFactory.create())
                             .addConverterFactory(JacksonConverterFactory.create(
                                 new ObjectMapper().enable(READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)))
                             .build();

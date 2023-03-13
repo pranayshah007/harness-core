@@ -122,6 +122,11 @@ public class ArtifactResourceUtils {
     if (isEmpty(pipelineIdentifier)) {
       return runtimeInputYaml;
     }
+
+    if (gitEntityBasicInfo == null) {
+      gitEntityBasicInfo = new GitEntityFindInfoDTO();
+    }
+
     MergeInputSetResponseDTOPMS response =
         NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
             projectIdentifier, pipelineIdentifier, gitEntityBasicInfo.getBranch(),

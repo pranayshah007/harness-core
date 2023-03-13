@@ -115,9 +115,13 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     final Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap =
         ngManifestsMetadataSweepingOutput.getFinalSvcManifestsMap();
 
-    if (isEmpty(finalSvcManifestsMap)) {
-      log.info("no manifest files found for service " + ngManifestsMetadataSweepingOutput.getServiceIdentifier()
-          + ". skipping the manifest files step");
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    if (noManifestsConfigured(finalSvcManifestsMap)) {
+      logCallback.saveExecutionLog(
+          String.format("No manifests configured in the service. <+%s> expressions will not work",
+              OutcomeExpressionConstants.MANIFESTS),
+          LogLevel.WARN);
+
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     List<ManifestConfigWrapper> manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMap);
@@ -135,7 +139,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
 
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     for (int i = 0; i < manifestAttributes.size(); i++) {
@@ -148,6 +151,11 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  private static boolean noManifestsConfigured(Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    return isEmpty(finalSvcManifestsMap)
+        || finalSvcManifestsMap.values().stream().noneMatch(EmptyPredicate::isNotEmpty);
   }
 
   @NotNull
