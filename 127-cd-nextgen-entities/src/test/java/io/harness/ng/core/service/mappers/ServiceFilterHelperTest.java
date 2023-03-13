@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.mappers;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -25,6 +26,7 @@ import io.harness.rule.Owner;
 
 import java.beans.PropertyDescriptor;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.bson.Document;
@@ -130,5 +132,29 @@ public class ServiceFilterHelperTest extends CategoryTest {
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
             "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}]}");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetListScopedRef1() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        "accId", "orgId", "projId", Collections.singletonList("account.accServ1"), false, null, null, null, false);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null, \"identifier\": {\"$in\": [\"accServ1\"]}}]}], \"deleted\": false}");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetListScopedRef2() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId",
+        Arrays.asList("account.accServ1", "org.orgServ1", "projServ1"), false, null, null, null, false);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null, \"identifier\": {\"$in\": [\"accServ1\"]}}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": null, \"identifier\": {\"$in\": [\"orgServ1\"]}}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"identifier\": {\"$in\": [\"projServ1\"]}}]}], \"deleted\": false}");
   }
 }

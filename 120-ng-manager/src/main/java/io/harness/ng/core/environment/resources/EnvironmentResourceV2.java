@@ -402,6 +402,42 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
+  }
+
+  @GET
+  @Path("list/scoped")
+  @Hidden
+  @ApiOperation(value = "Gets environment list filtered by scoped env refs", nickname = "getEnvironmentListFiltered")
+  @Operation(operationId = "getEnvironmentListFiltered", summary = "Gets Environment list filtered by scoped env refs",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Gets Environment list filtered by scoped env refs")
+      })
+  public ResponseDTO<PageResponse<EnvironmentResponse>>
+  getEnvironmentsFilteredByRefs(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                                    NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers) {
+    checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, envIdentifiers);
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, envIdentifiers, false);
+    Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
+
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
+  }
+
+  @NotNull
+  private ResponseDTO<PageResponse<EnvironmentResponse>> getEnvironmentsPageByCriteria(
+      Criteria criteria, Pageable pageRequest) {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
@@ -485,14 +521,7 @@ public class EnvironmentResourceV2 {
     } else {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
-    Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
-    environmentEntities.forEach(environment -> {
-      if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
-        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
-      }
-    });
-    return ResponseDTO.newResponse(getNGPageResponse(environmentEntities.map(EnvironmentMapper::toResponseWrapper)));
+    return getEnvironmentsPageByCriteria(criteria, pageRequest);
   }
 
   @GET
@@ -832,6 +861,51 @@ public class EnvironmentResourceV2 {
       @QueryParam("envIdentifiers") List<String> envIdentifiers) {
     return ResponseDTO.newResponse(
         environmentService.getAttributes(accountId, orgIdentifier, projectIdentifier, envIdentifiers));
+  }
+
+  private void checkAccessForListingAtScope(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
+    if (isEmpty(envIdentifiers)) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+      return;
+    }
+
+    boolean checkProjectLevelList = false;
+    boolean checkOrgLevelList = false;
+    boolean checkAccountLevelList = false;
+
+    if (isNotEmpty(envIdentifiers)) {
+      for (String envRef : envIdentifiers) {
+        if (isNotEmpty(envRef) && !EngineExpressionEvaluator.hasExpressions(envRef)) {
+          IdentifierRef envIdentifierRef =
+              IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgIdentifier, projectIdentifier);
+          if (io.harness.encryption.Scope.PROJECT.equals(envIdentifierRef.getScope())) {
+            checkProjectLevelList = true;
+          } else if (io.harness.encryption.Scope.ORG.equals(envIdentifierRef.getScope())) {
+            checkOrgLevelList = true;
+          } else if (io.harness.encryption.Scope.ACCOUNT.equals(envIdentifierRef.getScope())) {
+            checkAccountLevelList = true;
+          }
+        }
+      }
+    }
+
+    // listing without scoped refs
+    if (checkProjectLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
+
+    if (checkOrgLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, null),
+          Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
+
+    if (checkAccountLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null), Resource.of(ENVIRONMENT, null),
+          ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    }
   }
 
   private void checkForServiceOverrideUpdateAccess(

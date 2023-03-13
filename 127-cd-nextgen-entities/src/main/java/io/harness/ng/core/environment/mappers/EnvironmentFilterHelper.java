@@ -29,12 +29,15 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -66,6 +69,92 @@ public class EnvironmentFilterHelper {
       criteria.andOperator(searchCriteria);
     }
     return criteria;
+  }
+
+  public Criteria createCriteriaForGetList(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> scopedEnvRefs, boolean deleted) {
+    Criteria criteria = new Criteria();
+    if (isNotEmpty(accountId)) {
+      criteria.and(EnvironmentKeys.accountId).is(accountId);
+
+      Criteria scopedEnvsCriteria = null;
+
+      if (isNotEmpty(scopedEnvRefs) && !Iterables.all(scopedEnvRefs, Predicates.isNull())) {
+        scopedEnvsCriteria =
+            getCriteriaToReturnEnvsFromEnvList(accountId, orgIdentifier, projectIdentifier, scopedEnvRefs);
+      } else {
+        criteria.and(EnvironmentKeys.orgIdentifier).is(orgIdentifier);
+        criteria.and(EnvironmentKeys.projectIdentifier).is(projectIdentifier);
+      }
+
+      List<Criteria> criteriaList = new ArrayList<>();
+      if (scopedEnvsCriteria != null) {
+        criteriaList.add(scopedEnvsCriteria);
+      }
+      if (isNotEmpty(criteriaList)) {
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      }
+
+      criteria.and(EnvironmentKeys.deleted).is(deleted);
+      return criteria;
+    } else {
+      throw new InvalidRequestException("account identifier cannot be null for environment list");
+    }
+  }
+
+  private Criteria getCriteriaToReturnEnvsFromEnvList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> scopedEnvRefs) {
+    Criteria criteria = new Criteria();
+    List<Criteria> orCriteriaList = new ArrayList<>();
+    List<String> projectLevelIdentifiers = new ArrayList<>();
+    List<String> orgLevelIdentifiers = new ArrayList<>();
+    List<String> accountLevelIdentifiers = new ArrayList<>();
+
+    if (isNotEmpty(scopedEnvRefs)) {
+      ServiceFilterHelper.populateIdentifiersOfEachLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+          scopedEnvRefs, projectLevelIdentifiers, orgLevelIdentifiers, accountLevelIdentifiers);
+    }
+
+    Criteria accountCriteria;
+    Criteria orgCriteria;
+    Criteria projectCriteria;
+
+    if (isNotEmpty(accountLevelIdentifiers)) {
+      accountCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                            .is(null)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(null)
+                            .and(EnvironmentKeys.identifier)
+                            .in(accountLevelIdentifiers);
+      orCriteriaList.add(accountCriteria);
+    }
+
+    if (isNotEmpty(orgLevelIdentifiers)) {
+      orgCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                        .is(orgIdentifier)
+                        .and(EnvironmentKeys.projectIdentifier)
+                        .is(null)
+                        .and(EnvironmentKeys.identifier)
+                        .in(orgLevelIdentifiers);
+      orCriteriaList.add(orgCriteria);
+    }
+
+    if (isNotEmpty(projectLevelIdentifiers)) {
+      projectCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(EnvironmentKeys.identifier)
+                            .in(projectLevelIdentifiers);
+      orCriteriaList.add(projectCriteria);
+    }
+
+    if (isNotEmpty(orCriteriaList)) {
+      criteria.orOperator(orCriteriaList);
+      return criteria;
+    }
+
+    return null;
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
