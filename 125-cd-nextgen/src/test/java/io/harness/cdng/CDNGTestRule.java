@@ -62,7 +62,7 @@ import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.remote.client.ClientMode;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.Cache;
-import io.harness.rule.InjectorRuleMixin;
+import io.harness.rule.InjectorRuleMixinNew;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.secrets.services.PrivilegedSecretNGManagerClientServiceImpl;
@@ -125,8 +125,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
+public class CDNGTestRule implements InjectorRuleMixinNew, MethodRule, MongoRuleMixin {
   ClosingFactory closingFactory;
+  static final Injector[] injector = {null};
 
   public CDNGTestRule(ClosingFactory closingFactory) {
     this.closingFactory = closingFactory;
@@ -351,6 +352,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
 
   @Override
   public Statement apply(Statement base, FrameworkMethod method, Object target) {
-    return applyInjector(log, base, method, target);
+    return applyInjector(log, base, method, target, injector);
   }
 }
