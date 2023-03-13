@@ -132,10 +132,13 @@ public class RedissonClientFactory {
           config.useSentinelServers().setRetryAttempts(redisConfig.getRetryAttempts());
         }
       }
+
       config.setNettyThreads(redisConfig.getNettyThreads());
       config.setUseScriptCache(redisConfig.isUseScriptCache());
       if (redisConfig.getCodec() != null) {
         config.setCodec(getCodec(redisConfig.getCodec()));
+      } else {
+        config.setCodec(new RedissonKryoCodec());
       }
 
       log.info("Creating Redis Client");
