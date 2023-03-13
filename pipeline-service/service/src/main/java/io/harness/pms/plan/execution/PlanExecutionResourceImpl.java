@@ -61,7 +61,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -429,9 +428,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   }
 
   private void checkIfInterruptIsDeprecated(String accountId, PlanExecutionInterruptType interruptType) {
-    Set<PlanExecutionInterruptType> deprecatedInterrupts = new HashSet<>();
-    deprecatedInterrupts.add(PlanExecutionInterruptType.PAUSE);
-    deprecatedInterrupts.add(PlanExecutionInterruptType.RESUME);
+    Set<PlanExecutionInterruptType> deprecatedInterrupts =
+        Set.of(PlanExecutionInterruptType.PAUSE, PlanExecutionInterruptType.RESUME);
     if (deprecatedInterrupts.contains(interruptType)
         && pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_DEPRECATE_PAUSE_INTERRUPT_NG)) {
       throw new InvalidRequestException(

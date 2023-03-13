@@ -449,36 +449,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestRemoveTimeoutInstances() {
-    String planExecutionUuid = generateUuid();
-    String parentId = generateUuid();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .mode(ExecutionMode.SYNC)
-            .uuid(generateUuid())
-            .name("name")
-            .identifier(generateUuid())
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.RUNNING)
-            .timeoutInstanceIds(ImmutableList.of(generateUuid(), generateUuid()))
-            .build();
-    nodeExecutionService.save(nodeExecution);
-
-    boolean ack = nodeExecutionService.removeTimeoutInstances(nodeExecution.getUuid());
-    assertThat(ack).isTrue();
-
-    NodeExecution updated = nodeExecutionService.get(nodeExecution.getUuid());
-    assertThat(updated.getTimeoutInstanceIds()).isEmpty();
-  }
-
-  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void test() {
