@@ -23,7 +23,6 @@ public class CdEnumFilter extends EnumFeatureFlagFilter {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public CdEnumFilter() {
-    put(FeatureName.SSH_NG, Sets.newHashSet(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM));
     put(FeatureName.NG_SVC_ENV_REDESIGN, Sets.newHashSet(ServiceDefinitionType.CUSTOM_DEPLOYMENT));
     put(FeatureName.CDS_TAS_NG, Sets.newHashSet(ServiceDefinitionType.TAS));
   }
