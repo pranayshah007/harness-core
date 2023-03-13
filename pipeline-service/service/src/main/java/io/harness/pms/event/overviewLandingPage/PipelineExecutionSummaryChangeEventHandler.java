@@ -165,4 +165,8 @@ public class PipelineExecutionSummaryChangeEventHandler extends DebeziumAbstract
     }
     return true;
   }
+
+  public String getEventName() {
+    return "PipelineExecution";
+  }
 }

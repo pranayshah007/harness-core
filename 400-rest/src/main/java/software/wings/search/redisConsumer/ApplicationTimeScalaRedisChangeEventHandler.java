@@ -91,6 +91,10 @@ public class ApplicationTimeScalaRedisChangeEventHandler extends DebeziumAbstrac
         tableName, getColumnValueMapping(value, id), Collections.singletonMap("id", id), getPrimaryKeys()));
   }
 
+  public String getEventName() {
+    return "CgApplication";
+  }
+
   public List<String> getPrimaryKeys() {
     return asList("id");
   }

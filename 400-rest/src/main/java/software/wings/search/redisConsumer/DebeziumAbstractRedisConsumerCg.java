@@ -27,6 +27,7 @@ import io.harness.queue.RedisConsumerCg;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DebeziumAbstractRedisConsumerCg extends RedisTraceConsumer implements RedisConsumerCg {
   @Inject private PersistentLocker persistentLocker;
+
+  @Inject private DebeziumRedisEventMetricsTracker debeziumRedisEventMetricsTracker;
   private static final String LOCK_PREFIX = "DEBEZIUM_SNAPSHOT_CONSUMER_";
   private static final String CACHE_PREFIX = "DEBEZIUM_EVENT_";
   private static final int WAIT_TIME_IN_SECONDS = 30;
@@ -46,6 +49,7 @@ public class DebeziumAbstractRedisConsumerCg extends RedisTraceConsumer implemen
   DebeziumAbstractRedisEventHandler eventHandler;
   QueueController queueController;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
+  private static long logMetricsCounter;
   Cache<String, Long> eventsCache;
 
   public DebeziumAbstractRedisConsumerCg(Consumer redisConsumer, QueueController queueController,
@@ -122,21 +126,45 @@ public class DebeziumAbstractRedisConsumerCg extends RedisTraceConsumer implemen
       }
       log.debug("Acquired lock for id: {}", eventKey);
       Long lastProcessedTimestamp = eventsCache.get(eventKey);
+      Instant start = Instant.now();
+
+      boolean eventHandled = false;
       if (lastProcessedTimestamp == null) {
         eventsCache.put(eventKey, currentTimestamp);
-        return eventHandler.handleEvent(debeziumChangeEvent);
+        eventHandled = eventHandler.handleEvent(debeziumChangeEvent);
       } else {
         if (lastProcessedTimestamp <= currentTimestamp) {
           eventsCache.put(eventKey, currentTimestamp);
-          return eventHandler.handleEvent(debeziumChangeEvent);
+          eventHandled = eventHandler.handleEvent(debeziumChangeEvent);
         } else {
           log.debug("Ignoring event {} with id {} as it was already updated", message.getId(), eventKey);
           return true;
         }
       }
+      double timeTaken = Duration.between(start, Instant.now()).toMillis();
+      try {
+        debeziumRedisEventMetricsTracker.updateAverage(eventHandler.getEventName(), timeTaken);
+        logMetric(eventHandler, debeziumChangeEvent, timeTaken);
+      } catch (Exception e) {
+        log.error("Exception occurred while trying to handle log metrics.", e);
+      }
+
+      return eventHandled;
     } catch (Exception exception) {
       log.error(String.format("Error occurred in processing message with id %s", message.getId()), exception);
       return false;
+    }
+  }
+
+  private void logMetric(
+      DebeziumAbstractRedisEventHandler eventHandler, DebeziumChangeEvent debeziumChangeEvent, double timeTaken) {
+    logMetricsCounter++;
+    boolean shouldLogMetrics = (logMetricsCounter % 5000) == 0;
+    if (shouldLogMetrics) {
+      log.info("Time taken for changeEvent {}:{} is {}", eventHandler.getEventName(), debeziumChangeEvent.getOptype(),
+          timeTaken);
+      log.info("Running average: {}", debeziumRedisEventMetricsTracker.getRunningAverageTime());
+      log.info("No. of change Events processed: {}", debeziumRedisEventMetricsTracker.getNumChangeEvents());
     }
   }
 

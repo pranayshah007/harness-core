@@ -233,6 +233,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
     return true;
   }
 
+  public String getEventName() {
+    return "CDPipelineExecution";
+  }
+
   private void setTimeToRestore(Record record, String originalExecutionId, Long currEndTime) {
     try {
       Result<?> result = dsl.select(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)

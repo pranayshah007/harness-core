@@ -97,6 +97,11 @@ public class ModuleLicensesChangeEventHandler extends DebeziumAbstractRedisEvent
     return true;
   }
 
+  @Override
+  public String getEventName() {
+    return "ModuleLicenses";
+  }
+
   private void populateCommonFields(JsonNode node, Record record) {
     if (node.get("accountIdentifier") != null) {
       record.set(Tables.MODULE_LICENSES.ACCOUNT_IDENTIFIER, node.get("accountIdentifier").asText());

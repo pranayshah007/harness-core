@@ -48,4 +48,5 @@ public abstract class RedisAbstractHandler {
   public abstract boolean handleCreateEvent(String id, String value);
   public abstract boolean handleDeleteEvent(String id);
   public abstract boolean handleUpdateEvent(String id, String value);
+  public abstract String getEventName();
 }
