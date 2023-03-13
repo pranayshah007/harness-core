@@ -118,6 +118,7 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
@@ -1691,17 +1692,29 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);
-      DelegateParams delegateParams = builder.build()
-                                          .toBuilder()
-                                          .delegateId(delegateId)
-                                          .lastHeartBeat(clock.millis())
-                                          .location(Paths.get("").toAbsolutePath().toString())
-                                          .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
-                                          .delegateConnectionId(delegateConnectionId)
-                                          .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
-                                          .build();
+      DelegateParams delegateParamsECS = builder.build()
+                                             .toBuilder()
+                                             .delegateId(delegateId)
+                                             .lastHeartBeat(clock.millis())
+                                             .location(Paths.get("").toAbsolutePath().toString())
+                                             .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                             .delegateConnectionId(delegateConnectionId)
+                                             .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                             .build();
 
+      // Send only minimal params over web socket to record HB
+      DelegateParams delegatesParams = DelegateParams.builder()
+                                           .delegateId(delegateId)
+                                           .accountId(accountId)
+                                           .lastHeartBeat(clock.millis())
+                                           .version(getVersion())
+                                           .location(Paths.get("").toAbsolutePath().toString())
+                                           .tokenName(DelegateAgentCommonVariables.getDelegateTokenName())
+                                           .delegateConnectionId(delegateConnectionId)
+                                           .token(tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
+                                           .build();
       try {
+        final DelegateParams delegateParams = isEcsDelegate() ? delegateParamsECS : delegatesParams;
         HTimeLimiter.callInterruptible21(
             delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
         lastHeartbeatSentAt.set(clock.millis());
@@ -2624,7 +2637,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
   }
 
-  @Override
   public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
     Response<ResponseBody> response = null;
     try {
@@ -2657,6 +2669,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response.body().close();
       }
     }
+  }
+
+  @Override
+  public void sendTaskResponse(final String taskId, final ExecutionStatusResponse taskResponse) {
+    throw new UnsupportedOperationException("Proto task status only supported for plugin delegate");
   }
 
   private void sendErrorResponse(DelegateTaskPackage delegateTaskPackage, Exception exception) {

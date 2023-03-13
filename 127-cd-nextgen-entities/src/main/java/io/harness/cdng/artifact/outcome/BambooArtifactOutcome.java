@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.BambooArtifactOutcome")
 public class BambooArtifactOutcome implements ArtifactOutcome {
-  /** Jenkins connector. */
+  /** Bamboo connector. */
   String connectorRef;
 
   /** jobName */
@@ -51,7 +51,7 @@ public class BambooArtifactOutcome implements ArtifactOutcome {
   /** Whether this config corresponds to primary artifact.*/
   boolean primaryArtifact;
 
-  /** Jenkins Artifact Metadata.*/
+  /** Bamboo Artifact Metadata.*/
   Map<String, String> metadata;
 
   @Override

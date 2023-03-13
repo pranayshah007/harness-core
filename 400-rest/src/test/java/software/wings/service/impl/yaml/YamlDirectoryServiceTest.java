@@ -410,7 +410,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
     when(infrastructureDefinitionService.list(any(PageRequest.class)))
         .thenReturn(aPageResponse().withResponse(Arrays.asList(infraDefinition_1)).build(),
             aPageResponse().withResponse(Arrays.asList(infraDefinition_2)).build());
-    when(environmentService.list(any(), anyBoolean(), any()))
+    when(environmentService.list(any(), anyBoolean(), any(), anyBoolean()))
         .thenReturn(aPageResponse().withResponse(Arrays.asList(environment_1, environment_2)).build());
     when(applicationManifestService.getAllByEnvIdAndKind(
              environment_1.getAppId(), environment_1.getUuid(), AppManifestKind.VALUES))
@@ -791,7 +791,7 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
                  .withResponse(Arrays.asList(anEnvironment().name(ENV_NAME).uuid(ENV_ID).appId(APP_ID).build()))
                  .build())
         .when(environmentService)
-        .list(any(), anyBoolean(), anyString());
+        .list(any(), anyBoolean(), anyString(), anyBoolean());
 
     PageResponse<InfrastructureDefinition> mappingResponse =
         aPageResponse()

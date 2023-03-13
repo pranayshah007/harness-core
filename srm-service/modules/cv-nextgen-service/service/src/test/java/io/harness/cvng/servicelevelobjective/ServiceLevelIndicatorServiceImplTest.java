@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective;
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
@@ -33,6 +34,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.sli.MetricOnboardingGraph;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
@@ -42,20 +44,20 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -85,7 +87,7 @@ import org.junit.experimental.categories.Category;
 public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   BuilderFactory builderFactory;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
-  @Inject Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
+  @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
   @Inject private MetricPackService metricPackService;
   @Inject HPersistence hPersistence;
@@ -126,9 +128,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
     ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
-            .getEntity(builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef(), true);
+        serviceLevelIndicatorEntityAndDTOTransformer.getEntity(builderFactory.getProjectParams(),
+            serviceLevelIndicatorDTO, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), true);
+
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
 
@@ -172,6 +174,67 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getMetricIdentifier())
         .isEqualTo("Calls per Minute");
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getDataPoints().get(0).getValue())
+        .isEqualTo(343.0);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMetricGraph() throws IOException, IllegalAccessException {
+    String tracingId = "tracingId";
+    String healthSourceRef = "healthSourceIdentifier";
+    CVConfig cvConfig =
+        builderFactory.appDynamicsCVConfigBuilder()
+            .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceRef))
+            .build();
+    hPersistence.save(cvConfig);
+    metricPackService.populateDataCollectionDsl(cvConfig.getType(), ((MetricCVConfig) cvConfig).getMetricPack());
+
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
+
+    DataCollectionInfo dataCollectionInfo =
+        dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
+            .toDataCollectionInfo(Arrays.asList(cvConfig), Collections.singletonList("identifier"));
+
+    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
+    Instant startTime = endTime.minus(Duration.ofDays(1));
+
+    DataCollectionRequest request = SyncDataCollectionRequest.builder()
+                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                        .dataCollectionInfo(dataCollectionInfo)
+                                        .endTime(endTime)
+                                        .startTime(startTime)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(cvConfig.getConnectorIdentifier())
+            .accountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
+            .tracingId(tracingId)
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    MetricOnboardingGraph metricOnboardingGraph =
+        serviceLevelIndicatorService.getMetricGraphs(builderFactory.getContext().getProjectParams(),
+            monitoredServiceIdentifier, healthSourceRef, null, Collections.singletonList("identifier"), tracingId);
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().size()).isEqualTo(1);
+
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getStartTime()).isEqualTo(1595760600000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getEndTime()).isEqualTo(1595847000000L);
+    assertThat(metricOnboardingGraph.getMetricGraphs()).hasSize(1);
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricName()).isEqualTo("name");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getMetricIdentifier()).isEqualTo("identifier");
+    assertThat(metricOnboardingGraph.getMetricGraphs().get("identifier").getDataPoints().get(0).getValue())
         .isEqualTo(343.0);
   }
 
@@ -276,6 +339,21 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCreateRequest_success() {
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
+        builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build();
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            generateUuid(), monitoredServiceIdentifier, generateUuid());
+    List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
+        serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
+    assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testUpdate_queueAnalysis_success() throws IllegalAccessException {
@@ -298,7 +376,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
     verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
-    ((RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec()).setEventType(RatioSLIMetricEventType.BAD);
+    ((RatioSLIMetricSpec) ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec())
+        .setEventType(RatioSLIMetricEventType.BAD);
     updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
         serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
     verify(orchestrationService, times(2)).queueAnalysis(sliId, startTime, endTime);
@@ -339,9 +418,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .type(ServiceLevelIndicatorType.LATENCY)
+        .type(SLIExecutionType.WINDOW)
         .sliMissingDataType(SLIMissingDataType.GOOD)
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.GOOD)
@@ -358,8 +437,8 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     return ServiceLevelIndicatorDTO.builder()
         .identifier("sliIndicator")
         .name("sliName")
-        .type(ServiceLevelIndicatorType.LATENCY)
-        .spec(ServiceLevelIndicatorSpec.builder()
+        .type(SLIExecutionType.WINDOW)
+        .spec(WindowBasedServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.THRESHOLD)
                   .spec(ThresholdSLIMetricSpec.builder()
                             .metric1("metric1")

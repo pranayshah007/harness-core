@@ -18,7 +18,6 @@ function get_PR_Modules(){
   PR_MODULES=()
   PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
   check_cmd_status "$?" "Failed to get modules from commits."
-
   echo "List of targets modules for your PR."
   echo "${PR_MODULES[@]}"
 }
@@ -60,12 +59,20 @@ if [ "${RUN_BAZEL_TESTS}" == "true" ]; then
 fi
 
 if [ "${RUN_CHECKS}" == "true" ]; then
-  get_PR_Modules
+  if [[ "${BUILD_PURPOSE}" == "PR_CHECK" ]];then
+    get_PR_Modules
+  else
+    GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
+    PR_MODULES=()
+    PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+    echo "By default target branch is develop but if your target branch is something different then you can change the target branch in line no 65 and 90 to run it in local"
+  fi
+
   TARGETS=()
   for module in "${PR_MODULES[@]}"
   do
-    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"':*)') ]];then
-      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"':*)'))
+    if [[ $(bazel query 'attr (tags,"checkstyle",//'"$module"'/...)') ]];then
+      TARGETS+=($(bazel query 'attr (tags,"checkstyle",//'"$module"'/...)'))
     fi
   done
 
@@ -77,7 +84,14 @@ if [ "${RUN_CHECKS}" == "true" ]; then
 fi
 
 if [ "${RUN_PMDS}" == "true" ]; then
-  get_PR_Modules
+   if [[ "${BUILD_PURPOSE}" == "PR_CHECK" ]];then
+      get_PR_Modules
+   else
+      GIT_DIFF="git diff --name-only develop $(git branch --show-current)"
+      PR_MODULES=()
+      PR_MODULES+=($($GIT_DIFF | awk -F/ '{print $1}' | sort -u | tr '\r\n' ' '))
+      echo "By default target branch is develop but if your target branch is something different then you can change the target branch in line no 65 and 90 to run it in local"
+    fi
   TARGETS=()
   for module in "${PR_MODULES[@]}"
   do
@@ -108,6 +122,7 @@ BAZEL_MODULES="\
   //400-rest:module \
   //400-rest:supporter-test \
   //410-cg-rest:module \
+  //419-delegate-service-app/src/main/java/io/harness/dms/app:module \
   //420-delegate-agent:module \
   //420-delegate-service:module \
   //425-verification-commons:module \
@@ -339,6 +354,7 @@ build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
 build_bazel_module 420-delegate-agent
+build_bazel_module 419-delegate-service-app/src/main/java/io/harness/dms/app
 build_bazel_module 420-delegate-service
 build_bazel_module 425-verification-commons
 build_bazel_module 440-connector-nextgen

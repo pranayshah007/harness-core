@@ -46,8 +46,6 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
-import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
@@ -121,7 +119,6 @@ public class ContainerStepInitHelper {
     String connectorRef = infrastructure.getSpec().getConnectorRef().getValue();
 
     ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
-    verifyK8sConnectorAsIam(k8sConnector);
     return CIK8InitializeTaskParams.builder()
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix))
@@ -129,19 +126,12 @@ public class ContainerStepInitHelper {
         .build();
   }
 
-  private void verifyK8sConnectorAsIam(ConnectorDetails k8sConnector) {
-    KubernetesClusterConfigDTO connectorConfig = (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
-    if (connectorConfig.getCredential().getKubernetesCredentialType()
-        != KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
-      throw new ContainerStepExecutionException("We only support k8s connector with inherit from delegate as of now");
-    }
-  }
-
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepInfo containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
     String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
-    Map<String, String> buildLabels = k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier());
+    Map<String, String> buildLabels =
+        k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier().replace("_", ""));
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
         "annotations", "ContainerStep", "stepSetup", k8sDirectInfraYaml.getSpec().getAnnotations(), false);
     Map<String, String> labels = ExpressionResolverUtils.resolveMapParameter(
@@ -174,6 +164,7 @@ public class ContainerStepInitHelper {
         .priorityClassName(k8sDirectInfraYaml.getSpec().getPriorityClassName().getValue())
         .containerParamsList(podContainers.getRight())
         .initContainerParamsList(singletonList(podContainers.getLeft()))
+        .tolerations(k8sPodInitUtils.getPodTolerations(k8sDirectInfraYaml.getSpec().getTolerations()))
         .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
         .volumes(volumes)
         .build();
@@ -391,9 +382,9 @@ public class ContainerStepInitHelper {
     if (runStepInfo.getConnectorRef() == null) {
       throw new ContainerStepExecutionException("connector ref can't be empty in k8s infrastructure");
     }
-    String identifier = runStepInfo.getIdentifier();
+    String identifier = runStepInfo.getIdentifier().replace("_", "");
     Integer port = portFinder.getNextPort();
-    String containerName = format("%s%s", STEP_PREFIX, runStepInfo.getIdentifier().toLowerCase());
+    String containerName = format("%s%s", STEP_PREFIX, identifier).toLowerCase();
 
     Map<String, String> stepEnvVars = new HashMap<>();
     Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameter(

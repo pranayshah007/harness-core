@@ -51,11 +51,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  public static final String NULL_STR = "null";
   private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
@@ -101,6 +104,21 @@ public class YamlUtils {
 
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
+  }
+
+  // This is added to prevent duplicate fields in the yaml. Without this, through api duplicate fields were allowed to
+  // save. The below yaml is invalid and should not be allowed to save.
+  /*
+  pipeline:
+    name: pipeline
+    orgIdentifier: org
+    projectIdentifier: project
+    orgIdentifier: org
+   */
+  public YamlField readTree(String content, boolean checkDuplicate) throws IOException {
+    ObjectMapper mapperWithDuplicate = new ObjectMapper(new YAMLFactory());
+    mapperWithDuplicate.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, checkDuplicate);
+    return readTreeInternal(content, mapperWithDuplicate);
   }
 
   public YamlField tryReadTree(String content) {
@@ -166,6 +184,40 @@ public class YamlUtils {
       return field;
     }
     throw new InvalidRequestException("No Top root node available in the yaml.");
+  }
+
+  public void replaceFieldInJsonNodeFromAnotherJsonNode(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    if (baseNode == null || valueNode == null) {
+      return;
+    }
+    if (baseNode.getNodeType() != valueNode.getNodeType()) {
+      throw new InvalidRequestException("Both jsonNodes must be of same nodeType. Can not replace the values.");
+    }
+    if (baseNode.isObject()) {
+      injectUuidInObjectWithLeafValues(baseNode, valueNode, fieldName);
+    } else if (baseNode.isArray()) {
+      injectUuidInArrayWithLeafUuid(baseNode, valueNode, fieldName);
+    }
+  }
+
+  private void injectUuidInObjectWithLeafValues(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ObjectNode objectNode = (ObjectNode) baseNode;
+    if (objectNode.get(fieldName) != null) {
+      objectNode.put(fieldName, valueNode.get(fieldName));
+    }
+    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Entry<String, JsonNode> field = it.next();
+      if (!field.getValue().isValueNode()) {
+        replaceFieldInJsonNodeFromAnotherJsonNode(field.getValue(), valueNode.get(field.getKey()), fieldName);
+      }
+    }
+  }
+
+  private void injectUuidInArrayWithLeafUuid(JsonNode baseNode, JsonNode valueNode, String fieldName) {
+    ArrayNode arrayNode = (ArrayNode) baseNode;
+    for (int index = 0; index < arrayNode.size(); index++) {
+      replaceFieldInJsonNodeFromAnotherJsonNode(arrayNode.get(index), valueNode.get(index), fieldName);
+    }
   }
 
   public YamlField injectUuidWithLeafUuid(String content) throws IOException {

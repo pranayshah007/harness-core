@@ -34,6 +34,10 @@ import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
@@ -167,6 +171,22 @@ public class ConnectorServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void createUpdateJiraConnector_PatAuthWithFFDisabled() {
+    ConnectorDTO connectorDTO = getJiraConnectorPatDTO();
+    String accountIdentifier = randomAlphabetic(10);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
+
+    assertThatThrownBy(() -> connectorService.create(connectorDTO, accountIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported jira auth type provided : PAT");
+    assertThatThrownBy(() -> connectorService.update(connectorDTO, accountIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported jira auth type provided : PAT");
+  }
+
+  @Test
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void deleteSecretManagerWhenNoOtherSMPresent() {
@@ -214,6 +234,25 @@ public class ConnectorServiceImplTest extends CategoryTest {
                                                                     .build())
                                                    .build())
                                          .serviceNowUrl("https://test.service-now.com")
+                                         .build());
+    connectorInfo.setName("name");
+    connectorInfo.setIdentifier("identifier");
+    connectorInfo.setOrgIdentifier("orgIdentifier");
+    connectorInfo.setProjectIdentifier("projectIdentifier");
+    return ConnectorDTO.builder().connectorInfo(connectorInfo).build();
+  }
+
+  private ConnectorDTO getJiraConnectorPatDTO() {
+    SecretRefData secretRefData = new SecretRefData(randomAlphabetic(10));
+    secretRefData.setDecryptedValue(randomAlphabetic(5).toCharArray());
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().build();
+    connectorInfo.setConnectorType(ConnectorType.JIRA);
+    connectorInfo.setConnectorConfig(JiraConnectorDTO.builder()
+                                         .auth(JiraAuthenticationDTO.builder()
+                                                   .authType(JiraAuthType.PAT)
+                                                   .credentials(JiraPATDTO.builder().patRef(secretRefData).build())
+                                                   .build())
+                                         .jiraUrl("https://test.atlassian.com")
                                          .build());
     connectorInfo.setName("name");
     connectorInfo.setIdentifier("identifier");

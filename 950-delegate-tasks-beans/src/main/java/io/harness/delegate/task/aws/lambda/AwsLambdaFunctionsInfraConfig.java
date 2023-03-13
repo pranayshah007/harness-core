@@ -19,13 +19,13 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import software.amazon.awssdk.regions.Region;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AwsLambdaFunctionsInfraConfig implements AwsLambdaInfraConfig {
   AwsConnectorDTO awsConnectorDTO;
-  @NonFinal @Expression(ALLOW_SECRETS) Region region;
+  @NonFinal @Expression(ALLOW_SECRETS) String region;
   List<EncryptedDataDetail> encryptionDataDetails;
+  String infraStructureKey;
 }

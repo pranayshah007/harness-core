@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.infra.beans.AsgInfraMapping;
+import io.harness.cdng.infra.beans.AwsLambdaInfrastructureMapping;
 import io.harness.cdng.infra.beans.AwsSamInfraMapping;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
@@ -39,6 +40,7 @@ import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.ElastigroupInfraMapping;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
@@ -90,6 +92,8 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AwsSamInfraMapping.class);
     set.add(ModuleVersionInfo.class);
     set.add(ScopeAware.class);
+    set.add(AwsLambdaInfrastructureMapping.class);
+    set.add(K8sAwsInfraMapping.class);
   }
 
   @Override

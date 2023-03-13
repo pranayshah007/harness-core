@@ -10,7 +10,7 @@ package io.harness.cdng.bamboo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -19,7 +19,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 @OwnedBy(CDC)
 public interface BambooBuildStepHelperService {
-  TaskRequest prepareTaskRequest(BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder paramsBuilder,
-      Ambiance ambiance, String connectorRef, String timeStr, String taskName);
+  TaskRequest prepareTaskRequest(BambooArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
+      String connectorRef, String timeStr, String taskName);
   StepResponse prepareStepResponse(ThrowingSupplier<ArtifactTaskResponse> responseSupplier) throws Exception;
 }

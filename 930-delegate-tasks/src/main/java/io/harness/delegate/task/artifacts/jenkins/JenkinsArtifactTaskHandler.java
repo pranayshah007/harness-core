@@ -75,6 +75,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.conn.ConnectTimeoutException;
 
@@ -323,7 +324,11 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
       }
       String consoleLogs = jenkinsRegistryUtils.getJenkinsConsoleLogs(
           jenkinsInternalConfig, attributesRequest.getJobName(), String.valueOf(jenkinsBuild.getNumber()));
-      executionLogCallback.saveExecutionLog(consoleLogs, LogLevel.INFO);
+      if (StringUtils.isNotBlank(consoleLogs)) {
+        executionLogCallback.saveExecutionLog(consoleLogs, LogLevel.INFO);
+      } else {
+        executionLogCallback.saveExecutionLog("We could not fetch the logs from Jenkins", LogLevel.WARN);
+      }
     } catch (WingsException e) {
       ExceptionLogger.logProcessedMessages(e, DELEGATE, log);
       executionStatus = ExecutionStatus.FAILED;

@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.git;
+
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -29,6 +30,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -43,10 +45,12 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
+import io.harness.delegate.task.gitapi.client.impl.BitbucketApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.helper.BitbucketHelper;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -80,7 +84,6 @@ import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -110,6 +113,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject private BitbucketApiClient bitbucketApiClient;
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -180,6 +184,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         case AZURE_REPO:
           responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
           break;
+        case BITBUCKET:
+          responseData = (GitApiTaskResponse) bitbucketApiClient.mergePR(taskParams);
+          break;
 
         default:
           String errorMsg = "Failed to execute MergePR step. Connector not supported";
@@ -221,8 +228,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress)
       throws IOException, ParseException {
     try {
-      FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, false);
+      FetchFilesResult fetchFilesResult =
+          gitOpsTaskHelper.getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(),
+              gitOpsTaskParams.getAccountId(), logCallback, gitOpsTaskParams.isCloseLogStream());
       updateFilesNotFoundWithEmptyContent(
           fetchFilesResult, gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getPaths());
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
@@ -336,7 +344,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
-      // TODO: BITBUCKET
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
         return "https://github.com"
@@ -349,6 +356,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
         return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
+      case BITBUCKET:
+        return BitbucketHelper.getBitbucketPRLink((BitbucketConnectorDTO) scmConnector, prNumber);
       default:
         return "";
     }
@@ -416,56 +425,36 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .build());
   }
 
-  public JSONObject mapToJson(Map<String, String> stringMap) {
-    JSONObject fieldsToUpdate = new JSONObject(stringMap);
-    JSONObject nestedFields = new JSONObject();
+  public JSONObject mapToJson(String key, String value) {
+    /*
+      we need to make a conversion as shown below:
 
-    Set<String> complexFields = new HashSet<>();
+      "place.details.city": "blr"
+      TO
+      "place":
+       {
+          "details":
+          {
+             "city": "blr",
+          }
+       }
+     */
 
-    for (Object key : fieldsToUpdate.keySet()) {
-      String str = (String) key;
-      if (str.contains(".")) {
-        /*
-          we need to make a conversion as shown below:
+    String[] keys = key.split("\\.");
 
-          "place.details.city": "blr"
-          TO
-          "place":
-           {
-              "details":
-              {
-                 "city": "blr",
-              }
-           }
-         */
-        complexFields.add(str);
+    int len = keys.length - 1;
 
-        String[] keys = str.split("\\.");
+    Map<Object, Object> map1 = new HashMap<>();
+    Map<Object, Object> map2 = new HashMap<>();
 
-        int len = keys.length - 1;
+    map1.put(keys[len], value);
 
-        Map<Object, Object> map1 = new HashMap<>();
-        Map<Object, Object> map2 = new HashMap<>();
-
-        map1.put(keys[len], fieldsToUpdate.get(key));
-
-        while (--len >= 0) {
-          map2.put(keys[len], map1);
-          map1 = map2;
-          map2 = new HashMap<>();
-        }
-
-        nestedFields.putAll(map1);
-      }
+    while (--len >= 0) {
+      map2.put(keys[len], map1);
+      map1 = map2;
+      map2 = new HashMap<>();
     }
-
-    for (String str : complexFields) {
-      fieldsToUpdate.remove(str);
-    }
-
-    fieldsToUpdate.putAll(nestedFields);
-
-    return fieldsToUpdate;
+    return new JSONObject(map1);
   }
 
   /**
@@ -488,15 +477,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
       stringObjectMap.forEach(
           (k, v) -> logCallback.saveExecutionLog(format("%s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
-      if (StringUtils.isEmpty(gitFile.getFileContent())) {
-        updatedFiles.add(gson.toJson(stringObjectMap));
-      } else {
-        if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
-          updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
-        } else {
-          updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
-        }
+      String fileContent = gitFile.getFileContent();
+      if (!StringUtils.isEmpty(fileContent) && !fileContent.toLowerCase().endsWith(".json")) {
+        fileContent = convertYamlToJson(fileContent);
       }
+      updatedFiles.add(updateJSONFile(fileContent, stringObjectMap));
     }
 
     List<GitFile> updatedGitFiles = new ArrayList<>();
@@ -524,33 +509,47 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
    * @throws ParseException
    * @throws JsonProcessingException
    */
-  public String replaceFields(String fileContent, Map<String, String> stringObjectMap)
+  public String updateJSONFile(String fileContent, Map<String, String> stringObjectMap)
       throws ParseException, JsonProcessingException {
-    JSONObject fieldsToUpdate = mapToJson(stringObjectMap);
-    JSONParser parser = new JSONParser();
-    JSONObject json = (JSONObject) parser.parse(fileContent);
+    JSONObject existingFile = new JSONObject();
+    if (!StringUtils.isEmpty(fileContent)) {
+      JSONParser parser = new JSONParser();
+      existingFile = (JSONObject) parser.parse(fileContent);
+    }
 
-    // change the required fields by merging
-    json.putAll(fieldsToUpdate);
+    for (String key : stringObjectMap.keySet()) {
+      existingFile = mergeJSON(existingFile, mapToJson(key, stringObjectMap.get(key)));
+    }
 
-    return convertToPrettyJson(json.toString());
+    return convertToPrettyJson(existingFile.toString());
   }
 
-  public List<String> replaceFieldsNew(List<String> fileList, Map<String, String> stringObjectMap)
-      throws ParseException, JsonProcessingException {
-    List<String> result = new ArrayList<>();
-    JSONObject fieldsToUpdate = mapToJson(stringObjectMap);
-
-    for (String file : fileList) {
-      JSONParser parser = new JSONParser();
-      JSONObject json = (JSONObject) parser.parse(file);
-
-      // change the required fields by merging
-      json.putAll(fieldsToUpdate);
-
-      result.add(convertToPrettyJson(json.toString()));
+  public JSONObject mergeJSON(JSONObject existing, JSONObject updated) {
+    Set<String> existingKeys = existing.keySet();
+    for (Object updatedKey : updated.keySet()) {
+      if (!existingKeys.contains(updatedKey)) {
+        existing.put(updatedKey, updated.get(updatedKey));
+      } else {
+        Object existingObject = existing.get(updatedKey);
+        Object updatingObject = updated.get(updatedKey);
+        if (existingObject instanceof String && updatingObject instanceof String) {
+          existing.put(updatedKey, updatingObject);
+        } else if (existingObject instanceof String) {
+          throw new InvalidRequestException("Data Type Mismatch: expected string, received nested map.");
+        } else if (updatingObject instanceof String) {
+          throw new InvalidRequestException("Data Type Mismatch: expected nested map, received string.");
+        } else {
+          if (existingObject instanceof Map && updatingObject instanceof Map) {
+            existing.put(
+                updatedKey, mergeJSON(new JSONObject((Map) existingObject), new JSONObject((Map) updatingObject)));
+          } else {
+            throw new InvalidRequestException(
+                format("Received unsupported data type for this operation: %s", updatingObject.getClass()));
+          }
+        }
+      }
     }
-    return result;
+    return existing;
   }
 
   public String convertToPrettyJson(String uglyJson) throws JsonProcessingException {

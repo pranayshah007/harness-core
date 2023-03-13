@@ -44,7 +44,8 @@ public class CloudformationCreateStepMapperImpl extends BaseCloudformationProvis
   }
 
   @Override
-  public List<CgEntityId> getReferencedEntities(GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+  public List<CgEntityId> getReferencedEntities(
+      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     CloudFormationCreateStackState state = (CloudFormationCreateStackState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

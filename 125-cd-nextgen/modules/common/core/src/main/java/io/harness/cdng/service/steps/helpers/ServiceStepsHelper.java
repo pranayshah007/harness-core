@@ -7,7 +7,6 @@
 
 package io.harness.cdng.service.steps.helpers;
 
-import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.STEP_TYPE;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 

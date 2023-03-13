@@ -51,6 +51,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.UTSAV;
@@ -168,6 +169,7 @@ import io.harness.k8s.kubectl.GetJobCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
+import io.harness.k8s.kubectl.VersionCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
@@ -648,7 +650,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .processResult(new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes())))
             .build();
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
-
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
     final String workingDirectory = ".";
     K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
                                                       .workingDirectory(workingDirectory)
@@ -668,6 +671,128 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
           assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
           return true;
         });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunManifestIsErrorFrameworkEnabledWithResources() throws Exception {
+    ProcessResponse response =
+        ProcessResponse.builder()
+            .processResult(new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes())))
+            .build();
+    Kubectl client = Kubectl.client("kubectl", "config-path");
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+
+    assertThatThrownBy(
+        ()
+            -> spyK8sTaskHelperBase.dryRunManifests(client,
+                Collections.singletonList(
+                    KubernetesResource.builder()
+                        .spec("Sample resouece")
+                        .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
+                        .build()),
+                k8sDelegateTaskParams, executionLogCallback, true, false))
+        .matches(throwable -> {
+          KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
+          assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
+              .contains("Something went wrong");
+          assertThat(taskException.getResourcesNotApplied().contains("deployment/test-svc"));
+          assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
+          return true;
+        });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunManifestIsErrorFrameworkEnabledWithEmptyOutput() throws Exception {
+    ProcessResponse response = ProcessResponse.builder().processResult(new ProcessResult(1, null)).build();
+    Kubectl client = Kubectl.client("kubectl", "config-path");
+    doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+
+    assertThatThrownBy(
+        ()
+            -> spyK8sTaskHelperBase.dryRunManifests(client,
+                Collections.singletonList(
+                    KubernetesResource.builder()
+                        .spec("Sample resouece")
+                        .resourceId(new KubernetesResourceId().builder().kind("Deployment").name("test-svc").build())
+                        .build()),
+                k8sDelegateTaskParams, executionLogCallback, true, false))
+        .matches(throwable -> {
+          KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
+          assertThat(taskException.getResourcesNotApplied().contains("deployment/test-svc"));
+          assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
+          assertThat(taskException.getKubectlVersion()).contains("");
+          return true;
+        });
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunForOpenshiftResourcesNoOutput() throws Exception {
+    ProcessResult result = new ProcessResult(0, null);
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+    Kubectl client = Kubectl.client("kubectl", "config-path");
+    String result2 = spyK8sTaskHelperBase.getKubernetesVersion(k8sDelegateTaskParams, client);
+    assertThat(result2).isEqualTo("");
+    ArgumentCaptor<VersionCommand> captor = ArgumentCaptor.forClass(VersionCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutableSilent(any(), captor.capture());
+    assertThat(captor.getValue().command()).isEqualTo("kubectl --kubeconfig=config-path version --output=json");
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testDryRunForOpenshiftResourcesKubernetesVersion() throws Exception {
+    ProcessResult result = new ProcessResult(0,
+        new ProcessOutput(
+            "{\"clientVersion\":{\"gitVersion\":\"v1.19.2\"},\"serverVersion\":{\"gitVersion\":\"v1.23.14-gke.1800\"}}"
+                .getBytes()));
+    doReturn(result).when(spyK8sTaskHelperBase).runK8sExecutableSilent(any(), any());
+
+    final String workingDirectory = ".";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory(workingDirectory)
+                                                      .ocPath("oc")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("config-path")
+                                                      .build();
+    Kubectl client = Kubectl.client("kubectl", "config-path");
+
+    String result2 = spyK8sTaskHelperBase.getKubernetesVersion(k8sDelegateTaskParams, client);
+    assertThat(result2).contains(
+        "{\"clientVersion\":{\"gitVersion\":\"v1.19.2\"},\"serverVersion\":{\"gitVersion\":\"v1.23.14-gke.1800\"}}");
+    ArgumentCaptor<VersionCommand> captor = ArgumentCaptor.forClass(VersionCommand.class);
+    verify(spyK8sTaskHelperBase, times(1)).runK8sExecutableSilent(any(), captor.capture());
+    assertThat(captor.getValue().command()).isEqualTo("kubectl --kubeconfig=config-path version --output=json");
   }
 
   @Test
@@ -1056,14 +1181,23 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   public void getCurrentReplicas() throws Exception {
     doReturn(K8sTestHelper.buildProcessResult(0, "3"))
         .doReturn(K8sTestHelper.buildProcessResult(1))
+        .doReturn(K8sTestHelper.buildProcessResult(0, ""))
         .when(spyK8sTaskHelperBase)
         .runK8sExecutableSilent(any(), any());
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isEqualTo(3);
 
-    assertThat(spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
-                   K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build()))
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
+        .isNull();
+
+    assertThat(
+        spyK8sTaskHelperBase.getCurrentReplicas(Kubectl.client("kubectl", "kubeconfig"),
+            K8sTestHelper.deployment().getResourceId(), K8sDelegateTaskParams.builder().build(), executionLogCallback))
         .isNull();
   }
 
@@ -3146,14 +3280,14 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<FileData> renderedFiles = new ArrayList<>();
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback);
+        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
         valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback);
+        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
   }
 
   @Test
@@ -3174,7 +3308,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
         .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback);
+            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplateForGivenFiles(delegateTaskParams, manifestDelegateConfig,
         "manifest", fileList, valuesList, "release", "namespace", executionLogCallback, 10, false);
@@ -3182,7 +3316,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
         .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback);
+            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
   }
 
   @Test

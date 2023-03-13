@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.api;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.pipeline.api.PipelinesApiUtils.getMoveConfigType;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,18 +17,20 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
-import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetError;
 import io.harness.spec.server.pipeline.v1.model.InputSetErrorDetails;
@@ -50,6 +53,8 @@ import lombok.AllArgsConstructor;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputSetsApiUtils {
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
+  @Inject private final NGSettingsClient ngSettingsClient;
 
   public InputSetResponseBody getInputSetResponse(InputSetEntity inputSetEntity) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
@@ -200,5 +205,30 @@ public class InputSetsApiUtils {
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
     return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+  }
+
+  public boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {
+    String isGitClientEnabledString =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(
+                GitSyncConstants.ALLOW_DIFFERENT_REPO_FOR_PIPELINE_AND_INPUT_SETS, accountId, null, null))
+            .getValue();
+    return GitSyncConstants.TRUE_VALUE.equals(isGitClientEnabledString);
+  }
+
+  public static InputSetMoveConfigOperationDTO buildMoveConfigOperationDTO(GitMoveDetails gitDetails,
+      io.harness.spec.server.pipeline.v1.model.MoveConfigOperationType moveConfigOperationType,
+      String pipelineIdentifier) {
+    return InputSetMoveConfigOperationDTO.builder()
+        .repoName(gitDetails.getRepoName())
+        .branch(gitDetails.getBranchName())
+        .moveConfigOperationType(getMoveConfigType(moveConfigOperationType))
+        .connectorRef(gitDetails.getConnectorRef())
+        .baseBranch(gitDetails.getBaseBranch())
+        .commitMessage(gitDetails.getCommitMessage())
+        .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
+        .filePath(gitDetails.getFilePath())
+        .pipelineIdentifier(pipelineIdentifier)
+        .build();
   }
 }

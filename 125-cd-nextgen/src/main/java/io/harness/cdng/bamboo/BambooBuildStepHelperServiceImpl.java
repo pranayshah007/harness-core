@@ -7,7 +7,6 @@
 
 package io.harness.cdng.bamboo;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
@@ -15,6 +14,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.bamboo.BambooBuildOutcome.BambooBuildOutcomeBuilder;
 import io.harness.common.NGTaskType;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorDTO;
@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.bamboo.BambooConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -35,7 +36,6 @@ import io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -83,8 +83,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
   }
 
   @Override
-  public TaskRequest prepareTaskRequest(
-      BambooArtifactDelegateRequest.BambooArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
+  public TaskRequest prepareTaskRequest(BambooArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
       String connectorRef, String timeStr, String taskName) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
@@ -135,7 +134,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
     ArtifactTaskResponse taskResponse = responseSupplier.get();
     BambooBuildTaskNGResponse bambooBuildTaskNGResponse =
         taskResponse.getArtifactTaskExecutionResponse().getBambooBuildTaskNGResponse();
-    BambooBuildOutcome.BambooBuildOutcomeBuilder bambooBuildOutcomeBuilder =
+    BambooBuildOutcomeBuilder bambooBuildOutcomeBuilder =
         BambooBuildOutcome.builder()
             .buildNumber(bambooBuildTaskNGResponse.getBuildNumber())
             .buildStatus(bambooBuildTaskNGResponse.getBuildStatus())

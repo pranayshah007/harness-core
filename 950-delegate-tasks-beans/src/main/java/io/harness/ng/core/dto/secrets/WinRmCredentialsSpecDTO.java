@@ -18,7 +18,10 @@ import software.wings.stencils.DefaultValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.github.reinert.jjschema.Attributes;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -37,6 +40,7 @@ import lombok.NoArgsConstructor;
 public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
   @Schema(description = "WinRm port") @DefaultValue("5986") int port = 5986;
   @Valid @NotNull WinRmAuthDTO auth;
+  @Attributes(title = "Parameters") private List<WinRmCommandParameter> parameters = Collections.emptyList();
 
   @Override
   @JsonIgnore
@@ -46,12 +50,13 @@ public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
 
   @Override
   public SecretSpec toEntity() {
-    return WinRmCredentialsSpec.builder().port(getPort()).auth(this.auth.toEntity()).build();
+    return WinRmCredentialsSpec.builder().port(getPort()).auth(this.auth.toEntity()).parameters(parameters).build();
   }
 
   @Builder
-  public WinRmCredentialsSpecDTO(int port, WinRmAuthDTO auth) {
+  public WinRmCredentialsSpecDTO(int port, WinRmAuthDTO auth, List<WinRmCommandParameter> parameters) {
     this.port = port;
     this.auth = auth;
+    this.parameters = parameters;
   }
 }

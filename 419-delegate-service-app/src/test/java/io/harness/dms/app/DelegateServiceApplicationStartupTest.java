@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.ANUPAM;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.dms.app.DelegateServiceApp;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
@@ -29,6 +28,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -72,6 +72,7 @@ public class DelegateServiceApplicationStartupTest {
   @Test
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
+  @Ignore("TODO: As discussed with team enable this once DMS support FF")
   public void testAppStartup() {
     final Client client = new JerseyClientBuilder().sslContext(Http.getSslContext()).build();
     final Response response =

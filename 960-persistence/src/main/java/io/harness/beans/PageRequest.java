@@ -553,6 +553,7 @@ public class PageRequest<T> {
     private List<String> fieldsIncluded = new ArrayList<>();
     private List<String> fieldsExcluded = new ArrayList<>();
     private UriInfo uriInfo;
+    private BasicDBObject indexHint;
 
     private PageRequestBuilder() {}
 
@@ -667,6 +668,11 @@ public class PageRequest<T> {
       return this;
     }
 
+    public PageRequestBuilder withIndexHint(BasicDBObject hint) {
+      this.indexHint = hint;
+      return this;
+    }
+
     /**
      * Builds the.
      *
@@ -681,6 +687,7 @@ public class PageRequest<T> {
       pageRequest.setFieldsIncluded(fieldsIncluded);
       pageRequest.setFieldsExcluded(fieldsExcluded);
       pageRequest.setUriInfo(uriInfo);
+      pageRequest.setIndexHint(indexHint);
       return pageRequest;
     }
   }

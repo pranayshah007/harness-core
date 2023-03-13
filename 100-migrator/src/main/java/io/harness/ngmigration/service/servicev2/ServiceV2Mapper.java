@@ -33,7 +33,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,27 +67,28 @@ public interface ServiceV2Mapper {
   default PrimaryArtifact getPrimaryArtifactStream(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<ArtifactStream> artifactStreams = getArtifactStream(entities, graph, service);
-    List<ArtifactSource> sources = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(artifactStreams)) {
-      sources =
-          artifactStreams.stream()
-              .map(artifactStream -> {
-                PrimaryArtifact artifactSource =
-                    ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
-                        .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
-                if (isNotEmpty(artifactSource.getSources())) {
-                  return artifactSource.getSources();
-                } else {
-                  return Arrays.asList(ArtifactSource.builder()
-                                           .sourceType(artifactSource.getSourceType())
-                                           .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                                           .spec(artifactSource.getSpec())
-                                           .build());
-                }
-              })
-              .flatMap(List::stream)
-              .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(artifactStreams)) {
+      return null;
     }
+    List<ArtifactSource> sources =
+        artifactStreams.stream()
+            .map(artifactStream -> {
+              PrimaryArtifact artifactSource =
+                  ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
+                      .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
+              if (isNotEmpty(artifactSource.getSources())) {
+                return artifactSource.getSources();
+              } else {
+                return Collections.singletonList(
+                    ArtifactSource.builder()
+                        .sourceType(artifactSource.getSourceType())
+                        .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
+                        .spec(artifactSource.getSpec())
+                        .build());
+              }
+            })
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
     return PrimaryArtifact.builder()
         .primaryArtifactRef(ParameterField.createValueField("<+input>"))
         .sources(sources)

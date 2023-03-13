@@ -7,7 +7,7 @@
 
 package io.harness.cdng.bamboo;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -33,8 +33,8 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.BAMBOO_BUILD)
 @TypeAlias("BambooBuildStepNode")
-@OwnedBy(PIPELINE)
-@RecasterAlias("BambooBuildStepNode")
+@OwnedBy(CDC)
+@RecasterAlias("io.harness.cdng.bamboo.BambooBuildStepNode")
 public class BambooBuildStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull BambooBuildStepNode.StepType type = BambooBuildStepNode.StepType.BambooBuild;
   @NotNull

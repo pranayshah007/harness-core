@@ -19,6 +19,8 @@ import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
+import io.harness.ccm.views.dto.LinkedPerspectives;
+import io.harness.ccm.views.dto.LinkedPerspectives.LinkedPerspectivesBuilder;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
@@ -56,10 +58,10 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
 
-import com.google.cloud.bigquery.BigQuery;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -311,7 +313,7 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName) {
+  public CEView updateTotalCost(CEView ceView) {
     if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
       List<QLCEViewAggregation> totalCostAggregationFunction = Collections.singletonList(
           QLCEViewAggregation.builder().columnName("cost").operationType(QLCEViewAggregateOperation.SUM).build());
@@ -369,6 +371,11 @@ public class CEViewServiceImpl implements CEViewService {
     return getQLCEViewsFromCEViews(accountId, viewList, folderList);
   }
 
+  @Override
+  public List<CEView> getAllViews(String accountId) {
+    return ceViewDao.list(accountId);
+  }
+
   private List<QLCEView> getQLCEViewsFromCEViews(
       String accountId, List<CEView> viewList, List<CEViewFolder> folderList) {
     List<QLCEView> graphQLViewObjList = new ArrayList<>();
@@ -421,6 +428,22 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getViewByState(String accountId, ViewState viewState) {
     return ceViewDao.findByAccountIdAndState(accountId, viewState);
+  }
+
+  @Override
+  public List<LinkedPerspectives> getViewsByBusinessMapping(String accountId, List<String> businessMappingUuids) {
+    List<LinkedPerspectives> perspectiveListMessageList = new ArrayList<>();
+    for (String businessMappingUuid : businessMappingUuids) {
+      List<CEView> ceViewList = ceViewDao.findByAccountIdAndBusinessMapping(accountId, businessMappingUuid);
+      LinkedPerspectivesBuilder perspectiveListMessageBuilder =
+          LinkedPerspectives.builder().costCategoryId(businessMappingUuid);
+      if (!Lists.isNullOrEmpty(ceViewList)) {
+        perspectiveListMessageBuilder.perspectiveIdAndName(
+            ceViewList.stream().collect(Collectors.toMap(CEView::getUuid, CEView::getName)));
+      }
+      perspectiveListMessageList.add(perspectiveListMessageBuilder.build());
+    }
+    return perspectiveListMessageList;
   }
 
   private ViewIdCondition getDefaultViewIdCondition(String fieldId, String fieldName, ViewFieldIdentifier identifier) {

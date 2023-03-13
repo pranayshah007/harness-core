@@ -11,18 +11,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.filter.DelegateFilterPropertiesMapper;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesMapper;
+import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
-import io.harness.service.impl.DelegateCacheImpl;
+import io.harness.service.impl.DelegateAuthServiceImpl;
 import io.harness.service.impl.DelegateCallbackRegistryImpl;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
 import io.harness.service.impl.TaskProgressServiceImpl;
-import io.harness.service.intfc.DelegateCache;
+import io.harness.service.intfc.DelegateAuthService;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateTaskSelectorMapService;
@@ -37,14 +38,14 @@ public class DelegateServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(FiltersModule.getInstance());
-
+    install(FeatureFlagModule.getInstance());
     bind(DelegateTaskService.class).to(DelegateTaskServiceImpl.class);
     bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(DelegateCallbackRegistry.class).to(DelegateCallbackRegistryImpl.class);
     bind(DelegateTaskSelectorMapService.class).to(DelegateTaskSelectorMapServiceImpl.class);
-    bind(DelegateCache.class).to(DelegateCacheImpl.class);
     bind(TaskProgressService.class).to(TaskProgressServiceImpl.class);
     bind(DelegateSetupService.class).to(DelegateSetupServiceImpl.class);
+    bind(DelegateAuthService.class).to(DelegateAuthServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.DELEGATE.toString()).to(DelegateFilterPropertiesMapper.class);

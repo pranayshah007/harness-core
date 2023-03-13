@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.VLICA;
 import static io.harness.terraform.TerraformConstants.DEFAULT_TERRAFORM_COMMAND_TIMEOUT;
 
 import static java.lang.String.format;
@@ -25,9 +26,9 @@ import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.contains;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -96,7 +97,8 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(format("echo \"no\" | %s", command)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
-            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(),
+            anyLong());
 
     CliResponse actualResponse = terraformClientImpl.init(terraformInitCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -133,7 +135,41 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
+
+    doReturn(getCliResponseTfVersion(version.getMajor(), version.getMinor(), version.getPatch()))
+        .when(cliHelper)
+        .executeCliCommand(eq("terraform version"), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
+            eq(SCRIPT_FILES_DIRECTORY), any(LogCallback.class));
+
+    CliResponse actualResponse = terraformClientImpl.destroy(terraformDestroyCommandRequest,
+        DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+
+    assertThat(actualResponse).isEqualTo(cliResponse);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testDestroyCommandUsingTf012AndTfCloudCli() throws InterruptedException, IOException, TimeoutException {
+    testDestroyCommandUsingVersionAndTerraformCloudCLI(TerraformVersion.create(0, 12, 3));
+  }
+
+  private void testDestroyCommandUsingVersionAndTerraformCloudCLI(TerraformVersion version)
+      throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponse();
+    TerraformDestroyCommandRequest terraformDestroyCommandRequest =
+        TerraformDestroyCommandRequest.builder()
+            .targets(Arrays.asList("10.0.10.1", "10.0.10.2"))
+            .varFilePaths(Arrays.asList("variableParams"))
+            .isTerraformCloudCli(true)
+            .build();
+    String command = format("echo yes | terraform destroy %s %s", TerraformHelperUtils.getAutoApproveArgument(version),
+        TerraformHelperUtils.generateCommandFlagsString(terraformDestroyCommandRequest.getTargets(), "-target="));
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     doReturn(getCliResponseTfVersion(version.getMajor(), version.getMinor(), version.getPatch()))
         .when(cliHelper)
@@ -160,7 +196,29 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
+
+    CliResponse actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest,
+        DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+
+    assertThat(actualResponse).isEqualTo(cliResponse);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testPlanCommandWithDestroyAndTerraformCloudCli()
+      throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponse();
+    TerraformPlanCommandRequest terraformPlanCommandRequest =
+        TerraformPlanCommandRequest.builder().destroySet(true).isTerraformCloudCli(true).build();
+
+    String command = format("terraform plan -input=false -detailed-exitcode -destroy %s",
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="));
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -183,7 +241,37 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(and(contains(command), contains(varParams)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
-            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any(), any());
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any(), any(),
+            anyLong());
+
+    CliResponse actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest,
+        DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+    assertThat(actualResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualResponse.getExitCode()).isEqualTo(2);
+
+    cliResponse.setExitCode(0);
+    actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
+        Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+    assertThat(actualResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualResponse.getExitCode()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testPlanCommandAndTerraformCloudCli() throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponseWithExitCode(2);
+    String varParams = "-compact-warnings";
+    TerraformPlanCommandRequest terraformPlanCommandRequest =
+        TerraformPlanCommandRequest.builder().varParams(varParams).isTerraformCloudCli(true).build();
+
+    String command = format("terraform plan -input=false -detailed-exitcode %s",
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="));
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(and(contains(command), contains(varParams)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any(), any(),
+            anyLong());
 
     CliResponse actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -212,7 +300,8 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(and(contains(command), contains(varParams)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
-            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any(), any());
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any(), any(),
+            anyLong());
 
     assertThatThrownBy(()
                            -> terraformClientImpl.plan(terraformPlanCommandRequest, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
@@ -233,7 +322,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.refresh(terraformRefreshCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -263,7 +352,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(loggingCommand), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(loggingCommand), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.refresh(terraformRefreshCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -297,7 +386,28 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
+
+    CliResponse actualResponse = terraformClientImpl.apply(terraformApplyCommandRequest,
+        DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+
+    assertThat(actualResponse).isEqualTo(cliResponse);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testApplyCommandAndTerraformCloudCli() throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponse();
+    TerraformApplyCommandRequest terraformApplyCommandRequest = TerraformApplyCommandRequest.builder()
+                                                                    .planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME)
+                                                                    .isTerraformCloudCli(true)
+                                                                    .build();
+    String command = "echo yes | terraform apply ";
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.apply(terraformApplyCommandRequest,
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -315,7 +425,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.workspace(workspace, true, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
         Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -338,7 +448,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.show(plan, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
         Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
@@ -362,7 +472,7 @@ public class TerraformClientImplTest extends CategoryTest {
     verify(cliHelper, never())
         .executeCliCommand(and(contains("terraform show"), contains("-json")), anyLong(),
             anyMapOf(String.class, String.class), anyString(), any(LogCallback.class), anyString(),
-            any(LogOutputStream.class), any());
+            any(LogOutputStream.class), any(), anyLong());
     assertThat(cliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SKIPPED);
   }
 
@@ -399,14 +509,14 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(cliHelper)
         .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
-            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any());
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any(), anyLong());
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
     verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMapOf(String.class, String.class),
-        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any());
+        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
     assertThat(commandCaptor.getAllValues().get(0)).contains("terraform show");
     assertThat(commandCaptor.getAllValues().get(0)).contains("-json");
   }
@@ -424,14 +534,14 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(cliHelper)
         .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
-            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any());
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class), any(), anyLong());
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
     verify(cliHelper).executeCliCommand(commandCaptor.capture(), anyLong(), anyMapOf(String.class, String.class),
-        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any());
+        anyString(), any(LogCallback.class), anyString(), any(LogOutputStream.class), any(), anyLong());
     assertThat(commandCaptor.getAllValues().get(0)).contains("terraform show");
     assertThat(commandCaptor.getAllValues().get(0)).contains("-json");
   }
@@ -446,7 +556,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.output(
         tfOutputsFile, DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
@@ -465,7 +575,7 @@ public class TerraformClientImplTest extends CategoryTest {
     doReturn(cliResponse)
         .when(cliHelper)
         .executeCliCommand(eq(command), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT), eq(Collections.emptyMap()),
-            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any());
+            eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), eq(command), any(), any(), anyLong());
 
     CliResponse actualResponse = terraformClientImpl.output(
         tfOutputsFile, DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);

@@ -7,21 +7,24 @@
 
 package io.harness.cdng.bamboo;
 
-import static io.harness.annotations.dev.HarnessTeam.*;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import io.harness.annotation.*;
-import io.harness.annotations.dev.*;
-import io.harness.beans.*;
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ExecutionStatus;
 import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.pms.sdk.core.data.*;
+import io.harness.pms.sdk.core.data.Outcome;
 
-import software.wings.sm.states.*;
+import software.wings.sm.states.FilePathAssertionEntry;
 
-import com.fasterxml.jackson.annotation.*;
-import com.google.common.collect.*;
-import java.util.*;
-import lombok.*;
-import org.springframework.data.annotation.*;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
@@ -30,7 +33,7 @@ import org.springframework.data.annotation.*;
 @OwnedBy(CDC)
 @JsonTypeName("bambooBuildOutcome")
 @TypeAlias("bambooBuildOutcome")
-@RecasterAlias("BambooBuildOutcome")
+@RecasterAlias("io.harness.cdng.bamboo.BambooBuildOutcome")
 public class BambooBuildOutcome implements Outcome {
   private DelegateMetaInfo delegateMetaInfo;
   private String projectName;

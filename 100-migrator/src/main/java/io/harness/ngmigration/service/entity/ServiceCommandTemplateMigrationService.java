@@ -18,6 +18,7 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -206,6 +207,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   @Override
   public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    MigrationContext context = MigrationContext.newInstance(inputDTO, entities, graph, migratedEntities);
     ServiceCommand template = (ServiceCommand) entities.get(entityId).getEntity();
 
     String identifierSource = template.getName();
@@ -221,7 +223,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = "";
-    MigratorExpressionUtils.render(template, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, template, inputDTO.getCustomExpressions());
 
     // Converting service commands to Template object
     List<CommandUnit> commandUnits = template.getCommand().getCommandUnits();
@@ -244,7 +246,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                               .build();
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(CGTemplate);
-    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(CGTemplate, orgIdentifier, projectIdentifier);
+    JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(context, CGTemplate, orgIdentifier, projectIdentifier);
 
     if (ngTemplateService.isMigrationSupported() && spec != null) {
       List<NGYamlFile> files = new ArrayList<>();
@@ -256,7 +258,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                         .templateInfoConfig(NGTemplateInfoConfig.builder()
                                                 .type(ngTemplateService.getTemplateEntityType())
                                                 .identifier(MigratorUtility.generateIdentifier(identifierSource))
-                                                .name(template.getName())
+                                                .name(name)
                                                 .description(ParameterField.createValueField(description))
                                                 .projectIdentifier(projectIdentifier)
                                                 .orgIdentifier(orgIdentifier)
@@ -279,7 +281,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       // Note: We are passing versionLabel as `null` because we do not know the version label.
       // It will return a stable version by default.

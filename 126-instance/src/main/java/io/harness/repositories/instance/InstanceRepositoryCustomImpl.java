@@ -296,12 +296,12 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps) {
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
     Criteria criteria = getCriteriaForActiveInstancesV2(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, null, envIdentifier);
     addCriteriaForGitOpsCheck(criteria, isGitOps);
 
-    if (displayName != null) {
+    if (filterOnArtifact) {
       criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
     }
 
@@ -505,15 +505,13 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String pipelineExecutionId, String buildId, int limit) {
     Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    if (envId != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envId);
-    }
-    if (serviceId != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceId);
-    }
-    if (buildId != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
-    }
+    criteria.and(InstanceKeys.envIdentifier)
+        .is(envId)
+        .and(InstanceKeys.serviceIdentifier)
+        .is(serviceId)
+        .and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+        .is(buildId);
+
     if (infraId != null) {
       criteria.and(InstanceKeys.infraIdentifier).is(infraId);
     }

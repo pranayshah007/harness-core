@@ -58,12 +58,13 @@ import retrofit2.http.Body;
 @OwnedBy(DX)
 public class EntitySetupUsageResource {
   EntitySetupUsageService entitySetupUsageService;
+  private static final int MAX_LIMIT = 1000;
 
   @GET
   @ApiOperation(value = "Get Entities referring this resource", nickname = "listReferredByEntities")
   public ResponseDTO<PageResponse<EntitySetupUsageDTO>> list(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(100) int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -80,7 +81,7 @@ public class EntitySetupUsageResource {
   @ApiOperation(value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsageByFqn")
   public ResponseDTO<PageResponse<EntitySetupUsageDTO>> listAllEntityUsageV2(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
@@ -95,7 +96,7 @@ public class EntitySetupUsageResource {
       nickname = "listAllEntityUsageWithTwoFqns", hidden = true)
   public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   listAllEntityUsageWith2Fqns(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(REFERRED_ENTITY_FQN1) String referredEntityFQN1,
       @NotNull @QueryParam(REFERRED_ENTITY_FQN2) String referredEntityFQN2,
@@ -112,7 +113,7 @@ public class EntitySetupUsageResource {
       value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsage", hidden = true)
   public ResponseDTO<PageResponse<EntitySetupUsageDTO>>
   listAllEntityUsage(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
@@ -126,7 +127,7 @@ public class EntitySetupUsageResource {
   @ApiOperation(value = "Get Entities referred by this resource", nickname = "listAllReferredUsages", hidden = true)
   public ResponseDTO<List<EntitySetupUsageDTO>> listAllReferredUsages(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(REFERRED_BY_ENTITY_FQN) String referredByEntityFQN,
       @QueryParam(REFERRED_ENTITY_TYPE) EntityType referredEntityType,

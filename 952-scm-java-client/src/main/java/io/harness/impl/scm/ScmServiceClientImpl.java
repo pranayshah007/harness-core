@@ -1039,7 +1039,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
             .build();
       }
 
-      if (isEmpty(commitId)) {
+      if (!gitFileRequest.isGetOnlyFileContent() && isEmpty(commitId)) {
         GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
             getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileRequest.getFilepath());
         if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
@@ -1083,6 +1083,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
               .commitId(request.getCommitId())
               .filepath(request.getFilepath())
               .branch(request.getBranch())
+              .getOnlyFileContent(request.isGetOnlyFileContent())
               .build(),
           scmBlockingStub);
       getBatchFileRequestIdentifierGitFileResponseMap.put(identifier, gitFileResponse);

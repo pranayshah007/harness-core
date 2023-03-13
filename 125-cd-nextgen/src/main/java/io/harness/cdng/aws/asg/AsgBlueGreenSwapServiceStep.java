@@ -113,6 +113,8 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
       AsgBlueGreenSwapServiceOutcome asgBlueGreenSwapServiceOutcome =
           AsgBlueGreenSwapServiceOutcome.builder()
               .trafficShifted(asgBlueGreenSwapServiceResult.isTrafficShifted())
+              .stageAsg(asgBlueGreenSwapServiceResult.getStageAutoScalingGroupContainer())
+              .prodAsg(asgBlueGreenSwapServiceResult.getProdAutoScalingGroupContainer())
               .build();
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME,
@@ -202,7 +204,7 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
-            .stageAsgName(asgBlueGreenDeployDataOutcome.getStageAutoScalingGroupContainer().getAutoScalingGroupName())
+            .stageAsgName(asgBlueGreenDeployDataOutcome.getStageAsg().getAutoScalingGroupName())
             .downsizeOldAsg(ParameterFieldHelper.getBooleanParameterFieldValue(
                 asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg()))
             .build();

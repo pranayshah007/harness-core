@@ -80,6 +80,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -208,8 +209,17 @@ public class PipelineMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(pipeline.getDescription()) ? "" : pipeline.getDescription();
 
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
-
-    for (PipelineStage pipelineStage : pipeline.getPipelineStages()) {
+    List<StageElementWrapperConfig> parallelStages = null;
+    for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
+      PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
+      if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
+        if (EmptyPredicate.isNotEmpty(parallelStages)) {
+          ngStages.add(StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
+        }
+        parallelStages = null;
+      } else if (parallelStages == null) {
+        parallelStages = new ArrayList<>();
+      }
       for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
         StageElementWrapperConfig stage = null;
         if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
@@ -229,8 +239,11 @@ public class PipelineMigrationService extends NgMigrationService {
           // TODO @Deepakputhraya
           return null;
         }
-        ngStages.add(stage);
+        Objects.requireNonNullElse(parallelStages, ngStages).add(stage);
       }
+    }
+    if (EmptyPredicate.isNotEmpty(parallelStages)) {
+      ngStages.add(StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
     }
 
     if (EmptyPredicate.isEmpty(ngStages)) {
@@ -269,6 +282,18 @@ public class PipelineMigrationService extends NgMigrationService {
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     return YamlGenerationDetails.builder().yamlFileList(files).build();
+  }
+
+  private boolean isPartOfParallelStage(List<PipelineStage> stages, int index) {
+    PipelineStage currentStage = stages.get(index);
+    if (currentStage.isParallel()) {
+      return true;
+    }
+    if (index + 1 < stages.size()) {
+      PipelineStage nextStage = stages.get(index + 1);
+      return nextStage.isParallel();
+    }
+    return false;
   }
 
   private StageElementWrapperConfig buildApprovalStage(PipelineStageElement stageElement) {
@@ -352,7 +377,8 @@ public class PipelineMigrationService extends NgMigrationService {
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(wfTemplate.getNgEntityDetail()));
-    templateLinkConfig.setTemplateInputs(migrationTemplateUtils.getTemplateInputs(wfTemplate, accountId));
+    templateLinkConfig.setTemplateInputs(
+        migrationTemplateUtils.getTemplateInputs(wfTemplate.getNgEntityDetail(), accountId));
 
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(stageElement.getName());
@@ -364,7 +390,8 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected YamlDTO getNGEntity(CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+  protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
     try {
       PMSPipelineResponseDTO response = NGRestUtils.getResponse(
           pipelineServiceClient.getPipelineByIdentifier(ngEntityDetail.getIdentifier(), accountIdentifier,

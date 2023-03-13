@@ -6,7 +6,6 @@
  */
 package io.harness.cvng.downtime.services.api;
 
-import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;

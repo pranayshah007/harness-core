@@ -48,6 +48,7 @@ public class TerraformCloudPlanAndApplySpec extends TerraformCloudRunExecutionSp
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> organization;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> discardPendingRuns;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> overridePolicies;
 
   List<NGVariable> variables;
 
@@ -68,6 +69,7 @@ public class TerraformCloudPlanAndApplySpec extends TerraformCloudRunExecutionSp
         .organization(organization)
         .workspace(workspace)
         .discardPendingRuns(discardPendingRuns)
+        .overridePolicies(overridePolicies)
         .variables(NGVariablesUtils.getMapOfVariables(variables, 0L))
         .targets(targets)
         .build();

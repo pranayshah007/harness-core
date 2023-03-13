@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 import io.harness.terraformcloud.model.ApplyData;
@@ -24,6 +26,7 @@ import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -156,13 +159,28 @@ public class TerraformCloudClientImpl implements TerraformCloudClient {
     return executeHttpCall(new HttpGet(url));
   }
 
+  @Override
+  public void overridePolicyChecks(String url, String token, String policyChecksId) throws IOException {
+    Call<Void> call = getRestClient(url).overridePolicyChecks(getAuthorization(token), policyChecksId);
+    executeRestCall(call);
+  }
+
+  @Override
+  public TerraformCloudResponse<List<RunData>> getAppliedRuns(String url, String token, String workspaceId)
+      throws IOException {
+    Call<TerraformCloudResponse<List<RunData>>> call =
+        getRestClient(url).getRunsByStatus(getAuthorization(token), workspaceId, "applied");
+    return executeRestCall(call);
+  }
+
   @VisibleForTesting
   TerraformCloudRestClient getRestClient(String url) {
     Retrofit retrofit = new Retrofit.Builder()
                             .client(getOkHttpClient(url))
                             .baseUrl(url)
                             .addConverterFactory(ScalarsConverterFactory.create())
-                            .addConverterFactory(JacksonConverterFactory.create())
+                            .addConverterFactory(JacksonConverterFactory.create(
+                                new ObjectMapper().enable(READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)))
                             .build();
     return retrofit.create(TerraformCloudRestClient.class);
   }

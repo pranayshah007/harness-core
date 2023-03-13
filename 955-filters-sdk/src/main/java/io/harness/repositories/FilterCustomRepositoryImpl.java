@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.entity.Filter;
 
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -42,8 +43,8 @@ public class FilterCustomRepositoryImpl implements FilterCustomRepository {
         filters, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Filter.class));
   }
   @Override
-  public List<Filter> deleteAll(Criteria criteria) {
+  public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.findAllAndRemove(query, Filter.class);
+    return mongoTemplate.remove(query, Filter.class);
   }
 }

@@ -13,6 +13,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVI
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
@@ -41,6 +42,7 @@ import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
@@ -226,6 +228,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerCorrelationFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
 
+    if (isTrue(templateServiceConfiguration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+
     if (templateServiceConfiguration.isShouldDeployWithGitSync()) {
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
     }
@@ -316,6 +322,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerApiResponseFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
+  private void registerTraceFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(TraceFilter.class));
   }
 
   private void registerMigrations(Injector injector) {

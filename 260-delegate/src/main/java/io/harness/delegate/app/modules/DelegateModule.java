@@ -38,12 +38,12 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.lambda.AwsLambdaClient;
-import io.harness.aws.lambda.AwsLambdaClientImpl;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.aws.v2.ecs.ElbV2ClientImpl;
+import io.harness.aws.v2.lambda.AwsLambdaClient;
+import io.harness.aws.v2.lambda.AwsLambdaClientImpl;
 import io.harness.awscli.AwsCliClient;
 import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -99,7 +99,6 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
-import io.harness.delegate.aws.lambda.AwsLambdaDeployTaskCommandHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -124,6 +123,9 @@ import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskArnCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
+import io.harness.delegate.ecs.EcsTaskArnBlueGreenCreateServiceCommandTaskHandler;
+import io.harness.delegate.ecs.EcsTaskArnCanaryDeployCommandTaskHandler;
+import io.harness.delegate.ecs.EcsTaskArnRollingDeployCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -237,7 +239,9 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
-import io.harness.delegate.task.aws.lambda.AwsLambdaCommandTypeNG;
+import io.harness.delegate.task.aws.lambda.AwsLambdaDeployTask;
+import io.harness.delegate.task.aws.lambda.AwsLambdaPrepareRollbackTask;
+import io.harness.delegate.task.aws.lambda.AwsLambdaRollbackTask;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -293,6 +297,9 @@ import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.ecs.EcsRunTaskArnTask;
 import io.harness.delegate.task.ecs.EcsS3FetchTask;
+import io.harness.delegate.task.ecs.EcsTaskArnBlueGreenCreateServiceTaskNG;
+import io.harness.delegate.task.ecs.EcsTaskArnCanaryDeployTaskNG;
+import io.harness.delegate.task.ecs.EcsTaskArnRollingDeployTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupDeployTask;
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
@@ -331,6 +338,7 @@ import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
 import io.harness.delegate.task.helm.OciHelmConnectivityDelegateTask;
+import io.harness.delegate.task.helm.OciHelmDockerApiListTagsDelegateTask;
 import io.harness.delegate.task.helm.OciHelmValidationHandler;
 import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
 import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
@@ -421,6 +429,7 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.terraformcloud.TerraformCloudCleanupTaskNG;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntApplyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
@@ -486,8 +495,6 @@ import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
 import io.harness.k8s.config.K8sGlobalConfigService;
-import io.harness.kustomize.KustomizeClient;
-import io.harness.kustomize.KustomizeClientImpl;
 import io.harness.manifest.CustomManifestService;
 import io.harness.manifest.CustomManifestServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;
@@ -1200,7 +1207,6 @@ public class DelegateModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(HelmClient.class).to(HelmClientImpl.class);
     bind(TerragruntClient.class).to(TerragruntClientImpl.class);
-    bind(KustomizeClient.class).to(KustomizeClientImpl.class);
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
     bind(HelmDeployService.class).to(HelmDeployServiceImpl.class);
     bind(ContainerDeploymentDelegateHelper.class);
@@ -2015,6 +2021,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_DECRYT_GIT_API_ACCESS_TASK).toInstance(DecryptGitAPIAccessTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V2).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V3).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2037,6 +2045,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
+    mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
+        .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2062,12 +2073,22 @@ public class DelegateModule extends AbstractModule {
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_RUN_TASK.name()).to(EcsRunTaskCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_RUN_TASK_ARN.name())
         .to(EcsRunTaskArnCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_TASK_ARN_ROLLING_DEPLOY.name())
+        .to(EcsTaskArnRollingDeployCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_TASK_ARN_CANARY_DEPLOY.name())
+        .to(EcsTaskArnCanaryDeployCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE.name())
+        .to(EcsTaskArnBlueGreenCreateServiceCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
     mapBinder.addBinding(TaskType.ECS_RUN_TASK_ARN).toInstance(EcsRunTaskArnTask.class);
+    mapBinder.addBinding(TaskType.ECS_TASK_ARN_ROLLING_DEPLOY_NG).toInstance(EcsTaskArnRollingDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_TASK_ARN_CANARY_DEPLOY_NG).toInstance(EcsTaskArnCanaryDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG)
+        .toInstance(EcsTaskArnBlueGreenCreateServiceTaskNG.class);
 
     // GIT
     mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);
@@ -2088,13 +2109,6 @@ public class DelegateModule extends AbstractModule {
         .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
     googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
         .to(GoogleFunctionRollbackCommandTaskHandler.class);
-
-    // AWS Lambda NG
-    MapBinder<String, AwsLambdaDeployTaskCommandHandler> awsLambdaDeployTaskCommandHandlerMapBinder =
-        MapBinder.newMapBinder(binder(), String.class, AwsLambdaDeployTaskCommandHandler.class);
-    awsLambdaDeployTaskCommandHandlerMapBinder.addBinding(AwsLambdaCommandTypeNG.AWS_LAMBDA_DEPLOY.name())
-        .to(AwsLambdaDeployTaskCommandHandler.class);
-
     // AWS ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
@@ -2163,6 +2177,12 @@ public class DelegateModule extends AbstractModule {
         .toInstance(GoogleFunctionPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_ROLLBACK_TASK).toInstance(GoogleFunctionRollbackTask.class);
     mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK).toInstance(GoogleFunctionTrafficShiftTask.class);
+
+    // AWS Lambda
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_DEPLOY_COMMAND_TASK_NG).toInstance(AwsLambdaDeployTask.class);
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG)
+        .toInstance(AwsLambdaPrepareRollbackTask.class);
+    mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaRollbackTask.class);
   }
 
   private void registerSecretManagementBindings() {

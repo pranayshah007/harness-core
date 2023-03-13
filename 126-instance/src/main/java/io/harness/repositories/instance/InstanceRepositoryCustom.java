@@ -62,7 +62,7 @@ public interface InstanceRepositoryCustom {
       String buildIdentifier);
   AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps);
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact);
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 

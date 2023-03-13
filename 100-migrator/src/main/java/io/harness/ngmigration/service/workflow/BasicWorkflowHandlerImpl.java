@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration.service.workflow;
 
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
@@ -24,20 +23,8 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
 
   @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(workflow1, workflow2);
-  }
-
-  @Override
   public JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
-  }
-
-  @Override
-  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
-    // We can infer the type based on the service, infra & sometimes based on the steps used.
-    // TODO: Deepak Puthraya
-    return ServiceDefinitionType.SSH;
   }
 }

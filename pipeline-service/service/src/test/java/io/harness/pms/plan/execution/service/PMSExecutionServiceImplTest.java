@@ -398,9 +398,9 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testMergeInputSetIntoPipelineForRerun() {
-    doReturn((PipelineEntity.builder().yaml("pipelineYaml").build()))
+    doReturn(PipelineEntity.builder().yaml("pipelineYaml").build())
         .when(validateAndMergeHelper)
-        .getPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false);
+        .getPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, false, false);
     doReturn(Optional.of(PipelineExecutionSummaryEntity.builder().inputSetYaml("inputSetYaml").build()))
         .when(pmsExecutionSummaryRepository)
         .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(

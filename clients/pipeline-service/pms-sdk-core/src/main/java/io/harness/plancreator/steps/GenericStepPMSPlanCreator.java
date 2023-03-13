@@ -452,9 +452,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
       default:
         throw new InvalidRequestException(
-
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }

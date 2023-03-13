@@ -155,6 +155,31 @@ paths:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+  /v1/audits:
+    post:
+      summary: List Audits
+      operationId: post-audits
+      responses:
+        '200':
+          $ref: '#/components/responses/AuditListResponse'
+      description: Get list of Audits
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PageIndex'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditFilterPropertiesV1DTO'
+        description: This has the filter attributes for listing Audit Events
+      tags:
+        - Audits
+      x-internal: true
 components:
   schemas:
     StreamingDestinationStatus:
@@ -377,6 +402,278 @@ components:
           type: string
       description: Details of the last streamed batch
       x-internal: true
+    ResourceScopeDTO:
+      title: ResourceScopeDTO
+      x-stoplight:
+        id: 4pz290lmuwtl3
+      type: object
+      description: This has scope details for the resource defined in Harness.
+      properties:
+        account_identifier:
+          type: string
+          description: Identifier of Account
+        org_identifier:
+          type: string
+          description: Identifier of Organization
+        project_identifier:
+          type: string
+          description: Identifier of Project
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    ResourceDTO:
+      title: ResourceDTO
+      x-stoplight:
+        id: 2r7wy11v8scql
+      type: object
+      description: This contains info about Resource saved as a part of Audit Event
+      properties:
+        type:
+          type: string
+        identifier:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    AuditFilterPropertiesV1DTO:
+      title: AuditFilterPropertiesV1DTO
+      x-stoplight:
+        id: hrclq6ndh1ymg
+      type: object
+      description: Properties of the Filter entity defined in Harness.
+      properties:
+        filter_type:
+          $ref: '#/components/schemas/FilterType'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: tags
+        start_time:
+          type: integer
+          format: int64
+          description: Used to specify a start time for retrieving Audit events that occurred at or after the time indicated.
+        end_time:
+          type: integer
+          format: int64
+          description: Used to specify the end time for retrieving Audit events that occurred at or before the time indicated.
+        modules:
+          type: array
+          description: List of Module Types
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        actions:
+          type: array
+          description: List of Actions
+          items:
+            $ref: '#/components/schemas/Action'
+        resources:
+          type: array
+          description: List of Resources
+          items:
+            $ref: '#/components/schemas/ResourceDTO'
+        scopes:
+          type: array
+          description: List of Resource Scopes
+          items:
+            $ref: '#/components/schemas/ResourceScopeDTO'
+        principals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Principal'
+        static_filter:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaticAuditFilter'
+        environments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
+    StaticAuditFilter:
+      title: StaticAuditFilter
+      x-stoplight:
+        id: mdul5d1wgfhez
+      type: string
+      enum:
+        - SYSTEM_EVENTS
+        - LOGIN_EVENTS
+        - ENTITY_CHANGE_EVENTS
+        - RUNTIME_EVENTS
+    ModuleType:
+      title: ModuleType
+      x-stoplight:
+        id: xjqf65bl7w788
+      type: string
+      description: Type of Modules
+      enum:
+        - CD
+        - CI
+        - CV
+        - CF
+        - CE
+        - STO
+        - CORE
+        - PMS
+        - TEMPLATESERVICE
+        - GOVERNANCE
+        - CHAOS
+    Action:
+      title: Action
+      x-stoplight:
+        id: bzquds8sspg1q
+      type: string
+      enum:
+        - CREATE
+        - UPDATE
+        - RESTORE
+        - DELETE
+        - FORCE_DELETE
+        - UPSERT
+        - INVITE
+        - RESEND_INVITE
+        - REVOKE_INVITE
+        - ADD_COLLABORATOR
+        - REMOVE_COLLABORATOR
+        - CREATE_TOKEN
+        - REVOKE_TOKEN
+        - LOGIN
+        - LOGIN2FA
+        - UNSUCCESSFUL_LOGIN
+        - ERROR_BUDGET_RESET
+    Principal:
+      title: Principal
+      x-stoplight:
+        id: tj7q0qb2zdnyw
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          $ref: '#/components/schemas/PrincipalType'
+    PrincipalType:
+      title: PrincipalType
+      x-stoplight:
+        id: fxz45g9sxt8f2
+      type: string
+      enum:
+        - USER
+        - SYSTEM
+        - API_KEY
+        - SERVICE_ACCOUNT
+    Environment:
+      title: Environment
+      x-stoplight:
+        id: jmpmivgkftb1v
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          $ref: '#/components/schemas/EnvironmentType'
+    EnvironmentType:
+      title: EnvironmentType
+      x-stoplight:
+        id: ihuiok9k1qcmz
+      type: string
+      enum:
+        - PreProduction
+        - Production
+    FilterType:
+      title: FilterType
+      x-stoplight:
+        id: nvm8xs2of7vf8
+      type: string
+      enum:
+        - CONNECTOR
+        - DELEGATEPROFILE
+        - DELEGATE
+        - PIPELINESETUP
+        - PIPELINEEXECUTION
+        - DEPLOYMENT
+        - AUDIT
+        - TEMPLATE
+        - ENVIRONMENTGROUP
+        - FILESTORE
+        - CCMRECOMMENDATION
+        - ANOMALY
+        - ENVIRONMENT
+        - RULEEXECUTION
+    AuditEventDTO:
+      title: AuditEventDTO
+      x-stoplight:
+        id: mxditpr8jr7lh
+      type: object
+      properties:
+        audit_id:
+          type: string
+        insert_id:
+          type: string
+        resource_scope:
+          $ref: '#/components/schemas/ResourceScopeDTO'
+        timestamp:
+          type: integer
+        module:
+          $ref: '#/components/schemas/ModuleType'
+        http_request_info:
+          $ref: '#/components/schemas/HttpRequestInfo'
+        request_metadata:
+          $ref: '#/components/schemas/RequestMetadata'
+        authentication_info:
+          $ref: '#/components/schemas/AuthenticationInfoDTO'
+        environment:
+          $ref: '#/components/schemas/Environment'
+        resource:
+          $ref: '#/components/schemas/ResourceDTO'
+        yaml_diff_record:
+          $ref: '#/components/schemas/YamlDiffRecordDTO'
+        action:
+          $ref: '#/components/schemas/Action'
+        internal_info:
+          type: object
+          additionalProperties:
+            type: string
+    HttpRequestInfo:
+      title: HttpRequestInfo
+      x-stoplight:
+        id: xv4gl47om7rva
+      type: object
+      properties:
+        request_method:
+          type: string
+    RequestMetadata:
+      title: RequestMetadata
+      x-stoplight:
+        id: ga39sbthmsnqw
+      type: object
+      properties:
+        client_ip:
+          type: string
+    AuthenticationInfoDTO:
+      title: AuthenticationInfoDTO
+      x-stoplight:
+        id: vbhi03cpej4ej
+      type: object
+      properties:
+        principal:
+          $ref: '#/components/schemas/Principal'
+        labels:
+          type: string
+    YamlDiffRecordDTO:
+      title: YamlDiffRecordDTO
+      x-stoplight:
+        id: 9t10m54ew32zz
+      type: object
+      description: This has the YAML Difference of the record.
+      properties:
+        old_yaml:
+          type: string
+          description: Previous YAML version
+        new_yaml:
+          type: string
+          description: Current YAML version
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -526,6 +823,27 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/StreamingDestinationAggregateDTO'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    AuditListResponse:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/AuditEventDTO'
       headers:
         X-Total-Elements:
           schema:

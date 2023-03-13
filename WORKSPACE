@@ -350,8 +350,8 @@ go_repository(
 go_repository(
     name = "com_github_labstack_echo_contrib",
     importpath = "github.com/labstack/echo-contrib",
-    sum = "h1:bzSG0SpuZZd7BmJLvsWtPfU23W0Enh3K0tok3aENVKA=",
-    version = "v0.13.0",
+    sum = "h1:oNUSCeXQOlCGt3eWafzu0mkXjIh3SINnYgE/UR2kYXQ=",
+    version = "v0.14.1",
 )
 
 go_repository(
@@ -1296,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:7Ud/0r3SJA37MRG8iPztTNIF34LF31aJ9KTqbsk7Y48=",
-    version = "v1.28.2-0.20230210135737-288a76aba2cf",
+    sum = "h1:9ZrokpIAX+BANYGahqJp6vJqgYiD5c8v5A4iVk+oyZo=",
+    version = "v1.29.1",
 )
 
 go_repository(
@@ -4883,7 +4883,6 @@ plain_artifacts = [
     "guru.nidi.com.kitfox:svgSalamander:1.1.3",
     "guru.nidi:graphviz-java:0.16.3",
     "guru.nidi:graphviz-rough:0.16.3",
-    "info.jerrinot:subzero-core:0.7",
     "io.cloudsoft.windows:winrm4j-client:0.12.3",
     "io.cloudsoft.windows:winrm4j:0.12.3",
     "io.confluent:common-config:5.5.1",
@@ -4966,7 +4965,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.42-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.43-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
@@ -5133,7 +5132,7 @@ plain_artifacts = [
     "org.cloudfoundry:cloudfoundry-client:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-operations:5.9.0.RELEASE",
     "org.cloudfoundry:cloudfoundry-util:5.9.0.RELEASE",
-    "org.codehaus.groovy:groovy:3.0.7",
+    "org.codehaus.groovy:groovy:3.0.15",
     "org.codehaus.jackson:jackson-core-asl:1.9.11",
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",
@@ -5628,10 +5627,8 @@ maven_install(
         ),
     ],
     repositories = [
-        "https://repo1.maven.org/maven2",
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
-        "https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core/4.3.4",
     ],
 )
 

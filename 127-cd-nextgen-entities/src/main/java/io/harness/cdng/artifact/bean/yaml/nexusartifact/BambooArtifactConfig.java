@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.bean.yaml.nexusartifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.BAMBOO_ARTIFACTS_NAME;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +24,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -69,8 +71,9 @@ public class BambooArtifactConfig implements ArtifactConfig, Visitable, WithConn
    * Artifact FilePaths
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @YamlSchemaTypes(value = {runtime})
   @Wither
-  ParameterField<List<String>> artifactPath;
+  ParameterField<List<String>> artifactPaths;
 
   /**
    * Identifier for artifact.
@@ -103,8 +106,8 @@ public class BambooArtifactConfig implements ArtifactConfig, Visitable, WithConn
     if (!ParameterField.isNull(bambooArtifactConfig.getPlanKey())) {
       resultantConfig = resultantConfig.withPlanKey(bambooArtifactConfig.getPlanKey());
     }
-    if (!ParameterField.isNull(bambooArtifactConfig.getArtifactPath())) {
-      resultantConfig = resultantConfig.withArtifactPath(bambooArtifactConfig.getArtifactPath());
+    if (!ParameterField.isNull(bambooArtifactConfig.getArtifactPaths())) {
+      resultantConfig = resultantConfig.withArtifactPaths(bambooArtifactConfig.getArtifactPaths());
     }
     if (!ParameterField.isNull(bambooArtifactConfig.getBuild())) {
       resultantConfig = resultantConfig.withBuild(bambooArtifactConfig.getBuild());

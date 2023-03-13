@@ -311,7 +311,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     }
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
-    initializeCiManagerMonitoring(injector);
+    initializeCiManagerMonitoring(configuration, injector);
 
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
@@ -568,9 +568,11 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 
-  private void initializeCiManagerMonitoring(Injector injector) {
-    log.info("Initializing CI Manager Monitoring");
-    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  private void initializeCiManagerMonitoring(CIManagerConfiguration config, Injector injector) {
+    if (BooleanUtils.isTrue(config.getEnableTelemetry())) {
+      log.info("Initializing CI Manager Monitoring");
+      injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+    }
   }
 
   private void initializePluginPublisher(Injector injector) {

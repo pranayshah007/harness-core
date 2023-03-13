@@ -8,12 +8,12 @@
 package io.harness.ngmigration.service.step.pcf;
 
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -23,7 +23,7 @@ import software.wings.sm.states.pcf.PcfRollbackState;
 
 import java.util.Map;
 
-public class PcfRollbackStepMapperImpl extends StepMapper {
+public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -32,6 +32,11 @@ public class PcfRollbackStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.TAS_ROLLBACK;
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
+    return ServiceDefinitionType.TAS;
   }
 
   @Override

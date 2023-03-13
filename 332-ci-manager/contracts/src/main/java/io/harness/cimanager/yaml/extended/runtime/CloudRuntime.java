@@ -33,6 +33,8 @@ public class CloudRuntime implements Runtime {
   @Builder.Default @NotNull @ApiModelProperty(allowableValues = "Cloud") private Type type = Type.CLOUD;
   @NotNull private CloudRuntimeSpec spec;
 
+  @ApiModelProperty(hidden = true) String uuid;
+
   @Data
   @Builder
   @NoArgsConstructor

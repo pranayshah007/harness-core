@@ -229,7 +229,7 @@ public class ArtifactUtils {
       case BAMBOO:
         BambooArtifactConfig bambooArtifactConfig = (BambooArtifactConfig) artifactConfig;
         return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
-            bambooArtifactConfig.getPlanKey().getValue(), bambooArtifactConfig.getArtifactPath().getValue(),
+            bambooArtifactConfig.getPlanKey().getValue(), bambooArtifactConfig.getArtifactPaths().getValue(),
             bambooArtifactConfig.getBuild().getValue(), bambooArtifactConfig.getConnectorRef().getValue());
       case GOOGLE_CLOUD_STORAGE_ARTIFACT:
         GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =

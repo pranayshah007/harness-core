@@ -50,6 +50,9 @@ public class AccountDTO {
   @Schema(description = "Default experience of the Account.")
   @VariableExpression(skipVariableExpression = true)
   DefaultExperience defaultExperience;
+  @Schema(description = "Specifies weather access to other generation is allowed or not")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isCrossGenerationAccessEnabled;
   @Schema(description = "Authentication mechanism associated with the account.")
   @VariableExpression(skipVariableExpression = true)
   AuthenticationMechanism authenticationMechanism;
@@ -69,21 +72,28 @@ public class AccountDTO {
   @VariableExpression(skipVariableExpression = true)
   long createdAt;
 
+  @Schema(description = "Specifies delegate ring version for account")
+  @VariableExpression(skipVariableExpression = true)
+  private String ringName;
+
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
-      DefaultExperience defaultExperience, AuthenticationMechanism authenticationMechanism,
-      ServiceAccountConfig serviceAccountConfig, boolean isNextGenEnabled, boolean isProductLed,
-      boolean isTwoFactorAdminEnforced, long createdAt) {
+      DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,
+      AuthenticationMechanism authenticationMechanism, ServiceAccountConfig serviceAccountConfig,
+      boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt,
+      String ringName) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
     this.cluster = cluster;
     this.defaultExperience = defaultExperience;
+    this.isCrossGenerationAccessEnabled = isCrossGenerationAccessEnabled;
     this.authenticationMechanism = authenticationMechanism;
     this.isNextGenEnabled = isNextGenEnabled;
     this.serviceAccountConfig = serviceAccountConfig;
     this.isProductLed = isProductLed;
     this.isTwoFactorAdminEnforced = isTwoFactorAdminEnforced;
+    this.ringName = ringName;
     this.createdAt = createdAt;
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -51,6 +52,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -132,7 +135,9 @@ public class EcsCanaryDeployStepTest extends CategoryTest {
                                                .passThroughData(ecsPrepareRollbackDataPassThroughData)
                                                .build();
 
-    doReturn(taskChainResponse1).when(ecsStepCommonHelper).queueEcsTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(taskChainResponse1)
+        .when(ecsStepCommonHelper)
+        .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
     EcsCanaryDeleteDataOutcome ecsCanaryDeleteDataOutcome =
         EcsCanaryDeleteDataOutcome.builder()
             .ecsServiceNameSuffix(canarySuffix)

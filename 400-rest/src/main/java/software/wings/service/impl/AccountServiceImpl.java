@@ -131,6 +131,10 @@ import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
+import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
+import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
+import software.wings.beans.accountdetails.events.CrossGenerationAccessYamlDTO;
+import software.wings.beans.accountdetails.events.DefaultExperienceYamlDTO;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.events.LoginSettingsWhitelistedDomainsUpdateEvent;
@@ -495,7 +499,6 @@ public class AccountServiceImpl implements AccountService {
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
       updateNextGenEnabled(account.getUuid(), true);
-      featureFlagService.enableAccount(FeatureName.CDNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CING_ENABLED, account.getUuid());
@@ -581,6 +584,77 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience) {
+    Account account = get(accountIdentifier);
+    DefaultExperience oldDefaultExperience = account.getDefaultExperience();
+    account.setDefaultExperience(defaultExperience);
+    Account updatedAccount = update(account);
+    ngAuditAccountDetailsDefaultExperience(
+        accountIdentifier, oldDefaultExperience, updatedAccount.getDefaultExperience());
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsDefaultExperience(
+      String accountIdentifier, DefaultExperience oldDefaultExperience, DefaultExperience newDefaultExperience) {
+    try {
+      OutboxEvent outboxEvent =
+          outboxService.save(AccountDetailsDefaultExperienceUpdateEvent.builder()
+                                 .accountIdentifier(accountIdentifier)
+                                 .oldDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(oldDefaultExperience).build())
+                                 .newDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(newDefaultExperience).build())
+                                 .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsDefaultExperienceUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsDefaultExperienceUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
+  public Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen) {
+    Account account = get(accountIdentifier);
+    boolean oldIsCrossGenerationAccessEnabled = account.isCrossGenerationAccessEnabled();
+    account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
+    Account updatedAccount = update(account);
+    if (isNextGen) {
+      ngAuditAccountDetailsCrossGenerationAccess(
+          accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+    }
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsCrossGenerationAccess(
+      String accountIdentifier, boolean oldIsCrossGenerationAccessEnabled, boolean newIsCrossGenerationAccessEnabled) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          AccountDetailsCrossGenerationAccessUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(oldIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .newCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(newIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsCrossGenerationAccessUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsCrossGenerationAccessUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -596,6 +670,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setLicenseInfo(account.getLicenseInfo());
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
+    accountDetails.setCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
     accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
     if (featureFlagService.isEnabled(CG_LICENSE_USAGE, accountId)) {
@@ -932,6 +1007,10 @@ public class AccountServiceImpl implements AccountService {
 
     if (account.getDefaultExperience() != null) {
       updateOperations.set(AccountKeys.defaultExperience, account.getDefaultExperience());
+    }
+
+    if (account.isCrossGenerationAccessEnabled() != null) {
+      updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, account.isCrossGenerationAccessEnabled());
     }
 
     wingsPersistence.update(account, updateOperations);

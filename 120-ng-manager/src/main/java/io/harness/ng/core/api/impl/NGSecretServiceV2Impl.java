@@ -386,8 +386,11 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public Page<Secret> list(Criteria criteria) {
-    return secretRepository.findAll(criteria, Pageable.unpaged());
+  public Page<Secret> list(Criteria criteria, Pageable pageable) {
+    if (pageable.getPageSize() == 0) {
+      pageable = Pageable.ofSize(50000);
+    }
+    return secretRepository.findAll(criteria, pageable);
   }
 
   @Override

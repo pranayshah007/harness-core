@@ -8,7 +8,7 @@
 package io.harness.delegate.task.artifacts.artifactory;
 
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_DIRECTORY;
-import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_BUILDS_PER_ARTIFACT;
+import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,9 +32,12 @@ import software.wings.utils.RepositoryFormat;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -179,12 +182,30 @@ public class ArtifactoryArtifactTaskHelper {
     BuildDetails buildDetails = artifactoryNgService.getLatestArtifact(artifactoryConfigRequest,
         artifactoryGenericArtifactDelegateRequest.getRepositoryName(), artifactDirectory,
         artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(),
-        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_BUILDS_PER_ARTIFACT);
+        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_TAGS_PER_ARTIFACT);
     artifactoryGenericArtifactDelegateResponse = ArtifactoryRequestResponseMapper.toArtifactoryGenericResponse(
         buildDetails, artifactoryGenericArtifactDelegateRequest);
-
+    addArtifactNameToMetaData(artifactoryGenericArtifactDelegateResponse);
     return artifactoryArtifactTaskHandler.getSuccessTaskExecutionResponseGeneric(
         Collections.singletonList(artifactoryGenericArtifactDelegateResponse));
+  }
+
+  private void addArtifactNameToMetaData(
+      ArtifactoryGenericArtifactDelegateResponse artifactoryGenericArtifactDelegateResponse) {
+    if (artifactoryGenericArtifactDelegateResponse.getBuildDetails() != null) {
+      Map<String, String> metadata = artifactoryGenericArtifactDelegateResponse.getBuildDetails().getMetadata();
+      if (metadata == null) {
+        metadata = new HashMap<>();
+      }
+      String name = "";
+      if (artifactoryGenericArtifactDelegateResponse.getArtifactPath() != null) {
+        name = StringUtils.substringAfterLast(artifactoryGenericArtifactDelegateResponse.getArtifactPath(), "/");
+        if (name.equals("")) {
+          name = artifactoryGenericArtifactDelegateResponse.getArtifactPath();
+        }
+      }
+      metadata.put(ArtifactMetadataKeys.FILE_NAME, name);
+    }
   }
 
   private ArtifactTaskResponse getSuccessTaskResponse(ArtifactTaskExecutionResponse taskExecutionResponse) {

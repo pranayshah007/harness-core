@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -155,35 +156,34 @@ public class HarnessNgUrl {
   }
 
   private static String fieldToFieldNameMapping(String field) {
-    switch (field) {
-      case "gcpProduct":
+    switch (field.toLowerCase()) {
+      case "gcpproduct":
         return "Product";
-      case "gcpProjectId":
+      case "gcpprojectid":
         return "Project";
-      case "gcpSKUDescription":
-      case "gcpSkuDescription":
+      case "gcpskudescription":
         return "SKUs";
-      case "clusterName":
+      case "clustername":
         return "Cluster Name";
       case "namespace":
         return "Namespace";
-      case "workloadName":
+      case "workloadname":
         return "Workload";
-      case "awsUsageAccountId":
+      case "awsusageaccountid":
         return "Account";
-      case "awsServiceCode":
+      case "awsservicecode":
         return "Service";
-      case "awsInstancetype":
+      case "awsinstancetype":
         return "Instance Type";
-      case "awsUsageType":
+      case "awsusagetype":
         return "Usage Type";
-      case "workloadType":
+      case "workloadtype":
         return "Workload Type";
-      case "azureSubscriptionGuid":
+      case "azuresubscriptionguid":
         return "Subscription ID";
-      case "azureMeterCategory":
+      case "azuremetercategory":
         return "Meter category";
-      case "azureResourceGroup":
+      case "azureresourcegroup":
         return "Resource group name";
       default:
         throw new InternalError("Invalid field");
@@ -193,6 +193,7 @@ public class HarnessNgUrl {
   public String convertInstantToDate(Instant instant) {
     Date myDate = Date.from(instant);
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
     return formatter.format(myDate);
   }
 }

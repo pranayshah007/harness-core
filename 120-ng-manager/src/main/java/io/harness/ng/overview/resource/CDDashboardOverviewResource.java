@@ -391,9 +391,10 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName,
+      @NotNull @QueryParam("filterOnArtifact") boolean filterOnArtifact) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId, displayName));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId, displayName, filterOnArtifact));
   }
 
   @GET
@@ -428,8 +429,8 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
-      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
-      @NotNull @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
+      @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
+      @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier,
         projectIdentifier, serviceId, envId, infraId, clusterId, pipelineExecutionId, buildId));
   }
@@ -574,7 +575,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
-      @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval) {
+      @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getOpenTasks(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startInterval));
   }

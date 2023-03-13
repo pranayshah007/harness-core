@@ -38,8 +38,6 @@ import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
-import io.harness.cvng.core.beans.LogFeedback;
-import io.harness.cvng.core.beans.LogFeedbackHistory;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -91,7 +89,6 @@ import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
-import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
@@ -103,11 +100,11 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
@@ -215,7 +212,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(PagerDutyActivity.class);
     set.add(HarnessCDCurrentGenChangeSource.class);
     set.add(HarnessCDCurrentGenActivity.class);
-    set.add(ServiceLevelObjective.class);
     set.add(UserJourney.class);
     set.add(CVNGDemoDataIndex.class);
     set.add(CVNGDemoPerpetualTask.class);
@@ -247,6 +243,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(EntityUnavailabilityStatuses.class);
     set.add(LogFeedbackEntity.class);
     set.add(LogFeedbackHistoryEntity.class);
+    set.add(RequestServiceLevelIndicator.class);
   }
 
   @Override

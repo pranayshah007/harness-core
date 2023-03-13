@@ -8,10 +8,13 @@
 package io.harness.service;
 
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.LUCAS;
 import static io.harness.rule.OwnerRule.NICOLAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,6 +26,7 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.impl.DelegateTokenServiceImpl;
@@ -35,6 +39,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
@@ -49,6 +54,7 @@ public class DelegateTokenServiceTest extends WingsBaseTest {
   @Inject private HPersistence persistence;
   @Inject private DelegateTokenService delegateTokenService;
   @Inject private DelegateTokenServiceImpl delegateTokenServiceImpl;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Before
   public void setUp() {
@@ -207,6 +213,15 @@ public class DelegateTokenServiceTest extends WingsBaseTest {
     assertThat(delegateTokens.get(0).getAccountId()).isEqualTo(TEST_ACCOUNT_ID);
     assertThat(delegateTokens.get(0).getName()).startsWith(TEST_TOKEN_NAME);
     assertThat(delegateTokens.get(0).getStatus()).isEqualTo(DelegateTokenStatus.ACTIVE);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegateTokensEncryptedTokenId() {
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    delegateTokenService.createDelegateToken(TEST_ACCOUNT_ID, TEST_TOKEN_NAME);
+    assertThat(delegateTokenService.getTokenValue(TEST_ACCOUNT_ID, TEST_TOKEN_NAME)).isNotNull();
   }
 
   private DelegateTokenDetails retrieveTokenFromDB(String tokenName) {
