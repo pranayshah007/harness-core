@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
@@ -21,6 +22,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GC
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
@@ -48,6 +50,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.ng.core.NGAccess;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -59,14 +62,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 @OwnedBy(CDP)
 @Singleton
 public class K8sEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject private AccountClient accountClient;
+
   public static final String CLASS_CAST_EXCEPTION_ERROR =
       "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
   public static final String K8S_INFRA_NAMESPACE_REGEX_PATTERN = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$";
@@ -163,6 +170,7 @@ public class K8sEntityHelper {
               .namespace(k8SDirectInfrastructure.getNamespace())
               .kubernetesClusterConfigDTO((KubernetesClusterConfigDTO) connectorDTO.getConnectorConfig())
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .useSocketCapability(useK8sDirectSocketCapability(ngAccess.getAccountIdentifier()))
               .build();
 
         case KUBERNETES_GCP:
@@ -221,5 +229,16 @@ public class K8sEntityHelper {
       default:
         return StringUtils.EMPTY;
     }
+  }
+
+  private boolean useK8sDirectSocketCapability(String accountIdentifier) {
+    try {
+      return CGRestUtils.getResponse(
+          accountClient.isFeatureFlagEnabled(CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(), accountIdentifier));
+    } catch (Exception e) {
+      log.warn("Unable to evaluate FF {} for account {}", CDS_K8S_SOCKET_CAPABILITY_CHECK_NG.name(), accountIdentifier);
+    }
+
+    return false;
   }
 }
