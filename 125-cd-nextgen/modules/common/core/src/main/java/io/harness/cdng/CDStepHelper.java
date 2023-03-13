@@ -40,6 +40,7 @@ import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -68,6 +69,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -213,6 +215,7 @@ public class CDStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
@@ -565,6 +568,17 @@ public class CDStepHelper {
     return releaseName;
   }
 
+  public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
+    return EncodingUtils.encodeBase64(getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize));
+  }
+
+  public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
+    return cdExpressionResolver.renderExpression(ambiance,
+        fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
+            allowedBytesFileSize));
+  }
+
   private static void validateReleaseName(String name) {
     if (isEmpty(name)) {
       throw new InvalidArgumentsException(Pair.of("releaseName", "Cannot be empty"));
@@ -860,6 +874,25 @@ public class CDStepHelper {
           "Cannot find service. Make sure this is running in a CD stage with service configured");
     }
     return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
+  }
+
+  public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
+    boolean retVal = true;
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      if (manifestOutcome.getStore() != null) {
+        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      }
+    }
+    return retVal;
+  }
+
+  public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
+    for (ManifestOutcome manifest : ecsManifestsOutcomes) {
+      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public List<String> fetchFilesContentFromLocalStore(

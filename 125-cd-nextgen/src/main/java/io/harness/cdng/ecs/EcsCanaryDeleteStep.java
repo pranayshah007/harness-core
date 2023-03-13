@@ -51,6 +51,8 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -183,7 +185,8 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
 
     return ecsStepCommonHelper
         .queueEcsTask(stepElementParameters, ecsCanaryDeleteRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
+            TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 

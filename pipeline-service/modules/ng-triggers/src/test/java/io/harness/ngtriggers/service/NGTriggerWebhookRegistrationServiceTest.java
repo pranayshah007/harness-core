@@ -148,8 +148,6 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
     assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getRegistrationResult())
         .isEqualTo(WebhookRegistrationStatus.ERROR);
-    assertThat(webhookRegistrationStatus.getWebhookAutoRegistrationStatus().getDetailedMessage())
-        .isEqualTo("Exception");
   }
 
   @Test

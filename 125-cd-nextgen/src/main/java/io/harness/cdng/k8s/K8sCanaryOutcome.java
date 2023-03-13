@@ -30,5 +30,6 @@ public class K8sCanaryOutcome implements Outcome, ExecutionSweepingOutput {
   Integer targetInstances;
   Integer releaseNumber;
   String canaryWorkload;
+  K8sGitFetchInfo manifest;
   boolean canaryWorkloadDeployed;
 }

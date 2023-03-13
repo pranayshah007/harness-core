@@ -46,6 +46,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequest
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 
@@ -128,9 +129,12 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
       @QueryParam("pipelineBranch") @Parameter(
           description = "Github branch of the Pipeline for which the Input Set is to be fetched") String pipelineBranch,
-      @QueryParam("pipelineRepoID")
-      @Parameter(description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
-      String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @QueryParam("pipelineRepoID") @Parameter(
+          description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
+      String pipelineRepoID,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @GET
   @Path("overlay/{inputSetIdentifier}")
@@ -157,9 +161,12 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
       @QueryParam("pipelineBranch") @Parameter(
           description = "Github branch of the Pipeline for which the Input Set is to be fetched") String pipelineBranch,
-      @QueryParam("pipelineRepoID")
-      @Parameter(description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
-      String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @QueryParam("pipelineRepoID") @Parameter(
+          description = "Github Repo identifier of the Pipeline for which the Input Set is to be fetched")
+      String pipelineRepoID,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
@@ -372,7 +379,8 @@ public interface InputSetResourcePMS {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = "Pipeline identifier for which we need the Runtime Input Template.") String pipelineIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, InputSetTemplateRequestDTO inputSetTemplateRequestDTO);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, InputSetTemplateRequestDTO inputSetTemplateRequestDTO,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("merge")
@@ -401,7 +409,8 @@ public interface InputSetResourcePMS {
           "pipelineBranch") String pipelineBranch,
       @Parameter(description = "Github Repo identifier of the Pipeline to which the Input Sets belong")
       @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+      @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @POST
   @Path("merge-for-rerun")
@@ -576,4 +585,25 @@ public interface InputSetResourcePMS {
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
       @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO);
+
+  @GET
+  @Path("/list-repos")
+  @ApiOperation(value = "Gets InputSet Repository list", nickname = "getInputSetRepositoryList")
+  @Operation(operationId = "getInputSetRepositoryList", description = "Gets the list of all repositories",
+      summary = "List InputSet Repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all InputSets")
+      })
+  @Hidden
+  ResponseDTO<PMSInputSetListRepoResponse>
+  getListRepos(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier);
 }

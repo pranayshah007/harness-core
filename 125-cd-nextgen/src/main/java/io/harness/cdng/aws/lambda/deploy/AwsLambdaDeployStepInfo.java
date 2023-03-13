@@ -14,6 +14,7 @@ import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.aws.AwsLambdaDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
@@ -61,6 +62,11 @@ public class AwsLambdaDeployStepInfo extends AwsLambdaDeployBaseStepInfo impleme
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.TASK_CHAIN;
+  }
+
+  @Override
+  public SpecParameters getSpecParameters() {
+    return AwsLambdaDeployStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 
   @Override

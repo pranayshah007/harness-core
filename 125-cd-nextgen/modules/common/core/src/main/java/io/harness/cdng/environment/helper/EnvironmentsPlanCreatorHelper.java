@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -63,12 +64,12 @@ public class EnvironmentsPlanCreatorHelper {
     List<String> envRefs =
         environmentYamlV2s.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
 
     // To fetch the env name. This is required for populating GitOps ClusterRefs
     Map<String, Environment> envMapping =
-        emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
+        emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::fetchRef, Function.identity()));
 
     Set<IndividualEnvData> listEnvData = new HashSet<>();
     if (!EnvironmentInfraFilterUtils.areFiltersPresent(environmentsYaml)) {
@@ -96,7 +97,7 @@ public class EnvironmentsPlanCreatorHelper {
         }
       }
     }
-    EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfigBuilder =
+    EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfigBuilder =
         EnvironmentsPlanCreatorConfig.builder()
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)

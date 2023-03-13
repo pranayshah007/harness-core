@@ -8,12 +8,12 @@
 package io.harness.perpetualtask.datacollection;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -31,7 +31,6 @@ import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.MetricPackDTO;
 import io.harness.cvng.beans.MetricPackDTO.MetricDefinitionDTO;
 import io.harness.cvng.core.services.CVNextGenConstants;
-import io.harness.cvng.utils.CVNGParallelExecutor;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.RuntimeParameters;
@@ -59,8 +58,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -69,6 +68,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import retrofit2.Call;
@@ -77,7 +77,7 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.CV)
 public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  private DataCollectionPerpetualTaskExecutor dataCollector = new DataCollectionPerpetualTaskExecutor();
+  private DataCollectionPerpetualTaskExecutor dataCollector;
   @Mock private TimeSeriesDataStoreService timeSeriesDataStoreService;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private DataCollectionDSLService dataCollectionDSLService;
@@ -91,14 +91,15 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
   @Inject KryoSerializer kryoSerializer;
-  @Mock CVNGParallelExecutor cvngParallelExecutor;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
+    dataCollector = Mockito.spy(new DataCollectionPerpetualTaskExecutor());
     on(dataCollector).set("kryoSerializer", kryoSerializer);
     cvngRequestExecutor = new CVNGRequestExecutor();
     FieldUtils.writeField(dataCollector, "cvngRequestExecutor", cvngRequestExecutor, true);
     FieldUtils.writeField(cvngRequestExecutor, "executorService", Executors.newFixedThreadPool(1), true);
+    FieldUtils.writeField(dataCollector, "parallelExecutor", Executors.newFixedThreadPool(1), true);
     accountId = generateUuid();
     SecretRefData secretRefData = SecretRefData.builder()
                                       .scope(Scope.ACCOUNT)
@@ -116,7 +117,6 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
     FieldUtils.writeField(dataCollector, "timeSeriesDataStoreService", timeSeriesDataStoreService, true);
     FieldUtils.writeField(dataCollector, "dataCollectionDSLService", dataCollectionDSLService, true);
     FieldUtils.writeField(dataCollector, "cvNextGenServiceClient", cvNextGenServiceClient, true);
-    FieldUtils.writeField(dataCollector, "cvngParallelExecutor", cvngParallelExecutor, true);
     dataCollectionInfo =
         AppDynamicsDataCollectionInfo.builder().applicationName("cv-app").tierName("docker-tier").build();
     dataCollectionTaskDTO = DataCollectionTaskDTO.builder()
@@ -140,13 +140,6 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
     when(taskUpdateResult.clone()).thenReturn(taskUpdateResult);
     when(taskUpdateResult.execute()).thenReturn(Response.success(new RestResponse<>(null)));
     when(cvNextGenServiceClient.updateTaskStatus(anyString(), any())).thenReturn(taskUpdateResult);
-    when(cvngParallelExecutor.executeParallel(anyList())).thenAnswer(invocationOnMock -> {
-      List<Callable> arguments = (List<Callable>) invocationOnMock.getArguments()[0];
-      for (Callable argument : arguments) {
-        argument.call();
-      }
-      return null;
-    });
   }
 
   private void createTaskParams(String metricPackIdentifier, String dataCollectionDsl) {
@@ -184,6 +177,23 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
     createTaskParams(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER, "dsl");
     dataCollector.runOnce(PerpetualTaskId.newBuilder().build(), perpetualTaskParams, Instant.now());
     verifyDsl("dsl");
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category({UnitTests.class})
+  public void testDataCollection_dslTimeOut() {
+    createTaskParams(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER, "dsl");
+    dataCollector.dataCollectionTimeoutInMilliSeconds = 1;
+    Mockito
+        .doAnswer(invocation -> {
+          Thread.sleep(1000L);
+          return null;
+        })
+        .when(dataCollector)
+        .run(any(), any(), any());
+    dataCollector.runOnce(PerpetualTaskId.newBuilder().build(), perpetualTaskParams, Instant.now());
+    verify(dataCollector).updateStatusWithException(any(), any(), any(TimeoutException.class));
   }
 
   @Test

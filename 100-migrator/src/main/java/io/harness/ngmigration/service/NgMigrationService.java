@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service;
 
-import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -28,7 +29,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.NameAccess;
-import io.harness.serializer.JsonUtils;
+import io.harness.serializer.jackson.PipelineJacksonModule;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -37,7 +38,6 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -45,8 +45,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.inject.Inject;
+import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +59,8 @@ import retrofit2.Response;
 @Slf4j
 public abstract class NgMigrationService {
   private static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
+  public static final ObjectMapper MIGRATION_DEFAULT_OBJECT_MAPPER =
+      configureObjectMapperForNG(Jackson.newObjectMapper()).registerModule(new PipelineJacksonModule());
 
   @Inject MigratorMappingService migratorMappingService;
 
@@ -86,7 +88,8 @@ public abstract class NgMigrationService {
                                          .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
                                          .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
                                          .enable(SerializationFeature.INDENT_OUTPUT);
-    return NGYamlUtils.getYamlString(yamlFile.getYaml(), NG_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
+    YAML_MAPPER.registerModule(new PipelineJacksonModule());
+    return NGYamlUtils.getYamlString(yamlFile.getYaml(), MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
@@ -94,15 +97,15 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public abstract List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+  public abstract YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities);
 
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean canMigrateAll) {
     return canMigrateAll;
   }
 
-  public NGYamlFile getExistingYaml(
-      MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities, CgEntityId entityId) {
+  public NGYamlFile getExistingYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityId entityId) {
     CgEntityNode cgEntityNode = entities.get(entityId);
     CgBasicInfo cgBasicInfo = cgEntityNode.getEntity().getCgBasicInfo();
     NgEntityDetail ngEntityDetail = getNGEntityDetail(inputDTO, entities, entityId);
@@ -116,7 +119,8 @@ public abstract class NgMigrationService {
             .build();
     if (mappingExist) {
       try {
-        YamlDTO yamlDTO = getNGEntity(ngEntityDetail, inputDTO.getAccountIdentifier());
+        YamlDTO yamlDTO =
+            getNGEntity(entities, migratedEntities, cgEntityNode, ngEntityDetail, inputDTO.getAccountIdentifier());
         if (yamlDTO == null) {
           return null;
         }
@@ -130,13 +134,14 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public List<NGYamlFile> getYaml(MigrationInputDTO inputDTO, CgEntityId root, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails getYamls(MigrationInputDTO inputDTO, CgEntityId root,
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId,
+      Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (!isNGEntityExists() || !canMigrate(entityId, root, inputDTO.isMigrateReferencedEntities())) {
-      return new ArrayList<>();
+      return null;
     }
     if (migratedEntities.containsKey(entityId)) {
-      return new ArrayList<>();
+      return null;
     }
     return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
   }
@@ -160,29 +165,15 @@ public abstract class NgMigrationService {
         .build();
   }
 
-  protected abstract YamlDTO getNGEntity(NgEntityDetail ngEntityDetail, String accountIdentifier);
+  protected abstract YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail,
+      String accountIdentifier);
 
   protected abstract boolean isNGEntityExists();
 
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
-    if (resp.code() >= 200 && resp.code() < 300) {
-      return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
-    }
-    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
-    Map<String, Object> error = JsonUtils.asObject(
-        resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
-    log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",
-        yamlFile.getType(), resp, error));
-    return MigrationImportSummaryDTO.builder()
-        .errors(Collections.singletonList(
-            ImportError.builder()
-                .message(error.containsKey("message")
-                        ? error.get("message").toString()
-                        : String.format("There was an error creating the %s", yamlFile.getType()))
-                .entity(yamlFile.getCgBasicInfo())
-                .build()))
-        .build();
+    return MigratorUtility.handleEntityMigrationResp(yamlFile, resp);
   }
 
   protected MigrationImportSummaryDTO migrateFile(

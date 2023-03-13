@@ -30,6 +30,7 @@ public class TerraformCloudPlanAndApplySpecParameters implements TerraformCloudR
   ParameterField<String> organization;
   ParameterField<String> workspace;
   ParameterField<Boolean> discardPendingRuns;
+  ParameterField<Boolean> overridePolicies;
   Map<String, Object> variables;
   ParameterField<List<String>> targets;
 

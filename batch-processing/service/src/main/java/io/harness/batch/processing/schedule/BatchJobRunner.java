@@ -88,7 +88,7 @@ public class BatchJobRunner {
     List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
     Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
     if (null == startAt) {
-      log.debug("Event not received for account {} ", accountId);
+      log.info("Event not received for account: {}, Job: {} ", accountId, batchJobType.name());
       return;
     }
     Instant endAt = Instant.now().minus(1, ChronoUnit.HOURS);

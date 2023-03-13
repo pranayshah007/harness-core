@@ -16,6 +16,7 @@ import io.harness.ccm.ccmAws.AwsAccountConnectionDetailsHelper;
 import io.harness.ccm.commons.entities.AwsAccountConnectionDetail;
 import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
+import io.harness.configuration.DeployMode;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -67,8 +68,15 @@ public class ConnectorSetup {
   public ResponseDTO<String> getGcpServiceAccount(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
     CEGcpServiceAccount ceGcpServiceAccount = null;
     try {
-      ceGcpServiceAccount = ceGcpServiceAccountService.provisionAndRetrieveServiceAccount(
-          accountId, configuration.getGcpConfig().getGcpProjectId());
+      log.info("isDeploymentOnPrem: " + configuration.getDeployMode());
+      if (DeployMode.isOnPrem(configuration.getDeployMode().name())) {
+        // For SMP based installs, we dont need to create a separate service account.
+        return ResponseDTO.newResponse(configuration.getCeGcpSetupConfig().getServiceAccountEmail());
+      } else {
+        ceGcpServiceAccount = ceGcpServiceAccountService.provisionAndRetrieveServiceAccount(accountId,
+            configuration.getGcpConfig().getGcpProjectId(),
+            configuration.getCeGcpSetupConfig().getServiceAccountEmail());
+      }
     } catch (IOException e) {
       log.error("Unable to get the default service account.", e);
     }

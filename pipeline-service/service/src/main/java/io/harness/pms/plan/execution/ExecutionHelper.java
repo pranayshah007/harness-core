@@ -30,6 +30,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.WingsException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -41,6 +42,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -95,6 +97,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -132,6 +135,7 @@ public class ExecutionHelper {
   AccessControlClient accessControlClient;
   PipelineStageHelper pipelineStageHelper;
   NodeExecutionService nodeExecutionService;
+  RollbackModeExecutionHelper rollbackModeExecutionHelper;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -244,11 +248,11 @@ public class ExecutionHelper {
     in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
     give an error in schema validation. That's why we need a value that doesn't have this validator appended.
      */
+      // We don't have schema validation for V1 yaml as of now.
       if (PipelineVersion.V0.equals(version)) {
-        String yamlToRunWithoutRuntimeInputs =
-            YamlUtils.getYamlWithoutInputs(new YamlConfig(stagesExecutionInfo.getPipelineYamlToRun()));
+        String yamlForValidatingSchema = getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputYaml, pipelineEntity);
         pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), yamlToRunWithoutRuntimeInputs);
+            pipelineEntity.getProjectIdentifier(), yamlForValidatingSchema);
       }
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
@@ -270,6 +274,16 @@ public class ExecutionHelper {
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
           triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
+    } catch (WingsException e) {
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Failed to start execution for Pipeline with identifier [%s] in Project [%s] of Org [%s]. Error Message: %s",
+              pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
+              e.getMessage()),
+          e);
+      throw new InvalidRequestException("Failed to start execution for Pipeline.", e);
     } finally {
       log.info("[PMS_EXECUTE] Pipeline build execution args took time {}ms", System.currentTimeMillis() - start);
     }
@@ -289,9 +303,10 @@ public class ExecutionHelper {
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(isNotEmpty(notificationRules))
             .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug);
+            .setIsDebug(isDebug)
+            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
-        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }
@@ -305,9 +320,32 @@ public class ExecutionHelper {
     return builder.build();
   }
 
+  public String getPipelineYamlWithUnResolvedTemplates(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
+    YamlConfig pipelineYamlConfigForSchemaValidations;
+    if (isEmpty(mergedRuntimeInputYaml)) {
+      pipelineYamlConfigForSchemaValidations = new YamlConfig(pipelineEntity.getYaml());
+    } else {
+      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
+      pipelineYamlConfigForSchemaValidations = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          pipelineEntityYamlConfig, runtimeInputYamlConfig, false, true);
+
+      /*
+      For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+      the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+      in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+      give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+       */
+      pipelineYamlConfigForSchemaValidations =
+          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, false);
+    }
+    pipelineYamlConfigForSchemaValidations = InputSetSanitizer.trimValues(pipelineYamlConfigForSchemaValidations);
+    return pipelineYamlConfigForSchemaValidations.getYaml();
+  }
+
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidateStaticallyReferredEntities(
-      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) throws IOException {
+      String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
     YamlConfig pipelineYamlConfig;
 
     long start = System.currentTimeMillis();
@@ -328,7 +366,7 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+          pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
               BOOLEAN_FALSE_VALUE);
@@ -385,9 +423,10 @@ public class ExecutionHelper {
     }
     if (isRetry) {
       try {
-        currentProcessedYaml = retryExecutionHelper.retryProcessedYaml(
-            retryExecutionParameters.getPreviousProcessedYaml(), currentProcessedYaml,
-            retryExecutionParameters.getRetryStagesIdentifier(), retryExecutionParameters.getIdentifierOfSkipStages());
+        currentProcessedYaml =
+            retryExecutionHelper.retryProcessedYaml(retryExecutionParameters.getPreviousProcessedYaml(),
+                currentProcessedYaml, retryExecutionParameters.getRetryStagesIdentifier(),
+                retryExecutionParameters.getIdentifierOfSkipStages(), version);
       } catch (IOException e) {
         log.error("Unable to get processed yaml. Previous Processed yaml:\n"
                 + retryExecutionParameters.getPreviousProcessedYaml(),
@@ -442,13 +481,24 @@ public class ExecutionHelper {
                                                       .build();
       long endTs = System.currentTimeMillis();
       log.info("[PMS_PLAN] Time taken to complete plan: {}ms ", endTs - startTs);
-      if (isRetry) {
-        Plan newPlan = retryExecutionHelper.transformPlan(
-            plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
-        return orchestrationService.startExecution(newPlan, abstractions, executionMetadata, planExecutionMetadata);
-      }
+      ExecutionMode executionMode = executionMetadata.getExecutionMode();
+      plan = transformPlan(
+          resp, plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier, executionMode);
       return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     }
+  }
+
+  Plan transformPlan(PlanCreationBlobResponse resp, Plan plan, boolean isRetry, List<String> identifierOfSkipStages,
+      String previousExecutionId, List<String> retryStagesIdentifier, ExecutionMode executionMode) {
+    if (isRetry) {
+      return retryExecutionHelper.transformPlan(
+          plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+    }
+    if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
+      return rollbackModeExecutionHelper.transformPlanForRollbackMode(
+          plan, previousExecutionId, Collections.emptyList());
+    }
+    return plan;
   }
 
   public PlanExecution startExecutionV2(String accountId, String orgIdentifier, String projectIdentifier,

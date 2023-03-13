@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -31,5 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 public class HelmManifestCommandFlag {
   @NotNull HelmCommandFlagType commandType;
-  @SkipAutoEvaluation @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> flag;
+
+  @NotEmpty
+  @SkipAutoEvaluation
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> flag;
 }

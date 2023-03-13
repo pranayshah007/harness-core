@@ -10,6 +10,7 @@ package io.harness.cvng.analysis.resources;
 import static io.harness.cvng.analysis.CVAnalysisConstants.DEPLOYMENT_LOG_ANALYSIS_SAVE_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_RESOURCE;
 import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_SAVE_PATH;
+import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_FEEDBACK_LIST;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_ANALYSIS_URL;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_LOG_ANALYSIS_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TEST_DATA_PATH;
@@ -19,6 +20,7 @@ import io.harness.cvng.analysis.beans.LogAnalysisDTO;
 import io.harness.cvng.analysis.beans.LogClusterDTO;
 import io.harness.cvng.analysis.entities.LogAnalysisCluster;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.LearningEngineAuth;
 
@@ -117,5 +119,16 @@ public class LogAnalysisResource {
         verificationTaskId, Instant.ofEpochMilli(Long.parseLong(analysisStartTime)),
         Instant.ofEpochMilli(Long.parseLong(analysisEndTime)));
     return new RestResponse<>(deploymentLogAnalysisDTO);
+  }
+
+  @GET
+  @Path("/" + LOG_FEEDBACK_LIST)
+  @Timed
+  @ExceptionMetered
+  @LearningEngineAuth
+  @ApiOperation(value = "get previous log analysis for a data source config", nickname = "getLogFeedbackList")
+  public RestResponse<List<LogFeedback>> getLogFeedbackList(
+      @QueryParam("verificationTaskId") String verificationTaskId) {
+    return new RestResponse<>(logAnalysisService.getLogFeedbackList(verificationTaskId));
   }
 }

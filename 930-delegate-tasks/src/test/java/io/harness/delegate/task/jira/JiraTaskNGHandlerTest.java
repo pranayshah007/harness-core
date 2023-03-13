@@ -10,6 +10,7 @@ package io.harness.delegate.task.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MOUNIK;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -28,8 +29,13 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraPATDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
+import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -117,7 +123,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   public void before() {
     url = "http://localhost:" + wireMockRule.port();
     JiraInternalConfig jiraInternalConfig =
-        JiraInternalConfig.builder().jiraUrl(url).username("username").password("password").build();
+        JiraInternalConfig.builder().jiraUrl(url).authToken("dummyAccessToken").build();
     jiraClient = new JiraClient(jiraInternalConfig);
   }
 
@@ -169,16 +175,31 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     JiraProjectBasicNG jiraProjectBasicNG = new JiraProjectBasicNG(jsonNode);
     List<JiraProjectBasicNG> projects = new ArrayList<>();
     projects.add(jiraProjectBasicNG);
-    assertThat(jiraTaskNGHandler.getProjects(
-                   createJiraTaskParametersBuilder()
-                       .jiraConnectorDTO(
-                           JiraConnectorDTO.builder()
-                               .jiraUrl(url)
-                               .username("username")
-                               .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
-                               .build())
-                       .build()))
+    assertThat(jiraTaskNGHandler.getProjects(createJiraTaskParametersBuilder().build()))
         .isEqualTo(JiraTaskNGResponse.builder().projects(projects).build());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testgetprojectsWithPatAuth() throws Exception {
+    wireMockRule.stubFor(get(urlEqualTo("/rest/api/2/project"))
+                             .willReturn(aResponse().withStatus(200).withBody(
+                                 "[{\"id\": \"ID\", \"name\": \"NAME\", \"key\": \"KEY\"}]")));
+    JiraProjectBasicNG jiraProjectBasicNG = new JiraProjectBasicNG(jsonNode);
+    List<JiraProjectBasicNG> projects = new ArrayList<>();
+    projects.add(jiraProjectBasicNG);
+    JiraTaskNGParameters jiraTaskNGParameters = createPatAuthJiraTaskParametersBuilder().build();
+    assertThat(jiraTaskNGHandler.getProjects(jiraTaskNGParameters))
+        .isEqualTo(JiraTaskNGResponse.builder().projects(projects).build());
+    JiraInternalConfig jiraInternalConfig =
+        JiraRequestResponseMapper.toJiraInternalConfig(jiraTaskNGParameters.getJiraConnectorDTO());
+    assertThat(jiraInternalConfig.getJiraUrl()).isEqualTo(url.concat("/"));
+    assertThat(jiraInternalConfig.getAuthToken())
+        .isEqualTo("Bearer %s",
+            new String(((JiraPATDTO) jiraTaskNGParameters.getJiraConnectorDTO().getAuth().getCredentials())
+                           .getPatRef()
+                           .getDecryptedValue()));
   }
 
   @Test
@@ -203,18 +224,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     statuses.add(new JiraStatusNG(jsonstatusNode));
 
     assertThat(jiraTaskNGHandler.getStatuses(
-                   createJiraTaskParametersBuilder()
-                       .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                             .jiraUrl(url)
-                                             .username("username")
-                                             .passwordRef(SecretRefData.builder()
-                                                              .decryptedValue("password".toCharArray())
-
-                                                              .build())
-                                             .build())
-                       .projectKey("projectkey")
-                       .issueType("NAME")
-                       .build()))
+                   createJiraTaskParametersBuilder().projectKey("projectkey").issueType("NAME").build()))
         .isEqualTo(JiraTaskNGResponse.builder().statuses(statuses).build());
   }
 
@@ -239,19 +249,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     jiraIssueNG.getFields().put("url", "http://localhost:" + wireMockRule.port() + "/browse/key");
     JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
     assertThat(
-        jiraTaskNGHandler.getIssue(createJiraTaskParametersBuilder()
-                                       .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                             .jiraUrl(url)
-                                                             .username("username")
-                                                             .passwordRef(SecretRefData.builder()
-                                                                              .decryptedValue("password".toCharArray())
-
-                                                                              .build())
-                                                             .build())
-                                       .projectKey("projectkey")
-                                       .issueType("NAME")
-                                       .issueKey("issuekey")
-                                       .build()))
+        jiraTaskNGHandler.getIssue(
+            createJiraTaskParametersBuilder().projectKey("projectkey").issueType("NAME").issueKey("issuekey").build()))
         .isEqualTo(jiraTaskNGResponse);
   }
 
@@ -268,24 +267,15 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
             .willReturn(aResponse().withStatus(200).withBody(
                 "{\"maxResults\":50,\"startAt\":0,\"total\":2,\"isLast\":true,\"values\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10000\",\"id\":\"10000\",\"description\":\"Thesub-taskoftheissue\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/issuetypes/subtask_alternate.png\",\"name\":\"Sub-task\",\"subtask\":true},{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\"id\":\"10003\",\"description\":\"Ataskthatneedstobedone.\",\"iconUrl\":\"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\"name\":\"Task\",\"subtask\":false}]}")));
 
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(true)
-                                        .build())
-            .getIssueCreateMetadata();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(true)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(2);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
@@ -308,34 +298,308 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
                 "{\"maxResults\":50,\"startAt\":0,\"total\":2,\"isLast\":true,\"values\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10000\",\"id\":\"10000\",\"description\":\"Thesub-taskoftheissue\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/issuetypes/subtask_alternate.png\",\"name\":\"Sub-task\",\"subtask\":true},{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\"id\":\"10003\",\"description\":\"Ataskthatneedstobedone.\",\"iconUrl\":\"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\"name\":\"Task\",\"subtask\":false}]}")));
     wireMockRule.stubFor(
         get(urlPathEqualTo("/rest/api/2/issue/createmeta/TES/issuetypes/10003"))
-            .willReturn(aResponse().withStatus(200).withBody(
-                "{\"maxResults\":50,\"startAt\":0,\"total\":12,\"isLast\":true,\"values\":[{\"required\":false,\"schema\":{\"type\":\"user\",\"system\":\"assignee\"},\"name\":\"Assignee\",\"fieldId\":\"assignee\",\"autoCompleteUrl\":\"https://jira.dev.harness.io/rest/api/latest/user/assignable/search?issueKey=null&username=\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"option\",\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\"customId\":10301},\"name\":\"custom_TID\",\"fieldId\":\"customfield_10301\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10200\",\"value\":\"OPTION1\",\"id\":\"10200\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10201\",\"value\":\"OPTION2\",\"id\":\"10201\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10202\",\"value\":\"OPTION3\",\"id\":\"10202\"}]},{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"option\",\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes\",\"customId\":10302},\"name\":\"custom_CHECKBOX\",\"fieldId\":\"customfield_10302\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10203\",\"value\":\"OPT1\",\"id\":\"10203\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10204\",\"value\":\"OPT2\",\"id\":\"10204\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10205\",\"value\":\"OPT3\",\"id\":\"10205\"}]},{\"required\":false,\"schema\":{\"type\":\"string\",\"system\":\"description\"},\"name\":\"Description\",\"fieldId\":\"description\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},{\"required\":false,\"schema\":{\"type\":\"date\",\"system\":\"duedate\"},\"name\":\"DueDate\",\"fieldId\":\"duedate\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},{\"required\":true,\"schema\":{\"type\":\"issuetype\",\"system\":\"issuetype\"},\"name\":\"IssueType\",\"fieldId\":\"issuetype\",\"hasDefaultValue\":false,\"operations\":[],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10000\",\"id\":\"10000\",\"description\":\"Thesub-taskoftheissue\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/issuetypes/subtask_alternate.png\",\"name\":\"Sub-task\",\"subtask\":true}]},{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"string\",\"system\":\"labels\"},\"name\":\"Labels\",\"fieldId\":\"labels\",\"autoCompleteUrl\":\"https://jira.dev.harness.io/rest/api/1.0/labels/suggest?query=\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"]},{\"required\":true,\"schema\":{\"type\":\"issuelink\",\"system\":\"parent\"},\"name\":\"Parent\",\"fieldId\":\"parent\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},{\"required\":true,\"schema\":{\"type\":\"project\",\"system\":\"project\"},\"name\":\"Project\",\"fieldId\":\"project\",\"hasDefaultValue\":false,\"operations\":[\"set\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/project/10101\",\"id\":\"10101\",\"key\":\"TES\",\"name\":\"TestTask\",\"projectTypeKey\":\"business\",\"avatarUrls\":{\"48x48\":\"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\"24x24\":\"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\"16x16\":\"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\"32x32\":\"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"}}]}]}")));
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"maxResults\": 50,\n"
+                + "    \"startAt\": 0,\n"
+                + "    \"total\": 12,\n"
+                + "    \"isLast\": true,\n"
+                + "    \"values\": [\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"user\",\n"
+                + "                \"system\": \"assignee\"\n"
+                + "            },\n"
+                + "            \"name\": \"Assignee\",\n"
+                + "            \"fieldId\": \"assignee\",\n"
+                + "            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/latest/user/assignable/search?issueKey=null&username=\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"array\",\n"
+                + "                \"items\": \"option\",\n"
+                + "                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\n"
+                + "                \"customId\": 10301\n"
+                + "            },\n"
+                + "            \"name\": \"custom_TID\",\n"
+                + "            \"fieldId\": \"customfield_10301\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"add\",\n"
+                + "                \"set\",\n"
+                + "                \"remove\"\n"
+                + "            ],\n"
+                + "            \"allowedValues\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10200\",\n"
+                + "                    \"value\": \"OPTION1\",\n"
+                + "                    \"id\": \"10200\",\n"
+                + "                    \"disabled\": false\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10201\",\n"
+                + "                    \"value\": \"OPTION2\",\n"
+                + "                    \"id\": \"10201\",\n"
+                + "                    \"disabled\": false\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10202\",\n"
+                + "                    \"value\": \"OPTION3\",\n"
+                + "                    \"id\": \"10202\",\n"
+                + "                    \"disabled\": false\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"array\",\n"
+                + "                \"items\": \"option\",\n"
+                + "                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes\",\n"
+                + "                \"customId\": 10302\n"
+                + "            },\n"
+                + "            \"name\": \"custom_CHECKBOX\",\n"
+                + "            \"fieldId\": \"customfield_10302\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"add\",\n"
+                + "                \"set\",\n"
+                + "                \"remove\"\n"
+                + "            ],\n"
+                + "            \"allowedValues\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10203\",\n"
+                + "                    \"value\": \"OPT1\",\n"
+                + "                    \"id\": \"10203\",\n"
+                + "                    \"disabled\": false\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10204\",\n"
+                + "                    \"value\": \"OPT2\",\n"
+                + "                    \"id\": \"10204\",\n"
+                + "                    \"disabled\": false\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10205\",\n"
+                + "                    \"value\": \"OPT3\",\n"
+                + "                    \"id\": \"10205\",\n"
+                + "                    \"disabled\": false\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"number\",\n"
+                + "                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:float\",\n"
+                + "                \"customId\": 10305\n"
+                + "            },\n"
+                + "            \"name\": \"customnumber\",\n"
+                + "            \"fieldId\": \"customfield_10305\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"string\",\n"
+                + "                \"system\": \"description\"\n"
+                + "            },\n"
+                + "            \"name\": \"Description\",\n"
+                + "            \"fieldId\": \"description\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"date\",\n"
+                + "                \"system\": \"duedate\"\n"
+                + "            },\n"
+                + "            \"name\": \"Due Date\",\n"
+                + "            \"fieldId\": \"duedate\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": true,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"issuetype\",\n"
+                + "                \"system\": \"issuetype\"\n"
+                + "            },\n"
+                + "            \"name\": \"Issue Type\",\n"
+                + "            \"fieldId\": \"issuetype\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [],\n"
+                + "            \"allowedValues\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\n"
+                + "                    \"id\": \"10003\",\n"
+                + "                    \"description\": \"A task that needs to be done.\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\n"
+                + "                    \"name\": \"Task\",\n"
+                + "                    \"subtask\": false,\n"
+                + "                    \"avatarId\": 10318\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"array\",\n"
+                + "                \"items\": \"string\",\n"
+                + "                \"system\": \"labels\"\n"
+                + "            },\n"
+                + "            \"name\": \"Labels\",\n"
+                + "            \"fieldId\": \"labels\",\n"
+                + "            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/1.0/labels/suggest?query=\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"add\",\n"
+                + "                \"set\",\n"
+                + "                \"remove\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": false,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"priority\",\n"
+                + "                \"system\": \"priority\"\n"
+                + "            },\n"
+                + "            \"name\": \"Priority\",\n"
+                + "            \"fieldId\": \"priority\",\n"
+                + "            \"hasDefaultValue\": true,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ],\n"
+                + "            \"allowedValues\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/1\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/highest.svg\",\n"
+                + "                    \"name\": \"Highest\",\n"
+                + "                    \"id\": \"1\"\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/2\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/high.svg\",\n"
+                + "                    \"name\": \"High\",\n"
+                + "                    \"id\": \"2\"\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/3\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\n"
+                + "                    \"name\": \"Medium\",\n"
+                + "                    \"id\": \"3\"\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/4\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/low.svg\",\n"
+                + "                    \"name\": \"Low\",\n"
+                + "                    \"id\": \"4\"\n"
+                + "                },\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/5\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/lowest.svg\",\n"
+                + "                    \"name\": \"Lowest\",\n"
+                + "                    \"id\": \"5\"\n"
+                + "                }\n"
+                + "            ],\n"
+                + "            \"defaultValue\": {\n"
+                + "                \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/3\",\n"
+                + "                \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\n"
+                + "                \"name\": \"Medium\",\n"
+                + "                \"id\": \"3\"\n"
+                + "            }\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": true,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"project\",\n"
+                + "                \"system\": \"project\"\n"
+                + "            },\n"
+                + "            \"name\": \"Project\",\n"
+                + "            \"fieldId\": \"project\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ],\n"
+                + "            \"allowedValues\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/project/10101\",\n"
+                + "                    \"id\": \"10101\",\n"
+                + "                    \"key\": \"TES\",\n"
+                + "                    \"name\": \"TestTask\",\n"
+                + "                    \"projectTypeKey\": \"business\",\n"
+                + "                    \"avatarUrls\": {\n"
+                + "                        \"48x48\": \"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\n"
+                + "                        \"24x24\": \"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\n"
+                + "                        \"16x16\": \"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\n"
+                + "                        \"32x32\": \"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": true,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"user\",\n"
+                + "                \"system\": \"reporter\"\n"
+                + "            },\n"
+                + "            \"name\": \"Reporter\",\n"
+                + "            \"fieldId\": \"reporter\",\n"
+                + "            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/latest/user/search?username=\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"required\": true,\n"
+                + "            \"schema\": {\n"
+                + "                \"type\": \"string\",\n"
+                + "                \"system\": \"summary\"\n"
+                + "            },\n"
+                + "            \"name\": \"Summary\",\n"
+                + "            \"fieldId\": \"summary\",\n"
+                + "            \"hasDefaultValue\": false,\n"
+                + "            \"operations\": [\n"
+                + "                \"set\"\n"
+                + "            ]\n"
+                + "        }\n"
+                + "    ]\n"
+                + "}")));
 
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .issueType("Task")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(true)
-                                        .build())
-            .getIssueCreateMetadata();
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .issueType("Task")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(true)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
         .isEqualTo("10003");
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().size())
-        .isEqualTo(8);
+        .isEqualTo(10);
+    // createMetadata should not contain issue type field
+    assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().containsKey(
+                   "Issue Type"))
+        .isFalse();
   }
 
   @Test
@@ -353,35 +617,331 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     wireMockRule.stubFor(
         get(urlPathEqualTo("/rest/api/2/issue/createmeta"))
             .withQueryParams(map)
-            .willReturn(aResponse().withStatus(200).withBody(
-                "{\"expand\":\"projects\",\"projects\":[{\"expand\":\"issuetypes\",\"self\":\"https://jira.dev.harness.io/rest/api/2/project/10101\",\"id\":\"10101\",\"key\":\"TES\",\"name\":\"TestTask\",\"avatarUrls\":{\"48x48\":\"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\"24x24\":\"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\"16x16\":\"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\"32x32\":\"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"},\"issuetypes\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\"id\":\"10003\",\"description\":\"Ataskthatneedstobedone.\",\"iconUrl\":\"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\"name\":\"Task\",\"subtask\":false,\"expand\":\"fields\",\"fields\":{\"summary\":{\"required\":true,\"schema\":{\"type\":\"string\",\"system\":\"summary\"},\"name\":\"Summary\",\"fieldId\":\"summary\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},\"issuetype\":{\"required\":true,\"schema\":{\"type\":\"issuetype\",\"system\":\"issuetype\"},\"name\":\"IssueType\",\"fieldId\":\"issuetype\",\"hasDefaultValue\":false,\"operations\":[],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\"id\":\"10003\",\"description\":\"Ataskthatneedstobedone.\",\"iconUrl\":\"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\"name\":\"Task\",\"subtask\":false,\"avatarId\":10318}]},\"reporter\":{\"required\":true,\"schema\":{\"type\":\"user\",\"system\":\"reporter\"},\"name\":\"Reporter\",\"fieldId\":\"reporter\",\"autoCompleteUrl\":\"https://jira.dev.harness.io/rest/api/latest/user/search?username=\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},\"duedate\":{\"required\":false,\"schema\":{\"type\":\"date\",\"system\":\"duedate\"},\"name\":\"DueDate\",\"fieldId\":\"duedate\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},\"description\":{\"required\":false,\"schema\":{\"type\":\"string\",\"system\":\"description\"},\"name\":\"Description\",\"fieldId\":\"description\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},\"priority\":{\"required\":false,\"schema\":{\"type\":\"priority\",\"system\":\"priority\"},\"name\":\"Priority\",\"fieldId\":\"priority\",\"hasDefaultValue\":true,\"operations\":[\"set\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/1\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/highest.svg\",\"name\":\"Highest\",\"id\":\"1\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/2\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/high.svg\",\"name\":\"High\",\"id\":\"2\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/3\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\"name\":\"Medium\",\"id\":\"3\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/4\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/low.svg\",\"name\":\"Low\",\"id\":\"4\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/5\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/lowest.svg\",\"name\":\"Lowest\",\"id\":\"5\"}],\"defaultValue\":{\"self\":\"https://jira.dev.harness.io/rest/api/2/priority/3\",\"iconUrl\":\"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\"name\":\"Medium\",\"id\":\"3\"}},\"labels\":{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"string\",\"system\":\"labels\"},\"name\":\"Labels\",\"fieldId\":\"labels\",\"autoCompleteUrl\":\"https://jira.dev.harness.io/rest/api/1.0/labels/suggest?query=\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"]},\"customfield_10301\":{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"option\",\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\"customId\":10301},\"name\":\"custom_TID\",\"fieldId\":\"customfield_10301\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10200\",\"value\":\"OPTION1\",\"id\":\"10200\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10201\",\"value\":\"OPTION2\",\"id\":\"10201\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10202\",\"value\":\"OPTION3\",\"id\":\"10202\"}]},\"customfield_10302\":{\"required\":false,\"schema\":{\"type\":\"array\",\"items\":\"option\",\"custom\":\"com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes\",\"customId\":10302},\"name\":\"custom_CHECKBOX\",\"fieldId\":\"customfield_10302\",\"hasDefaultValue\":false,\"operations\":[\"add\",\"set\",\"remove\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10203\",\"value\":\"OPT1\",\"id\":\"10203\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10204\",\"value\":\"OPT2\",\"id\":\"10204\"},{\"self\":\"https://jira.dev.harness.io/rest/api/2/customFieldOption/10205\",\"value\":\"OPT3\",\"id\":\"10205\"}]},\"assignee\":{\"required\":false,\"schema\":{\"type\":\"user\",\"system\":\"assignee\"},\"name\":\"Assignee\",\"fieldId\":\"assignee\",\"autoCompleteUrl\":\"https://jira.dev.harness.io/rest/api/latest/user/assignable/search?issueKey=null&username=\",\"hasDefaultValue\":false,\"operations\":[\"set\"]},\"project\":{\"required\":true,\"schema\":{\"type\":\"project\",\"system\":\"project\"},\"name\":\"Project\",\"fieldId\":\"project\",\"hasDefaultValue\":false,\"operations\":[\"set\"],\"allowedValues\":[{\"self\":\"https://jira.dev.harness.io/rest/api/2/project/10101\",\"id\":\"10101\",\"key\":\"TES\",\"name\":\"TestTask\",\"projectTypeKey\":\"business\",\"avatarUrls\":{\"48x48\":\"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\"24x24\":\"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\"16x16\":\"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\"32x32\":\"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"}}]}}}]}]}")));
-
-    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG =
-        jiraTaskNGHandler
-            .getIssueCreateMetadata(createJiraTaskParametersBuilder()
-                                        .jiraConnectorDTO(JiraConnectorDTO.builder()
-                                                              .jiraUrl(url)
-                                                              .username("username")
-                                                              .passwordRef(SecretRefData.builder()
-                                                                               .decryptedValue("password".toCharArray())
-
-                                                                               .build())
-                                                              .build())
-                                        .projectKey("TES")
-                                        .issueType("Task")
-                                        .fetchStatus(false)
-                                        .ignoreComment(false)
-                                        .expand(null)
-                                        .newMetadata(false)
-                                        .build())
-            .getIssueCreateMetadata();
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"expand\": \"projects\",\n"
+                + "    \"projects\": [\n"
+                + "        {\n"
+                + "            \"expand\": \"issuetypes\",\n"
+                + "            \"self\": \"https://jira.dev.harness.io/rest/api/2/project/10101\",\n"
+                + "            \"id\": \"10101\",\n"
+                + "            \"key\": \"TES\",\n"
+                + "            \"name\": \"TestTask\",\n"
+                + "            \"avatarUrls\": {\n"
+                + "                \"48x48\": \"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\n"
+                + "                \"24x24\": \"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\n"
+                + "                \"16x16\": \"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\n"
+                + "                \"32x32\": \"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"\n"
+                + "            },\n"
+                + "            \"issuetypes\": [\n"
+                + "                {\n"
+                + "                    \"self\": \"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\n"
+                + "                    \"id\": \"10003\",\n"
+                + "                    \"description\": \"A task that needs to be done.\",\n"
+                + "                    \"iconUrl\": \"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\n"
+                + "                    \"name\": \"Task\",\n"
+                + "                    \"subtask\": false,\n"
+                + "                    \"expand\": \"fields\",\n"
+                + "                    \"fields\": {\n"
+                + "                        \"summary\": {\n"
+                + "                            \"required\": true,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"string\",\n"
+                + "                                \"system\": \"summary\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Summary\",\n"
+                + "                            \"fieldId\": \"summary\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"issuetype\": {\n"
+                + "                            \"required\": true,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"issuetype\",\n"
+                + "                                \"system\": \"issuetype\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Issue Type\",\n"
+                + "                            \"fieldId\": \"issuetype\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [],\n"
+                + "                            \"allowedValues\": [\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/issuetype/10003\",\n"
+                + "                                    \"id\": \"10003\",\n"
+                + "                                    \"description\": \"A task that needs to be done.\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/secure/viewavatar?size=xsmall&avatarId=10318&avatarType=issuetype\",\n"
+                + "                                    \"name\": \"Task\",\n"
+                + "                                    \"subtask\": false,\n"
+                + "                                    \"avatarId\": 10318\n"
+                + "                                }\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"reporter\": {\n"
+                + "                            \"required\": true,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"user\",\n"
+                + "                                \"system\": \"reporter\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Reporter\",\n"
+                + "                            \"fieldId\": \"reporter\",\n"
+                + "                            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/latest/user/search?username=\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"duedate\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"date\",\n"
+                + "                                \"system\": \"duedate\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Due Date\",\n"
+                + "                            \"fieldId\": \"duedate\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"description\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"string\",\n"
+                + "                                \"system\": \"description\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Description\",\n"
+                + "                            \"fieldId\": \"description\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"priority\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"priority\",\n"
+                + "                                \"system\": \"priority\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Priority\",\n"
+                + "                            \"fieldId\": \"priority\",\n"
+                + "                            \"hasDefaultValue\": true,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ],\n"
+                + "                            \"allowedValues\": [\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/1\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/highest.svg\",\n"
+                + "                                    \"name\": \"Highest\",\n"
+                + "                                    \"id\": \"1\"\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/2\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/high.svg\",\n"
+                + "                                    \"name\": \"High\",\n"
+                + "                                    \"id\": \"2\"\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/3\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\n"
+                + "                                    \"name\": \"Medium\",\n"
+                + "                                    \"id\": \"3\"\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/4\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/low.svg\",\n"
+                + "                                    \"name\": \"Low\",\n"
+                + "                                    \"id\": \"4\"\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/5\",\n"
+                + "                                    \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/lowest.svg\",\n"
+                + "                                    \"name\": \"Lowest\",\n"
+                + "                                    \"id\": \"5\"\n"
+                + "                                }\n"
+                + "                            ],\n"
+                + "                            \"defaultValue\": {\n"
+                + "                                \"self\": \"https://jira.dev.harness.io/rest/api/2/priority/3\",\n"
+                + "                                \"iconUrl\": \"https://jira.dev.harness.io/images/icons/priorities/medium.svg\",\n"
+                + "                                \"name\": \"Medium\",\n"
+                + "                                \"id\": \"3\"\n"
+                + "                            }\n"
+                + "                        },\n"
+                + "                        \"labels\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"array\",\n"
+                + "                                \"items\": \"string\",\n"
+                + "                                \"system\": \"labels\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Labels\",\n"
+                + "                            \"fieldId\": \"labels\",\n"
+                + "                            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/1.0/labels/suggest?query=\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"add\",\n"
+                + "                                \"set\",\n"
+                + "                                \"remove\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"customfield_10301\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"array\",\n"
+                + "                                \"items\": \"option\",\n"
+                + "                                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:multiselect\",\n"
+                + "                                \"customId\": 10301\n"
+                + "                            },\n"
+                + "                            \"name\": \"custom_TID\",\n"
+                + "                            \"fieldId\": \"customfield_10301\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"add\",\n"
+                + "                                \"set\",\n"
+                + "                                \"remove\"\n"
+                + "                            ],\n"
+                + "                            \"allowedValues\": [\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10200\",\n"
+                + "                                    \"value\": \"OPTION1\",\n"
+                + "                                    \"id\": \"10200\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10201\",\n"
+                + "                                    \"value\": \"OPTION2\",\n"
+                + "                                    \"id\": \"10201\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10202\",\n"
+                + "                                    \"value\": \"OPTION3\",\n"
+                + "                                    \"id\": \"10202\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                }\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"customfield_10302\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"array\",\n"
+                + "                                \"items\": \"option\",\n"
+                + "                                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes\",\n"
+                + "                                \"customId\": 10302\n"
+                + "                            },\n"
+                + "                            \"name\": \"custom_CHECKBOX\",\n"
+                + "                            \"fieldId\": \"customfield_10302\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"add\",\n"
+                + "                                \"set\",\n"
+                + "                                \"remove\"\n"
+                + "                            ],\n"
+                + "                            \"allowedValues\": [\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10203\",\n"
+                + "                                    \"value\": \"OPT1\",\n"
+                + "                                    \"id\": \"10203\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10204\",\n"
+                + "                                    \"value\": \"OPT2\",\n"
+                + "                                    \"id\": \"10204\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                },\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/customFieldOption/10205\",\n"
+                + "                                    \"value\": \"OPT3\",\n"
+                + "                                    \"id\": \"10205\",\n"
+                + "                                    \"disabled\": false\n"
+                + "                                }\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"customfield_10305\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"number\",\n"
+                + "                                \"custom\": \"com.atlassian.jira.plugin.system.customfieldtypes:float\",\n"
+                + "                                \"customId\": 10305\n"
+                + "                            },\n"
+                + "                            \"name\": \"customnumber\",\n"
+                + "                            \"fieldId\": \"customfield_10305\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"assignee\": {\n"
+                + "                            \"required\": false,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"user\",\n"
+                + "                                \"system\": \"assignee\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Assignee\",\n"
+                + "                            \"fieldId\": \"assignee\",\n"
+                + "                            \"autoCompleteUrl\": \"https://jira.dev.harness.io/rest/api/latest/user/assignable/search?issueKey=null&username=\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ]\n"
+                + "                        },\n"
+                + "                        \"project\": {\n"
+                + "                            \"required\": true,\n"
+                + "                            \"schema\": {\n"
+                + "                                \"type\": \"project\",\n"
+                + "                                \"system\": \"project\"\n"
+                + "                            },\n"
+                + "                            \"name\": \"Project\",\n"
+                + "                            \"fieldId\": \"project\",\n"
+                + "                            \"hasDefaultValue\": false,\n"
+                + "                            \"operations\": [\n"
+                + "                                \"set\"\n"
+                + "                            ],\n"
+                + "                            \"allowedValues\": [\n"
+                + "                                {\n"
+                + "                                    \"self\": \"https://jira.dev.harness.io/rest/api/2/project/10101\",\n"
+                + "                                    \"id\": \"10101\",\n"
+                + "                                    \"key\": \"TES\",\n"
+                + "                                    \"name\": \"TestTask\",\n"
+                + "                                    \"projectTypeKey\": \"business\",\n"
+                + "                                    \"avatarUrls\": {\n"
+                + "                                        \"48x48\": \"https://jira.dev.harness.io/secure/projectavatar?avatarId=10324\",\n"
+                + "                                        \"24x24\": \"https://jira.dev.harness.io/secure/projectavatar?size=small&avatarId=10324\",\n"
+                + "                                        \"16x16\": \"https://jira.dev.harness.io/secure/projectavatar?size=xsmall&avatarId=10324\",\n"
+                + "                                        \"32x32\": \"https://jira.dev.harness.io/secure/projectavatar?size=medium&avatarId=10324\"\n"
+                + "                                    }\n"
+                + "                                }\n"
+                + "                            ]\n"
+                + "                        }\n"
+                + "                    }\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "    ]\n"
+                + "}")));
+    JiraIssueCreateMetadataNG jiraIssueCreateMetadataNG = jiraTaskNGHandler
+                                                              .getIssueCreateMetadata(createJiraTaskParametersBuilder()
+                                                                                          .projectKey("TES")
+                                                                                          .issueType("Task")
+                                                                                          .fetchStatus(false)
+                                                                                          .ignoreComment(false)
+                                                                                          .expand(null)
+                                                                                          .newMetadata(false)
+                                                                                          .build())
+                                                              .getIssueCreateMetadata();
     assertThat(jiraIssueCreateMetadataNG.getProjects().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().size()).isEqualTo(1);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getId()).isEqualTo("10101");
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getId())
         .isEqualTo("10003");
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().size())
-        .isEqualTo(10);
+        .isEqualTo(11);
+    // createMetadata should not contain issue type field
+    assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().containsKey(
+                   "Issue Type"))
+        .isFalse();
   }
 
   @Test
@@ -391,14 +951,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -462,14 +1015,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -534,17 +1081,11 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
-                                                    .action(JiraActionNG.CREATE_ISSUE)
+    fields.put("Issue Type", "Change");
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
+                                                    .action(JiraActionNG.UPDATE_ISSUE)
                                                     .projectKey("TJI")
-                                                    .issueType("Bug")
                                                     .issueKey("TJI-37792")
                                                     .transitionToStatus("INVALID")
                                                     .fields(fields)
@@ -565,8 +1106,14 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     jiraFieldNG2.setName("field2");
     jiraFieldNG2.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build());
 
+    JiraFieldNG jiraFieldNG3 = JiraFieldNG.builder().build();
+    jiraFieldNG3.setKey("issuetype");
+    jiraFieldNG3.setName("Issue Type");
+    jiraFieldNG3.setSchema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.ISSUE_TYPE).build());
+
     fieldsMap.put("QE Assignee", jiraFieldNG1);
     fieldsMap.put("Test Summary", jiraFieldNG2);
+    fieldsMap.put("Issue Type", jiraFieldNG3);
     when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
@@ -581,6 +1128,7 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields1 = new HashMap<>();
     fields1.put("QE Assignee", "accountId");
     fields1.put("Test Summary", "No test added");
+    fields1.put("Issue Type", "Change");
     when(jiraClient.updateIssue(
              jiraTaskNGParameters.getIssueKey(), jiraTaskNGParameters.getTransitionToStatus(), null, fields1))
         .thenReturn(jiraIssueNG);
@@ -599,14 +1147,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     Map<String, String> fields = new HashMap<>();
     fields.put("QE Assignee", "your-jira-account-id");
     fields.put("Test Summary", "No test added");
-    JiraConnectorDTO jiraConnectorDTO =
-        JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
-            .build();
-    JiraTaskNGParameters jiraTaskNGParameters = JiraTaskNGParameters.builder()
-                                                    .jiraConnectorDTO(jiraConnectorDTO)
+
+    JiraTaskNGParameters jiraTaskNGParameters = createJiraTaskParametersBuilder()
                                                     .action(JiraActionNG.CREATE_ISSUE)
                                                     .projectKey("TJI")
                                                     .issueType("Bug")
@@ -660,9 +1202,32 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   private JiraTaskNGParametersBuilder createJiraTaskParametersBuilder() {
     JiraConnectorDTO jiraConnectorDTO =
         JiraConnectorDTO.builder()
-            .jiraUrl("https://harness.atlassian.net/")
-            .username("username")
-            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .jiraUrl(url)
+            .auth(JiraAuthenticationDTO.builder()
+                      .authType(JiraAuthType.USER_PASSWORD)
+                      .credentials(
+                          JiraUserNamePasswordDTO.builder()
+                              .username("username")
+                              .passwordRef(
+                                  SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                              .build())
+                      .build())
+            .build();
+    return JiraTaskNGParameters.builder().jiraConnectorDTO(jiraConnectorDTO);
+  }
+
+  private JiraTaskNGParametersBuilder createPatAuthJiraTaskParametersBuilder() {
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl(url)
+            .auth(JiraAuthenticationDTO.builder()
+                      .authType(JiraAuthType.PAT)
+                      .credentials(
+                          JiraPATDTO.builder()
+                              .patRef(
+                                  SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                              .build())
+                      .build())
             .build();
     return JiraTaskNGParameters.builder().jiraConnectorDTO(jiraConnectorDTO);
   }

@@ -40,6 +40,7 @@ import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
 import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
 import static java.time.Duration.ofHours;
@@ -130,6 +131,10 @@ import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
+import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
+import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
+import software.wings.beans.accountdetails.events.CrossGenerationAccessYamlDTO;
+import software.wings.beans.accountdetails.events.DefaultExperienceYamlDTO;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.events.LoginSettingsWhitelistedDomainsUpdateEvent;
@@ -148,6 +153,8 @@ import software.wings.helpers.ext.account.DeleteAccountHelper;
 import software.wings.licensing.LicenseService;
 import software.wings.persistence.AppContainer;
 import software.wings.persistence.mail.EmailData;
+import software.wings.scheduler.AccountJobProperties;
+import software.wings.scheduler.AccountJobType;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
@@ -180,6 +187,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.account.AccountCrudObserver;
 import software.wings.service.intfc.account.AccountLicenseObserver;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
+import software.wings.service.intfc.instance.stats.collector.StatsCollector;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.verification.CVConfiguration;
@@ -202,6 +210,8 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -293,6 +303,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private OutboxService outboxService;
+  @Inject private StatsCollector statsCollector;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -365,8 +376,7 @@ public class AccountServiceImpl implements AccountService {
               .setData(AccountEntityChangeDTO.newBuilder().setAccountId(accountId).build().toByteString())
               .build());
     } catch (Exception ex) {
-      log.error(
-          String.format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
+      log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
 
@@ -489,7 +499,6 @@ public class AccountServiceImpl implements AccountService {
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
       updateNextGenEnabled(account.getUuid(), true);
-      featureFlagService.enableAccount(FeatureName.CDNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CING_ENABLED, account.getUuid());
@@ -575,6 +584,77 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience) {
+    Account account = get(accountIdentifier);
+    DefaultExperience oldDefaultExperience = account.getDefaultExperience();
+    account.setDefaultExperience(defaultExperience);
+    Account updatedAccount = update(account);
+    ngAuditAccountDetailsDefaultExperience(
+        accountIdentifier, oldDefaultExperience, updatedAccount.getDefaultExperience());
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsDefaultExperience(
+      String accountIdentifier, DefaultExperience oldDefaultExperience, DefaultExperience newDefaultExperience) {
+    try {
+      OutboxEvent outboxEvent =
+          outboxService.save(AccountDetailsDefaultExperienceUpdateEvent.builder()
+                                 .accountIdentifier(accountIdentifier)
+                                 .oldDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(oldDefaultExperience).build())
+                                 .newDefaultExperienceYamlDTO(
+                                     DefaultExperienceYamlDTO.builder().defaultExperience(newDefaultExperience).build())
+                                 .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsDefaultExperienceUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsDefaultExperienceUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
+  public Account updateCrossGenerationAccessEnabled(
+      String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen) {
+    Account account = get(accountIdentifier);
+    boolean oldIsCrossGenerationAccessEnabled = account.isCrossGenerationAccessEnabled();
+    account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
+    Account updatedAccount = update(account);
+    if (isNextGen) {
+      ngAuditAccountDetailsCrossGenerationAccess(
+          accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+    }
+
+    return updatedAccount;
+  }
+
+  private void ngAuditAccountDetailsCrossGenerationAccess(
+      String accountIdentifier, boolean oldIsCrossGenerationAccessEnabled, boolean newIsCrossGenerationAccessEnabled) {
+    try {
+      OutboxEvent outboxEvent = outboxService.save(
+          AccountDetailsCrossGenerationAccessUpdateEvent.builder()
+              .accountIdentifier(accountIdentifier)
+              .oldCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(oldIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .newCrossGenerationAccessYamlDTO(CrossGenerationAccessYamlDTO.builder()
+                                                   .isCrossGenerationAccessEnabled(newIsCrossGenerationAccessEnabled)
+                                                   .build())
+              .build());
+      log.info(
+          "NG Account Details: for account {} and outboxEventId {} successfully saved the audit for AccountDetailsCrossGenerationAccessUpdateEvent to outbox",
+          accountIdentifier, outboxEvent.getId());
+    } catch (Exception ex) {
+      log.error(
+          "NG Account Details: for account {} saving the AccountDetailsCrossGenerationAccessUpdateEvent to outbox failed with exception: ",
+          accountIdentifier, ex);
+    }
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -590,6 +670,7 @@ public class AccountServiceImpl implements AccountService {
     accountDetails.setLicenseInfo(account.getLicenseInfo());
     accountDetails.setCeLicenseInfo(account.getCeLicenseInfo());
     accountDetails.setDefaultExperience(account.getDefaultExperience());
+    accountDetails.setCrossGenerationAccessEnabled(account.isCrossGenerationAccessEnabled());
     accountDetails.setCreatedFromNG(account.isCreatedFromNG());
     accountDetails.setActiveServiceCount(cgCdLicenseUsageService.getActiveServiceInTimePeriod(accountId, 60));
     if (featureFlagService.isEnabled(CG_LICENSE_USAGE, accountId)) {
@@ -698,7 +779,7 @@ public class AccountServiceImpl implements AccountService {
       count++;
     }
     throw new GeneralException(
-        String.format("Failed to generate unique Account Name for initial accountName=%s", accountName));
+        format("Failed to generate unique Account Name for initial accountName=%s", accountName));
   }
 
   /**
@@ -926,6 +1007,10 @@ public class AccountServiceImpl implements AccountService {
 
     if (account.getDefaultExperience() != null) {
       updateOperations.set(AccountKeys.defaultExperience, account.getDefaultExperience());
+    }
+
+    if (account.isCrossGenerationAccessEnabled() != null) {
+      updateOperations.set(AccountKeys.isCrossGenerationAccessEnabled, account.isCrossGenerationAccessEnabled());
     }
 
     wingsPersistence.update(account, updateOperations);
@@ -1273,6 +1358,40 @@ public class AccountServiceImpl implements AccountService {
     return setAccountStatusInternal(account, AccountStatus.ACTIVE);
   }
 
+  @Override
+  public void scheduleAccountLevelJobs(
+      String targetAccountId, List<AccountJobType> jobTypes, AccountJobProperties jobProperties) {
+    if (jobTypes.contains(AccountJobType.ALERT)) {
+      log.info("Start adding AlertCheckJob for account {}", targetAccountId);
+      AlertCheckJob.delete(jobScheduler, targetAccountId);
+      AlertCheckJob.add(jobScheduler, targetAccountId);
+      log.info("AlertCheckJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.INSTANCE)) {
+      if (jobProperties != null && jobProperties.getInstanceStatsSnapshotTimeDaysAgo() >= 0) {
+        long instanceStatsSnapshotTime =
+            Instant.now().minus(Period.ofDays(jobProperties.getInstanceStatsSnapshotTimeDaysAgo())).toEpochMilli();
+        boolean statsCreated = statsCollector.createStatsAtIfMissing(targetAccountId, instanceStatsSnapshotTime);
+        if (!statsCreated) {
+          throw new InvalidRequestException(format("Failed to create instance stats for account, %s", targetAccountId));
+        }
+      }
+
+      log.info("Start adding InstanceStatsCollectorJob for account {}", targetAccountId);
+      InstanceStatsCollectorJob.delete(jobScheduler, targetAccountId);
+      InstanceStatsCollectorJob.add(jobScheduler, targetAccountId);
+      log.info("InstanceStatsCollectorJob is added successfully for account {}", targetAccountId);
+    }
+
+    if (jobTypes.contains(AccountJobType.LIMIT_VICINITY)) {
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+      LimitVicinityCheckerJob.delete(jobScheduler, targetAccountId);
+      LimitVicinityCheckerJob.add(jobScheduler, targetAccountId);
+      log.info("LimitVicinityCheckerJob is added successfully for account {}", targetAccountId);
+    }
+  }
+
   private void updateMigratedToClusterUrl(Account account, String migratedToClusterUrl) {
     if (isNotEmpty(migratedToClusterUrl)) {
       wingsPersistence.update(account,
@@ -1527,7 +1646,7 @@ public class AccountServiceImpl implements AccountService {
     try {
       featureName = FeatureName.valueOf(featureFlagName);
     } catch (IllegalArgumentException ex) {
-      String errMsg = String.format("Invalid feature flag name received: %s", featureFlagName);
+      String errMsg = format("Invalid feature flag name received: %s", featureFlagName);
       log.error(errMsg, ex);
       throw new InvalidRequestException(errMsg);
     }

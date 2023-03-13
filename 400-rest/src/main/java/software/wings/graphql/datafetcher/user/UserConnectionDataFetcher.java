@@ -70,6 +70,7 @@ public class UserConnectionDataFetcher
   protected void populateFilters(List<QLUserFilter> filters, Query query) {
     userQueryHelper.setAccountFilter(query, getAccountId());
     userQueryHelper.setQuery(filters, query);
+    userQueryHelper.setShowDisabledFilter(filters, query);
   }
 
   @Override

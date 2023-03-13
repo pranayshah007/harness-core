@@ -144,6 +144,7 @@ ceAzureSetupConfig:
 
 ceGcpSetupConfig:
   enableServiceAccountPermissionsCheck: false
+  serviceAccountEmail: harness-ce-public-test@ccm-play.iam.gserviceaccount.com
 
 awsConfig:
   accessKey: accessKey_placeholder
@@ -263,5 +264,3 @@ clickHouseConfig:
   password: ""
   
 isClickHouseEnabled: false
-
-

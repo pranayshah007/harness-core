@@ -30,7 +30,7 @@ import lombok.Value;
 public class HostVolume implements Volume {
   @Builder.Default @NotNull Volume.Type type = Type.HOST;
   @NotNull HostVolumeSpec spec;
-
+  @ApiModelProperty(hidden = true) String uuid;
   @Value
   @Builder
   @AllArgsConstructor

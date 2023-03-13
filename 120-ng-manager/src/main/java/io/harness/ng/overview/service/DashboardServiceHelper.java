@@ -7,6 +7,7 @@
 
 package io.harness.ng.overview.service;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
@@ -18,6 +19,8 @@ import io.harness.ng.overview.dto.ArtifactInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
+import io.harness.ng.overview.dto.ServicePipelineInfo;
+import io.harness.utils.IdentifierRefHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -482,13 +485,25 @@ public class DashboardServiceHelper {
     });
   }
 
+  public void sortServicePipelineInfoList(List<ServicePipelineInfo> servicePipelineInfoList) {
+    // sort based on last deployed time
+    Collections.sort(servicePipelineInfoList, new Comparator<ServicePipelineInfo>() {
+      public int compare(ServicePipelineInfo o1, ServicePipelineInfo o2) {
+        return (int) (o2.getLastExecutedAt() - o1.getLastExecutedAt());
+      }
+    });
+  }
+
   public void constructEnvironmentNameAndTypeMap(List<Environment> environments, Map<String, String> envIdToNameMap,
       Map<String, EnvironmentType> envIdToEnvTypeMap) {
     for (Environment environment : environments) {
-      final String envId = environment.getIdentifier();
+      String envId = environment.getIdentifier();
       if (envId == null) {
         continue;
       }
+      IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(
+          envId, environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier());
+      envId = identifierRef.buildScopedIdentifier();
       final String envName = environment.getName();
       final EnvironmentType environmentType = environment.getType();
       envIdToNameMap.put(envId, envName);
@@ -574,5 +589,12 @@ public class DashboardServiceHelper {
               .build());
     }
     return map;
+  }
+
+  public String buildOpenTaskQuery(
+      String accountId, String orgId, String projectId, String serviceId, long startInterval) {
+    return String.format(
+        "select pipeline_execution_summary_cd_id from service_infra_info where accountid = '%s' and orgidentifier = '%s' and projectidentifier = '%s' and service_id = '%s' and service_startts > %s",
+        accountId, orgId, projectId, serviceId, startInterval);
   }
 }

@@ -36,6 +36,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
@@ -76,6 +77,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock RemoteExpressionFunctor remoteExpressionFunctor;
+  @Mock PlanExpansionService planExpansionService;
 
   private final String planExecutionId = generateUuid();
   NodeExecution nodeExecution1;
@@ -358,8 +360,10 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     SampleEngineExpressionEvaluator evaluator = new SampleEngineExpressionEvaluator(ambiance, pmsSdkInstanceService);
     on(evaluator).set("planExecutionService", planExecutionService);
     on(evaluator).set("nodeExecutionService", nodeExecutionService);
+    on(evaluator).set("planExpansionService", planExpansionService);
 
     evaluator.addToContextMap("dummy", remoteExpressionFunctor);
+
     return evaluator;
   }
 

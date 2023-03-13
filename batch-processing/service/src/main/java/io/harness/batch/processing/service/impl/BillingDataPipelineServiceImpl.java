@@ -20,6 +20,7 @@ import software.wings.beans.Account;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.Credentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
@@ -541,7 +542,15 @@ public class BillingDataPipelineServiceImpl implements BillingDataPipelineServic
   }
 
   public DataTransferServiceClient getDataTransferClient() throws IOException {
-    ServiceAccountCredentials sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    GoogleCredentials sourceCredentials;
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    if (!usingWorkloadIdentity) {
+      log.info("WI: Initializing DataTransferServiceClient with JSON Key file");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: DataTransferServiceClient using Google ADC");
+      sourceCredentials = GoogleCredentials.getApplicationDefault();
+    }
     Credentials credentials = getImpersonatedCredentials(sourceCredentials, null);
     return getDataTransferClient(credentials);
   }

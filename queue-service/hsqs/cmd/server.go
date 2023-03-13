@@ -8,9 +8,11 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog"
 
@@ -89,7 +91,10 @@ func startServer(c *config.Config) {
 
 	// enabling AppDynamics For Service
 
+	log.Info("Initializing redis service with values ", c.Redis.Endpoint, " ", len(c.Redis.Password), " ", c.Redis.SSLEnabled, " ", c.Redis.CertPath, " ", c.ClaimTimeout, c.PendingTimeout)
 	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath, c.PendingTimeout, c.ClaimTimeout)
+
+	log.Info("redis initialized with store ", store)
 	customMetrics := metrics.InitMetrics()
 	h := handler.NewHandler(store, customMetrics)
 
@@ -98,6 +103,7 @@ func startServer(c *config.Config) {
 	r.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
+	r.GET("/version", version)
 
 	g := r.Group("v1")
 
@@ -112,4 +118,40 @@ func startServer(c *config.Config) {
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().StringP(envarg, "e", "local.env", "Config file for the server")
+}
+
+func version(c echo.Context) error {
+
+	file, err := os.Open("./build.properties")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return fmt.Errorf("version file not found")
+	}
+	defer file.Close()
+
+	// Read the file line by line
+	scanner := bufio.NewScanner(file)
+	version := make(map[string]string)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, "=")
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		version[key] = value
+	}
+
+	// Generate the version response
+	majorVersion := version["build.majorVersion"]
+	minorVersion := version["build.minorVersion"]
+	patch := version["build.patch"]
+	buildNo := version["BUILD_NO"]
+
+	response := fmt.Sprintf("{\"resource\":{\"versionInfo\":{\"version\":%s.%s.%s,\"buildNo\":%s}}}", majorVersion, minorVersion, patch, buildNo)
+
+	log.Info(response)
+
+	return c.String(http.StatusOK, response)
 }

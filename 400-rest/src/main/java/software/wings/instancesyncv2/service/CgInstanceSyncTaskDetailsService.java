@@ -94,14 +94,18 @@ public class CgInstanceSyncTaskDetailsService {
       String taskDetailsId, Set<CgReleaseIdentifiers> releasesToUpdate, Set<CgReleaseIdentifiers> releasesToDelete) {
     InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);
     taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
+    Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
     if (!releasesToUpdate.isEmpty() || !releasesToDelete.isEmpty()) {
-      Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
       if (isNotEmpty(taskDetails.getReleaseIdentifiers())) {
         allReleases.addAll(taskDetails.getReleaseIdentifiers());
       }
       allReleases.removeAll(releasesToDelete);
       taskDetails.setReleaseIdentifiers(allReleases);
     }
-    save(taskDetails);
+    if (allReleases.isEmpty()) {
+      delete(taskDetailsId);
+    } else {
+      save(taskDetails);
+    }
   }
 }

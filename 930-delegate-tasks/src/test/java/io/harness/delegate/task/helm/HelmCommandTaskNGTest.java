@@ -32,7 +32,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
-import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -91,7 +91,7 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     String kubeConfigLocation = ".kube/config";
 
     doReturn(logCallback).when(dummyCommandRequest).getLogCallback();
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateBaseHelper).createKubernetesConfig(any());
+    doReturn(kubernetesConfig).when(containerDeploymentDelegateBaseHelper).createKubernetesConfig(any(), any());
     doReturn(kubeConfigLocation).when(containerDeploymentDelegateBaseHelper).createKubeConfig(eq(kubernetesConfig));
 
     assertThatThrownBy(() -> spyHelmCommandTask.run(dummyCommandRequest)).isInstanceOf(TaskNGDataException.class);

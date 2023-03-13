@@ -22,5 +22,4 @@ public class GitFileResponse extends ScmBaseResponse {
   String objectId;
   String filepath;
   String branch;
-  ScmGitMetadata scmGitMetadata;
 }

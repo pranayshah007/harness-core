@@ -42,6 +42,8 @@ import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviser;
 import io.harness.pms.sdk.core.adviser.ignore.IgnoreAdviserParameters;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviser;
 import io.harness.pms.sdk.core.adviser.manualintervention.ManualInterventionAdviserParameters;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
+import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.retry.RetryAdviser;
@@ -285,6 +287,15 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
                                         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
                                         .build());
           break;
+        case MARK_AS_FAILURE:
+          adviserObtainmentList.add(
+              adviserObtainmentBuilder.setType(OnMarkFailureAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkFailureAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
+          break;
         default:
           Switch.unhandled(actionType);
       }
@@ -441,9 +452,10 @@ public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<St
         return RepairActionCode.MANUAL_INTERVENTION;
       case RETRY:
         return RepairActionCode.RETRY;
+      case MARK_AS_FAILURE:
+        return RepairActionCode.MARK_AS_FAILURE;
       default:
         throw new InvalidRequestException(
-
             action.toString() + " Failure action doesn't have corresponding RepairAction Code.");
     }
   }

@@ -32,7 +32,8 @@ public interface DockerRegistryService {
    * @param maxNumberOfBuilds the max number of builds
    * @return the builds
    */
-  List<BuildDetailsInternal> getBuilds(DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(
+      DockerInternalConfig dockerConfig, String imageName, int maxNumberOfBuilds, String tagRegex);
 
   /**
    * Gets labels.

@@ -152,10 +152,15 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
+    String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+    if (k8sCanaryDeployRequest.isUseDeclarativeRollback()) {
+      canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+          canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
+    }
     return K8sDeployResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
-                               .canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef())
+                               .canaryWorkload(canaryObjectsNames)
                                .k8sPodList(allPods)
                                .releaseNumber(k8sCanaryHandlerConfig.getCurrentRelease().getReleaseNumber())
                                .currentInstances(k8sCanaryHandlerConfig.getTargetInstances())
@@ -179,7 +184,13 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         K8sCanaryDataException.dataBuilder().canaryWorkloadDeployed(canaryWorkloadDeployed).cause(exception);
     KubernetesResource canaryWorkload = k8sCanaryHandlerConfig.getCanaryWorkload();
     if (canaryWorkload != null && canaryWorkload.getResourceId() != null) {
-      k8sCanaryDataBuilder.canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef());
+      String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+      if (((K8sCanaryDeployRequest) request).isUseDeclarativeRollback()) {
+        canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
+            canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
+      }
+
+      k8sCanaryDataBuilder.canaryWorkload(canaryObjectsNames);
     }
 
     throw k8sCanaryDataBuilder.build();
@@ -191,7 +202,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
     k8sCanaryHandlerConfig.setKubernetesConfig(
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig()));
+        containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig(), logCallback));
     k8sCanaryHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
 

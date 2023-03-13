@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.GROUP;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_CHILD_SCOPE_GROUPS;
 import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_INHERITED_GROUPS;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
@@ -312,6 +313,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
+  public List<UserGroup> getUserGroupsForUser(String accountIdentifier, String userId) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(UserGroupKeys.externallyManaged).is(true);
+    criteria.and(UserGroupKeys.users).in(userId);
+    return userGroupRepository.findAll(criteria);
+  }
+
+  @Override
   public List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
     if (isEmpty(userGroups)) {
       return Collections.emptyList();
@@ -454,7 +464,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       Criteria criteria =
           createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
-      List<UserGroup> deleteUserGroups = userGroupRepository.deleteAll(criteria);
+
+      List<UserGroup> deleteUserGroups = userGroupRepository.findAllAndDelete(criteria);
       if (isNotEmpty(deleteUserGroups)) {
         deleteUserGroups.forEach(userGroup
             -> outboxService.save(new UserGroupDeleteEvent(userGroup.getAccountIdentifier(), toDTO(userGroup))));
@@ -649,12 +660,26 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
+  private Criteria createChildScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(UserGroupKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(UserGroupKeys.projectIdentifier).is(projectIdentifier);
+    }
+    return criteria;
+  }
+
   @VisibleForTesting
   protected Criteria createUserGroupFilterCriteria(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, UserGroupFilterType filterType) {
     Criteria criteria;
     if (filterType == INCLUDE_INHERITED_GROUPS) {
       criteria = createScopeCriteriaIncludingInheritedUserGroups(accountIdentifier, orgIdentifier, projectIdentifier);
+    } else if (filterType == INCLUDE_CHILD_SCOPE_GROUPS) {
+      criteria = createChildScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     } else {
       criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     }

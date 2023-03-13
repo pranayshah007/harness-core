@@ -52,6 +52,8 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -195,10 +197,22 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void applyPatAuthFFCheckForJiraConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof JiraConnectorDTO) {
+      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
+      JiraConnectorDTO jiraConnectorDTO = (JiraConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      if (!isNull(jiraConnectorDTO.getAuth()) && JiraAuthType.PAT.equals(jiraConnectorDTO.getAuth().getAuthType())
+          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_JIRA_PAT_AUTH)) {
+        throw new InvalidRequestException("Unsupported jira auth type provided : PAT");
+      }
+    }
+  }
+
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
+    applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -304,6 +318,7 @@ public class ConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
     applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
+    applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =

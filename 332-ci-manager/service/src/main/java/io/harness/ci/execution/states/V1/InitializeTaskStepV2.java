@@ -51,7 +51,6 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.BackgroundTaskUtility;
 import io.harness.ci.execution.QueueExecutionUtils;
-import io.harness.ci.execution.queue.QueueClient;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -84,6 +83,9 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -120,6 +122,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
+import io.harness.tasks.FailureResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -168,11 +171,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
 
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private HsqsClientService hsqsClientService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
-  @Inject QueueClient queueClient;
   @Inject CIExecutionRepository ciExecutionRepository;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
@@ -197,12 +200,17 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     if (queueConcurrencyEnabled) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
+      String topic = "ci";
+      String moduleName = "ci";
       String payload = RecastOrchestrationUtils.toJson(
           CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
+      EnqueueRequest enqueueRequest =
+          EnqueueRequest.builder().topic(topic).subTopic(accountId).producerName(moduleName).payload(payload).build();
       try {
-        String queueId = queueClient.queue(accountId, payload);
-        if (StringUtils.isNotBlank(queueId)) {
-          ciExecutionRepository.updateQueueId(accountId, ambiance.getStageExecutionId(), queueId);
+        EnqueueResponse execute = hsqsClientService.enqueue(enqueueRequest);
+        log.info("build queued. message id: {}", execute.getItemId());
+        if (StringUtils.isNotBlank(execute.getItemId())) {
+          ciExecutionRepository.updateQueueId(accountId, ambiance.getStageExecutionId(), execute.getItemId());
         }
       } catch (Exception e) {
         log.info("failed to queue build", e);
@@ -212,11 +220,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
-    InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
-        InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
 
-    sdkGraphVisualizationDataService.publishStepDetailInformation(
-        ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     AsyncExecutableResponse.Builder responseBuilder =
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
@@ -224,6 +228,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     // Sending the status if feature flag is enabled
     if (queueConcurrencyEnabled) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
+    } else {
+      InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
+          InitStepV2DelegateTaskInfo.builder().taskID(taskId).taskName("INITIALIZATION_PHASE").build();
+
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
 
     return responseBuilder.build();
@@ -305,24 +315,36 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ResponseData responseData = responseDataMap.entrySet().iterator().next().getValue();
     responseData = serializedResponseDataHelper.deserialize(responseData);
-    if (responseData instanceof ErrorNotifyResponseData) {
-      FailureData failureData =
-          FailureData.newBuilder()
-              .addFailureTypes(FailureType.APPLICATION_FAILURE)
-              .setLevel(Level.ERROR.name())
-              .setCode(GENERAL_ERROR.name())
-              .setMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                  new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage())))))
-              .build();
+    if (responseData instanceof ErrorNotifyResponseData || responseData instanceof FailureResponseData) {
+      String message;
+      if (responseData instanceof ErrorNotifyResponseData) {
+        if (((InitializeStepInfo) stepParameters.getSpec()).getInfrastructure().getType()
+            == Infrastructure.Type.KUBERNETES_DIRECT) {
+          message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+              new CILiteEngineException(((ErrorNotifyResponseData) responseData).getErrorMessage()))));
+        } else {
+          message = emptyIfNull(((ErrorNotifyResponseData) responseData).getErrorMessage());
+        }
+      } else if (responseData instanceof FailureResponseData) {
+        message = emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+            new CIStageExecutionException(((FailureResponseData) responseData).getErrorMessage()))));
+      } else {
+        throw new CIStageExecutionException("Unexpected response received while process CI execution");
+      }
+
+      FailureData failureData = FailureData.newBuilder()
+                                    .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                    .setLevel(Level.ERROR.name())
+                                    .setCode(GENERAL_ERROR.name())
+                                    .setMessage(message)
+                                    .build();
 
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage("Delegate is not able to connect to created build farm")
-                           .addFailureData(failureData)
-                           .build())
+          .failureInfo(FailureInfo.newBuilder().addFailureData(failureData).build())
           .build();
     }
+
     CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     CITaskExecutionResponse.Type type = ciTaskExecutionResponse.getType();
     if (type == CITaskExecutionResponse.Type.K8) {
@@ -499,7 +521,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.FAILED).stepOutcome(stepOutcome);
       if (k8sTaskExecutionResponse.getErrorMessage() != null) {
         stepResponseBuilder.failureInfo(
-            FailureInfo.newBuilder().setErrorMessage(k8sTaskExecutionResponse.getErrorMessage()).build());
+            FailureInfo.newBuilder()
+                .setErrorMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
+                    new CILiteEngineException(k8sTaskExecutionResponse.getErrorMessage())))))
+                .build());
       }
       return stepResponseBuilder.build();
     }

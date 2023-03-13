@@ -17,8 +17,10 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(DX)
 public interface EntitySetupUsageService {
@@ -31,12 +33,8 @@ public interface EntitySetupUsageService {
   Page<EntitySetupUsageDTO> listAllEntityUsageWithSupportForTwoFqnForASingleEntity(int page, int size,
       String accountIdentifier, String referredEntityFQN1, String referredEntityFQN2, EntityType referredEntityType,
       String searchTerm);
-
   List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm);
-
-  List<EntitySetupUsageDTO> listAllReferredUsages(
-      String accountIdentifier, String referredByEntityFQN, EntityType referredEntityType);
 
   Page<EntitySetupUsageDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, EntityType referredEntityType, String searchTerm);
@@ -59,8 +57,12 @@ public interface EntitySetupUsageService {
 
   long deleteByReferredByEntityType(EntityType referredByEntityType);
 
-  List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
+  List<String> listAllReferredEntityIdentifiersPerReferredEntityScope(Scope scope, String referredEntityFQScope,
       EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort);
+
+  CloseableIterator<EntitySetupUsage> streamAllEntityUsagePerReferredEntityScope(Scope scope,
+      String referredEntityFQScope, EntityType referredEntityType, @NotNull EntityType referredByEntityType,
+      String referredByEntityName);
 
   Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs);
 }

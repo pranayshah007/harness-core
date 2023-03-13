@@ -37,7 +37,7 @@ public class StepParametersUtils {
     stageBuilder.failureStrategies(
         stageNode.getFailureStrategies() != null ? stageNode.getFailureStrategies().getValue() : null);
     stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.when(stageNode.getWhen() != null ? stageNode.getWhen().getValue() : null);
     stageBuilder.type(stageNode.getType());
     stageBuilder.uuid(stageNode.getUuid());
     stageBuilder.variables(
@@ -57,7 +57,7 @@ public class StepParametersUtils {
     stepBuilder.failureStrategies(
         stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
-    stepBuilder.when(stepElementConfig.getWhen());
+    stepBuilder.when(stepElementConfig.getWhen() != null ? stepElementConfig.getWhen().getValue() : null);
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
     stepBuilder.enforce(stepElementConfig.getEnforce());

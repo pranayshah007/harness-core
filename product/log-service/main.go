@@ -6,11 +6,26 @@
 package main
 
 import (
+	"fmt"
+	"runtime"
+
 	"github.com/harness/harness-core/product/log-service/cli"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Handling Panic before exit: %v", r)
+
+			stack := make([]byte, 1024*1024)
+			length := runtime.Stack(stack, true)
+
+			// Print the stack trace to stdout
+			fmt.Printf("Stack Trace thread dump= %s\n", stack[:length])
+		}
+	}()
 	cli.Command()
 }

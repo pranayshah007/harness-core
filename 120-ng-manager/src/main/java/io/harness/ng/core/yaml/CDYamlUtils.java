@@ -36,7 +36,8 @@ public class CDYamlUtils {
   static {
     mapper = new ObjectMapper(new YAMLFactory()
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR));
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
 
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);

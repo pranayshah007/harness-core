@@ -17,6 +17,7 @@ public interface EntityTypeConstants {
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
+  String GITOPS_SYNC = "GitOpsSync";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -162,6 +163,7 @@ public interface EntityTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String QUEUE = "Queue";
   String JENKINS_BUILD = "JenkinsBuild";
+  String BAMBOO_BUILD = "BambooBuild";
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
@@ -213,6 +215,14 @@ public interface EntityTypeConstants {
   String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
 
   String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
+  String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
+
+  // AWS SAM
+  String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_ROLLBACK = "AwsSamRollback";
+  String SSCA_ORCHESTRATION = "SscaOrchestration";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

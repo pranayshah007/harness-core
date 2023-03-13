@@ -60,6 +60,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -153,7 +154,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
+  public TemplateEntity create(
+      TemplateEntity templateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
 
@@ -174,6 +176,15 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getAccountId(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+
+    if (isNewTemplate
+        && validateIsNewTemplateIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier(), templateEntity.getIdentifier())) {
+      throw new InvalidRequestException(String.format(
+          "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
+          templateEntity.getIdentifier(), templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getVersionLabel()));
     }
 
     if (!isRemoteTemplateAndGitEntity(templateEntity)) {
@@ -278,7 +289,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false);
+            templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false, false);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
@@ -798,6 +809,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
+  public boolean validateIsNewTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    return templateRepository.existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+  }
+
+  @Override
   public TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath) {
     Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
                             .is(templateEntity.getAccountId())
@@ -1126,25 +1144,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  public List<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
+  public PageResponse<EntitySetupUsageDTO> listTemplateReferences(int page, int size, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel, String searchTerm,
       boolean isStableTemplate) {
-    List<EntitySetupUsageDTO> referredEntities;
+    PageResponse<EntitySetupUsageDTO> referredEntities;
     String referredEntityFQN =
         createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
     if (isStableTemplate) {
       String referredEntityFQNForStableTemplate =
           createFqnForTemplate(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, "");
-      referredEntities =
-          NGRestUtils
-              .getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size, accountIdentifier,
-                  referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm))
-              .getContent();
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsageWith2Fqns(page, size,
+          accountIdentifier, referredEntityFQN, referredEntityFQNForStableTemplate, EntityType.TEMPLATE, searchTerm));
     } else {
-      referredEntities = NGRestUtils
-                             .getResponse(entitySetupUsageClient.listAllEntityUsage(
-                                 page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm))
-                             .getContent();
+      referredEntities = NGRestUtils.getResponse(entitySetupUsageClient.listAllEntityUsage(
+          page, size, accountIdentifier, referredEntityFQN, EntityType.TEMPLATE, searchTerm));
     }
     return referredEntities;
   }

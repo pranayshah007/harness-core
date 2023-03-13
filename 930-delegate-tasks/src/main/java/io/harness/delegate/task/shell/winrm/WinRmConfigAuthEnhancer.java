@@ -18,6 +18,7 @@ import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO;
 import io.harness.ng.core.dto.secrets.TGTPasswordSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
+import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -46,18 +47,20 @@ public class WinRmConfigAuthEnhancer {
     switch (winRmAuthDTO.getAuthScheme()) {
       case NTLM:
         NTLMConfigDTO ntlmConfigDTO = (NTLMConfigDTO) winRmAuthDTO.getSpec();
-        return generateWinRmSessionConfigForNTLM(ntlmConfigDTO, builder, encryptionDetails, port);
+        return generateWinRmSessionConfigForNTLM(
+            ntlmConfigDTO, builder, encryptionDetails, port, winRmCredentialsSpecDTO.getParameters());
       case Kerberos:
         KerberosWinRmConfigDTO kerberosWinRmConfigDTO = (KerberosWinRmConfigDTO) winRmAuthDTO.getSpec();
-        return generateWinRmSessionConfigForKerberos(
-            kerberosWinRmConfigDTO, builder, encryptionDetails, port, useWinRMKerberosUniqueCacheFile);
+        return generateWinRmSessionConfigForKerberos(kerberosWinRmConfigDTO, builder, encryptionDetails, port,
+            useWinRMKerberosUniqueCacheFile, winRmCredentialsSpecDTO.getParameters());
       default:
         throw new IllegalArgumentException("Invalid authSchema provided:" + winRmAuthDTO.getAuthScheme());
     }
   }
 
   private WinRmSessionConfig generateWinRmSessionConfigForNTLM(NTLMConfigDTO ntlmConfigDTO,
-      WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails, int port) {
+      WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails, int port,
+      List<WinRmCommandParameter> commandParameters) {
     NTLMConfigDTO decryptedNTLMConfigDTO =
         (NTLMConfigDTO) secretDecryptionService.decrypt(ntlmConfigDTO, encryptionDetails);
 
@@ -70,14 +73,15 @@ public class WinRmConfigAuthEnhancer {
         .useSSL(ntlmConfigDTO.isUseSSL())
         .useNoProfile(ntlmConfigDTO.isUseNoProfile())
         .skipCertChecks(ntlmConfigDTO.isSkipCertChecks())
-        .password(String.valueOf(decryptedValue));
+        .password(String.valueOf(decryptedValue))
+        .commandParameters(commandParameters);
 
     return builder.build();
   }
 
   private WinRmSessionConfig generateWinRmSessionConfigForKerberos(KerberosWinRmConfigDTO kerberosWinRmConfigDTO,
       WinRmSessionConfigBuilder builder, List<EncryptedDataDetail> encryptionDetails, int port,
-      boolean useWinRMKerberosUniqueCacheFile) {
+      boolean useWinRMKerberosUniqueCacheFile, List<WinRmCommandParameter> commandParameters) {
     boolean isUseKeyTab = false;
     String password = StringUtils.EMPTY;
     String keyTabFilePath = StringUtils.EMPTY;
@@ -116,7 +120,8 @@ public class WinRmConfigAuthEnhancer {
         .useKeyTab(isUseKeyTab)
         .keyTabFilePath(keyTabFilePath)
         .password(password)
-        .useKerberosUniqueCacheFile(useWinRMKerberosUniqueCacheFile);
+        .useKerberosUniqueCacheFile(useWinRMKerberosUniqueCacheFile)
+        .commandParameters(commandParameters);
 
     return builder.build();
   }

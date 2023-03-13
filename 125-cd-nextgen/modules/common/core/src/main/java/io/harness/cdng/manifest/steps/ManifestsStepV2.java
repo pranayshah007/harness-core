@@ -7,8 +7,6 @@
 
 package io.harness.cdng.manifest.steps;
 
-import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
-import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
@@ -16,7 +14,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateHelmRepoOverrideContainsSameManifestType;
 
 import static java.lang.String.format;
 
@@ -35,8 +32,8 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorModule;
@@ -44,12 +41,16 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.validator.EntityIdentifierValidator;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.LogLevel;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -67,6 +68,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
+import software.wings.beans.LogWeight;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -75,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -93,6 +99,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject private ServiceStepsHelper serviceStepsHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -108,9 +115,13 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     final Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap =
         ngManifestsMetadataSweepingOutput.getFinalSvcManifestsMap();
 
-    if (isEmpty(finalSvcManifestsMap)) {
-      log.info("no manifest files found for service " + ngManifestsMetadataSweepingOutput.getServiceIdentifier()
-          + ". skipping the manifest files step");
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    if (noManifestsConfigured(finalSvcManifestsMap)) {
+      logCallback.saveExecutionLog(
+          String.format("No manifests configured in the service. <+%s> expressions will not work",
+              OutcomeExpressionConstants.MANIFESTS),
+          LogLevel.WARN);
+
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     List<ManifestConfigWrapper> manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMap);
@@ -123,12 +134,15 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     validateOverridesTypeAndUniqueness(finalSvcManifestsMap, ngManifestsMetadataSweepingOutput.getServiceIdentifier(),
         ngManifestsMetadataSweepingOutput.getEnvironmentIdentifier());
 
-    validateManifestList(ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
+    SvcEnvV2ManifestValidator.validateManifestList(
+        ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
+
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     for (int i = 0; i < manifestAttributes.size(); i++) {
+      checkAndWarnIfDoesNotFollowIdentifierRegex(manifestAttributes.get(i).getIdentifier(), logCallback);
       ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i);
       manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
     }
@@ -137,6 +151,11 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  private static boolean noManifestsConfigured(Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    return isEmpty(finalSvcManifestsMap)
+        || finalSvcManifestsMap.values().stream().noneMatch(EmptyPredicate::isNotEmpty);
   }
 
   @NotNull
@@ -197,7 +216,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     HelmChartManifest helmChartManifest = (HelmChartManifest) helmChart.getManifest().getSpec();
     HelmRepoOverrideManifest helmRepoOverride = (HelmRepoOverrideManifest) repoOverride.getManifest().getSpec();
     if (helmChartManifest != null && helmRepoOverride != null) {
-      validateHelmRepoOverrideContainsSameManifestType(helmChartManifest, helmRepoOverride);
+      SvcEnvV2ManifestValidator.validateHelmRepoOverrideContainsSameManifestType(helmChartManifest, helmRepoOverride);
       StoreConfig helmChartManifestStoreConfig = helmChartManifest.getStoreConfig();
       if (helmChartManifestStoreConfig != null) {
         helmChartManifestStoreConfig.overrideConnectorRef(helmRepoOverride.getConnectorRef());
@@ -267,42 +286,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     }
   }
 
-  private void validateManifestList(
-      ServiceDefinitionType serviceDefinitionType, List<ManifestAttributes> manifestList) {
-    if (serviceDefinitionType == null) {
-      return;
-    }
-
-    switch (serviceDefinitionType) {
-      case KUBERNETES:
-        validateDuplicateManifests(
-            manifestList, K8S_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.KUBERNETES.getYamlName());
-        break;
-      case NATIVE_HELM:
-        validateDuplicateManifests(
-            manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
-        break;
-      default:
-    }
-  }
-
-  private void validateDuplicateManifests(
-      List<ManifestAttributes> manifestList, Set<String> supported, String deploymentType) {
-    final Map<String, String> manifestIdTypeMap =
-        manifestList.stream()
-            .filter(m -> supported.contains(m.getKind()))
-            .collect(Collectors.toMap(ManifestAttributes::getIdentifier, ManifestAttributes::getKind));
-
-    if (manifestIdTypeMap.values().size() > 1) {
-      String manifestIdType = manifestIdTypeMap.entrySet()
-                                  .stream()
-                                  .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
-                                  .collect(Collectors.joining(", "));
-      throw new InvalidRequestException(String.format(
-          "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
-          manifestIdType, deploymentType, String.join(", ", supported)));
-    }
-  }
   void checkForAccessOrThrow(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
     if (EmptyPredicate.isEmpty(manifestAttributes)) {
       return;
@@ -322,5 +305,20 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
       }
     }
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
+
+  private void checkAndWarnIfDoesNotFollowIdentifierRegex(String str, NGLogCallback logCallback) {
+    if (isNotEmpty(str)) {
+      final Pattern identifierPattern = EntityIdentifierValidator.IDENTIFIER_PATTERN;
+      if (!identifierPattern.matcher(str).matches()) {
+        logCallback.saveExecutionLog(
+            LogHelper.color(
+                String.format(
+                    "Manifest identifier [%s] is not valid as per Harness Identifier Regex %s. Using this identifier in harness expressions might not work",
+                    str, identifierPattern.pattern()),
+                LogColor.Yellow, LogWeight.Bold),
+            LogLevel.WARN);
+      }
+    }
   }
 }

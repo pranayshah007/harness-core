@@ -25,6 +25,6 @@ public interface InfrastructureMappingRepository extends CrudRepository<Infrastr
   List<InfrastructureMapping> findAllByAccountIdentifierAndInfrastructureKey(
       String accountIdentifier, String infrastructureKey);
 
-  List<InfrastructureMapping> findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
+  long deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

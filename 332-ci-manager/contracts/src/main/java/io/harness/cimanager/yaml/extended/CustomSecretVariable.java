@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.encryption.SecretRefData;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -25,4 +26,5 @@ public class CustomSecretVariable implements CustomVariable {
   @Builder.Default @NotNull Type type = Type.SECRET;
   @NotNull String name;
   @NotNull SecretRefData value;
+  @ApiModelProperty(hidden = true) String uuid;
 }

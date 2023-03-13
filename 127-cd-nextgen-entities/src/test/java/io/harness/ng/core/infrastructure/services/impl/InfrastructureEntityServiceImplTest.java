@@ -10,12 +10,14 @@ package io.harness.ng.core.infrastructure.services.impl;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.YOGESH;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -26,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -42,25 +45,24 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
 
@@ -69,30 +71,6 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String ENV_ID = "ENV_ID";
-
-  private String pipelineInputYamlPath;
-  private String actualEntityYamlPath;
-  private String mergedInputYamlPath;
-  private boolean isMergedYamlEmpty;
-
-  public InfrastructureEntityServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
-      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
-    this.pipelineInputYamlPath = pipelineInputYamlPath;
-    this.actualEntityYamlPath = actualEntityYamlPath;
-    this.mergedInputYamlPath = mergedInputYamlPath;
-    this.isMergedYamlEmpty = isMergedYamlEmpty;
-  }
-
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {
-        {"infrastructure/infrastructure-inputs-in-pipeline.yaml", "infrastructure/infrastructure-with-few-inputs.yaml",
-            "infrastructure/infrastructureInput-merged.yaml", false},
-        {"infrastructure/infrastructure-inputs-in-pipeline.yaml", "infrastructure/infrastructure-with-no-input.yaml",
-            "infrastructure/empty-file.yaml", true},
-        {"infrastructure/empty-file.yaml", "infrastructure/infrastructure-with-few-inputs.yaml",
-            "infrastructure/infrastructureInput-merged.yaml", false}});
-  }
 
   @Before
   public void setUp() throws Exception {
@@ -111,7 +89,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testCreateInfrastructureInputs() throws IOException {
+  public void testCreateInfrastructureInputs() {
     String filename = "infrastructure-with-runtime-inputs.yaml";
     String yaml = readFile(filename);
     InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
@@ -124,7 +102,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .build();
 
     infrastructureEntityService.create(createInfraRequest);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).createSetupUsages(eq(createInfraRequest), any());
+    verify(infrastructureEntitySetupUsageHelper, times(1)).createSetupUsages(eq(createInfraRequest), any());
 
     String infrastructureInputsFromYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(ACCOUNT_ID,
         ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", Arrays.asList("IDENTIFIER"), false, NoInputMergeInputAction.RETURN_EMPTY);
@@ -140,7 +118,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
-  public void testCreateInfrastructureInputsWithoutRuntimeInputs() throws IOException {
+  public void testCreateInfrastructureInputsWithoutRuntimeInputs() {
     String filename = "infrastructure-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
     InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
@@ -233,7 +211,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .build();
 
     InfrastructureEntity updatedInfraResponse = infrastructureEntityService.update(updateInfraRequest);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(updateInfraRequest));
+    verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(updateInfraRequest));
     assertThat(updatedInfraResponse.getAccountId()).isEqualTo(updateInfraRequest.getAccountId());
     assertThat(updatedInfraResponse.getOrgIdentifier()).isEqualTo(updateInfraRequest.getOrgIdentifier());
     assertThat(updatedInfraResponse.getProjectIdentifier()).isEqualTo(updateInfraRequest.getProjectIdentifier());
@@ -271,7 +249,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                   .deploymentType(ServiceDefinitionType.NATIVE_HELM)
                                                   .build();
     InfrastructureEntity upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(createInfraRequest));
+    verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(createInfraRequest));
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());
@@ -294,7 +272,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
                              .build();
 
     upsertedInfra = infrastructureEntityService.upsert(upsertInfraRequest, UpsertOptions.DEFAULT);
-    Mockito.verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(eq(createInfraRequest));
+    verify(infrastructureEntitySetupUsageHelper, times(1)).getAllReferredEntities(createInfraRequest);
     assertThat(upsertedInfra.getAccountId()).isEqualTo(upsertInfraRequest.getAccountId());
     assertThat(upsertedInfra.getOrgIdentifier()).isEqualTo(upsertInfraRequest.getOrgIdentifier());
     assertThat(upsertedInfra.getProjectIdentifier()).isEqualTo(upsertInfraRequest.getProjectIdentifier());
@@ -320,12 +298,42 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // delete operations
     boolean delete =
-        infrastructureEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "IDENTIFIER1");
+        infrastructureEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "IDENTIFIER1", false);
     assertThat(delete).isTrue();
 
     Optional<InfrastructureEntity> deletedInfra =
         infrastructureEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "IDENTIFIER1");
     assertThat(deletedInfra.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testForceDeletion() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    InfrastructureEntity createInfraRequestDiffEnv = InfrastructureEntity.builder()
+                                                         .accountId(ACCOUNT_ID)
+                                                         .orgIdentifier(ORG_ID)
+                                                         .projectIdentifier(PROJECT_ID)
+                                                         .envIdentifier("ENV_IDENTIFIER")
+                                                         .identifier("IDENTIFIER1")
+                                                         .yaml(yaml)
+                                                         .build();
+
+    infrastructureEntityService.create(createInfraRequestDiffEnv);
+    doThrow(new ReferencedEntityException("unsafe to delete"))
+        .when(infrastructureEntitySetupUsageHelper)
+        .checkThatInfraIsNotReferredByOthers(any(InfrastructureEntity.class));
+
+    // force delete = false
+    assertThatExceptionOfType(ReferencedEntityException.class)
+        .isThrownBy(()
+                        -> infrastructureEntityService.delete(
+                            ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "IDENTIFIER1", false));
+
+    // force delete = true
+    infrastructureEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "ENV_IDENTIFIER", "IDENTIFIER1", true);
   }
 
   @Test
@@ -382,7 +390,7 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
     assertThat(listPostDeletion.getContent()).isNotNull();
-    assertThat(listPostDeletion.getContent().size()).isEqualTo(0);
+    assertThat(listPostDeletion.getContent().size()).isZero();
   }
 
   @Test
@@ -452,7 +460,12 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testMergeInfrastructureInputs() {
+  @Parameters({"infrastructure/infrastructure-inputs-in-pipeline.yaml, infrastructure/infrastructure-with-few-inputs.yaml, infrastructure/infrastructureInput-merged.yaml, false",
+      "infrastructure/infrastructure-inputs-in-pipeline.yaml, infrastructure/infrastructure-with-no-input.yaml , infrastructure/empty-file.yaml, true",
+      "infrastructure/empty-file.yaml, infrastructure/infrastructure-with-few-inputs.yaml, infrastructure/infrastructureInput-merged.yaml, false"})
+  public void
+  testMergeInfrastructureInputs(String pipelineInputYamlPath, String actualEntityYamlPath, String mergedInputYamlPath,
+      boolean isMergedYamlEmpty) {
     String yaml = readFile(actualEntityYamlPath);
     InfrastructureEntity createRequest = InfrastructureEntity.builder()
                                              .accountId(ACCOUNT_ID)

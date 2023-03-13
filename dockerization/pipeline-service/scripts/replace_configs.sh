@@ -470,6 +470,8 @@ replace_key_value iteratorsConfig.approvalInstanceIteratorConfig.targetIntervalI
 replace_key_value orchestrationStepConfig.ffServerBaseUrl "$FF_SERVER_BASE_URL"
 replace_key_value orchestrationStepConfig.ffServerApiKey "$FF_SERVER_API_KEY"
 
+replace_key_value orchestrationStepConfig.containerStepConfig.logStreamingContainerStepBaseUrl "$LOG_STREAMING_CONTAINER_STEP_BASE_URL"
+
 replace_key_value shouldDeployWithGitSync "$ENABLE_GIT_SYNC"
 
 replace_key_value enableAudit "$ENABLE_AUDIT"
@@ -549,3 +551,16 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+replace_key_value cfClientConfig.retries "$CF_RETRIES"
+replace_key_value cfClientConfig.sleepInterval "$CF_SLEEP_INTERVAL"
+
+replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
+replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"

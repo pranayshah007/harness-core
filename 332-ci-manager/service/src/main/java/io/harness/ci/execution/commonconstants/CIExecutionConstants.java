@@ -96,4 +96,7 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
   public static final String BASE_GCR_HOSTNAME = "gcr.io";
   public static final String BASE_ECR_HOSTNAME = "amazonaws.com";
   public static final String HTTPS_URL = "https://";
+
+  public static final String DOCKER_REGISTRY_V2 = "https://index.docker.io/v2/";
+  public static final String DOCKER_REGISTRY_V1 = "https://index.docker.io/v1/";
 }

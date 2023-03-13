@@ -37,6 +37,7 @@ import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.deployment.InstanceDetails;
 import io.harness.ecs.EcsContainerDetails;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.OciHelmDockerApiException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.git.UsernamePasswordAuthRequest;
 import io.harness.git.model.AuthInfo;
@@ -412,6 +413,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmCliCommandType.class, 97033);
     kryo.register(EnclaveOptions.class, 97034);
     kryo.register(KubernetesResource.class, 97035);
+    kryo.register(OciHelmDockerApiException.class, 97036);
 
     kryo.register(BuildOptions.class, 7414);
     kryo.register(BuiltImage.class, 7426);

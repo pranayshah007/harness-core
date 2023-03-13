@@ -58,6 +58,7 @@ import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.module.NotificationClientPersistenceModule;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -193,6 +194,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(ErrorTrackingClient.class).toInstance(Mockito.mock(ErrorTrackingClient.class));
       binder.bind(AccountClient.class).to(FakeAccountClient.class);
       binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
+      binder.bind(OpaServiceClient.class).toInstance(Mockito.mock(OpaServiceClient.class));
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
@@ -284,7 +286,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     Mockito
         .when(templateResourceClient.applyTemplatesOnGivenYamlV2(Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()))
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
         .thenAnswer((Answer<Call<ResponseDTO<TemplateMergeResponseDTO>>>) invocation -> {
           TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[12];
           String yaml = templateApplyRequestDTO.getOriginalEntityYaml();

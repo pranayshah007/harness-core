@@ -100,8 +100,8 @@ import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandData;
 import io.harness.helm.HelmSubCommandType;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
@@ -252,7 +252,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG = createHelmInstallCommandRequestNG();
     helmRollbackCommandRequestNG = createHelmRollbackCommandRequestNG();
     kubernetesConfig = KubernetesConfig.builder().build();
-    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any())).thenReturn(kubernetesConfig);
+    when(containerDeploymentDelegateBaseHelper.createKubernetesConfig(any(), any())).thenReturn(kubernetesConfig);
     spyHelmDeployService = spy(helmDeployService);
     doNothing()
         .when(helmTaskHelperBase)

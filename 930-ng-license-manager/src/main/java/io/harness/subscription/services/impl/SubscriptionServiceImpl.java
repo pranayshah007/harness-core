@@ -7,22 +7,29 @@
 
 package io.harness.subscription.services.impl;
 
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_TRIAL;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_FREE;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_PAID;
+import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_TEAM_TRIAL;
+import static io.harness.subscription.entities.SubscriptionDetail.INCOMPLETE;
+
 import io.harness.ModuleType;
+import io.harness.account.services.AccountService;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
+import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.helpers.ModuleLicenseHelper;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.repositories.SubscriptionDetailRepository;
-import io.harness.subscription.constant.Prices;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
@@ -31,14 +38,15 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
-import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.CustomerParams.CustomerParamsBuilder;
-import io.harness.subscription.params.ItemParams;
-import io.harness.subscription.params.SubscriptionParams;
+import io.harness.subscription.params.StripeItemRequest;
+import io.harness.subscription.params.StripeSubscriptionRequest;
+import io.harness.subscription.params.SubscriptionItemRequest;
+import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 import io.harness.subscription.utils.NGFeatureFlagHelperService;
@@ -50,14 +58,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Event;
+import com.stripe.model.Price;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.val;
 import org.apache.commons.validator.routines.EmailValidator;
 
 @Singleton
@@ -68,29 +77,34 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
   private final TelemetryReporter telemetryReporter;
+  private final AccountService accountService;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
+  private static final String PRICE_NOT_FOUND_MESSAGE =
+      "No price found with metadata: {}, type: {}, edition: {}, billed: {}, max: {}";
   private static final String EDITION_CHECK_FAILED =
       "Cannot create a subscription of %s edition. An active subscription of %s edition already exists.";
   private static final String QUANTITY_GREATER_THAN_MAX =
       "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
+  private static final long ONE = 1L;
   private static final String SUBSCRIPTION = "subscription";
 
   @Inject
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
       NGFeatureFlagHelperService nGFeatureFlagHelperService, TelemetryReporter telemetryReporter,
-      Map<String, StripeEventHandler> eventHandlers) {
+      AccountService accountService, Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
     this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
     this.telemetryReporter = telemetryReporter;
+    this.accountService = accountService;
     this.eventHandlers = eventHandlers;
   }
 
@@ -104,23 +118,21 @@ public class SubscriptionServiceImpl implements SubscriptionService {
           String.format("Cannot provide recommendation. No active license detected for module %s.", ModuleType.CF));
     }
 
-    ModuleLicense latestLicense = ModuleLicenseHelper.getLatestLicense(currentLicenses);
-
-    CFModuleLicense cfLicense = (CFModuleLicense) latestLicense;
+    CFModuleLicense cfLicense = (CFModuleLicense) ModuleLicenseHelper.getLatestLicense(currentLicenses);
+    ModuleLicenseState latestLicenseState = ModuleLicenseHelper.getCurrentModuleState(currentLicenses);
 
     EnumMap<UsageKey, Long> recommendedValues = new EnumMap<>(UsageKey.class);
 
-    LicenseType licenseType = latestLicense.getLicenseType();
-    Edition edition = latestLicense.getEdition();
-    if (licenseType.equals(LicenseType.TRIAL)) {
+    if (ACTIVE_ENTERPRISE_PAID.equals(latestLicenseState) || ACTIVE_TEAM_PAID.equals(latestLicenseState)
+        || ACTIVE_FREE.equals(latestLicenseState)) {
       double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers) * RECOMMENDATION_MULTIPLIER;
       double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs) * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
-    } else if (licenseType.equals(LicenseType.PAID) || edition.equals(Edition.FREE)) {
-      double recommendedUsers = Math.max(cfLicense.getNumberOfUsers(), numberOfUsers);
-      double recommendedMAUs = Math.max(cfLicense.getNumberOfClientMAUs(), numberOfMAUs);
+    } else if (ACTIVE_ENTERPRISE_TRIAL.equals(latestLicenseState) || ACTIVE_TEAM_TRIAL.equals(latestLicenseState)) {
+      double recommendedUsers = numberOfUsers * RECOMMENDATION_MULTIPLIER;
+      double recommendedMAUs = numberOfMAUs * RECOMMENDATION_MULTIPLIER;
 
       recommendedValues.put(UsageKey.NUMBER_OF_USERS, (long) recommendedUsers);
       recommendedValues.put(UsageKey.NUMBER_OF_MAUS, (long) recommendedMAUs);
@@ -143,13 +155,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable();
 
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
-        accountIdentifier, subscriptionDTO.getCustomerId());
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Cannot preview. Please finish customer information firstly");
     }
 
-    SubscriptionParams params = SubscriptionParams.builder().build();
+    StripeSubscriptionRequest params = StripeSubscriptionRequest.builder().build();
     params.setItems(subscriptionDTO.getItems());
     params.setCustomerId(stripeCustomer.getCustomerId());
 
@@ -168,105 +179,46 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     stripeHelper.payInvoice(invoiceId);
   }
 
-  @Override
-  public SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
-    // the module for telemetry event is hard-coded as CF. This method createFfSubscription will be deprecated for
-    // a generic createSubscription where the module won't be hardcoded
-    sendTelemetryEvent("Subscription Creation Initiated", null, accountIdentifier, ModuleType.CF.toString());
+  private StripeItemRequest buildSubscriptionItemRequest(
+      SubscriptionItemRequest subscriptionItemRequest, SubscriptionRequest subscriptionRequest) {
+    Optional<Price> price = stripeHelper.getPrice(subscriptionRequest, subscriptionItemRequest);
 
-    isSelfServiceEnable();
+    if (!price.isPresent()) {
+      throw new InvalidArgumentsException(String.format(PRICE_NOT_FOUND_MESSAGE, subscriptionRequest.getModuleType(),
+          subscriptionItemRequest.getType(), subscriptionRequest.getEdition(),
+          subscriptionRequest.getPaymentFrequency(), subscriptionItemRequest.getQuantity()));
+    }
 
-    // TODO: transaction control in case any race condition
-
-    // verify customer exists
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
-    if (stripeCustomer == null) {
-      createStripeCustomer(accountIdentifier, subscriptionDTO.getCustomer());
-      stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    StripeItemRequest stripeItemRequest;
+    if (subscriptionItemRequest.isQuantityIncludedInPrice()) {
+      stripeItemRequest =
+          StripeItemRequest.Builder.newInstance().withPriceId(price.get().getId()).withQuantity(ONE).build();
     } else {
-      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionDTO.getCustomer());
+      stripeItemRequest = StripeItemRequest.Builder.newInstance()
+                              .withPriceId(price.get().getId())
+                              .withQuantity(subscriptionItemRequest.getQuantity())
+                              .build();
     }
 
-    checkEdition(accountIdentifier, subscriptionDTO.getEdition());
+    return stripeItemRequest;
+  }
 
-    // Not allowed for creation if active subscriptionId exists
-    SubscriptionDetail subscriptionDetail =
-        subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, ModuleType.valueOf("CF"));
-    if (subscriptionDetail != null) {
-      if (!subscriptionDetail.isIncomplete()) {
-        throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
-      }
+  private StripeSubscriptionRequest buildSubscriptionRequest(
+      SubscriptionRequest subscriptionRequest, String customerId) {
+    ArrayList<StripeItemRequest> subscriptionItems = new ArrayList<>();
 
-      // cancel incomplete subscription
-      cancelSubscription(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getSubscriptionId());
-    }
-
-    ArrayList<ItemParams> subscriptionItems = new ArrayList<>();
-
-    val developerPriceId = stripeHelper.getPrice(
-        ModuleType.CF, "DEVELOPERS", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
-
-    int maxDevelopers = Integer.parseInt(developerPriceId.getMetadata().getOrDefault("max", "0"));
-
-    if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopers) {
-      throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
-    }
-
-    subscriptionItems.add(ItemParams.builder()
-                              .priceId(developerPriceId.getId())
-                              .quantity((long) subscriptionDTO.getNumberOfDevelopers())
-                              .build());
-
-    val mauPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU", subscriptionDTO.getEdition(),
-        subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
-
-    subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
-
-    if (subscriptionDTO.isPremiumSupport()) {
-      if (subscriptionDTO.getPaymentFreq().equalsIgnoreCase(PaymentFrequency.MONTHLY.toString())) {
-        throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
-      }
-      val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
-          subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
-
-      subscriptionItems.add(new ItemParams(mauSupportPriceId.getId(), 1L, Prices.PREMIUM_SUPPORT));
-
-      val developerSupportPriceId = stripeHelper.getPrice(
-          ModuleType.CF, "DEVELOPERS_SUPPORT", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
-
-      int maxDevelopersSupport = Integer.parseInt(developerSupportPriceId.getMetadata().getOrDefault("max", "0"));
-
-      if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopersSupport) {
-        throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
-      }
-
-      subscriptionItems.add(new ItemParams(
-          developerSupportPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(), Prices.PREMIUM_SUPPORT));
-    }
+    subscriptionRequest.getItems().forEach((SubscriptionItemRequest item) -> {
+      subscriptionItems.add(buildSubscriptionItemRequest(item, subscriptionRequest));
+    });
 
     // create Subscription
-    SubscriptionParams param = SubscriptionParams.builder()
-                                   .accountIdentifier(accountIdentifier)
-                                   .moduleType("CF")
-                                   .customerId(stripeCustomer.getCustomerId())
-                                   .items(subscriptionItems)
-                                   .paymentFrequency(subscriptionDTO.getPaymentFreq())
-                                   .customerEmail(subscriptionDTO.getCustomer().getBillingEmail())
-                                   .build();
-
-    SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
-
-    // Save locally with basic information after succeed
-    subscriptionDetailRepository.save(SubscriptionDetail.builder()
-                                          .accountIdentifier(accountIdentifier)
-                                          .customerId(stripeCustomer.getCustomerId())
-                                          .subscriptionId(subscription.getSubscriptionId())
-                                          .status("incomplete")
-                                          .latestInvoice(subscription.getLatestInvoice())
-                                          .moduleType(ModuleType.CF)
-                                          .build());
-
-    return subscription;
+    return StripeSubscriptionRequest.builder()
+        .accountIdentifier(subscriptionRequest.getAccountIdentifier())
+        .moduleType(subscriptionRequest.getModuleType().toString())
+        .customerId(customerId)
+        .items(subscriptionItems)
+        .paymentFrequency(subscriptionRequest.getPaymentFrequency())
+        .build();
   }
 
   private void checkEdition(String accountId, String edition) {
@@ -281,51 +233,47 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
+  public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest) {
     sendTelemetryEvent(
-        "Subscription Creation Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+        "Subscription Creation Initiated", null, accountIdentifier, subscriptionRequest.getModuleType().toString());
 
     isSelfServiceEnable();
 
-    // TODO: transaction control in case any race condition
-
-    // verify customer exists
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
-        accountIdentifier, subscriptionDTO.getCustomerId());
-    if (stripeCustomer == null) {
-      throw new InvalidRequestException("Cannot create subscription. Please finish customer information firstly");
+    AccountDTO account = accountService.getAccount(accountIdentifier);
+    if (!account.isProductLed()) {
+      throw new InvalidRequestException(String.format(
+          "This account %s does not seem to be Product-Led and creating subscriptions for Sales-Led account is not supported at the moment. Please try again with the right account.",
+          accountIdentifier));
     }
 
-    // Not allowed for creation if active subscriptionId exists
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    if (stripeCustomer == null) {
+      createStripeCustomer(accountIdentifier, subscriptionRequest.getCustomer());
+      stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    } else {
+      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionRequest.getCustomer());
+    }
+
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
-        accountIdentifier, subscriptionDTO.getModuleType());
+        accountIdentifier, subscriptionRequest.getModuleType());
     if (subscriptionDetail != null) {
       if (!subscriptionDetail.isIncomplete()) {
         throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
       }
 
-      // cancel incomplete subscription
       cancelSubscription(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getSubscriptionId());
     }
 
-    // create Subscription
-    SubscriptionParams param = SubscriptionParams.builder()
-                                   .accountIdentifier(accountIdentifier)
-                                   .moduleType(subscriptionDTO.getModuleType().name())
-                                   .customerId(stripeCustomer.getCustomerId())
-                                   .paymentMethodId(subscriptionDTO.getPaymentMethodId())
-                                   .items(subscriptionDTO.getItems())
-                                   .build();
+    StripeSubscriptionRequest param = buildSubscriptionRequest(subscriptionRequest, stripeCustomer.getCustomerId());
     SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
 
-    // Save locally with basic information after succeed
     subscriptionDetailRepository.save(SubscriptionDetail.builder()
                                           .accountIdentifier(accountIdentifier)
                                           .customerId(stripeCustomer.getCustomerId())
                                           .subscriptionId(subscription.getSubscriptionId())
-                                          .status(subscription.getStatus())
+                                          .status(INCOMPLETE)
                                           .latestInvoice(subscription.getLatestInvoice())
-                                          .moduleType(subscriptionDTO.getModuleType())
+                                          .moduleType(subscriptionRequest.getModuleType())
                                           .build());
     return subscription;
   }
@@ -344,14 +292,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
     // TODO: verify priceId is acceptable to update, could utilize local price cache
 
-    SubscriptionParams param = SubscriptionParams.builder()
-                                   .accountIdentifier(accountIdentifier)
-                                   .subscriptionId(subscriptionDetail.getSubscriptionId())
-                                   .paymentMethodId(subscriptionDTO.getPaymentMethodId())
-                                   .items(subscriptionDTO.getItems())
-                                   .build();
+    StripeSubscriptionRequest param = StripeSubscriptionRequest.builder()
+                                          .accountIdentifier(accountIdentifier)
+                                          .subscriptionId(subscriptionDetail.getSubscriptionId())
+                                          .paymentMethodId(subscriptionDTO.getPaymentMethodId())
+                                          .items(subscriptionDTO.getItems())
+                                          .build();
     return stripeHelper.updateSubscription(param);
   }
+
   @Override
   public void cancelSubscription(String accountIdentifier, String subscriptionId) {
     isSelfServiceEnable();
@@ -365,7 +314,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         "Subscription Cancellation Initiated", null, accountIdentifier, subscriptionDetail.getModuleType().toString());
 
     stripeHelper.cancelSubscription(
-        SubscriptionParams.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
+        StripeSubscriptionRequest.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
     subscriptionDetailRepository.deleteBySubscriptionId(subscriptionId);
   }
 
@@ -390,7 +339,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       throw new InvalidRequestException("Invalid subscriptionId");
     }
 
-    return stripeHelper.retrieveSubscription(SubscriptionParams.builder().subscriptionId(subscriptionId).build());
+    return stripeHelper.retrieveSubscription(
+        StripeSubscriptionRequest.builder().subscriptionId(subscriptionId).build());
   }
 
   @Override
@@ -417,7 +367,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return subscriptions.stream()
         .map(detail
             -> stripeHelper.retrieveSubscription(
-                SubscriptionParams.builder().subscriptionId(detail.getSubscriptionId()).build()))
+                StripeSubscriptionRequest.builder().subscriptionId(detail.getSubscriptionId()).build()))
         .collect(Collectors.toList());
   }
 

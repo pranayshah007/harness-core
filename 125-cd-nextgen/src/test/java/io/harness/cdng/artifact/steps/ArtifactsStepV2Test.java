@@ -307,15 +307,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
-    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(expressionResolver, never()).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
-    ArtifactsStepV2SweepingOutput output = captor.getValue();
-
-    assertThat(output.getArtifactConfigMap()).isEmpty();
-    assertThat(output.getPrimaryArtifactTaskId()).isNull();
-    assertThat(response.getCallbackIdsCount()).isEqualTo(0);
+    assertThat(response.getCallbackIdsCount()).isZero();
   }
 
   @Test
@@ -764,15 +759,16 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
         .thenThrow(new NGTemplateResolveExceptionV2(
             "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
     assertThatThrownBy(() -> step.resolveArtifactSourceTemplateRefs("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", givenYaml))
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
-        .hasMessage("Exception in resolving template refs in given yaml.");
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exception in resolving template refs in given service yaml.");
   }
 
   @Test
@@ -785,7 +781,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build(),
+            false);
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -891,7 +888,8 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(processedServiceYamlWithTemplateRefs)
                 .checkForAccess(true)
-                .build());
+                .build(),
+            false);
     when(callRequest.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
             TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedServiceYaml).build())));

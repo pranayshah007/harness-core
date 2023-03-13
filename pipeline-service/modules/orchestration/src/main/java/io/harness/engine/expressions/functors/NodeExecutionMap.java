@@ -20,6 +20,7 @@ import io.harness.engine.pms.data.OutcomeException;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.data.SweepingOutputException;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
@@ -90,9 +91,10 @@ public class NodeExecutionMap extends LateBindingMap {
       return null;
     }
 
-    return fetchFirst(asList(this::fetchCurrentStatus, this::fetchCurrentStatusIncludingChildOfStrategy,
-                          this::fetchChild, this::fetchNodeExecutionField, this::fetchStepParameters,
-                          this::fetchOutcomeOrOutput, this::fetchStrategyData),
+    return fetchFirst(
+        asList(this::fetchCurrentStatus, this::fetchExecutionUrl, this::fetchCurrentStatusIncludingChildOfStrategy,
+            this::fetchChild, this::fetchNodeExecutionField, this::fetchStepParameters, this::fetchOutcomeOrOutput,
+            this::fetchStrategyData),
         (String) key);
   }
 
@@ -124,6 +126,58 @@ public class NodeExecutionMap extends LateBindingMap {
     }
     List<Status> childStatuses = nodeExecutionsCache.findAllTerminalChildrenStatusOnly(nodeExecution.getUuid(), false);
     return Optional.of(StatusUtils.calculateStatus(childStatuses, ambiance.getPlanExecutionId()).name());
+  }
+
+  // This function calculates executionUrl of the node TILL now.
+  Optional<Object> fetchExecutionUrl(String key) {
+    if (!key.equals(OrchestrationConstants.EXECUTION_URL)) {
+      return Optional.empty();
+    }
+    // if Pipeline Node then skip as it would be resolved via PipelineExecutionFunctor
+    if (nodeExecution == null || OrchestrationUtils.isPipelineNode(nodeExecution)) {
+      return Optional.empty();
+    }
+
+    /*
+     * Following cases exists -
+     * 1. Step execution url
+     * a) Inside Normal stage (inside a matrix step/step-group is same as normal)
+     * b) Inside a matrix stage
+     * c) Inside a child pipeline stage -> for this output child execution url, thus same as 1.a case
+     *
+     * 2. Stage Execution url
+     * a) Normal stage
+     * b) Matrix stage
+     * c) a Pipeline Stage -> which is same as normal stage
+     */
+    String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
+    Ambiance nodeAmbiance = nodeExecution.getAmbiance();
+    boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
+    // If any other node expression is called, then return pipeline execution url.
+    if (!currentLevelInsideStage) {
+      return Optional.of(pipelineExecutionUrl);
+    }
+
+    String stageSetupId = AmbianceUtils.getStageSetupIdAmbiance(nodeAmbiance);
+    String stageExecutionUrl = "<+" + pipelineExecutionUrl + String.format("+'?stage=%s", stageSetupId);
+
+    // Check for stage if under matrix
+    boolean currentStrategyLevelAtStage = AmbianceUtils.isCurrentNodeUnderStageStrategy(nodeAmbiance);
+    if (currentStrategyLevelAtStage) {
+      String stageRuntimeId = nodeAmbiance.getStageExecutionId();
+      stageExecutionUrl += String.format("\\&stageExecId=%s", stageRuntimeId);
+    }
+
+    boolean currentLevelAtStep = AmbianceUtils.isCurrentLevelAtStep(nodeAmbiance);
+    if (currentLevelAtStep) {
+      String stepId = AmbianceUtils.obtainCurrentRuntimeId(nodeAmbiance);
+      String stepUrl = stageExecutionUrl + String.format("\\&step=%s'>", stepId);
+      return Optional.of(stepUrl);
+    }
+
+    stageExecutionUrl += "'>";
+
+    return Optional.of(stageExecutionUrl);
   }
 
   // This function calculates final status of the node TILL now.

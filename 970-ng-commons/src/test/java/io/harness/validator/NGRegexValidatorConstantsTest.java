@@ -9,6 +9,7 @@ package io.harness.validator;
 
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -72,5 +73,26 @@ public class NGRegexValidatorConstantsTest extends CategoryTest {
     assertFalse(timeoutPattern.matcher(" ABC ").matches());
     assertFalse(timeoutPattern.matcher(" ABC").matches());
     assertFalse(timeoutPattern.matcher("ABC ").matches());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testNonEmptyStringPattern() {
+    final Pattern nonEmptyStringPattern = Pattern.compile(NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN);
+    assertTrue(nonEmptyStringPattern.matcher("ABC ").matches());
+    assertTrue(nonEmptyStringPattern.matcher("1").matches());
+    assertTrue(nonEmptyStringPattern.matcher("org.serviceRef").matches());
+    assertTrue(nonEmptyStringPattern.matcher("serviceRef_1").matches());
+    assertTrue(nonEmptyStringPattern.matcher("#_1").matches());
+
+    assertTrue(nonEmptyStringPattern.matcher("<+input>").matches());
+    assertTrue(nonEmptyStringPattern.matcher("<+input>.allowedValues()").matches());
+    assertTrue(nonEmptyStringPattern.matcher("<+input>.regex()").matches());
+    assertTrue(nonEmptyStringPattern.matcher("<+2+8>s").matches());
+    assertTrue(nonEmptyStringPattern.matcher("<+random>").matches());
+
+    assertFalse(nonEmptyStringPattern.matcher("  ").matches());
+    assertFalse(nonEmptyStringPattern.matcher("").matches());
   }
 }

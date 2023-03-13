@@ -13,11 +13,11 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.rest.RestResponse;
 
+import software.wings.beans.dto.NewRelicMetricDataRecord;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.CVConstants;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.LogElement;
-import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.service.intfc.analysis.LogAnalysisResource;
 import software.wings.verification.CVActivityLog;

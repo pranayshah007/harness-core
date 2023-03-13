@@ -9,6 +9,7 @@ package io.harness.ngmigration.beans.summary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.TypeSummary;
 
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -24,10 +25,13 @@ public class ServiceSummary extends BaseSummary {
   Map<String, Long> deploymentTypeSummary;
   Map<String, Long> artifactTypeSummary;
 
+  Map<String, TypeSummary> deploymentsSummary;
   @Builder
-  public ServiceSummary(int count, Map<String, Long> deploymentTypeSummary, Map<String, Long> artifactTypeSummary) {
+  public ServiceSummary(int count, Map<String, Long> deploymentTypeSummary, Map<String, Long> artifactTypeSummary,
+      Map<String, TypeSummary> deploymentsSummary) {
     super(count);
     this.deploymentTypeSummary = deploymentTypeSummary;
     this.artifactTypeSummary = artifactTypeSummary;
+    this.deploymentsSummary = deploymentsSummary;
   }
 }

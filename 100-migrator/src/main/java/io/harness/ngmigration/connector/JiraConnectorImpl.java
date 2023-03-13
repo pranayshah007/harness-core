@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
 
@@ -45,6 +48,14 @@ public class JiraConnectorImpl implements BaseConnector {
         .delegateSelectors(toSet(jiraConfig.getDelegateSelectors()))
         .username(jiraConfig.getUsername())
         .passwordRef(MigratorUtility.getSecretRef(migratedEntities, jiraConfig.getEncryptedPassword()))
+        .auth(JiraAuthenticationDTO.builder()
+                  .authType(JiraAuthType.USER_PASSWORD)
+                  .credentials(JiraUserNamePasswordDTO.builder()
+                                   .username(jiraConfig.getUsername())
+                                   .passwordRef(MigratorUtility.getSecretRef(
+                                       migratedEntities, jiraConfig.getEncryptedPassword()))
+                                   .build())
+                  .build())
         .build();
   }
 }

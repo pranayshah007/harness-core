@@ -59,8 +59,10 @@ public class DelegateTaskAgent {
         log.error(runnerExecutionResult.outputUTF8());
       }
 
+      // FIXME: DelegateCoreClientFactory takes kryo converter just temporily until proto response PR merges. This
+      // way just to make the compilation pass.
       final var tokenGenerator = new TokenGenerator(ACCOUNT_ID, DELEGATE_TOKEN);
-      final var delegateTaskAgent = new DelegateTaskAgent(new DelegateCoreClientFactory(tokenGenerator));
+      final var delegateTaskAgent = new DelegateTaskAgent(new DelegateCoreClientFactory(null, tokenGenerator));
 
       // TODO: We can also use process output rather than writing and reading from file.
       final String outputYaml = Files.readString(Paths.get("/etc/output/result.yaml"));
@@ -72,8 +74,8 @@ public class DelegateTaskAgent {
     }
   }
 
-  private void sendResponse(final DelegateTaskResponse taskResponse) {
-    delegateCoreClient.taskResponse(ACCOUNT_ID, TASK_ID, taskResponse);
+  public void sendResponse(final DelegateTaskResponse taskResponse) throws IOException {
+    delegateCoreClient.taskResponse(TASK_ID, taskResponse).execute();
   }
 
   /**

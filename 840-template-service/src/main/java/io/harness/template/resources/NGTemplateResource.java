@@ -37,6 +37,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -60,6 +61,7 @@ import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
@@ -86,6 +88,7 @@ import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 import io.harness.template.services.TemplateVariableCreatorService;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -252,7 +255,18 @@ public class NGTemplateResource {
           }) @NotNull String templateYaml,
       @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
           "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
-      @Parameter(description = "Comments") @QueryParam("comments") String comments) {
+      @Parameter(description = "Comments") @QueryParam("comments") String comments,
+      @Parameter(
+          description =
+              "When isNewTemplate flag is set user will not be able to create a new version for an existing template")
+      @QueryParam("isNewTemplate") @DefaultValue("false") @ApiParam(hidden = true) boolean isNewTemplate) {
+    /*
+      isNewTemplate flag is used to restrict users from creating new versions for an existing template from UI
+      As we dont want to allow creation of new versions from create template flow
+      Default value is false as we use same api for creation for different versions of template
+      Jira - CDS-47301
+     */
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
@@ -263,7 +277,8 @@ public class NGTemplateResource {
           "created", templateEntity.getIdentifier(), gitEntityCreateInfo.getCommitMsg());
     }
 
-    TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments);
+    TemplateEntity createdTemplate =
+        templateService.create(templateEntity, setDefaultTemplate, comments, isNewTemplate);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
             .isValid(true)
@@ -625,7 +640,7 @@ public class NGTemplateResource {
   @Path("/entitySetupUsage/{templateIdentifier}")
   @ApiOperation(value = "Get Entities referring this template", nickname = "listTemplateUsage")
   @Hidden
-  public ResponseDTO<List<EntitySetupUsageDTO>> listTemplateEntityUsage(
+  public ResponseDTO<PageResponse<EntitySetupUsageDTO>> listTemplateEntityUsage(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -719,13 +734,17 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
+    if (templateApplyRequestDTO.isGetOnlyFileContent()) {
+      TemplateUtils.setUserFlowContext();
+    }
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId,
             templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);
@@ -747,13 +766,18 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @QueryParam("AppendInputSetValidator") @DefaultValue("false") boolean appendInputSetValidator) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
+    log.info("Principal in the applyTemplate resource layer is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
+    if (templateApplyRequestDTO.isGetOnlyFileContent()) {
+      TemplateUtils.setUserFlowContext();
+    }
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
             templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
-            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);
@@ -796,7 +820,7 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false)
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, false)
             .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
@@ -840,7 +864,7 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false)
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false, false)
             .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);

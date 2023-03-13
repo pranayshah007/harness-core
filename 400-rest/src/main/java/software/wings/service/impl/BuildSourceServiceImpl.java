@@ -30,6 +30,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -54,6 +55,7 @@ import software.wings.beans.SyncTaskContext;
 import software.wings.beans.SyncTaskContext.SyncTaskContextBuilder;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.artifact.GcsArtifactStream;
 import software.wings.beans.command.GcbTaskParams;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -68,6 +70,7 @@ import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactCollectionService;
+import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.BuildService;
@@ -121,6 +124,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
   @Inject private ArtifactStreamHelper artifactStreamHelper;
   @Inject private DelegateServiceImpl delegateService;
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
+  @Inject private ArtifactService artifactService;
 
   @Override
   public Set<JobDetails> getJobs(String appId, String settingId, String parentJobName) {
@@ -911,5 +915,20 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     log.info("[Delegate Selection] Appending delegate selectors to - {} with selectors {}", settingAttribute.getName(),
         tags);
     return syncTaskContextBuilder.tags(tags).build();
+  }
+
+  @Override
+  public List<BuildDetails> listArtifactByArtifactStreamAndFilterPath(
+      List<Artifact> artifacts, ArtifactStream artifactStream) {
+    return artifacts.stream()
+        .filter(artifact -> {
+          List<String> paths = ((GcsArtifactStream) artifactStream).getArtifactPaths();
+          return paths.stream().anyMatch(path -> {
+            path = path.replace("*", "");
+            return artifact.getArtifactPath().startsWith(path);
+          });
+        })
+        .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
+        .collect(toList());
   }
 }

@@ -27,6 +27,7 @@ import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -76,12 +77,12 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    * will deprecate this soon
    */
   public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator) {
     YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
-    return getTemplateMergeResponseDTO(
-        accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap, loadFromCache);
+    return getTemplateMergeResponseDTO(accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode,
+        templateCacheMap, loadFromCache, appendInputSetValidator);
   }
 
   @Override
@@ -97,12 +98,12 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    * @return final yaml with all template occurrences replaced with actual template information.
    */
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator) {
     YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
-    return getTemplateMergeResponseDTO(
-        accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap, loadFromCache);
+    return getTemplateMergeResponseDTO(accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode,
+        templateCacheMap, loadFromCache, appendInputSetValidator);
   }
 
   @Override
@@ -130,7 +131,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
 
   private TemplateMergeResponseDTO getTemplateMergeResponseDTO(String accountId, String orgId, String projectId,
       String yaml, boolean getMergedYamlWithTemplateField, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+      Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache, boolean appendInputSetValidator) {
+    log.info("Principal in getTemplateMergeResponseDTO is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     Map<String, Object> resMap;
     if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
       templateCacheMap.putAll(
@@ -139,10 +141,10 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     if (!getMergedYamlWithTemplateField) {
       resMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
     } else {
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
       resMap = mergeTemplateInputsInObject.getResMap();
     }
 
