@@ -82,7 +82,6 @@ import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
@@ -569,10 +568,11 @@ public class EnvironmentResourceV2 {
                 String.format("Could not find environment group with identifier: %s", envGroupIdentifier));
           });
       // fetch environments from the same scope as of env group
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
-          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(envGroupIdentifierRef.getAccountIdentifier(),
+          envGroupIdentifierRef.getOrgIdentifier(), envGroupIdentifierRef.getProjectIdentifier(), false, searchTerm);
     } else {
-      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
+      criteria = environmentFilterHelper.createCriteriaForGetList(
+          accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     }
 
     if (isNotEmpty(envIdentifiers)) {
