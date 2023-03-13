@@ -24,9 +24,11 @@ public class KubernetesConnectionTaskParams
     extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   KubernetesClusterConfigDTO kubernetesClusterConfig;
   private List<EncryptedDataDetail> encryptionDetails;
+  private boolean useSocketCapability;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfig, maskingEvaluator);
+    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+        kubernetesClusterConfig, maskingEvaluator, useSocketCapability);
   }
 }
