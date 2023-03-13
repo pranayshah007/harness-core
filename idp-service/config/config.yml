@@ -68,12 +68,18 @@ ngManagerServiceHttpClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+managerClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 backstageHttpClientConfig:
   baseUrl: http://localhost:7007/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
 ngManagerServiceSecret: ""
+managerServiceSecret: ""
 backstageServiceSecret: ""
 idpServiceSecret: ""
 jwtAuthSecret: ""

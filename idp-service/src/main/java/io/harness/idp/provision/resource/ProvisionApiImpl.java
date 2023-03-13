@@ -13,6 +13,7 @@ import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.provision.service.ProvisionService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
@@ -24,6 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class ProvisionApiImpl implements ProvisionApi {
   private ProvisionService provisionService;
@@ -32,6 +34,7 @@ public class ProvisionApiImpl implements ProvisionApi {
   @Override
   public Response provisionIdp(String accountIdentifier) {
     try {
+      provisionService.checkUserAuthorization();
       NamespaceEntity namespaceEntity = namespaceService.saveAccountIdNamespace(accountIdentifier);
       NamespaceInfo namespaceInfo = NamespaceMapper.toDTO(namespaceEntity);
       provisionService.triggerPipeline(namespaceInfo.getAccountIdentifier(), namespaceInfo.getNamespace());

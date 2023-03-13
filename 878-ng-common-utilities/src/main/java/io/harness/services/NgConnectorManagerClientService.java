@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.globalkms.services;
+package io.harness.services;
 
 public interface NgConnectorManagerClientService {
   boolean isHarnessSupportUser(String userId);

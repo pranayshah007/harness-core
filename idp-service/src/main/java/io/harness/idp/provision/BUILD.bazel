@@ -14,6 +14,7 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//878-ng-common-utilities:module",
         "//960-api-services/src/main/java/io/harness/k8s:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",

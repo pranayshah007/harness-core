@@ -9,10 +9,15 @@ package io.harness.idp.provision.service;
 import static io.harness.idp.provision.ProvisionConstants.ACCOUNT_ID;
 import static io.harness.idp.provision.ProvisionConstants.NAMESPACE;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
+import io.harness.client.NgConnectorManagerClient;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.retry.RetryHelper;
+import io.harness.security.SecurityContextBuilder;
 
 import com.google.inject.name.Named;
 import io.github.resilience4j.retry.Retry;
@@ -36,10 +41,22 @@ public class ProvisionServiceImpl implements ProvisionService {
   @Inject @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig;
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");
+  @Inject NgConnectorManagerClient ngConnectorManagerClient;
 
   @Override
   public void triggerPipeline(String accountIdentifier, String namespace) {
     makeTriggerApi(accountIdentifier, namespace);
+  }
+
+  @Override
+  public void checkUserAuthorization() {
+    String userId = SecurityContextBuilder.getPrincipal().getName();
+    boolean isAuthorized = getResponse(ngConnectorManagerClient.isHarnessSupportUser(userId));
+    if (!isAuthorized) {
+      String errorMessage = String.format("User : %s not allowed to provision IDP", userId);
+      log.error(errorMessage);
+      throw new AccessDeniedException(errorMessage, WingsException.USER);
+    }
   }
 
   private void makeTriggerApi(String accountIdentifier, String namespace) {

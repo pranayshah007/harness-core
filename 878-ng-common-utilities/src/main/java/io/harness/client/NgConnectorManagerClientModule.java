@@ -5,16 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.globalkms.client;
+package io.harness.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.client.NgConnectorManagerClient;
-import io.harness.ng.core.globalkms.impl.NgConnectorManagerClientServiceImpl;
-import io.harness.ng.core.globalkms.services.NgConnectorManagerClientService;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
+import io.harness.services.NgConnectorManagerClientService;
+import io.harness.services.NgConnectorManagerClientServiceImpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
