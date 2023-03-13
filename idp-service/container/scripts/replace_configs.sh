@@ -125,8 +125,16 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
+  export MANAGER_SERVICE_SECRET; yq -i '.managerServiceSecret=env(MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_CLIENT_BASE_URL" ]]; then
+  export MANAGER_CLIENT_BASE_URL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then

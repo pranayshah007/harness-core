@@ -58,6 +58,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
         PluginStepInfo.builder()
             .image(ParameterField.createValueField("image"))
             .privileged(ParameterField.createValueField(true))
+            .runAsUser(ParameterField.createValueField(1000))
             .connectorRef(ParameterField.createValueField("connectorRef"))
             .reports(ParameterField.createValueField(null))
             .envVariables(ParameterField.createValueField(Map.of(
@@ -67,6 +68,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
         (VmPluginStep) vmPluginStepSerializer.serialize(pluginStepInfo, null, "id", null, null, ambiance, null, null);
     assertThat(vmPluginStep.isPrivileged()).isTrue();
     assertThat(vmPluginStep.getImage()).isEqualTo("image");
+    assertThat(vmPluginStep.getRunAsUser()).isEqualTo("1000");
     assertThat(vmPluginStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));
   }
 

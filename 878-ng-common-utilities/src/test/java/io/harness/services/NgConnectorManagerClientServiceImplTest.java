@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.globalkms.impl;
+package io.harness.services;
 
 import static io.harness.rule.OwnerRule.NISHANT;
 

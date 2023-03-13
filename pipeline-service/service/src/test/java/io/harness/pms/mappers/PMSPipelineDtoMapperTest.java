@@ -669,7 +669,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                             .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                             .build())
                 .startTs(1L)
-                .endTs(2L)
+                .endTs(null)
                 .build();
     responseBody = PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(event);
     assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");

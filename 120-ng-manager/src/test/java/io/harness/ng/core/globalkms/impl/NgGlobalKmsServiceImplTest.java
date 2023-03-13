@@ -45,7 +45,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.globalkms.dto.ConnectorSecretResponseDTO;
-import io.harness.ng.core.globalkms.services.NgConnectorManagerClientService;
 import io.harness.request.RequestContext;
 import io.harness.request.RequestContextData;
 import io.harness.rule.Owner;
@@ -54,6 +53,7 @@ import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.services.NgConnectorManagerClientService;
 
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;

@@ -17,11 +17,14 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.LogLevel;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -56,6 +59,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject private ServiceStepsHelper serviceStepsHelper;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -69,9 +73,12 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
-      log.info("no config files found for service " + configFilesSweepingOutput.getServiceIdentifier()
-          + ". skipping the config files step");
+      logCallback.saveExecutionLog(
+          String.format("No config files configured in the service. <+%s> expressions will not work",
+              OutcomeExpressionConstants.CONFIG_FILES),
+          LogLevel.WARN);
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);

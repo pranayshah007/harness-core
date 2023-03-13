@@ -58,7 +58,7 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testServiceLayer() {
-    PipelineValidationEvent validationEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD);
+    PipelineValidationEvent validationEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD, false);
     assertThat(validationEvent).isNotNull();
     assertThat(validationEvent.getUuid()).isNotEmpty();
     assertThat(validationEvent.getFqn()).isEqualTo(fqn);
@@ -86,7 +86,7 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
     assertThat(updatedEvent.getParams()).isEqualTo(ValidationParams.builder().pipelineEntity(pipeline).build());
     assertThat(updatedEvent.getResult()).isEqualTo(ValidationResult.builder().build());
 
-    PipelineValidationEvent newEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD);
+    PipelineValidationEvent newEvent = asyncValidationService.startEvent(pipeline, null, Action.CRUD, false);
     assertThat(newEvent).isNotNull();
     String newEventUuid = newEvent.getUuid();
     Optional<PipelineValidationEvent> optionalLatest =

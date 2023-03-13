@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PipelineAsyncValidationHandler implements Runnable {
   private final PipelineValidationEvent validationEvent;
+  private final boolean loadFromCache; // todo: see if this can be set to true always
   private final PipelineAsyncValidationService validationService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
@@ -59,7 +60,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
     ValidationResult templateValidationResult;
 
     TemplateMergeResponseDTO templateMergeResponse =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, false);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
     templateValidationResult =
         ValidationResult.builder()
             .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())

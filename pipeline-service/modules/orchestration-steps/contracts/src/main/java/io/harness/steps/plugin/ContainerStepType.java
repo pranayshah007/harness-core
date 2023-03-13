@@ -5,10 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.provision.service;
+package io.harness.steps.plugin;
 
-public interface ProvisionService {
-  void triggerPipeline(String accountIdentifier, String namespace);
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-  void checkUserAuthorization();
-}
+@OwnedBy(HarnessTeam.SSCA) public enum ContainerStepType { UNKNOWN, RUN_CONTAINER, CD_SSCA_ORCHESTRATION }

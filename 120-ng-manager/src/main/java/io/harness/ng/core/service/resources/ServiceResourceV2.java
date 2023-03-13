@@ -52,6 +52,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
@@ -428,6 +429,7 @@ public class ServiceResourceV2 {
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
+
     if (isEmpty(sort)) {
       pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
     } else {
@@ -447,6 +449,92 @@ public class ServiceResourceV2 {
     });
     return ResponseDTO.newResponse(getNGPageResponse(
         serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
+  }
+
+  @GET
+  @Path("/list/scoped")
+  @Hidden
+  @ApiOperation(value = "Gets Service list filtered by service refs", nickname = "getServiceListFiltered")
+  @Operation(operationId = "getServiceList", summary = "Gets Service list",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Services filtered by scoped service refs")
+      })
+  public ResponseDTO<PageResponse<ServiceResponse>>
+  getServicesFilteredByRefs(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                                NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "List of ServicesIds") @QueryParam(
+          "serviceIdentifiers") List<String> serviceIdentifiers) {
+    checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
+
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+
+    Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
+
+    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+
+    serviceEntities.forEach(serviceEntity -> {
+      if (EmptyPredicate.isEmpty(serviceEntity.getYaml())) {
+        NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+        serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+      }
+    });
+    return ResponseDTO.newResponse(
+        getNGPageResponse(serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, false))));
+  }
+
+  private void checkAccessForListingAtScope(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers) {
+    if (isEmpty(serviceIdentifiers)) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    boolean checkProjectLevelList = false;
+    boolean checkOrgLevelList = false;
+    boolean checkAccountLevelList = false;
+
+    if (isNotEmpty(serviceIdentifiers)) {
+      for (String serviceRef : serviceIdentifiers) {
+        if (isNotEmpty(serviceRef) && !EngineExpressionEvaluator.hasExpressions(serviceRef)) {
+          IdentifierRef serviceIdentifierRef =
+              IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+          if (io.harness.encryption.Scope.PROJECT.equals(serviceIdentifierRef.getScope())) {
+            checkProjectLevelList = true;
+          } else if (io.harness.encryption.Scope.ORG.equals(serviceIdentifierRef.getScope())) {
+            checkOrgLevelList = true;
+          } else if (io.harness.encryption.Scope.ACCOUNT.equals(serviceIdentifierRef.getScope())) {
+            checkAccountLevelList = true;
+          }
+        }
+      }
+    }
+
+    // listing without scoped refs
+    if (checkProjectLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    if (checkOrgLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, null),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
+
+    if (checkAccountLevelList) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null),
+          Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
+    }
   }
 
   @GET
