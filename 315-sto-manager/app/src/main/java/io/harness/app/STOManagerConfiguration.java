@@ -33,8 +33,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public class STOManagerConfiguration {
   public static final String MONGO_CONNECTION_ENV_NAME = "STOMANAGER_MONGO_URI";
   public static final String DEFAULT_MONGO_CONNECTION = "mongodb://localhost:27017/sto-harness";
