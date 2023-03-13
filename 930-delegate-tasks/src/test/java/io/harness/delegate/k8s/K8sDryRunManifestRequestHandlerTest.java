@@ -80,7 +80,7 @@ public class K8sDryRunManifestRequestHandlerTest extends CategoryTest {
 
     doReturn(KubernetesConfig.builder().namespace("default").build())
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(any(K8sInfraDelegateConfig.class));
+        .createKubernetesConfig(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
   }
 
   @Test

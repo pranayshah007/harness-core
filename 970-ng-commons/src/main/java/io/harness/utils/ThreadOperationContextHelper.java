@@ -26,4 +26,13 @@ public class ThreadOperationContextHelper {
     }
     return threadOperationContext.getUserFlow();
   }
+
+  public ThreadOperationContext getThreadOperationContext() {
+    ThreadOperationContext threadOperationContext =
+        GlobalContextManager.get(ThreadOperationContext.THREAD_OPERATION_CONTEXT);
+    if (threadOperationContext == null) {
+      return ThreadOperationContext.builder().build();
+    }
+    return threadOperationContext;
+  }
 }

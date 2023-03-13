@@ -57,6 +57,7 @@ public class VmRunStepSerializerTest extends CategoryTest {
             .command(ParameterField.createValueField("echo hello"))
             .privileged(ParameterField.createValueField(true))
             .connectorRef(ParameterField.createValueField("connectorRef"))
+            .runAsUser(ParameterField.createValueField(1000))
             .outputVariables(ParameterField.createValueField(Collections.emptyList()))
             .reports(ParameterField.createValueField(null))
             .envVariables(ParameterField.createValueField(Map.of(
@@ -66,6 +67,7 @@ public class VmRunStepSerializerTest extends CategoryTest {
     assertThat(vmRunStep.isPrivileged()).isTrue();
     assertThat(vmRunStep.getImage()).isEqualTo("image");
     assertThat(vmRunStep.getCommand()).isEqualTo("set -xe; echo hello");
+    assertThat(vmRunStep.getRunAsUser()).isEqualTo("1000");
     assertThat(vmRunStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));
   }
 }

@@ -71,6 +71,7 @@ import io.harness.terraformcloud.model.RunData;
 import io.harness.terraformcloud.model.RunRequest;
 import io.harness.terraformcloud.model.RunStatus;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -295,6 +296,7 @@ public class TerraformCloudTaskNGTest {
     doReturn("policyCheckJsonId")
         .when(terraformCloudTaskHelper)
         .uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
+    doReturn(runData).when(terraformCloudTaskHelper).getRun(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
@@ -327,6 +329,7 @@ public class TerraformCloudTaskNGTest {
     doReturn("policyCheckJsonId")
         .when(terraformCloudTaskHelper)
         .uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
+    doReturn(runData).when(terraformCloudTaskHelper).getRun(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
@@ -345,7 +348,7 @@ public class TerraformCloudTaskNGTest {
   @Test(expected = TaskNGDataException.class)
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testRunPlanAndApplyTaskTypeWhenPolicyCantOverride() {
+  public void testRunPlanAndApplyTaskTypeWhenPolicyCantOverride() throws IOException {
     doReturn(terraformCloudConfig).when(terraformCloudConfigMapper).mapTerraformCloudConfigWithDecryption(any(), any());
     TaskParameters taskParameters = getTerraformCloudTaskParams(TerraformCloudTaskType.RUN_PLAN_AND_APPLY);
     RunData runData = new RunData();
@@ -370,6 +373,7 @@ public class TerraformCloudTaskNGTest {
     verify(terraformCloudTaskHelper, times(1)).streamApplyLogs(any(), any(), any(), any());
     verify(terraformCloudTaskHelper, times(1)).getPolicyCheckData(any(), any(), any());
     verify(terraformCloudTaskHelper, times(0)).overridePolicy(any(), any(), any(), any());
+    verify(terraformCloudTaskHelper, times(1)).discardRun(any(), any(), any(), any());
   }
 
   @Test
@@ -391,6 +395,7 @@ public class TerraformCloudTaskNGTest {
     doReturn("policyCheckJsonId")
         .when(terraformCloudTaskHelper)
         .uploadJsonFile(any(), any(), any(), any(), any(), any(), any());
+    doReturn(runData).when(terraformCloudTaskHelper).getRun(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 

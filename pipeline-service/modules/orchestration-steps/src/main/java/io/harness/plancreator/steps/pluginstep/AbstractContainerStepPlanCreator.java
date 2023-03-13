@@ -34,7 +34,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
 import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
-import io.harness.steps.plugin.IContainerStepSpec;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStepNode> extends ChildrenPlanCreator<T> {
-  public static final String CONTAINER_STEP_GROUP = "Container Step Group";
   @Inject KryoSerializer kryoSerializer;
 
   @Override public abstract Map<String, Set<String>> getSupportedTypes();
@@ -87,7 +86,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, T config, List<String> childrenNodeIds) {
     config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
-    config.setName(CONTAINER_STEP_GROUP);
+    config.setName(config.getName());
 
     StepGroupStepParameters stepGroupStepParameters =
         StepGroupStepParameters.builder()
@@ -165,9 +164,9 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T field) {
-    if (field.getStepSpecType() instanceof IContainerStepSpec) {
-      ((IContainerStepSpec) field.getStepSpecType()).setName(field.getName());
-      ((IContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
+    if (field.getStepSpecType() instanceof ContainerStepSpec) {
+      ((ContainerStepSpec) field.getStepSpecType()).setName(field.getName());
+      ((ContainerStepSpec) field.getStepSpecType()).setIdentifier(field.getIdentifier());
     }
     return super.createPlanForField(ctx, field);
   }

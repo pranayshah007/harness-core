@@ -14,6 +14,7 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.clients.BackstageCatalogResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.git.GitClientV2;
@@ -183,6 +184,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(AccessControlClientModule.getInstance(
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
+    install(
+        new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
     install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),

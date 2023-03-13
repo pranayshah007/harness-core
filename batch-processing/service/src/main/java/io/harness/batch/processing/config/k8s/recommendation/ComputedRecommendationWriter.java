@@ -22,7 +22,6 @@ import static java.time.Duration.between;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 
-import io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils;
 import io.harness.batch.processing.service.intfc.WorkloadRepository;
 import io.harness.batch.processing.tasklet.support.K8sLabelServiceInfoFetcher;
 import io.harness.batch.processing.tasklet.util.ClusterHelper;
@@ -31,6 +30,7 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
+import io.harness.ccm.commons.utils.ResourceAmountUtils;
 import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.histogram.Histogram;
 
@@ -314,8 +314,8 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
 
       ResourceRequirement recommendedResource = containerRecommendation.getGuaranteed();
       if (containerRecommendation.getPercentileBased() != null
-          && containerRecommendation.getPercentileBased().containsKey(String.format(PERCENTILE_KEY, 90))) {
-        recommendedResource = containerRecommendation.getPercentileBased().get(String.format(PERCENTILE_KEY, 90));
+          && containerRecommendation.getPercentileBased().containsKey(String.format(PERCENTILE_KEY, 95))) {
+        recommendedResource = containerRecommendation.getPercentileBased().get(String.format(PERCENTILE_KEY, 95));
       }
       BigDecimal recommended = getResourceValue(recommendedResource, resource, null);
 

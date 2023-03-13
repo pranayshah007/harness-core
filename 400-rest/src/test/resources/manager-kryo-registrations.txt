@@ -2303,6 +2303,7 @@
 97034:com.amazonaws.services.ec2.model.EnclaveOptions
 97035:io.harness.k8s.model.KubernetesResource
 97036:io.harness.exception.OciHelmDockerApiException
+97037:io.harness.exception.OpenShiftClientException
 97100:io.harness.manifest.CustomSourceConfig
 97101:io.harness.servicenow.ServiceNowActionNG
 97102:io.harness.servicenow.ServiceNowFieldAllowedValueNG

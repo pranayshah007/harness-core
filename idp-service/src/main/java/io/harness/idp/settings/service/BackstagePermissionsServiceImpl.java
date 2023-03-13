@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class BackstagePermissionsServiceImpl implements BackstagePermissionsService {
-  private static final String SETTINGS_CONFIG = "settings_config";
+  private static final String SETTINGS_CONFIG = "settings-config";
   private static final String PERMISSIONS = "permissions";
   private static final String USERGROUP = "userGroup";
   private BackstagePermissionsRepository backstagePermissionsRepository;

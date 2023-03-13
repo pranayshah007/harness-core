@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -258,6 +259,21 @@ public interface RoleAssignmentResource {
   delete(@BeanParam HarnessScopeParams harnessScopeParams,
       @Parameter(description = "Identifier for role assignment") @NotEmpty @PathParam(
           IDENTIFIER_KEY) String identifier);
+
+  @POST
+  @Path("/delete/batch")
+  @ApiOperation(value = "Delete Role Assignment", nickname = "bulkDeleteRoleAssignment")
+  @Operation(operationId = "bulkDeleteRoleAssignment", summary = "Bulk Delete Role Assignment",
+      description = "Bulk delete role assignments by identifiers",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns successfully/failed deleted roleassignment.")
+      })
+  ResponseDTO<RoleAssignmentDeleteResponseDTO>
+  bulkDelete(@BeanParam HarnessScopeParams harnessScopeParams,
+      @RequestBody(description = "List of role assigment identifiers to be deleted",
+          required = true) @Body Set<String> roleAssignmentIdentifiers);
 
   @GET
   @Path("{identifier}")

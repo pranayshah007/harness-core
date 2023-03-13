@@ -21,6 +21,7 @@ import io.harness.annotations.dev.TargetModule;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -54,7 +55,7 @@ public class GcbBuildDetails {
   private String logUrl;
   private Map<String, String> substitutions;
   private List<String> tags;
-  private List<String> secrets;
+  private JsonNode secrets;
   private Map<String, TimeSpan> timing;
 
   /**

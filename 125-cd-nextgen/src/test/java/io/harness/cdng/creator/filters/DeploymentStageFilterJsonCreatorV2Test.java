@@ -8,10 +8,12 @@
 package io.harness.cdng.creator.filters;
 
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -33,6 +35,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureType;
@@ -162,6 +165,25 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigUseFromStageInvalid")
+  public void getFiltersWithUseFromStageInvalid(DeploymentStageNode node) {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .build();
+    assertThatThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Only one of serviceRef and useFromStage fields are allowed in service. Please remove one and try again");
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigWithFilters")
@@ -271,10 +293,8 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     final DeploymentStageNode node2 = new DeploymentStageNode();
     node2.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder()
-                         .useFromStage(
-                             ParameterField.createValueField(ServiceUseFromStageV2.builder().stage("stage1").build()))
-                         .build())
+            .service(
+                ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build()).build())
             .environment(EnvironmentYamlV2.builder()
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              // default to false
@@ -304,6 +324,41 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                     .currentField(new YamlField(new YamlNode("stage", new ObjectNode(null))))
                                     .build();
     assertThatExceptionOfType(InvalidYamlRuntimeException.class).isThrownBy(() -> filterCreator.getFilter(ctx, node));
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testSaveStageTemplateWithUseFromStage() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(
+                ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("stageId").build()).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
+                             .deployToAll(ParameterField.createValueField(false))
+                             .infrastructureDefinition(ParameterField.createValueField(
+                                 InfraStructureDefinitionYaml.builder()
+                                     .identifier(ParameterField.createValueField(infra.getIdentifier()))
+                                     .build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField =
+        new YamlField(YamlNode.fromYamlPath(getYaml("stageTemplateSpecWithUseFromStage.yaml"), ""));
+    YamlField currentField = fullYamlField.fromYamlPath("spec");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining("cannot save a stage template that propagates service from another stage");
   }
 
   private Object[][] getDeploymentStageConfigWithFilters() throws IOException {
@@ -389,6 +444,28 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .build());
 
     return new Object[][] {{node1}, {node2}, {node3}, {node4}};
+  }
+
+  private Object[][] getDeploymentStageConfigUseFromStageInvalid() {
+    final DeploymentStageNode node1 = new DeploymentStageNode();
+    node1.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                         .useFromStage(ServiceUseFromStageV2.builder().stage("stageId").build())
+                         .build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
+                             .deployToAll(ParameterField.createValueField(false))
+                             .infrastructureDefinition(ParameterField.createValueField(
+                                 InfraStructureDefinitionYaml.builder()
+                                     .identifier(ParameterField.createValueField(infra.getIdentifier()))
+                                     .build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+
+    return new Object[][] {{node1}};
   }
 
   private Object[][] getDeploymentStageConfigGitops() {
@@ -589,8 +666,12 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   }
 
   private DeploymentStageNode getDeploymentStageNodeFromYaml(String filePath) throws IOException {
-    final URL testFile = classLoader.getResource(filePath);
-    String stageYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String stageYaml = getYaml(filePath);
     return YamlPipelineUtils.read(stageYaml, DeploymentStageNode.class);
+  }
+
+  private String getYaml(String filePath) throws IOException {
+    final URL testFile = classLoader.getResource(filePath);
+    return Resources.toString(testFile, Charsets.UTF_8);
   }
 }

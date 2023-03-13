@@ -13,6 +13,7 @@ import io.harness.idp.secret.beans.entity.EnvironmentSecretEntity.EnvironmentSec
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -31,6 +32,7 @@ public class EnvironmentSecretRepositoryCustomImpl implements EnvironmentSecretR
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(EnvironmentSecretsEntityKeys.secretIdentifier, environmentSecretEntity.getSecretIdentifier());
-    return mongoTemplate.findAndModify(query, update, EnvironmentSecretEntity.class);
+    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+    return mongoTemplate.findAndModify(query, update, options, EnvironmentSecretEntity.class);
   }
 }

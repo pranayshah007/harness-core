@@ -9,6 +9,7 @@ package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
@@ -21,6 +22,9 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptTemplateService implements NgTemplateService {
@@ -36,25 +40,35 @@ public class ShellScriptTemplateService implements NgTemplateService {
     List<Map<String, String>> outputVariables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getOutputVars())) {
       for (String varName : shellScriptTemplate.getOutputVars().split(",")) {
-        outputVariables.add(ImmutableMap.of(
-            "name", valueOrDefaultEmpty(varName), "type", "String", "value", valueOrDefaultEmpty(varName)));
+        outputVariables.add(getOutputVariable(varName, "String"));
       }
     }
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getSecretOutputVars())) {
       for (String varName : shellScriptTemplate.getSecretOutputVars().split(",")) {
-        outputVariables.add(ImmutableMap.of(
-            "name", valueOrDefaultEmpty(varName), "type", "Secret", "value", valueOrDefaultEmpty(varName)));
+        outputVariables.add(getOutputVariable(varName, "Secret"));
       }
     }
+
+    Set<String> expressions = MigratorExpressionUtils.getExpressions(shellScriptTemplate);
+
+    if (EmptyPredicate.isNotEmpty(expressions)) {
+      final Pattern pattern = Pattern.compile("[a-zA-Z_]+[\\w.]*");
+      outputVariables.addAll(expressions.stream()
+                                 .filter(exp -> exp.contains("."))
+                                 .filter(exp -> pattern.matcher(exp).matches())
+                                 .map(exp -> exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp)
+                                 .map(exp -> exp.replace('.', '_'))
+                                 .distinct()
+                                 .map(exp -> getOutputVariable(exp, "String"))
+                                 .collect(Collectors.toList()));
+    }
+
     List<Map<String, String>> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables()
           .stream()
           .filter(variable -> StringUtils.isNotBlank(variable.getName()))
-          .forEach(variable -> {
-            variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
-                valueOrDefaultRuntime(variable.getValue())));
-          });
+          .forEach(variable -> variables.add(getEnvironmentVariable(variable.getName(), variable.getValue())));
     }
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
@@ -86,5 +100,21 @@ public class ShellScriptTemplateService implements NgTemplateService {
 
   static String valueOrDefaultRuntime(String val) {
     return StringUtils.isNotBlank(val) ? val.trim() : "<+input>";
+  }
+
+  static Map<String, String> getEnvironmentVariable(String varName, String value) {
+    return ImmutableMap.<String, String>builder()
+        .put("name", valueOrDefaultEmpty(varName))
+        .put("type", "String")
+        .put("value", valueOrDefaultRuntime(value))
+        .build();
+  }
+
+  static Map<String, String> getOutputVariable(String varName, String type) {
+    return ImmutableMap.<String, String>builder()
+        .put("name", valueOrDefaultEmpty(varName))
+        .put("type", type)
+        .put("value", valueOrDefaultEmpty(varName))
+        .build();
   }
 }

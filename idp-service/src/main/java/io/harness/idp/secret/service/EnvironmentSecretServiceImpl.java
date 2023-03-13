@@ -43,7 +43,6 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
-  private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
   private EnvironmentSecretRepository environmentSecretRepository;
   private K8sClient k8sClient;
   @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
@@ -110,8 +109,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
   }
 
   @Override
-  public void delete(String secretIdentifier, String accountIdentifier) throws Exception {
-    EnvironmentSecretEntity environmentSecretEntity = EnvironmentSecretEntity.builder().id(secretIdentifier).build();
+  public void delete(String secretIdentifier, String accountIdentifier) {
     Optional<EnvironmentSecretEntity> envSecretOpt =
         environmentSecretRepository.findByAccountIdentifierAndSecretIdentifier(secretIdentifier, accountIdentifier);
     if (envSecretOpt.isEmpty()) {
@@ -120,11 +118,11 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     }
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET,
         Collections.singletonList(envSecretOpt.get().getEnvName()));
-    environmentSecretRepository.delete(environmentSecretEntity);
+    environmentSecretRepository.delete(envSecretOpt.get());
   }
 
   @Override
-  public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) throws Exception {
+  public void deleteMulti(List<String> secretIdentifiers, String accountIdentifier) {
     Iterable<EnvironmentSecretEntity> secrets = environmentSecretRepository.findAllById(secretIdentifiers);
     List<String> envNames =
         Streams.stream(secrets).map(EnvironmentSecretEntity::getEnvName).collect(Collectors.toList());
@@ -146,6 +144,7 @@ public class EnvironmentSecretServiceImpl implements EnvironmentSecretService {
     }
   }
 
+  @Override
   public void syncK8sSecret(List<EnvironmentSecret> environmentSecrets, String accountIdentifier) {
     Map<String, byte[]> secretData = new HashMap<>();
     for (EnvironmentSecret environmentSecret : environmentSecrets) {
