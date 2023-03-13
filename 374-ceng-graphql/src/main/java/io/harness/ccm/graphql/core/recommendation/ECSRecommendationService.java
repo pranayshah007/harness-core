@@ -8,12 +8,12 @@
 package io.harness.ccm.graphql.core.recommendation;
 
 import static io.harness.ccm.RecommenderUtils.EPSILON;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.convertToReadableForm;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
 
-import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
-import static java.math.RoundingMode.HALF_UP;
+import static io.kubernetes.client.custom.Quantity.Format.BINARY_SI;
 
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
@@ -130,9 +130,10 @@ public class ECSRecommendationService {
       long cpuUnits = cpuUnitsFromReadableFormat(mapEntry.getValue().get(CPU));
       memoryMb += (long) ((double) memoryMb * (double) bufferPercentage) / 100.0;
       cpuUnits += (long) ((double) cpuUnits * (double) bufferPercentage) / 100.0;
-      long memoryBytes = BigDecimal.valueOf(memoryMb).scaleByPowerOfTen(6).longValue();
-      long cpuMilliUnits = BigDecimal.valueOf(cpuUnits).scaleByPowerOfTen(3).longValue();
-      percentileBased.put(mapEntry.getKey(), convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes)));
+      long memoryBytes = BigDecimal.valueOf(memoryMb).longValue() * 1024L * 1024L;
+      long cpuMilliUnits = BigDecimal.valueOf(cpuUnits).longValue() * 1024L;
+      percentileBased.put(
+          mapEntry.getKey(), convertToReadableForm(makeResourceMap(cpuMilliUnits, memoryBytes), BINARY_SI));
     }
   }
 
@@ -140,13 +141,13 @@ public class ECSRecommendationService {
     for (Map.Entry<String, Map<String, String>> percentileBasedEntry : percentileBased.entrySet()) {
       long percentileMemoryMb = memoryMbFromReadableFormat(percentileBasedEntry.getValue().get(MEMORY));
       long percentileCpuUnits = cpuUnitsFromReadableFormat(percentileBasedEntry.getValue().get(CPU));
-      long memoryBytes = BigDecimal.valueOf(percentileMemoryMb).scaleByPowerOfTen(6).longValue();
-      long cpuMilliUnits = BigDecimal.valueOf(percentileCpuUnits).scaleByPowerOfTen(3).longValue();
+      long memoryBytes = BigDecimal.valueOf(percentileMemoryMb).longValue() * 1024L * 1024L;
+      long cpuMilliUnits = BigDecimal.valueOf(percentileCpuUnits).longValue() * 1024L;
       CpuMillsAndMemoryBytes resourceValues = fargateResourceValues.get(cpuMilliUnits, memoryBytes);
       long cpuAmount = resourceValues.getCpuMilliUnits();
       long memoryAmount = resourceValues.getMemoryBytes();
       percentileBased.put(
-          percentileBasedEntry.getKey(), convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount)));
+          percentileBasedEntry.getKey(), convertToReadableForm(makeResourceMap(cpuAmount, memoryAmount), BINARY_SI));
     }
   }
 
@@ -168,7 +169,7 @@ public class ECSRecommendationService {
   }
 
   private static long memoryMbFromReadableFormat(String memory) {
-    return getAmountFromReadableFormat(memory).scaleByPowerOfTen(-6).longValue();
+    return getAmountFromReadableFormat(memory).longValue() / (1024L * 1024L);
   }
 
   private static BigDecimal getAmountFromReadableFormat(String s) {
@@ -177,44 +178,5 @@ public class ECSRecommendationService {
 
   public static Map<String, Long> makeResourceMap(long cpuAmount, long memoryAmount) {
     return ImmutableMap.of(CPU, cpuAmount, MEMORY, memoryAmount);
-  }
-
-  public static Map<String, String> convertToReadableForm(Map<String, Long> resourceMap) {
-    ImmutableMap.Builder<String, String> builder = ImmutableMap.<String, String>builder();
-    if (resourceMap.containsKey(CPU)) {
-      builder.put(CPU, readableCpuAmount(resourceMap.get(CPU)));
-    }
-    if (resourceMap.containsKey(MEMORY)) {
-      builder.put(MEMORY, readableMemoryAmount(resourceMap.get(MEMORY)));
-    }
-    return builder.build();
-  }
-
-  static String readableCpuAmount(long cpuAmount) {
-    BigDecimal cpuInCores = BigDecimal
-                                // milliCore to core
-                                .valueOf(cpuAmount, 3)
-                                // round up to nearest milliCore
-                                .setScale(3, HALF_UP);
-    return toDecimalSuffixedString(cpuInCores);
-  }
-
-  static String readableMemoryAmount(long memoryAmount) {
-    int maxAllowedStringLen = 5;
-    BigDecimal memoryInBytes = BigDecimal.valueOf(memoryAmount);
-    int scale = 0;
-    while (true) {
-      String memoryString = toDecimalSuffixedString(memoryInBytes);
-      if (memoryString.length() <= maxAllowedStringLen) {
-        return memoryString;
-      }
-      // Keep rounding up to next higher unit until we reach a human readable value
-      scale -= 3;
-      memoryInBytes = memoryInBytes.setScale(scale, HALF_UP);
-    }
-  }
-
-  private static String toDecimalSuffixedString(BigDecimal number) {
-    return new Quantity(number, DECIMAL_SI).toSuffixedString();
   }
 }

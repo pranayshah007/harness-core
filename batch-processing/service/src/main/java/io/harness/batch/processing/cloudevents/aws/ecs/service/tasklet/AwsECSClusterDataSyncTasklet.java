@@ -300,6 +300,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     String clusterId = ceCluster.getUuid();
     String settingId = ceCluster.getParentAccountSettingId();
     String region = ceCluster.getRegion();
+    String awsAccountId = ceCluster.getInfraAccountId();
     Map<String, InstanceData> activeInstanceDataMap = getInstanceDataMap(accountId, clusterId,
         ImmutableList.of(InstanceType.ECS_TASK_FARGATE, InstanceType.ECS_TASK_EC2), InstanceState.RUNNING);
     Set<String> activeTaskIds = activeInstanceDataMap.keySet();
@@ -323,7 +324,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
           if (null != activeInstanceDataMap.get(taskId)) {
             InstanceData instanceData = activeInstanceDataMap.get(taskId);
             ECSService ecsService =
-                getECSService(accountId, clusterId, task, deploymentIdServiceMap, getLaunchType(task));
+                getECSService(accountId, awsAccountId, clusterId, task, deploymentIdServiceMap, getLaunchType(task));
             boolean updated = updateInstanceStopTimeForTask(instanceData, task);
             boolean updatedLabels = false;
             // Labels will only be updated once in a day - If we don't have this updating labels every hour is costly
@@ -402,7 +403,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                     .harnessServiceInfo(harnessServiceInfo)
                     .build();
             ECSService ecsService =
-                getECSService(accountId, clusterId, task, deploymentIdServiceMap, getLaunchType(task));
+                getECSService(accountId, awsAccountId, clusterId, task, deploymentIdServiceMap, getLaunchType(task));
 
             updateInstanceStopTimeForTask(instanceData, task);
             updateLabels(instanceData, ecsService, task, ceCluster, serviceArnTagsMap, deploymentIdServiceMap);
@@ -462,8 +463,8 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     return false;
   }
 
-  ECSService getECSService(String accountId, String clusterId, Task task, Map<String, String> deploymentIdServiceMap,
-      LaunchType launchType) {
+  ECSService getECSService(String accountId, String awsAccountId, String clusterId, Task task,
+      Map<String, String> deploymentIdServiceMap, LaunchType launchType) {
     if (!serviceExistsForTask(task, deploymentIdServiceMap)) {
       return null;
     }
@@ -474,6 +475,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
     Resource resource = Resource.builder().cpuUnits(cpu).memoryMb(memory).build();
     return ECSService.builder()
         .accountId(accountId)
+        .awsAccountId(awsAccountId)
         .clusterId(clusterId)
         .serviceArn(serviceArn)
         .serviceName(serviceName)

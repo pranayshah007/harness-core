@@ -55,6 +55,7 @@ public class ECSServiceDaoImpl implements ECSServiceDao {
                                     .equal(ecsService.getServiceArn()),
                hPersistence.createUpdateOperations(ECSService.class)
                    .set(ECSServiceKeys.accountId, ecsService.getAccountId())
+                   .set(ECSServiceKeys.awsAccountId, ecsService.getAwsAccountId())
                    .set(ECSServiceKeys.clusterId, ecsService.getClusterId())
                    .set(ECSServiceKeys.serviceArn, ecsService.getServiceArn())
                    .set(ECSServiceKeys.serviceName, ecsService.getServiceName())

@@ -19,6 +19,7 @@ import dev.morphia.query.UpdateOperations;
 import dev.morphia.query.UpdateResults;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +49,7 @@ public class CEClusterDao {
     return hPersistence.createQuery(CECluster.class).field(CEClusterKeys.accountId).equal(accountId).asList();
   }
 
-  public Map<String, String> getClusterIdNameMapping(String accountId) {
+  public Map<String, CECluster> getClusterIdMapping(String accountId) {
     return hPersistence.createQuery(CECluster.class)
         .field(CEClusterKeys.accountId)
         .equal(accountId)
@@ -56,7 +57,7 @@ public class CEClusterDao {
         .project(CEClusterKeys.clusterName, true)
         .asList()
         .stream()
-        .collect(Collectors.toMap(CECluster::getUuid, CECluster::getClusterName));
+        .collect(Collectors.toMap(CECluster::getUuid, Function.identity()));
   }
 
   public boolean deleteCluster(String uuid) {

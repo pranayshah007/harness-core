@@ -149,6 +149,7 @@ public class ECSRecommendationDAO {
     UpdateOperations<ECSServiceRecommendation> updateOperations =
         hPersistence.createUpdateOperations(ECSServiceRecommendation.class)
             .set(ECSServiceRecommendationKeys.accountId, ecsServiceRecommendation.getAccountId())
+            .set(ECSServiceRecommendationKeys.awsAccountId, ecsServiceRecommendation.getAwsAccountId())
             .set(ECSServiceRecommendationKeys.clusterId, ecsServiceRecommendation.getClusterId())
             .set(ECSServiceRecommendationKeys.clusterName, ecsServiceRecommendation.getClusterName())
             .set(ECSServiceRecommendationKeys.serviceArn, ecsServiceRecommendation.getServiceArn())
@@ -179,6 +180,10 @@ public class ECSRecommendationDAO {
       updateOperations =
           updateOperations.set(ECSServiceRecommendationKeys.launchType, ecsServiceRecommendation.getLaunchType());
     }
+    if (ecsServiceRecommendation.getAwsAccountId() != null) {
+      updateOperations =
+          updateOperations.set(ECSServiceRecommendationKeys.awsAccountId, ecsServiceRecommendation.getAwsAccountId());
+    }
     if (ecsServiceRecommendation.shouldShowRecommendation()) {
       updateOperations =
           updateOperations.set(ECSServiceRecommendationKeys.lastDayCost, ecsServiceRecommendation.getLastDayCost())
@@ -188,11 +193,12 @@ public class ECSRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
-  public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, @NonNull String clusterName,
-      @NonNull String serviceName, @Nullable Double monthlyCost, @Nullable Double monthlySaving,
-      boolean shouldShowRecommendation, @NonNull Instant lastReceivedUntilAt) {
+  public void upsertCeRecommendation(@NonNull String uuid, @NonNull String accountId, String awsAccountId,
+      @NonNull String clusterName, @NonNull String serviceName, @Nullable Double monthlyCost,
+      @Nullable Double monthlySaving, boolean shouldShowRecommendation, @NonNull Instant lastReceivedUntilAt) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, accountId)
+        .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
         .set(CE_RECOMMENDATIONS.ID, uuid)
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName)
         .set(CE_RECOMMENDATIONS.NAME, serviceName)
@@ -204,6 +210,7 @@ public class ECSRecommendationDAO {
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
+        .set(CE_RECOMMENDATIONS.NAMESPACE, awsAccountId)
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, monthlyCost)
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, shouldShowRecommendation)
