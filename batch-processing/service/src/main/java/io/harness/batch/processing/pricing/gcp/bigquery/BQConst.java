@@ -10,8 +10,6 @@ package io.harness.batch.processing.pricing.gcp.bigquery;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.text.SimpleDateFormat;
-
 @OwnedBy(HarnessTeam.CE)
 public class BQConst {
   private BQConst() {}
@@ -37,13 +35,14 @@ public class BQConst {
 
   public static final String GCP_VM_BILLING_QUERY =
       "SELECT %s as productfamily, SUM(cost) as cost, MAX(usage.amount_in_pricing_units) as gcpRate, resource.name as gcpResourceName, service.description gcpServiceName "
-      + "FROM `%s` "
-      + "WHERE DATE(_PARTITIONTIME) >= Date('%s') and "
-      + "DATE(_PARTITIONTIME) <= Date('%s') and "
-      + "%s and "
-      + "usage_start_time >= '%s' and usage_end_time <= '%s' and %s "
-      + "and service.description = 'Compute Engine' "
-      + "group by gcpResourceName, gcpServiceName, productfamily";
+      + " FROM `%s` "
+      + " WHERE "
+      + " usage_start_time >= '%s' "
+      + " and usage_end_time <= '%s' "
+      + " and %s "
+      + " and %s "
+      + " and service.description = 'Compute Engine' "
+      + " group by gcpResourceName, gcpServiceName, productfamily";
 
   public static final String GCP_DESCRIPTION_CONDITION = "(sku.description like '%E2 Instance Core running%' OR "
       + "sku.description like '%RAM cost%' OR "

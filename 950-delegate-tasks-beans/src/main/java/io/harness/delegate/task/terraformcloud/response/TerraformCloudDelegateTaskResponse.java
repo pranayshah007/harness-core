@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Data;
@@ -21,8 +23,11 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
-public class TerraformCloudDelegateTaskResponse implements DelegateTaskNotifyResponseData {
+public abstract class TerraformCloudDelegateTaskResponse implements DelegateTaskNotifyResponseData {
   protected CommandExecutionStatus commandExecutionStatus;
+  protected UnitProgressData unitProgressData;
   protected DelegateMetaInfo delegateMetaInfo;
   protected String errorSummary;
+
+  public abstract TerraformCloudTaskType getTaskType();
 }

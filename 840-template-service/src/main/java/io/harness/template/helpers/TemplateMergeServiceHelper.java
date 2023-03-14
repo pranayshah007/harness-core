@@ -45,6 +45,7 @@ import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.serializer.JsonUtils;
 import io.harness.template.beans.GetTemplateEntityRequest;
 import io.harness.template.beans.TemplateUniqueIdentifier;
@@ -96,19 +97,20 @@ public class TemplateMergeServiceHelper {
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(String accountId, String orgId, String projectId,
       JsonNode yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+    TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
     long start = System.currentTimeMillis();
     try (AutoLogContext ignore1 =
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS)) {
-      log.info("[TemplateService] Fetching Template from project {}, org {}, account {}", projectId, orgId, accountId);
-      TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
-
+      log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {}",
+          templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId);
       TemplateEntity template = getLinkedTemplateEntityHelper(accountId, orgId, projectId,
           templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getVersionLabel(),
           templateCacheMap, templateUniqueIdentifier.getVersionMaker(), loadFromCache);
       return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
     } finally {
-      log.info("[TemplateService] Fetching Template from project {}, org {}, account {} took {}ms ", projectId, orgId,
-          accountId, System.currentTimeMillis() - start);
+      log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {} took {}ms ",
+          templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId,
+          System.currentTimeMillis() - start);
     }
   }
 
@@ -126,6 +128,7 @@ public class TemplateMergeServiceHelper {
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
       String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
       boolean loadFromCache) {
+    log.info("Principal in getLinkedTemplateEntityHelper is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
     IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
@@ -317,7 +320,7 @@ public class TemplateMergeServiceHelper {
 
   private void validateAndAddToQueue(Map<String, TemplateEntity> remoteTemplates, Queue<YamlField> yamlNodeQueue) {
     remoteTemplates.forEach((templateIdentifier, templateEntity) -> {
-      YamlNode yamlNode = validateAndGetYamlNode(remoteTemplates.get(templateIdentifier).getYaml());
+      YamlNode yamlNode = validateAndGetYamlNode(remoteTemplates.get(templateIdentifier).getYaml(), templateIdentifier);
       yamlNodeQueue.addAll(yamlNode.fields());
     });
   }
@@ -467,6 +470,7 @@ public class TemplateMergeServiceHelper {
         .repoName(savedEntity.getRepo())
         .entityType(EntityType.TEMPLATE)
         .loadFromCache(loadFromCache)
+        .getOnlyFileContent(TemplateUtils.isExecutionFlow())
         .build();
   }
 
@@ -493,6 +497,8 @@ public class TemplateMergeServiceHelper {
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
       String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator) {
+    log.info("Principal in mergeTemplateInputsInObjectAlongWithOpaPolicy is {}",
+        SourcePrincipalContextBuilder.getSourcePrincipal());
     Map<String, Object> resMap = new LinkedHashMap<>();
     Map<String, Object> resMapWithTemplateRef = new LinkedHashMap<>();
     for (YamlField childYamlField : yamlNode.fields()) {

@@ -58,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  public static final String NULL_STR = "null";
   private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");

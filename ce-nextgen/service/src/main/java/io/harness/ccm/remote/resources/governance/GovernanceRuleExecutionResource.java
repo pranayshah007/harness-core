@@ -20,6 +20,7 @@ import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.helper.FilterValues;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
+import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -27,7 +28,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
@@ -43,6 +44,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.io.IOException;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -168,6 +170,36 @@ public class GovernanceRuleExecutionResource {
   }
 
   @GET
+  @Path("status/{ruleExecutionId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return logs for a rule execution status", nickname = "getRuleExecutionStatus")
+  @Operation(operationId = "getRuleExecutionStatus", summary = "Return logs for a rule execution status ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Return logs for a rule status",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public Response
+  getRuleExecutionStatus(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("ruleExecutionId") @NotNull @Valid String ruleExecutionId) {
+    RuleExecution ruleExecution = ruleExecutionService.get(accountId, ruleExecutionId);
+    if (ruleExecution.getExecutionStatus() == RuleExecutionStatusType.FAILED) {
+      if (ruleExecution.getErrorMessage() != null) {
+        throw new InvalidRequestException(ruleExecution.getErrorMessage());
+      } else {
+        throw new InvalidRequestException(
+            "Rule Execution Failed, Validate the policy or check if the you have relevant permission");
+      }
+    } else if (ruleExecution.getExecutionStatus() == RuleExecutionStatusType.SUCCESS) {
+      return getRuleExecutionDetails(accountId, ruleExecutionId);
+    }
+    return null;
+  }
+
+  @GET
   @Path("execution/{ruleExecutionId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Return logs for a rule execution", nickname = "getRuleExecutionDetails")
@@ -201,7 +233,16 @@ public class GovernanceRuleExecutionResource {
         // Other ways to return this file is by using a signed url concept. We can see this when adoption grows
         // https://cloud.google.com/storage/docs/access-control/signed-urls
         log.info("Fetching files from GCS");
-        ServiceAccountCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        GoogleCredentials credentials = bigQueryService.getCredentials(GCP_CREDENTIALS_PATH);
+        if (credentials == null) {
+          try {
+            log.info("WI: Using Google ADC");
+            credentials = GoogleCredentials.getApplicationDefault();
+          } catch (IOException e) {
+            log.error("Exception in using Google ADC", e);
+          }
+        }
+
         log.info("configuration.getGcpConfig().getGcpProjectId(): {}", configuration.getGcpConfig().getGcpProjectId());
         Storage storage = StorageOptions.newBuilder()
                               .setProjectId(configuration.getGcpConfig().getGcpProjectId())

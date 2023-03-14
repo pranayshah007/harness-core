@@ -19,4 +19,7 @@ public class DocumentationConstants {
   public static final String infrastructureRequestDTO =
 
       "{\"name\":\"infrastructure\",\"identifier\":\"infrastructureId\",\"description\":\"infrastructure description\",\"tags\":{},\"orgIdentifier\":\"default\",\"projectIdentifier\":\"projectIdentifier\",\"environmentRef\":\"environmentId\",\"deploymentType\":\"Kubernetes\",\"type\":\"KubernetesDirect\",\"yaml\":\"infrastructureDefinition:\\n  name: infrastructure\\n  identifier: infrastructure\\n  description: infrastructure description\\n  tags: {}\\n  orgIdentifier: default\\n  projectIdentifier: projectIdentifier\\n  environmentRef: environmentId\\n  deploymentType: Kubernetes\\n  type: KubernetesDirect\\n  spec:\\n    connectorRef: connectorId\\n    namespace: namespace\\n    releaseName: release-<+INFRA_KEY>\\n  allowSimultaneousDeployments: false\\n\"}";
+
+  public static final String serviceRequestDTO =
+      "{\"name\":\"serviceName\",\"identifier\":\"serviceId\",\"tags\":{},\"projectIdentifier\":\"s\",\"orgIdentifier\":\"default\",\"yaml\":\"service:\\n  name: serviceName\\n  identifier: serviceId\\n  tags: {}\\n  serviceDefinition:\\n    spec:\\n      artifacts:\\n        primary:\\n          primaryArtifactRef: artifactName\\n          sources:\\n            - spec:\\n                connectorRef: connectorId\\n                imagePath: imagePath\\n                tag: tagId\\n              identifier: artifactName\\n              type: DockerRegistry\\n    type: Kubernetes\\n\"}";
 }

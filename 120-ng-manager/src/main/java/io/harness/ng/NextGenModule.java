@@ -73,11 +73,14 @@ import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cd.license.CdLicenseUsageCgModule;
 import io.harness.cdng.NGModule;
+import io.harness.cdng.bamboo.BambooBuildStepHelperService;
+import io.harness.cdng.bamboo.BambooBuildStepHelperServiceImpl;
 import io.harness.cdng.customDeployment.eventlistener.CustomDeploymentEntityCRUDStreamEventListener;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.events.ConnectorEventHandler;
@@ -110,9 +113,11 @@ import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
 import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
 import io.harness.freeze.service.impl.FreezeSchemaServiceImpl;
+import io.harness.freeze.service.impl.FrozenExecutionServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.gitsync.GitSyncConfigClientModule;
@@ -133,6 +138,8 @@ import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.manage.ManagedScheduledExecutorService;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.module.AgentMtlsModule;
 import io.harness.modules.ModulesClientModule;
 import io.harness.mongo.AbstractMongoModule;
@@ -197,7 +204,6 @@ import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
 import io.harness.ng.core.event.VariableEntityCRUDStreamListener;
 import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
-import io.harness.ng.core.globalkms.client.NgConnectorManagerClientModule;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
@@ -664,7 +670,6 @@ public class NextGenModule extends AbstractModule {
     install(new DefaultOrganizationModule());
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
-    install(new io.harness.module.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
@@ -718,6 +723,8 @@ public class NextGenModule extends AbstractModule {
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
     bind(FreezeSchemaService.class).to(FreezeSchemaServiceImpl.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
+    bind(FrozenExecutionService.class).to(FrozenExecutionServiceImpl.class);
     install(new ProviderModule() {
       @Provides
       @Singleton
@@ -868,6 +875,7 @@ public class NextGenModule extends AbstractModule {
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
     bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
+    bind(BambooBuildStepHelperService.class).to(BambooBuildStepHelperServiceImpl.class);
     bind(EntityRefreshService.class).to(EntityRefreshServiceImpl.class);
     if (!appConfig.getShouldConfigureWithPMS().equals(TRUE)) {
       bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);

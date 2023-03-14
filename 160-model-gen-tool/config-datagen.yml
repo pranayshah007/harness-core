@@ -102,6 +102,16 @@ mongo:
     mongoTrustStorePassword:
   aliasDBName: harness
 
+dms-mongo:
+  uri: mongodb://localhost:27017/dms-harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: dms-harness
+
 watcherMetadataUrl: file:///local-storage/wingswatchers/watcherlocal.txt
 delegateMetadataUrl: file:///local-storage/wingsdelegates/delegatelocal.txt
 apiUrl: "https://localhost:9090"
@@ -310,6 +320,20 @@ totp:
     count: 10
     duration: 5
     durationUnit: MINUTES
+
+redisDelegateConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
+
 
 delegateQueueServiceConfig:
   queueServiceConfig:

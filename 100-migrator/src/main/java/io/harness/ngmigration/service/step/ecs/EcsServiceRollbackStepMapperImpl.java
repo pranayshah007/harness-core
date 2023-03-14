@@ -57,7 +57,6 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
     baseSetup(graphNode, stepNode);
     EcsRollingRollbackStepInfo stepInfo =
         EcsRollingRollbackStepInfo.infoBuilder()
-            .ecsRollingRollbackFnq("<+input>")
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
             .build();
     stepNode.setEcsRollingRollbackStepInfo(stepInfo);
@@ -66,7 +65,6 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 }

@@ -7,12 +7,12 @@
 
 package io.harness.batch.processing.config.k8s.recommendation.estimators;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.bytesFromMemoryAmount;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.coresFromCpuAmount;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.cpu;
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.memory;
 import static io.harness.ccm.RecommenderUtils.newCpuHistogram;
 import static io.harness.ccm.RecommenderUtils.newMemoryHistogram;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.bytesFromMemoryAmount;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.coresFromCpuAmount;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.cpu;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.memory;
 import static io.harness.rule.OwnerRule.AVMOHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;

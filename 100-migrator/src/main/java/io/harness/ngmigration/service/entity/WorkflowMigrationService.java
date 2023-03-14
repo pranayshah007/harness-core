@@ -9,6 +9,8 @@ package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.ngmigration.NGMigrationEntityType.PIPELINE;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.stream.Collectors.counting;
@@ -64,6 +66,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.impl.yaml.handler.workflow.RollingWorkflowYamlHandler;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.WorkflowService;
@@ -260,6 +263,7 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     TemplateEntityType templateType = workflowHandler.getTemplateType(workflow);
     YamlDTO yamlDTO;
+    NGMigrationEntityType ngType;
     if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
       List<StageElementWrapperConfig> stages;
       try {
@@ -285,6 +289,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .allowStageExecutions(true)
                                             .build())
                     .build();
+      ngType = PIPELINE;
     } else {
       JsonNode templateSpec;
       try {
@@ -324,6 +329,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .spec(templateSpec)
                                             .build())
                     .build();
+      ngType = TEMPLATE;
     }
 
     NGYamlFile ngYamlFile = NGYamlFile.builder()
@@ -331,6 +337,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                 .filename("workflows/" + name + ".yaml")
                                 .yaml(yamlDTO)
                                 .ngEntityDetail(NgEntityDetail.builder()
+                                                    .entityType(ngType)
                                                     .identifier(identifier)
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)

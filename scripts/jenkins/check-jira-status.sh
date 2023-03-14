@@ -92,7 +92,11 @@ else
   phase_injected=`echo "${jira_response}" | jq ".fields.customfield_10748" | tr -d '"'`
 fi
 
-
+# BT-1465 - Disallow PRs on issuetype question
+if [ $issuetype = "Question" ]; then
+  echo "ERROR: Cannot commit code on Question issue type."
+  exit 1
+fi
 
 if [[ "${BRANCH_PREFIX}" = "release/"  && ( ${PRIORITY_LIST[*]} =~ "${prioritytype}" ) ]]
 then

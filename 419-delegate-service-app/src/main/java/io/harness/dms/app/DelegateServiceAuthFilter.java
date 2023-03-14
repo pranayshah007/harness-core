@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AccountLogContext;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.security.annotations.PublicApiWithWhitelist;

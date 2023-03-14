@@ -20,6 +20,7 @@ public class OutcomeExpressionConstants {
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
+  public final String ARTIFACT = "artifact";
   public final String MANIFESTS = "manifests";
   public final String INFRASTRUCTURE_OUTCOME = "stage.spec.infrastructure.output";
   public final String INFRASTRUCTURE_GROUP = "infrastructureGroup";
@@ -76,4 +77,6 @@ public class OutcomeExpressionConstants {
   public final String ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME = "asgBlueGreenSwapServiceOutcome";
   public final String ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "asgBlueGreenPrepareRollbackDataOutcome";
   public final String ASG_BLUE_GREEN_DEPLOY_OUTCOME = "asgBlueGreenDeployOutcome";
+
+  public final String AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "awsLambdaFunctionPrepareRollbackOutcome";
 }

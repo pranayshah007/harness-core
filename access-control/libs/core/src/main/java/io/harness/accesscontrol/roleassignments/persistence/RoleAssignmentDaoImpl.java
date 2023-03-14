@@ -64,9 +64,10 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
   }
 
   @Override
-  public PageResponse<RoleAssignment> list(PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter) {
+  public PageResponse<RoleAssignment> list(
+      PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
-    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter, true);
+    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter, hideInternal);
     Page<RoleAssignmentDBO> assignmentPage = roleAssignmentRepository.findAll(criteria, pageable);
     return PageUtils.getNGPageResponse(assignmentPage.map(RoleAssignmentDBOMapper::fromDBO));
   }
@@ -95,18 +96,30 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
 
   @Override
   public Optional<RoleAssignment> delete(String identifier, String scopeIdentifier) {
-    return roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier)
-        .stream()
-        .findFirst()
-        .flatMap(r -> {
-          log.info("The role assignment is being deleted, {}", r);
-          return Optional.of(RoleAssignmentDBOMapper.fromDBO(r));
-        });
+    Optional<RoleAssignmentDBO> optionalRoleAssignmentDBO =
+        roleAssignmentRepository.deleteByIdentifierAndScopeIdentifier(identifier, scopeIdentifier);
+    if (optionalRoleAssignmentDBO.isPresent()) {
+      log.info("The role assignment is being deleted, {}", optionalRoleAssignmentDBO.get());
+      return Optional.of(RoleAssignmentDBOMapper.fromDBO(optionalRoleAssignmentDBO.get()));
+    }
+    return Optional.empty();
   }
 
   @Override
   public long deleteMulti(RoleAssignmentFilter roleAssignmentFilter) {
     return roleAssignmentRepository.deleteMulti(createCriteriaFromFilter(roleAssignmentFilter, false));
+  }
+
+  @Override
+  public long deleteMulti(String scopeIdentifier, List<String> identifiers) {
+    return roleAssignmentRepository.deleteMulti(createCriteriaForBulkDelete(scopeIdentifier, identifiers));
+  }
+
+  private Criteria createCriteriaForBulkDelete(String scopeIdentifier, List<String> roleAssignmentThatCanBeDeleted) {
+    return Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier)
+        .is(scopeIdentifier)
+        .and(RoleAssignmentDBOKeys.identifier)
+        .in(roleAssignmentThatCanBeDeleted);
   }
 
   private Criteria createCriteriaFromFilter(RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {

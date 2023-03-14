@@ -12,11 +12,14 @@ import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.gitx.USER_FLOW;
+import io.harness.manage.GlobalContextManager;
 
 import lombok.experimental.UtilityClass;
 
@@ -33,6 +36,7 @@ public class PipelineGitXHelper {
       if (!GitAwareContextHelper.isNullOrDefault(projectIdentifier)) {
         gitEntityInfo.setParentEntityProjectIdentifier(projectIdentifier);
       }
+      // setting connector and repo name. This is required to pass to child pipeline from parent pipeline
       if (!GitAwareContextHelper.isNullOrDefault(connectorRef)) {
         gitEntityInfo.setParentEntityConnectorRef(connectorRef);
       }
@@ -56,12 +60,35 @@ public class PipelineGitXHelper {
       if (EmptyPredicate.isNotEmpty(entityGitDetails.getFilePath())) {
         gitEntityInfo.setFilePath(entityGitDetails.getFilePath());
       }
+      if (isNotEmpty(entityGitDetails.getParentEntityConnectorRef())) {
+        gitEntityInfo.setParentEntityConnectorRef(entityGitDetails.getParentEntityConnectorRef());
+      }
+      if (isNotEmpty(entityGitDetails.getParentEntityRepoName())) {
+        gitEntityInfo.setParentEntityRepoName(entityGitDetails.getParentEntityRepoName());
+      }
     }
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
   }
 
   public boolean shouldRetryWithFallBackBranch(
       ScmException scmException, String branchTried, String entityFallBackBranch) {
     return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
         && (isNotEmpty(entityFallBackBranch) && !entityFallBackBranch.equals(branchTried));
+  }
+
+  public boolean isExecutionFlow() {
+    USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
+    if (user_flow != null) {
+      return user_flow.equals(USER_FLOW.EXECUTION);
+    }
+    return false;
+  }
+
+  public void setUserFlowContext(USER_FLOW userFlow) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        ThreadOperationContextHelper.getThreadOperationContext().withUserFlow(userFlow));
   }
 }

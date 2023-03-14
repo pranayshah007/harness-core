@@ -101,9 +101,14 @@ public class DeploymentLogAnalysisDTO {
   public static class ClusterSummary {
     int label;
     ClusterType clusterType;
+    ClusterType previousClusterType;
     int risk;
+    int previousRisk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
+    }
+    public Risk getPreviousRiskLevel() {
+      return Risk.valueOfRiskForDeploymentLogAnalysis(previousRisk);
     }
     double score;
     int count;

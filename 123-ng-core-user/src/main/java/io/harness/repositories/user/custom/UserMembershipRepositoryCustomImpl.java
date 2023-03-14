@@ -33,18 +33,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED, onConstructor = @__({ @Inject }))
 @OwnedBy(PL)
 @Slf4j
 public class UserMembershipRepositoryCustomImpl implements UserMembershipRepositoryCustom {
   private final MongoTemplate mongoTemplate;
-
-  @Override
-  public List<UserMembership> findAll(Criteria criteria) {
-    Query query = new Query(criteria);
-    return mongoTemplate.find(query, UserMembership.class);
-  }
 
   @Override
   public UserMembership findOne(Criteria criteria) {
@@ -101,5 +96,17 @@ public class UserMembershipRepositoryCustomImpl implements UserMembershipReposit
       }
       throw ex;
     }
+  }
+
+  @Override
+  public CloseableIterator<UserMembership> stream(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.stream(query, UserMembership.class);
+  }
+
+  @Override
+  public long count(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.count(query, UserMembership.class);
   }
 }

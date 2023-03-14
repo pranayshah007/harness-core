@@ -1,0 +1,43 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/bamboo:module",
+        "//950-delegate-tasks-beans:module",
+        "//954-connector-beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/azureartifacts/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/gar/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/gcr/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/githubpackages/beans:module",
+        "//960-api-services/src/main/java/io/harness/artifacts/jenkins/beans:module",
+        "//960-api-services/src/main/java/io/harness/security/encryption:module",
+        "//970-api-services-beans/src/main/java/io/harness/artifactory:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure:module",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/beans:module",
+        "//970-api-services-beans/src/main/java/io/harness/nexus:module",
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//970-api-services-beans/src/main/java/software/wings/helpers/ext/jenkins:module",
+        "//970-ng-commons:module",
+        "//980-commons/src/main/java/io/harness/artifact:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/filesystem:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:io_harness_cv_data_collection_dsl",
+    ],
+)
+
+run_analysis_per_module()

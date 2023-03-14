@@ -40,6 +40,7 @@ import io.harness.cdng.infra.beans.EcsInfraMapping;
 import io.harness.cdng.infra.beans.ElastigroupInfraMapping;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
@@ -92,6 +93,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ModuleVersionInfo.class);
     set.add(ScopeAware.class);
     set.add(AwsLambdaInfrastructureMapping.class);
+    set.add(K8sAwsInfraMapping.class);
   }
 
   @Override

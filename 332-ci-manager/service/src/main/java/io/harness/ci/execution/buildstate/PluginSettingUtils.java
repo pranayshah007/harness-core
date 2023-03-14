@@ -89,6 +89,9 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -183,8 +186,20 @@ public class PluginSettingUtils {
         return getRestoreCacheS3StepInfoEnvVariables((RestoreCacheS3StepInfo) stepInfo, identifier, timeout);
       case GIT_CLONE:
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, identifier);
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
+            (SscaOrchestrationStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+    }
+  }
+
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step) {
+    switch (step.getNonYamlInfo().getStepInfoType()) {
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
+      default:
+        return new HashMap<>();
     }
   }
 
@@ -234,6 +249,8 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.DOCKER_PASSWORD, PLUGIN_PASSW);
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);
         return map;
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);

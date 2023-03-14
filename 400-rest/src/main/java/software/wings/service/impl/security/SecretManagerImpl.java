@@ -802,6 +802,12 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
+  public String fetchSecretValue(String accountId, String secretRecordId) {
+    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
+    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+  }
+
+  @Override
   public EncryptedData encryptSecret(String accountId, SecretText secret, boolean validateScopes) {
     return secretService.encryptSecret(accountId, secret, validateScopes);
   }

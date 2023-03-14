@@ -86,12 +86,12 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     K8sScaleRequest k8sScaleRequest = (K8sScaleRequest) k8sDeployRequest;
+    LogCallback logCallback =
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
+    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+        k8sScaleRequest.getK8sInfraDelegateConfig(), logCallback);
 
-    KubernetesConfig kubernetesConfig =
-        containerDeploymentDelegateBaseHelper.createKubernetesConfig(k8sScaleRequest.getK8sInfraDelegateConfig());
-
-    init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(),
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+    init(k8sScaleRequest, k8SDelegateTaskParams, kubernetesConfig.getNamespace(), logCallback);
 
     if (resourceIdToScale == null) {
       return getSuccessResponse(K8sScaleResponse.builder().build());
@@ -185,7 +185,8 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     }
 
     executionLogCallback.saveExecutionLog("\nQuerying current replicas");
-    Integer currentReplicas = k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams);
+    Integer currentReplicas =
+        k8sTaskHelperBase.getCurrentReplicas(client, resourceIdToScale, k8sDelegateTaskParams, executionLogCallback);
     executionLogCallback.saveExecutionLog("Current replica count is " + currentReplicas);
 
     if (request.getInstanceUnitType() == null) {

@@ -633,7 +633,7 @@ public class DowntimeServiceImpl implements DowntimeService {
                        DowntimeListView.LastModified.builder()
                            .lastModifiedAt(downtime.getLastUpdatedAt())
                            .lastModifiedBy(
-                               downtime.getLastUpdatedBy() != null ? downtime.getLastUpdatedBy().getName() : "")
+                               downtime.getLastUpdatedBy() != null ? downtime.getLastUpdatedBy().getEmail() : "")
                            .build())
                    .duration(downtimeTransformerMap.get(downtime.getType())
                                  .getDowntimeDuration(downtime.getDowntimeDetails()))

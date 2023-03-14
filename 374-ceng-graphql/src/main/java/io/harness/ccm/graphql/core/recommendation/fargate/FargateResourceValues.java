@@ -24,16 +24,18 @@ public class FargateResourceValues {
 
   public FargateResourceValues() {
     allowedResourceValues.put((double) 256, Arrays.asList(0.5, 1.0, 2.0));
-    allowedResourceValues.put((double) 512, incrementalList(1, 4));
-    allowedResourceValues.put((double) 1024, incrementalList(2, 8));
-    allowedResourceValues.put((double) 2048, incrementalList(4, 16));
-    allowedResourceValues.put((double) 4096, incrementalList(8, 30));
+    allowedResourceValues.put((double) 512, incrementalList(1, 4, 1));
+    allowedResourceValues.put((double) 1024, incrementalList(2, 8, 1));
+    allowedResourceValues.put((double) 2048, incrementalList(4, 16, 1));
+    allowedResourceValues.put((double) 4096, incrementalList(8, 30, 1));
+    allowedResourceValues.put((double) 8192, incrementalList(16, 60, 4));
+    allowedResourceValues.put((double) 16384, incrementalList(32, 120, 8));
     allowedCPUValues.addAll(allowedResourceValues.keySet());
   }
 
-  private static List<Double> incrementalList(int from, int to) {
+  private static List<Double> incrementalList(int from, int to, int increment) {
     List<Double> list = new ArrayList<>();
-    for (int i = from; i <= to; i++) {
+    for (int i = from; i <= to; i += increment) {
       list.add((double) i);
     }
     return list;
@@ -65,10 +67,10 @@ public class FargateResourceValues {
   }
 
   private static double cpuMillisToCores(long cpuMillis) {
-    return (double) cpuMillis / (double) 1000;
+    return (double) cpuMillis / (double) 1024;
   }
 
   private static long cpuCoresToMillis(double cpuCores) {
-    return (long) cpuCores * 1000L;
+    return (long) cpuCores * 1024L;
   }
 }

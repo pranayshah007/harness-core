@@ -20,4 +20,5 @@ public class GitFileRequest extends ScmBaseRequest {
   String branch;
   String commitId;
   String filepath;
+  boolean getOnlyFileContent;
 }

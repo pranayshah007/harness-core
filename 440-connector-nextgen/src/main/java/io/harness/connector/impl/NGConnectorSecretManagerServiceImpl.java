@@ -112,7 +112,9 @@ public class NGConnectorSecretManagerServiceImpl implements NGConnectorSecretMan
             identifier, projectIdentifier, orgIdentifier));
       }
     } finally {
-      GlobalContextManager.upsertGlobalContextRecord(gitSyncBranchContext);
+      if (gitSyncBranchContext != null) {
+        GlobalContextManager.upsertGlobalContextRecord(gitSyncBranchContext);
+      }
     }
 
     ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.get().getConnector();

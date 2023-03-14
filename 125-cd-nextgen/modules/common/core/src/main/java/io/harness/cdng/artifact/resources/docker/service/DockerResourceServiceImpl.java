@@ -106,6 +106,10 @@ public class DockerResourceServiceImpl implements DockerResourceService {
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
     } catch (ExplanationException e) {
+      if (e.getMessage().contains("no metadata was returned")) {
+        throw new HintException(
+            HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH, new InvalidRequestException(e.getMessage(), USER));
+      }
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }

@@ -7,4 +7,4 @@
 
 package io.harness.delegate.task.aws.lambda;
 
-public enum AwsLambdaArtifactType { AMAZON_S3, ECR }
+public enum AwsLambdaArtifactType { AMAZON_S3, ECR, NEXUS_PACKAGE, ARTIFACTORY, JENKINS, CUSTOM_ARTIFACT }

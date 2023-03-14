@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
@@ -30,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PipelineAsyncValidationHandler implements Runnable {
   private final PipelineValidationEvent validationEvent;
+  private final boolean loadFromCache; // todo: see if this can be set to true always
   private final PipelineAsyncValidationService validationService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
@@ -58,24 +58,17 @@ public class PipelineAsyncValidationHandler implements Runnable {
 
   Pair<ValidationResult, TemplateMergeResponseDTO> validateTemplatesAndUpdateResult(PipelineEntity pipelineEntity) {
     ValidationResult templateValidationResult;
-    try {
-      TemplateMergeResponseDTO templateMergeResponse =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, false);
-      templateValidationResult =
-          ValidationResult.builder()
-              .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())
-              .build();
-      validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.IN_PROGRESS, templateValidationResult);
-      // Add Template Module Info temporarily to Pipeline Entity
-      pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponse));
-      return new Pair<>(templateValidationResult, templateMergeResponse);
-    } catch (NGTemplateResolveExceptionV2 e) {
-      ValidateTemplateInputsResponseDTO validateTemplateInputsResponse = e.getValidateTemplateInputsResponseDTO();
-      templateValidationResult =
-          ValidationResult.builder().templateInputsResponse(validateTemplateInputsResponse).build();
-      validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.FAILURE, templateValidationResult);
-      return new Pair<>(templateValidationResult, null);
-    }
+
+    TemplateMergeResponseDTO templateMergeResponse =
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
+    templateValidationResult =
+        ValidationResult.builder()
+            .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())
+            .build();
+    validationService.updateEvent(validationEvent.getUuid(), ValidationStatus.IN_PROGRESS, templateValidationResult);
+    // Add Template Module Info temporarily to Pipeline Entity
+    pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponse));
+    return new Pair<>(templateValidationResult, templateMergeResponse);
   }
 
   void evaluatePoliciesAndUpdateResult(PipelineEntity pipelineEntity, TemplateMergeResponseDTO templateMergeResponse,

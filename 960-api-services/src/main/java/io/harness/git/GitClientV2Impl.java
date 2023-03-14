@@ -19,6 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
+import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
 import static io.harness.git.Constants.GIT_YAML_LOG_PREFIX;
 import static io.harness.git.Constants.HARNESS_IO_KEY_;
@@ -1026,6 +1027,11 @@ public class GitClientV2Impl implements GitClientV2 {
 
   @Override
   public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException {
+    return fetchFilesByPath(DEFAULT_FETCH_IDENTIFIER, request);
+  }
+
+  @Override
+  public FetchFilesResult fetchFilesByPath(String identifier, FetchFilesByPathRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
     File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
@@ -1034,7 +1040,8 @@ public class GitClientV2Impl implements GitClientV2 {
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        checkoutFiles(request);
+        String latestCommitSHA = checkoutFiles(request);
+        GitFetchMetadataLocalThread.putCommitId(identifier, latestCommitSHA);
         List<GitFile> gitFiles = getFilteredGitFiles(request);
         resetWorkingDir(request);
 

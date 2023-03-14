@@ -208,10 +208,11 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   }
 
   @Override
-  public void checkAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public void checkAnomalyViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(PERSPECTIVE, null), COST_OVERVIEW_VIEW,
-        String.format(DESCRIPTIVE_PERMISSION_MISSING_MESSAGE, ANOMALIES, ANOMALIES, COST_OVERVIEW_VIEW, ALL_RESOURCES));
+        Resource.of(FOLDER, folderId), PERSPECTIVE_VIEW,
+        String.format(PERMISSION_MISSING_MESSAGE, VIEW_PERMISSION, RESOURCE_PERSPECTIVE));
   }
 
   @Override

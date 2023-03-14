@@ -1,41 +1,47 @@
 stages:
   - type: Custom
-    name: custom_stage_name
+    id: stage1
+    name: stage1
+    strategy:
+      type: matrix
+      spec:
+        axis:
+          command:
+            - "echo Hi"
+            - "echo Hi2"
+          a:
+            - "true"
+            - "false"
+        exclude:
+          - command: "echo Hi"
+            a: "true"
+        concurrency: 2
     spec:
-      strategy:
-        matrix:
-          service: ["Service1","Service2", "Service3"]
-          maxConcurrency: 2
       steps:
-        - type: Http
-          name: HttpStepWithStrategy
+        - type: ShellScript
           spec:
-            strategy:
-              parallelism: 3
-            method: GET
-            url: http://www.google.com
-        - type: Http
-          spec:
-            strategy:
-              matrix:
-                service: ["Service1","Service2", "Service3"]
-            method: GET
-            url: http://www.google.com
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s
   - type: Custom
-    name: custom_stage_name_1
+    id: stage2
+    name: stage2
     spec:
       steps:
-        - type: Http
-          name: HttpStepWithStrategy
+        - type: ShellScript
           spec:
-            strategy:
-              parallelism: 3
-            method: GET
-            url: http://www.google.com
-        - type: Http
-          spec:
-            strategy:
-              matrix:
-                service: ["Service1","Service2", "Service3"]
-            method: GET
-            url: http://www.google.com
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: <+matrix.command>
+                environmentVariables: []
+                outputVariables: []
+          timeout: 10s

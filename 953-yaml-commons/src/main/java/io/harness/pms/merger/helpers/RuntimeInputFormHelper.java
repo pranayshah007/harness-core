@@ -9,11 +9,13 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
@@ -81,10 +83,34 @@ public class RuntimeInputFormHelper {
               && !key.isType())) {
         templateMap.put(key, fullMap.get(key));
       }
-      if (keepInput && keepDefaultValues && key.isDefault()) {
-        templateMap.put(key, fullMap.get(key));
-      }
     });
+
+    /* we only want to keep "default" keys if they have a sibling as runtime input
+    For example, over here, the default of v1 should be kept, while v2 should not be kept at all
+    - name: v1
+      type: String
+      default: v1Val
+      value: <+input>
+    - name: v2
+      type: String
+      default: v2Val
+      value: fixedValue
+      This code block goes over all the runtime input fields (all of them are in templateMap). For every runtime input
+    key, it checks if it has a sibling with key "default" in the full pipeline map. If it is there, then the default key
+    is added to the template. In the above example, the "default" key for v2 is not even looped over
+     */
+    if (keepDefaultValues && EmptyPredicate.isNotEmpty(templateMap)) {
+      Map<FQN, Object> defaultKeys = new LinkedHashMap<>();
+      templateMap.keySet().forEach(key -> {
+        FQN parent = key.getParent();
+        FQN defaultSibling = FQN.duplicateAndAddNode(
+            parent, FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(YAMLFieldNameConstants.DEFAULT).build());
+        if (fullMap.containsKey(defaultSibling)) {
+          defaultKeys.put(defaultSibling, fullMap.get(defaultSibling));
+        }
+      });
+      templateMap.putAll(defaultKeys);
+    }
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
   }
@@ -193,7 +219,12 @@ public class RuntimeInputFormHelper {
     });
 
     // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    // TODO: we are updating the json node, due to race condition ConcurrentModificationException is possible here. To
+    // minimize the race condition, adding NotEmpty condition on templateMap. Find permanent way to solve this issue
+    if (isNotEmpty(templateMap)) {
+      JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
+      return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    }
+    return null;
   }
 }

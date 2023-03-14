@@ -8,6 +8,7 @@
 package io.harness.filters;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.yaml.ParameterField.isNotNull;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.COMMAND;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
@@ -77,12 +78,13 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
   }
 
   private void validateStrategy(StepGroupElementConfig field) {
-    StrategyConfig strategy = field.getStrategy();
-    if (strategy != null && containsCommandStep(field)
-        && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
-            || (strategy.getParallelism() != null
-                && (strategy.getParallelism().getValue() != null
-                    || strategy.getParallelism().getExpressionValue() != null)))) {
+    ParameterField<StrategyConfig> strategy = field.getStrategy();
+    if (isNotNull(strategy) && strategy.getValue() != null && containsCommandStep(field)
+        && ((isNotNull(strategy.getValue().getMatrixConfig())
+                && strategy.getValue().getMatrixConfig().getValue() != null)
+            || (strategy.getValue().getParallelism() != null
+                && (strategy.getValue().getParallelism().getValue() != null
+                    || strategy.getValue().getParallelism().getExpressionValue() != null)))) {
       throw new InvalidYamlException("Only repeat strategy is supported if step group contains command step.");
     }
   }

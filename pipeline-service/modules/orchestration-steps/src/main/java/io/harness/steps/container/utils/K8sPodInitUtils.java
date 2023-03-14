@@ -86,7 +86,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
-import io.harness.steps.plugin.ContainerStepInfo;
+import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
@@ -296,10 +296,17 @@ public class K8sPodInitUtils {
         .build();
   }
 
+  private List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
+    if (tolerations == null || tolerations.isExpression() || tolerations.getValue() == null) {
+      return null;
+    } else {
+      return tolerations.getValue();
+    }
+  }
+
   public List<PodToleration> getPodTolerations(ParameterField<List<Toleration>> parameterizedTolerations) {
     List<PodToleration> podTolerations = new ArrayList<>();
-    List<Toleration> tolerations = null;
-    //                    Con.resolveTolerations(parameterizedTolerations);
+    List<Toleration> tolerations = resolveTolerations(parameterizedTolerations);
     if (tolerations == null) {
       return podTolerations;
     }
@@ -512,7 +519,7 @@ public class K8sPodInitUtils {
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.SECRETS).build();
   }
 
-  public Pair<Integer, Integer> getStepRequest(ContainerStepInfo containerStepInfo, String accountId) {
+  public Pair<Integer, Integer> getStepRequest(ContainerStepSpec containerStepInfo, String accountId) {
     ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
     Integer containerCpuLimit =
         getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);

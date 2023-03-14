@@ -243,7 +243,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .mode(ExecutionMode.SYNC)
                                       .build();
 
-    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(nodeExecution);
+    when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
     executionStrategy.endNodeExecution(ambiance);
     verify(orchestrationEngine, times(1)).endNodeExecution(any());
 
@@ -258,7 +258,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                               .status(Status.INTERVENTION_WAITING)
                                               .mode(ExecutionMode.SYNC)
                                               .build();
-    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(nodeExecutionNotifyId);
+    when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), any())).thenReturn(nodeExecutionNotifyId);
     executionStrategy.endNodeExecution(ambiance);
 
     ArgumentCaptor<String> notifyId = ArgumentCaptor.forClass(String.class);

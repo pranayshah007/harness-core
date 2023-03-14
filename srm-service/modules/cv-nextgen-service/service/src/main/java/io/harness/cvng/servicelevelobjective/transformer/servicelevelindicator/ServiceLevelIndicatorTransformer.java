@@ -19,10 +19,10 @@ public abstract class ServiceLevelIndicatorTransformer<E extends ServiceLevelInd
 
   public final ServiceLevelIndicatorDTO getDTO(E serviceLevelIndicator) {
     return ServiceLevelIndicatorDTO.builder()
+        .type(serviceLevelIndicator.getSLIExecutionType())
         .spec(getSpec(serviceLevelIndicator))
         .name(serviceLevelIndicator.getName())
         .identifier(serviceLevelIndicator.getIdentifier())
-        .type(serviceLevelIndicator.getType())
         .sliMissingDataType(serviceLevelIndicator.getSliMissingDataType())
         .build();
   }

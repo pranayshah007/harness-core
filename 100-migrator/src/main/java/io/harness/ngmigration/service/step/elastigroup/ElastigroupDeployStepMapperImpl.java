@@ -13,6 +13,7 @@ import io.harness.cdng.common.capacity.CountCapacitySpec;
 import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepNode;
+import io.harness.data.structure.CompareUtils;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -26,6 +27,7 @@ import software.wings.sm.State;
 import software.wings.sm.states.spotinst.SpotInstDeployState;
 
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class ElastigroupDeployStepMapperImpl extends StepMapper {
   @Override
@@ -78,8 +80,12 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    SpotInstDeployState state1 = (SpotInstDeployState) getState(stepYaml1);
+    SpotInstDeployState state2 = (SpotInstDeployState) getState(stepYaml2);
+    return state1.getDownsizeInstanceUnitType() == state2.getDownsizeInstanceUnitType()
+        && StringUtils.equals(state1.getName(), state2.getName())
+        && CompareUtils.compareObjects(state1.getDownsizeInstanceCount(), state2.getDownsizeInstanceCount())
+        && CompareUtils.compareObjects(state1.getInstanceCount(), state2.getInstanceCount());
   }
 
   @Override

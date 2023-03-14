@@ -12,6 +12,7 @@ import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
+import io.harness.freeze.beans.response.FrozenExecutionDetails;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,9 @@ public interface FreezeCRUDService {
   void deleteFreezeConfig(String freezeId, String accountId, String orgId, String projectId);
 
   FreezeResponseDTO getFreezeConfig(String freezeIdentifier, String accountId, String orgId, String projectId);
+
+  FrozenExecutionDetails getFrozenExecutionDetails(
+      String accountId, String orgId, String projectId, String planExecutionId, String baseUrl);
 
   Page<FreezeSummaryResponseDTO> list(Criteria criteria, Pageable pageRequest);
 

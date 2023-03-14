@@ -78,6 +78,7 @@ import net.rcarz.jiraclient.Transition;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import okhttp3.Credentials;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -969,11 +970,13 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     String baseUrl =
         jiraConfig.getBaseUrl().endsWith("/") ? jiraConfig.getBaseUrl() : jiraConfig.getBaseUrl().concat("/");
     log.info(" Getting Jira Client from:  " + baseUrl);
-    JiraInternalConfig jiraNGConfig = JiraInternalConfig.builder()
-                                          .jiraUrl(baseUrl)
-                                          .username(jiraConfig.getUsername())
-                                          .password(new String(jiraConfig.getPassword()))
-                                          .build();
+    JiraInternalConfig jiraNGConfig =
+        JiraInternalConfig.builder()
+            .jiraUrl(baseUrl)
+            .username(jiraConfig.getUsername())
+            .password(new String(jiraConfig.getPassword()))
+            .authToken(Credentials.basic(jiraConfig.getUsername(), new String(jiraConfig.getPassword())))
+            .build();
     return new io.harness.jira.JiraClient(jiraNGConfig);
   }
 

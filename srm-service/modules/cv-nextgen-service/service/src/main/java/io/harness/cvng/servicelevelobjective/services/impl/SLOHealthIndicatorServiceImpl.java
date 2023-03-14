@@ -16,13 +16,10 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -35,7 +32,6 @@ import java.util.Objects;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private GraphDataService graphDataService;
   @Inject private Clock clock;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
@@ -92,17 +88,6 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
         .in(serviceLevelObjectiveIdentifiers)
         .asList();
   }
-  @Override
-  public void upsert(ServiceLevelIndicator serviceLevelIndicator) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(serviceLevelIndicator.getAccountId())
-                                      .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
-                                      .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
-                                      .build();
-    SimpleServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
-    upsert(projectParams, serviceLevelObjective);
-  }
 
   @Override
   public void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier) {
@@ -146,6 +131,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     } else {
       UpdateOperations<SLOHealthIndicator> updateOperations =
           hPersistence.createUpdateOperations(SLOHealthIndicator.class);
+      updateOperations.set(SLOHealthIndicatorKeys.monitoredServiceIdentifier, monitoredServiceIdentifier);
       updateOperations.set(
           SLOHealthIndicatorKeys.errorBudgetRemainingPercentage, sloGraphData.getErrorBudgetRemainingPercentage());
       updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRisk,

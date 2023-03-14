@@ -9,23 +9,28 @@ package io.harness.delegate.task.terraformcloud.response;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.EqualsAndHashCode;
-import lombok.Setter;
 import lombok.Value;
-import lombok.experimental.NonFinal;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
+// Unsupported this class should not be used anymore
 public class TerraformCloudRunTaskResponse extends TerraformCloudDelegateTaskResponse {
-  @NonFinal @Setter UnitProgressData unitProgressData;
-
   Integer detailedExitCode;
   String tfPlanJsonFileId;
   String runId;
+  String lastAppliedRun;
   String tfOutput;
+  String policyChecksJsonFileId;
+  String workspaceId;
+
+  @Override
+  public TerraformCloudTaskType getTaskType() {
+    return null;
+  }
 }

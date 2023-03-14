@@ -35,6 +35,11 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - UnitTests-2: `trigger ut2`
 - UnitTests-3: `trigger ut3`
 - UnitTests-4: `trigger ut4`
+- UnitTests-5: `trigger ut5`
+- UnitTests-6: `trigger ut6`
+- UnitTests-7: `trigger ut7`
+- UnitTests-8: `trigger ut8`
+- UnitTests-9: `trigger ut9`
 - FunctionalTest1: `trigger ft1`
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`
@@ -42,6 +47,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - SonarScan: `trigger ss`
 - GitLeaks: `trigger gitleaks`
 - Trigger all Checks: `trigger smartchecks`
+- Go Build: `trigger gobuild`
 </details>
 
 ## PR check failures and solutions

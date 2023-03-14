@@ -149,8 +149,8 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
     builder.setTarget(baseRef);
     builder.setFork(productNode.get("head").get("repo").get("full_name").textValue());
 
-    builder.setLink(productNode.get("head").get("repo").get("html_url").textValue());
-    builder.setClosed(!"state".equalsIgnoreCase(productNode.get("state").textValue()));
+    builder.setLink(productNode.get("html_url").textValue());
+    builder.setClosed(!"open".equalsIgnoreCase(productNode.get("state").textValue()));
     builder.setMerged(productNode.get("merged_at") != null && isNotBlank(productNode.get("merged_at").textValue()));
 
     builder.setHead(Reference.newBuilder()

@@ -38,11 +38,10 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.ng.core.CorrelationContext;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
@@ -83,7 +82,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Inject private MetricPackService metricPackService;
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject HPersistence hPersistence;
-  @Inject Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
+  @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
 
   @Mock OnboardingService onboardingService;
@@ -126,9 +125,8 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
     ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
-            .getEntity(builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef(), true);
+        serviceLevelIndicatorEntityAndDTOTransformer.getEntity(builderFactory.getProjectParams(),
+            serviceLevelIndicatorDTO, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), true);
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
 

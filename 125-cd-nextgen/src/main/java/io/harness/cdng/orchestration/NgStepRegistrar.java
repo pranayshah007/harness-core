@@ -28,6 +28,7 @@ import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
+import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamRollbackStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
@@ -38,6 +39,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
+import io.harness.cdng.bamboo.BambooBuildStep;
 import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
@@ -62,6 +64,7 @@ import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.gitops.syncstep.SyncStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStep;
@@ -154,6 +157,7 @@ public class NgStepRegistrar {
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
+    engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
@@ -274,10 +278,12 @@ public class NgStepRegistrar {
     engineSteps.put(GoogleFunctionsTrafficShiftStep.STEP_TYPE, GoogleFunctionsTrafficShiftStep.class);
     engineSteps.put(GoogleFunctionsRollbackStep.STEP_TYPE, GoogleFunctionsRollbackStep.class);
     engineSteps.put(TerraformCloudRunStep.STEP_TYPE, TerraformCloudRunStep.class);
+    engineSteps.put(BambooBuildStep.STEP_TYPE, BambooBuildStep.class);
     engineSteps.put(TerraformCloudRollbackStep.STEP_TYPE, TerraformCloudRollbackStep.class);
 
     // AWS Lambda
     engineSteps.put(AwsLambdaDeployStep.STEP_TYPE, AwsLambdaDeployStep.class);
+    engineSteps.put(AwsLambdaRollbackStep.STEP_TYPE, AwsLambdaRollbackStep.class);
 
     // AWS SAM
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);

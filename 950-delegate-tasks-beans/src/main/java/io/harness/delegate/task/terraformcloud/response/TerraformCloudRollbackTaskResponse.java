@@ -10,6 +10,7 @@ package io.harness.delegate.task.terraformcloud.response;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
 
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
@@ -27,4 +28,10 @@ public class TerraformCloudRollbackTaskResponse extends TerraformCloudDelegateTa
   Integer detailedExitCode;
   String runId;
   String tfOutput;
+  String policyChecksJsonFileId;
+
+  @Override
+  public TerraformCloudTaskType getTaskType() {
+    return TerraformCloudTaskType.ROLLBACK;
+  }
 }

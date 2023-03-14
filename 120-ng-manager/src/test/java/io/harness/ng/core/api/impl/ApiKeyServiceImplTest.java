@@ -10,6 +10,7 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -29,18 +30,28 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.api.ApiKeyService;
+import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ApiKeyDTO;
+import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.entities.ApiKey;
+import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.rule.Owner;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
 
+import com.google.common.collect.ImmutableList;
 import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.NotAuthorizedException;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +72,11 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
   private AccountOrgProjectValidator accountOrgProjectValidator;
   private AccountService accountService;
   private TransactionTemplate transactionTemplate;
+  private NgUserService ngUserService;
+
+  private static final String TEST_PRINCIPAL = "TEST_PRINCIPAL";
+  private static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
+  private static final String TEST_USER_EMAIL = "test.user@harness.io";
 
   @Before
   public void setup() throws IllegalAccessException {
@@ -73,6 +89,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     apiKeyService = new ApiKeyServiceImpl();
     accountOrgProjectValidator = mock(AccountOrgProjectValidator.class);
     accountService = mock(AccountService.class);
+    ngUserService = mock(NgUserService.class);
     transactionTemplate = mock(TransactionTemplate.class);
 
     apiKeyDTO = ApiKeyDTO.builder()
@@ -105,6 +122,11 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     FieldUtils.writeField(apiKeyService, "accountOrgProjectValidator", accountOrgProjectValidator, true);
     FieldUtils.writeField(apiKeyService, "accountService", accountService, true);
     FieldUtils.writeField(apiKeyService, "transactionTemplate", transactionTemplate, true);
+    FieldUtils.writeField(apiKeyService, "ngUserService", ngUserService, true);
+
+    Principal principal = new UserPrincipal(TEST_PRINCIPAL, TEST_USER_EMAIL, "", TEST_ACCOUNT_ID);
+    SecurityContextBuilder.setContext(principal);
+    SourcePrincipalContextBuilder.setSourcePrincipal(principal);
   }
 
   @Test
@@ -185,5 +207,42 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     List<ApiKeyDTO> apiKeys = apiKeyService.listApiKeys(
         accountIdentifier, orgIdentifier, projectIdentifier, SERVICE_ACCOUNT, parentIdentifier, new ArrayList<>());
     assertThat(apiKeys.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void validateParentIdentifier_userBelongToAccount_noExceptionThrown() {
+    // Arrange
+    doReturn(
+        Optional.of(UserInfo.builder()
+                        .email(TEST_USER_EMAIL)
+                        .uuid(TEST_PRINCIPAL)
+                        .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(TEST_ACCOUNT_ID).build()))
+                        .build()))
+        .when(ngUserService)
+        .getUserById(any());
+
+    // Act
+    apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
+  }
+
+  @Test(expected = NotAuthorizedException.class)
+  @Owner(developers = GAURAV_NANDA)
+  @Category(UnitTests.class)
+  public void validateParentIdentifier_userDoesNotBelongToAccount_notAuthorizedExceptionThrown() {
+    // Arrange
+    String randomAccountId = "34353";
+    doReturn(
+        Optional.of(UserInfo.builder()
+                        .email(TEST_USER_EMAIL)
+                        .uuid(TEST_PRINCIPAL)
+                        .accounts(ImmutableList.of(GatewayAccountRequestDTO.builder().uuid(randomAccountId).build()))
+                        .build()))
+        .when(ngUserService)
+        .getUserById(any());
+
+    // Act
+    apiKeyService.validateParentIdentifier(TEST_ACCOUNT_ID, null, null, ApiKeyType.USER, TEST_PRINCIPAL);
   }
 }

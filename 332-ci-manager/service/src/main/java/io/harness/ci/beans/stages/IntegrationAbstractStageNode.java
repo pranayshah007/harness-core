@@ -7,7 +7,7 @@
 
 package io.harness.beans.stages;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
@@ -22,6 +22,6 @@ import java.util.List;
 public abstract class IntegrationAbstractStageNode extends AbstractStageNode {
   @ApiModelProperty(dataType = SwaggerConstants.FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH)
   @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<List<FailureStrategyConfig>> failureStrategies;
 }

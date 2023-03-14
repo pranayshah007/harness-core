@@ -225,9 +225,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps) {
-    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps);
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
+    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
   }
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(

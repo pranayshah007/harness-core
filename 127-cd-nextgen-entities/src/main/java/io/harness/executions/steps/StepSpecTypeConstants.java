@@ -16,6 +16,7 @@ public interface StepSpecTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  String GITOPS_SYNC = "GitOpsSync";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -61,6 +62,7 @@ public interface StepSpecTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String DEPLOYMENT_STAGE = "Deployment";
   String JENKINS_BUILD = "JenkinsBuild";
+  String BAMBOO_BUILD = "BambooBuild";
 
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
@@ -120,4 +122,6 @@ public interface StepSpecTypeConstants {
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
+
+  String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
 }

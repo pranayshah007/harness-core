@@ -20,6 +20,7 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.AccessLevel;
@@ -62,7 +63,13 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
 
   @Override
   public PageResponse<RoleAssignment> list(PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter) {
-    return roleAssignmentDao.list(pageRequest, roleAssignmentFilter);
+    return list(pageRequest, roleAssignmentFilter, true);
+  }
+
+  @Override
+  public PageResponse<RoleAssignment> list(
+      PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
+    return roleAssignmentDao.list(pageRequest, roleAssignmentFilter, hideInternal);
   }
 
   @Override
@@ -113,6 +120,11 @@ public class RoleAssignmentServiceImpl implements RoleAssignmentService {
   @Override
   public long deleteMulti(RoleAssignmentFilter roleAssignmentFilter) {
     return roleAssignmentDao.deleteMulti(roleAssignmentFilter);
+  }
+
+  @Override
+  public long deleteMulti(String scopeIdentifier, List<String> identifiers) {
+    return roleAssignmentDao.deleteMulti(scopeIdentifier, identifiers);
   }
 
   @Override

@@ -18,6 +18,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class EcsRollingDeployResult {
+  private String serviceName;
   private String region;
   private List<EcsTask> ecsTasks;
 }

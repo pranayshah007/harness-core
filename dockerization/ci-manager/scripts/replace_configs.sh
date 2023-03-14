@@ -71,6 +71,10 @@ if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   export GCR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image=env(GCR_PUSH_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$ACR_PUSH_IMAGE" ]]; then
+  export ACR_PUSH_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushACRConfig.image=env(ACR_PUSH_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$ENABLE_AUTH" ]]; then
   export ENABLE_AUTH; yq -i '.enableAuth=env(ENABLE_AUTH)' $CONFIG_FILE
 fi
@@ -431,3 +435,6 @@ replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"

@@ -597,13 +597,6 @@ public class UserServiceImpl implements UserService {
 
     Account createdAccount = accountService.save(account, false);
 
-    if (!featureFlagService.isEnabled(FeatureName.CDNG_ENABLED, createdAccount.getUuid())
-        && "CD".equalsIgnoreCase(userInvite.getIntent())) {
-      createdAccount.setDefaultExperience(DefaultExperience.CG);
-
-      accountService.update(createdAccount);
-    }
-
     // create user
     User user = User.Builder.anUser()
                     .email(userInvite.getEmail())
@@ -2042,6 +2035,7 @@ public class UserServiceImpl implements UserService {
       user.setName(userInvite.getName().trim());
       user.setGivenName(userInvite.getGivenName());
       user.setFamilyName(userInvite.getFamilyName());
+      user.setExternalUserId(userInvite.getExternalId());
       user.setRoles(new ArrayList<>());
       user.setEmailVerified(true);
       user.setAppId(GLOBAL_APP_ID);
@@ -3950,14 +3944,16 @@ public class UserServiceImpl implements UserService {
   }
 
   public List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset,
-      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance) {
+      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
       query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
     } else {
       query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
     }
-    query.criteria(UserKeys.disabled).notEqual(true);
+    if (!includeDisabled) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+    }
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);

@@ -20,7 +20,7 @@
         } ],
         "body" : [ {
           "matcher" : "exact",
-          "value" : "{\"size\":10000,\"query\":{\"bool\":{\"filter\":[{\"query_string\":{\"query\":\"message: unmatchableString\"}},{\"range\":{\"@timestamp\":{\"lte\":1673379038498,\"gt\":1673378978498}}}]}},\"from\":\"0\"}"
+          "value" : "{\"size\":10000,\"query\":{\"bool\":{\"filter\":[{\"query_string\":{\"query\":\"message: unmatchableString\"}},{\"range\":{\"@timestamp\":{\"format\":\"epoch_millis\",\"lte\":1673379038498,\"gt\":1673378978498}}}]}},\"from\":\"0\"}"
         } ]
       },
       "response" : {

@@ -29,6 +29,8 @@ public interface GitClientV2 {
 
   FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException;
 
+  FetchFilesResult fetchFilesByPath(String identifier, FetchFilesByPathRequest request) throws IOException;
+
   DiffResult diff(DiffRequest request);
 
   CommitAndPushResult commitAndPush(CommitAndPushRequest request);

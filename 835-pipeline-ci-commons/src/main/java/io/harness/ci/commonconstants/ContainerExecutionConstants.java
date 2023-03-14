@@ -83,4 +83,9 @@ public class ContainerExecutionConstants {
   public static final String UNIX_STEP_COMMAND = "/addon/bin/ci-addon";
   public static final String WIN_STEP_COMMAND = "C:\\addon\\bin\\addon.exe";
   public static final String TMP_PATH = "/addon/tmp/";
+
+  public static final String GOLANG_CACHE_ENV_NAME = "GOCACHE";
+  public static final String GOLANG_CACHE_DIR = "/harness/.go/";
+  public static final String GRADLE_CACHE_ENV_NAME = "GRADLE_USER_HOME";
+  public static final String GRADLE_CACHE_DIR = "/harness/.gradle/";
 }

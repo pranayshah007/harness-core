@@ -253,10 +253,22 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Attestation": {
+      "type": "object",
+      "required": [
+        "privateKey"
+      ],
+      "properties": {
+        "privateKey": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -394,6 +406,77 @@
           "$ref": "#/definitions/CodeBase"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Capabilities": {
+      "type": "object",
+      "properties": {
+        "add": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "drop": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CdSscaOrchestrationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "attestation",
+            "infrastructure",
+            "source",
+            "tool"
+          ],
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/Attestation"
+            },
+            "infrastructure": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ContainerK8sInfra"
+                }
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "tool": {
+              "$ref": "#/definitions/SbomOrchestrationTool"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Clause": {
@@ -556,13 +639,81 @@
         "resources"
       ],
       "properties": {
+        "annotations": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "automountServiceAccountToken": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "connectorRef": {
           "type": "string"
+        },
+        "containerSecurityContext": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/SecurityContext"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "initTimeout": {
+          "type": "string"
+        },
+        "labels": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "namespace": {
           "type": "string",
           "minLength": 1,
           "maxLength": 2147483647
+        },
+        "nodeSelector": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "os": {
           "oneOf": [
@@ -581,8 +732,55 @@
             }
           ]
         },
+        "priorityClassName": {
+          "type": "string"
+        },
         "resources": {
           "$ref": "#/definitions/ContainerResource"
+        },
+        "runAsUser": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "serviceAccountName": {
+          "type": "string"
+        },
+        "tolerations": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Toleration"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "volumes": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ContainerVolume"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -768,6 +966,21 @@
           "type": "string",
           "enum": [
             "KubernetesDirect"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ContainerVolume": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "EmptyDir",
+            "PersistentVolumeClaim",
+            "HostPath"
           ]
         }
       },
@@ -1043,6 +1256,51 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EmptyDirYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ContainerVolume"
+        },
+        {
+          "type": "object",
+          "required": [
+            "mountPath",
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "mountPath": {
+              "type": "string"
+            },
+            "spec": {
+              "$ref": "#/definitions/EmptyDirYamlSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "EmptyDir",
+                "PersistentVolumeClaim",
+                "HostPath"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EmptyDirYamlSpec": {
+      "type": "object",
+      "properties": {
+        "medium": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ExecutionElementConfig": {
@@ -1368,6 +1626,53 @@
         }
       ]
     },
+    "HostPathYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ContainerVolume"
+        },
+        {
+          "type": "object",
+          "required": [
+            "mountPath",
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "mountPath": {
+              "type": "string"
+            },
+            "spec": {
+              "$ref": "#/definitions/HostPathYamlSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "EmptyDir",
+                "PersistentVolumeClaim",
+                "HostPath"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HostPathYamlSpec": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -1462,6 +1767,25 @@
               "enum": [
                 "Ignore"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ImageSbomSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomSourceSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -2355,6 +2679,53 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PersistentVolumeClaimYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ContainerVolume"
+        },
+        {
+          "type": "object",
+          "required": [
+            "mountPath",
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "mountPath": {
+              "type": "string"
+            },
+            "spec": {
+              "$ref": "#/definitions/PersistentVolumeClaimYamlSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "EmptyDir",
+                "PersistentVolumeClaim",
+                "HostPath"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PersistentVolumeClaimYamlSpec": {
+      "type": "object",
+      "required": [
+        "claimName"
+      ],
+      "properties": {
+        "claimName": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PipelineConfig": {
       "type": "object",
       "properties": {
@@ -3020,6 +3391,80 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomOrchestrationSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SbomOrchestrationTool": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Syft"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Syft"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SyftSbomOrchestration"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "image"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "image"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ImageSbomSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SbomSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -3050,6 +3495,90 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SecurityContext": {
+      "type": "object",
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "capabilities": {
+          "$ref": "#/definitions/Capabilities"
+        },
+        "privileged": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "procMount": {
+          "type": "string"
+        },
+        "readOnlyRootFilesystem": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "runAsGroup": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "runAsNonRoot": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "runAsUser": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "Serve": {
@@ -3665,7 +4194,16 @@
               ]
             },
             "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/StrategyConfig"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>$",
+                  "minLength": 1
+                }
+              ]
             },
             "template": {
               "$ref": "#/definitions/TemplateLinkConfig"
@@ -3709,7 +4247,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "^<\\+input>$",
                   "minLength": 1
                 }
               ]
@@ -3734,7 +4272,16 @@
             },
             "spec": { },
             "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/StrategyConfig"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>$",
+                  "minLength": 1
+                }
+              ]
             },
             "tags": {
               "type": "object",
@@ -3768,7 +4315,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "^<\\+input>$",
                   "minLength": 1
                 }
               ]
@@ -3933,7 +4480,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
@@ -3947,7 +4494,16 @@
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "timeout": {
           "type": "string",
@@ -3963,7 +4519,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
@@ -3983,6 +4539,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BarrierStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CdSscaOrchestration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CdSscaOrchestrationStepInfo"
               }
             }
           }
@@ -4293,7 +4865,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
@@ -4315,7 +4887,16 @@
           "minItems": 1
         },
         "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>$",
+              "minLength": 1
+            }
+          ]
         },
         "template": {
           "$ref": "#/definitions/TemplateLinkConfig"
@@ -4327,7 +4908,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "^<\\+input>$",
               "minLength": 1
             }
           ]
@@ -4487,6 +5068,25 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SyftSbomOrchestration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SbomOrchestrationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": [
+                "spdx-json"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TagBuildSpec": {
       "allOf": [
         {
@@ -4524,6 +5124,28 @@
         "versionLabel": {
           "type": "string",
           "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "Toleration": {
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "tolerationSeconds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "value": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

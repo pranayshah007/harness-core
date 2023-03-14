@@ -469,8 +469,16 @@ public enum TaskType {
   ECS_TASK_ARN_ROLLING_DEPLOY_NG(TaskGroup.ECS, "ECS Rolling Task"),
   ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
   ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
+
   BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO),
-  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task");
+  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task"),
+  AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Prepare Rollback Task NG"),
+  AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Rollback Task NG"),
+  TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
+  BAMBOO_TRIGGER_JOB(TaskGroup.BAMBOO),
+  TERRAFORM_TASK_NG_V4(TaskGroup.TERRAFORM_NG, "Terraform Task NG V4"),
+  TERRAFORM_CLOUD_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_CLOUD, "Terraform Cloud Cleanup Task", true),
+  OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG(TaskGroup.HELM, "Task to query OCI Helm Docker API List Tags");
 
   private final TaskGroup taskGroup;
   private final String displayName;

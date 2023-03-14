@@ -10,6 +10,8 @@ package io.harness.delegate.executor.serviceproviders;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.DelegateFileManagerBase;
+import io.harness.secrets.SecretsDelegateCacheHelperService;
+import io.harness.secrets.SecretsDelegateCacheService;
 
 import software.wings.delegatetasks.DelegateLogService;
 
@@ -22,5 +24,7 @@ public class ServiceProvidersModule extends AbstractModule {
     bind(DelegateFileManagerBase.class).to(DelegateFileManagerNoopImpl.class);
     bind(DelegateLogService.class).to(DelegateLogServiceNoopImpl.class);
     bind(DelegatePropertiesServiceProvider.class).to(DelegatePropertiesServiceProviderNoopImpl.class);
+    bind(SecretsDelegateCacheService.class).to(SecretDelegateCacheServiceNoopImpl.class);
+    bind(SecretsDelegateCacheHelperService.class).to(SecretsDelegateCacheHelperServiceNoopImpl.class);
   }
 }

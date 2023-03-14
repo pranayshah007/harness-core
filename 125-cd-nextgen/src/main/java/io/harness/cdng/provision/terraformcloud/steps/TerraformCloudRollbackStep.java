@@ -8,35 +8,37 @@
 package io.harness.cdng.provision.terraformcloud.steps;
 
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.ROLLBACK;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudRollbackStepParameters;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudStepHelper;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfigDAL;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome;
-import io.harness.cdng.provision.terraformcloud.output.TerraformCloudConfigSweepingOutput;
-import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
-import io.harness.delegate.beans.terraformcloud.RollbackType;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.RollbackType;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
-import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -46,11 +48,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -78,13 +75,12 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private TerraformCloudStepHelper helper;
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private TerraformCloudConfigDAL terraformCloudConfigDAL;
-  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -93,7 +89,12 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // nothing to validate here
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD)) {
+      throw new AccessDeniedException(
+          format("Step is not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TERRAFORM_CLOUD.name()),
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
   }
 
   @Override
@@ -107,84 +108,57 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
         ParameterFieldHelper.getParameterFieldValue(rollbackStepParameters.getProvisionerIdentifier());
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
 
-    try (HIterator<TerraformCloudConfig> configIterator = terraformCloudConfigDAL.getIterator(ambiance, entityId)) {
-      if (!configIterator.hasNext()) {
-        return TaskRequest.newBuilder()
-            .setSkipTaskRequest(
-                SkipTaskRequest.newBuilder()
-                    .setMessage(format(
-                        "No successful Provisioning found with provisionerIdentifier: [%s]. Skipping terraform cloud rollback.",
-                        provisionerIdentifier))
-                    .build())
-            .build();
-      }
+    TerraformCloudConfig rollbackConfig =
+        terraformCloudConfigDAL.getFirstTerraformCloudConfigForStage(ambiance, provisionerIdentifier);
 
-      TerraformCloudConfig rollbackConfig = null;
-      TerraformCloudConfig currentConfig = null;
-      while (configIterator.hasNext()) {
-        rollbackConfig = configIterator.next();
-        if (rollbackConfig.getPipelineExecutionId().equals(ambiance.getPlanExecutionId())) {
-          if (currentConfig == null) {
-            currentConfig = rollbackConfig;
-          }
-        } else {
-          // Found previous successful terraform cloud config
-          break;
-        }
-      }
-
-      RollbackType rollbackTaskType;
-      if (rollbackConfig == currentConfig) {
-        log.info(format(
-            "No previous successful Terraform cloud execution exists with the identifier : [%s], hence Destroying.",
-            provisionerIdentifier));
-        rollbackTaskType = RollbackType.DESTROY;
-      } else {
-        log.info(format("Inheriting Terraform Cloud Config from last successful Terraform Cloud Pipeline Execution  %s",
-            rollbackConfig));
-        rollbackTaskType = RollbackType.APPLY;
-      }
-
-      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TERRAFORM_CLOUD_CONFIG,
-          TerraformCloudConfigSweepingOutput.builder()
-              .terraformCloudConfig(rollbackConfig)
-              .rollbackTaskType(rollbackTaskType)
-              .build(),
-          StepOutcomeGroup.STEP.name());
-
-      TerraformCloudConnectorDTO terraformCloudConnector =
-          helper.getTerraformCloudConnectorWithRef(rollbackConfig.getConnectorRef(), ambiance);
-
-      TerraformCloudTaskParams terraformCloudTaskParams =
-          TerraformCloudTaskParams.builder()
-              .terraformCloudTaskType(TerraformCloudTaskType.ROLLBACK)
-              .accountId(AmbianceUtils.getAccountId(ambiance))
-              .runId(rollbackConfig.getRunId())
-              .rollbackType(rollbackTaskType)
-              .entityId(entityId)
-              .terraformCloudConnectorDTO(terraformCloudConnector)
-              .discardPendingRuns(
-                  ParameterFieldHelper.getBooleanParameterFieldValue(rollbackStepParameters.getDiscardPendingRuns()))
-              .encryptionDetails(encryptionHelper.getEncryptionDetail(terraformCloudConnector.getCredential().getSpec(),
-                  AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-                  AmbianceUtils.getProjectIdentifier(ambiance)))
-              .message(ParameterFieldHelper.getParameterFieldValue(rollbackStepParameters.getMessage()))
-              .build();
-
-      TaskData taskData = TaskData.builder()
-                              .async(true)
-                              .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
-                              .timeout(StepUtils.getTimeoutMillis(
-                                  stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
-                              .parameters(new Object[] {terraformCloudTaskParams})
-                              .build();
-
-      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-          Collections.singletonList(TerraformCloudCommandUnit.RUN.name()),
-          TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
-          TaskSelectorYaml.toTaskSelector(rollbackStepParameters.getDelegateSelectors()),
-          stepHelper.getEnvironmentType(ambiance));
+    if (rollbackConfig == null) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder()
+                  .setMessage(format(
+                      "No successful Provisioning found with provisionerIdentifier: [%s]. Skipping terraform cloud rollback.",
+                      provisionerIdentifier))
+                  .build())
+          .build();
     }
+
+    log.info(format("Create Terraform cloud run with same config as run: %s", rollbackConfig.getLastSuccessfulRun()));
+    TerraformCloudConnectorDTO terraformCloudConnector =
+        helper.getTerraformCloudConnectorWithRef(rollbackConfig.getConnectorRef(), ambiance);
+
+    TerraformCloudRollbackTaskParams terraformCloudTaskParamsImpl =
+        TerraformCloudRollbackTaskParams.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .runId(rollbackConfig.getLastSuccessfulRun())
+            .entityId(entityId)
+            .terraformCloudConnectorDTO(terraformCloudConnector)
+            .discardPendingRuns(
+                ParameterFieldHelper.getBooleanParameterFieldValue(rollbackStepParameters.getDiscardPendingRuns()))
+            .policyOverride(
+                ParameterFieldHelper.getBooleanParameterFieldValue(rollbackStepParameters.getOverridePolicies()))
+            .encryptionDetails(encryptionHelper.getEncryptionDetail(terraformCloudConnector.getCredential().getSpec(),
+                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+                AmbianceUtils.getProjectIdentifier(ambiance)))
+            .message(ParameterFieldHelper.getParameterFieldValue(rollbackStepParameters.getMessage()))
+            .rollbackType(rollbackConfig.getLastSuccessfulRun() == null ? RollbackType.DESTROY : RollbackType.APPLY)
+            .workspace(rollbackConfig.getWorkspaceId())
+            .build();
+
+    TaskData taskData = TaskData.builder()
+                            .async(true)
+                            .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
+                            .timeout(StepUtils.getTimeoutMillis(
+                                stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
+                            .parameters(new Object[] {terraformCloudTaskParamsImpl})
+                            .build();
+
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        List.of(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(),
+            TerraformCloudCommandUnit.PLAN.getDisplayName(), TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(),
+            TerraformCloudCommandUnit.APPLY.getDisplayName()),
+        format("%s : %s", TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(), ROLLBACK.getDisplayName()),
+        TaskSelectorYaml.toTaskSelector(rollbackStepParameters.getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override
@@ -220,19 +194,10 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
 
     if (CommandExecutionStatus.SUCCESS == terraformCloudRunTaskResponse.getCommandExecutionStatus()) {
       String runId = terraformCloudRunTaskResponse.getRunId();
-      OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-          ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.TERRAFORM_CLOUD_CONFIG));
-      TerraformCloudConfigSweepingOutput rollbackConfigOutput =
-          (TerraformCloudConfigSweepingOutput) optionalSweepingOutput.getOutput();
-      TerraformCloudConfig rollbackConfig = rollbackConfigOutput.getTerraformCloudConfig();
-
-      if (rollbackConfigOutput.getRollbackTaskType() == RollbackType.APPLY) {
-        rollbackConfig.setRunId(runId);
-        helper.saveTerraformCloudConfig(rollbackConfig, ambiance);
-      } else {
-        terraformCloudConfigDAL.clearTerraformCloudConfig(ambiance, rollbackConfig.getEntityId());
-      }
-
+      String provisionerIdentifier = ParameterFieldHelper.getParameterFieldValue(
+          ((TerraformCloudRollbackStepParameters) stepElementParameters.getSpec()).getProvisionerIdentifier());
+      helper.saveTerraformCloudPlanExecutionDetails(
+          ambiance, null, terraformCloudRunTaskResponse.getPolicyChecksJsonFileId(), provisionerIdentifier, null);
       stepResponseBuilder.stepOutcome(
           StepOutcome.builder()
               .name(OUTCOME_NAME)
@@ -240,6 +205,10 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                   TerraformCloudRunOutcome.builder()
                       .detailedExitCode(terraformCloudRunTaskResponse.getDetailedExitCode())
                       .runId(runId)
+                      .policyChecksFilePath(terraformCloudRunTaskResponse.getPolicyChecksJsonFileId() != null
+                                  && provisionerIdentifier != null
+                              ? TerraformCloudPolicyChecksJsonFunctor.getExpression(provisionerIdentifier)
+                              : null)
                       .outputs(new HashMap<>(helper.parseTerraformOutputs(terraformCloudRunTaskResponse.getTfOutput())))
                       .build())
               .build());

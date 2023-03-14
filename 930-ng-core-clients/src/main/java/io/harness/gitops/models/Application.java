@@ -19,4 +19,7 @@ public class Application {
   String name;
   String agentIdentifier;
   String url;
+  String healthStatus;
+  String syncStatus;
+  String syncErrorMessage;
 }

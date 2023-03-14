@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -82,7 +83,7 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   private ParameterField<List<OutputNGVariable>> outputVariables;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  private ParameterField<Map<String, String>> envVariables;
+  private ParameterField<Map<String, ParameterField<String>>> envVariables;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.UnitTestReport")
   private ParameterField<UnitTestReport> reports;
@@ -93,10 +94,10 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.CIShellType")
   private ParameterField<CIShellType> shell;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
@@ -105,7 +106,7 @@ public class RunStepInfo implements CIStepInfo, WithConnectorRef {
       "image", "connectorRef", "resources", "privileged", "runAsUser", "shell", "imagePullPolicy"})
   public RunStepInfo(String identifier, String name, Integer retry, ParameterField<String> command,
       ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<UnitTestReport> reports,
-      ParameterField<Map<String, String>> envVariables, ParameterField<String> image,
+      ParameterField<Map<String, ParameterField<String>>> envVariables, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<CIShellType> shell,
       ParameterField<ImagePullPolicy> imagePullPolicy) {

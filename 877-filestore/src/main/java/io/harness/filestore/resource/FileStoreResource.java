@@ -92,6 +92,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -412,7 +413,7 @@ public class FileStoreResource {
   getReferencedBy(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
                       PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          SIZE_KEY) @DefaultValue("100") int size,
+          SIZE_KEY) @DefaultValue("100") @Max(1000) int size,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,

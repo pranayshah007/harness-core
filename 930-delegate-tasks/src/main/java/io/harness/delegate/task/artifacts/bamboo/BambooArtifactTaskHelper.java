@@ -67,12 +67,18 @@ public class BambooArtifactTaskHelper {
           artifactTaskResponse = getSuccessTaskResponse(bambooArtifactTaskHandler.getArtifactPaths(attributes));
           saveLogs(executionLogCallback, "Get the Bamboo Job " + registryUrl);
           break;
+        case BAMBOO_BUILD:
+          saveLogs(executionLogCallback, "Trigger the Bamboo Builds");
+          artifactTaskResponse =
+              getSuccessTaskResponse(bambooArtifactTaskHandler.triggerBuild(attributes, executionLogCallback));
+          saveLogs(executionLogCallback, "Trigger the Bamboo Builds " + registryUrl);
+          break;
         default:
-          saveLogs(executionLogCallback, "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters);
-          log.error("No corresponding Jenkins artifact task type [{}]", artifactTaskParameters);
+          saveLogs(executionLogCallback, "No corresponding Bamboo artifact task type [{}]: " + artifactTaskParameters);
+          log.error("No corresponding Bamboo artifact task type [{}]", artifactTaskParameters);
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-              .errorMessage("There is no Jenkins artifact task type impl defined for - "
+              .errorMessage("There is no Bamboo artifact task type impl defined for - "
                   + artifactTaskParameters.getArtifactTaskType().name())
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();

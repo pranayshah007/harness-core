@@ -9,14 +9,23 @@ package io.harness.delegate.task.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jira.JiraAuthType;
+import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.jira.JiraActionNG;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -24,6 +33,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -55,6 +65,23 @@ public class JiraTaskNGHelperTest extends CategoryTest {
   public void shouldGetProjects() {
     JiraTaskNGParameters params = setupMocksForAction(JiraActionNG.GET_PROJECTS);
     jiraTaskNGHelper.getJiraTaskResponse(params);
+    ArgumentCaptor<DecryptableEntity> decryptableEntityArgumentCaptor =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    verify(secretDecryptionService).decrypt(decryptableEntityArgumentCaptor.capture(), any());
+    assertTrue(decryptableEntityArgumentCaptor.getValue() instanceof JiraConnectorDTO);
+    verify(jiraTaskNGHandler).getProjects(params);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void shouldGetProjectsWithUpdatedYaml() {
+    JiraTaskNGParameters params = setupMocksForActionWithUpdatedConnectorYaml(JiraActionNG.GET_PROJECTS);
+    jiraTaskNGHelper.getJiraTaskResponse(params);
+    ArgumentCaptor<DecryptableEntity> decryptableEntityArgumentCaptor =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    verify(secretDecryptionService).decrypt(decryptableEntityArgumentCaptor.capture(), any());
+    assertTrue(decryptableEntityArgumentCaptor.getValue() instanceof JiraAuthCredentialsDTO);
     verify(jiraTaskNGHandler).getProjects(params);
   }
 
@@ -113,8 +140,37 @@ public class JiraTaskNGHelperTest extends CategoryTest {
   }
 
   private JiraTaskNGParameters setupMocksForAction(JiraActionNG action) {
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://test.atlassian.net")
+            .username("username")
+            .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+            .build();
     JiraTaskNGResponse mockedResponse = JiraTaskNGResponse.builder().build();
-    JiraTaskNGParameters params = JiraTaskNGParameters.builder().action(action).build();
+    JiraTaskNGParameters params =
+        JiraTaskNGParameters.builder().action(action).jiraConnectorDTO(jiraConnectorDTO).build();
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(jiraTaskNGHandler.createIssue(params)).thenReturn(mockedResponse);
+    return params;
+  }
+
+  private JiraTaskNGParameters setupMocksForActionWithUpdatedConnectorYaml(JiraActionNG action) {
+    JiraConnectorDTO jiraConnectorDTO =
+        JiraConnectorDTO.builder()
+            .jiraUrl("https://test.atlassian.net")
+            .auth(JiraAuthenticationDTO.builder()
+                      .authType(JiraAuthType.USER_PASSWORD)
+                      .credentials(
+                          JiraUserNamePasswordDTO.builder()
+                              .username("username")
+                              .passwordRef(
+                                  SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                              .build())
+                      .build())
+            .build();
+    JiraTaskNGResponse mockedResponse = JiraTaskNGResponse.builder().build();
+    JiraTaskNGParameters params =
+        JiraTaskNGParameters.builder().action(action).jiraConnectorDTO(jiraConnectorDTO).build();
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
     when(jiraTaskNGHandler.createIssue(params)).thenReturn(mockedResponse);
     return params;

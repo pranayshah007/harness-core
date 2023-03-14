@@ -304,6 +304,7 @@ public class AccountServiceImpl implements AccountService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private OutboxService outboxService;
   @Inject private StatsCollector statsCollector;
+  @Inject private AuditServiceHelper auditServiceHelper;
 
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private GovernanceFeature governanceFeature;
@@ -499,7 +500,6 @@ public class AccountServiceImpl implements AccountService {
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
       updateNextGenEnabled(account.getUuid(), true);
-      featureFlagService.enableAccount(FeatureName.CDNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CING_ENABLED, account.getUuid());
@@ -624,9 +624,14 @@ public class AccountServiceImpl implements AccountService {
     boolean oldIsCrossGenerationAccessEnabled = account.isCrossGenerationAccessEnabled();
     account.isCrossGenerationAccessEnabled(isCrossGenerationAccessEnabled);
     Account updatedAccount = update(account);
+
     if (isNextGen) {
       ngAuditAccountDetailsCrossGenerationAccess(
           accountIdentifier, oldIsCrossGenerationAccessEnabled, updatedAccount.isCrossGenerationAccessEnabled());
+    } else {
+      account.isCrossGenerationAccessEnabled(oldIsCrossGenerationAccessEnabled);
+      auditServiceHelper.reportForAuditingUsingAccountId(
+          accountIdentifier, account, updatedAccount, software.wings.beans.Event.Type.UPDATE);
     }
 
     return updatedAccount;
@@ -2175,6 +2180,10 @@ public class AccountServiceImpl implements AccountService {
     notNullCheck("Invalid Default Experience: " + defaultExperience, defaultExperience);
     wingsPersistence.updateField(Account.class, accountId, DEFAULT_EXPERIENCE, defaultExperience);
     dbCache.invalidate(Account.class, account.getUuid());
+
+    Account updatedAccount = getFromCacheWithFallback(accountId);
+    auditServiceHelper.reportForAuditingUsingAccountId(
+        accountId, account, updatedAccount, software.wings.beans.Event.Type.UPDATE);
     return null;
   }
 

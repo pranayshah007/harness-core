@@ -7,22 +7,24 @@
 package io.harness.execution.expansion;
 
 import io.harness.beans.FeatureName;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.planExecutionJson.PlanExecutionExpansionRepository;
+import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.ejb.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -50,27 +52,11 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
-  public void addNameAndIdentifier(NodeExecution nodeExecution) {
-    if (shouldSkipUpdate(nodeExecution.getAmbiance())) {
-      return;
-    }
-    Update update = new Update();
-    String key = getExpansionPathUsingLevels(nodeExecution.getAmbiance());
-    String nameKey = String.format("%s.%s", key, PlanExpansionConstants.NAME);
-    String identifierKey = String.format("%s.%s", key, PlanExpansionConstants.IDENTIFIER);
-    update.set(nameKey, nodeExecution.getName());
-    update.set(identifierKey, nodeExecution.getIdentifier());
-    planExecutionExpansionRepository.update(nodeExecution.getPlanExecutionId(), update);
-  }
-
-  @Override
   public void addOutcomes(Ambiance ambiance, String name, PmsOutcome outcome) {
     if (shouldSkipUpdate(ambiance) || outcome == null) {
       return;
     }
     Update update = new Update();
-    // Todo: We should store json without recaster annotations if possible but since we might need to convert the json
-    // back to a given object and for that we require __recast field. Therefore keeping those self annotations
     update.set(getExpansionPathUsingLevels(ambiance) + String.format(".%s.", PlanExpansionConstants.OUTCOME) + name,
         Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(outcome.clone())));
 
@@ -83,12 +69,15 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   }
 
   @Override
-  public String resolveExpression(String planExecutionId, String expression) {
-    Criteria criteria = Criteria.where("planExecutionId").is(planExecutionId);
-    Query query = new Query(criteria);
-    query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression);
-    return RecastOrchestrationUtils.pruneRecasterAdditions(
-        planExecutionExpansionRepository.find(query).getExpandedJson());
+  public Map<String, Object> resolveExpressions(Ambiance ambiance, List<String> expressions) {
+    if (shouldUseExpandedJsonFunctor(ambiance)) {
+      Criteria criteria = Criteria.where("planExecutionId").is(ambiance.getPlanExecutionId());
+      Query query = new Query(criteria);
+      expressions.forEach(expression
+          -> query.fields().include(String.format("%s.", PlanExpansionConstants.EXPANDED_JSON) + expression));
+      return JsonUtils.asMap(planExecutionExpansionRepository.find(query).getExpandedJson().toJson());
+    }
+    return null;
   }
 
   @Override
@@ -107,7 +96,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     List<String> keyList = new ArrayList<>();
     keyList.add(PlanExpansionConstants.EXPANDED_JSON);
     for (Level level : levels) {
-      if (!level.getSkipExpressionChain()) {
+      if (!level.getSkipExpressionChain() || level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
         keyList.add(level.getIdentifier());
       }
     }
@@ -117,6 +106,11 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   private boolean shouldSkipUpdate(Ambiance ambiance) {
     return !pmsFeatureFlagService.isEnabled(
                AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_JSON_SUPPORT)
-        || AmbianceUtils.obtainCurrentLevel(ambiance).getSkipExpressionChain();
+        || (AmbianceUtils.obtainCurrentLevel(ambiance).getSkipExpressionChain()
+            && AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getStepCategory() != StepCategory.STRATEGY);
+  }
+
+  private boolean shouldUseExpandedJsonFunctor(Ambiance ambiance) {
+    return pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2);
   }
 }

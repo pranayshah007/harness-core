@@ -8,6 +8,7 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
@@ -68,7 +69,7 @@ public abstract class AbstractStageNode {
 
   @ApiModelProperty(dataType = SwaggerConstants.STAGE_WHEN_CLASSPATH)
   @VariableExpression
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<StageWhenCondition> when;
 
   @VariableExpression List<NGVariable> variables;
@@ -78,7 +79,11 @@ public abstract class AbstractStageNode {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @VariableExpression(skipVariableExpression = true)
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();

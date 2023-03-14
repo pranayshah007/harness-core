@@ -102,9 +102,9 @@ public class ViewsQueryBuilderTest extends CategoryTest {
                                                      .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
                                                      .build())
                                   .build();
-    SelectQuery selectQuery =
-        viewsQueryBuilder.getQuery(viewRules, Collections.emptyList(), Arrays.asList(startTimeFilter, endTimeFilter),
-            Collections.singletonList(groupBy), Collections.EMPTY_LIST, Collections.EMPTY_LIST, "TableName");
+    SelectQuery selectQuery = viewsQueryBuilder.getQuery(viewRules, Collections.emptyList(),
+        Arrays.asList(startTimeFilter, endTimeFilter), Collections.singletonList(groupBy), Collections.emptyList(),
+        Collections.emptyList(), "TableName", Collections.emptyList());
     assertThat(selectQuery.toString()).contains("GROUP BY awsUsageAccountId");
     assertThat(selectQuery.toString()).contains("((awsServicecode IN ('service1') )");
     assertThat(selectQuery.toString()).contains("SELECT awsUsageAccountId FROM TableName");
@@ -174,7 +174,7 @@ public class ViewsQueryBuilderTest extends CategoryTest {
     SelectQuery selectQuery = viewsQueryBuilder.getQuery(viewRules, Collections.singletonList(clusterFilter),
         Arrays.asList(startTimeFilter, endTimeFilter), Collections.singletonList(groupBy),
         Arrays.asList(costAgg, minStartTimeAgg, maxStartTimeAgg), Arrays.asList(costAscSort, startTimeDescSort),
-        "TableName");
+        "TableName", Collections.emptyList());
     assertThat(selectQuery.toString()).contains("GROUP BY namespace");
     assertThat(selectQuery.toString())
         .contains("(clusterName IN ('cluster1') ) AND (namespace NOT IN ('dummyCluster') )");

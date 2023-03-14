@@ -289,8 +289,11 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
 
   private List<ConstraintUnit> units(ResourceConstraint constraint) {
     Set<String> units = new HashSet<>();
-    try (HIterator<ResourceConstraintInstance> iterator = new HIterator<ResourceConstraintInstance>(
-             runnableQuery(constraint.getUuid()).project(ResourceConstraintInstanceKeys.resourceUnit, true).fetch())) {
+    try (HIterator<ResourceConstraintInstance> iterator =
+             new HIterator<ResourceConstraintInstance>(runnableQuery(constraint.getUuid())
+                                                           .project(ResourceConstraintInstanceKeys.resourceUnit, true)
+                                                           .project("_id", false)
+                                                           .fetch())) {
       for (ResourceConstraintInstance instance : iterator) {
         units.add(instance.getResourceUnit());
       }

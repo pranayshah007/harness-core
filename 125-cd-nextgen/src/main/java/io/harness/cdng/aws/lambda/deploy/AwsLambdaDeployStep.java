@@ -10,9 +10,14 @@ package io.harness.cdng.aws.lambda.deploy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.lambda.AwsLambdaHelper;
+import io.harness.cdng.aws.lambda.AwsLambdaStepExceptionPassThroughData;
 import io.harness.cdng.aws.lambda.AwsLambdaStepPassThroughData;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -31,6 +36,7 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -41,6 +47,7 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private AwsLambdaHelper awsLambdaHelper;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -63,6 +70,10 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof AwsLambdaStepExceptionPassThroughData) {
+      return awsLambdaHelper.handleStepExceptionFailure((AwsLambdaStepExceptionPassThroughData) passThroughData);
+    }
+
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     AwsLambdaStepPassThroughData awsLambdaStepPassThroughData = (AwsLambdaStepPassThroughData) passThroughData;
     AwsLambdaDeployResponse awsLambdaDeployResponse;
@@ -82,7 +93,16 @@ public class AwsLambdaDeployStep extends TaskChainExecutableWithRollbackAndRbac 
     AwsLambdaStepOutcome awsLambdaStepOutcome =
         awsLambdaHelper.getAwsLambdaStepOutcome(awsLambdaDeployResponse.getAwsLambda());
 
+    InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
+    AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig =
+        awsLambdaHelper.getInfraConfig(infrastructureOutcome, ambiance);
+    List<ServerInstanceInfo> serverInstanceInfoList = awsLambdaHelper.getServerInstanceInfo(
+        awsLambdaDeployResponse, awsLambdaFunctionsInfraConfig, infrastructureOutcome.getInfrastructureKey());
+    StepResponse.StepOutcome stepOutcome =
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+
     return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(stepOutcome)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
                          .outcome(awsLambdaStepOutcome)

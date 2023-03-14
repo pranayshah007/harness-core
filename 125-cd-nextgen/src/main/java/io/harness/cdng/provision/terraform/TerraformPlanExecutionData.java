@@ -60,6 +60,7 @@ public class TerraformPlanExecutionData {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> exportTerraformHumanReadablePlan;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRefreshCommand;
 
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -86,6 +87,8 @@ public class TerraformPlanExecutionData {
       });
     }
     builder.varFiles(varFiles);
+    builder.isTerraformCloudCli(ParameterField.createValueField(false));
+    builder.skipTerraformRefresh(skipRefreshCommand);
     return builder.build();
   }
 

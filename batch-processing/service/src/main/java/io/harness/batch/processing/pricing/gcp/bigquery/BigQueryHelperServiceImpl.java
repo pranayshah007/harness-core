@@ -28,7 +28,7 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
@@ -39,9 +39,9 @@ import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -80,7 +80,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private static final String TABLE_SUFFIX = "%s_%s";
   private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
   private static final String AZURE_TABLE_NAME = "unifiedTable";
-  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_billing_export_resource_*";
+  private static final String GCP_COST_TRUEUP_TABLE_WITH_WILDCARD = "gcp_cost_export_*";
   private String resourceCondition = "resourceid like '%%%s%%'";
 
   @Override
@@ -419,9 +419,9 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceIdSubQuery = createSubQuery(resourceIds);
     String query = BQConst.GCP_VM_BILLING_QUERY;
     String projectTableName = getGcpProjectTableName(dataSetId);
-    String formattedQuery =
-        format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime.minus(1, ChronoUnit.DAYS),
-            endTime.plus(7, ChronoUnit.DAYS), resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
+    String formattedQuery = format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime, endTime,
+        resourceIdSubQuery, GCP_DESCRIPTION_CONDITION);
+
     return query(formattedQuery, "GCP", null);
   }
 
@@ -503,7 +503,8 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
 
   private String getGcpProjectTableName(String dataSetId) {
     BillingDataPipelineConfig billingDataPipelineConfig = mainConfig.getBillingDataPipelineConfig();
-    return format("%s.%s.%s", billingDataPipelineConfig.getGcpProjectId(), dataSetId, GCP_TABLE_NAME_WITH_WILDCARD);
+    return format(
+        "%s.%s.%s", billingDataPipelineConfig.getGcpProjectId(), dataSetId, GCP_COST_TRUEUP_TABLE_WITH_WILDCARD);
   }
 
   public FieldList getFieldList(TableResult result) {
@@ -661,7 +662,19 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   public BigQuery getBigQueryService() {
-    ServiceAccountCredentials credentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
-    return BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+    boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
+    GoogleCredentials sourceCredentials = null;
+    if (!usingWorkloadIdentity) {
+      log.info("WI: In getBigQueryService. using older way");
+      sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
+    } else {
+      log.info("WI: In getBigQueryService. using Google ADC");
+      try {
+        sourceCredentials = GoogleCredentials.getApplicationDefault();
+      } catch (IOException e) {
+        log.error("Exception in using Google ADC", e);
+      }
+    }
+    return BigQueryOptions.newBuilder().setCredentials(sourceCredentials).build().getService();
   }
 }

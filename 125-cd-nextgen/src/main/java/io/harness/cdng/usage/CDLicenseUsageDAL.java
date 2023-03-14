@@ -7,6 +7,8 @@
 
 package io.harness.cdng.usage;
 
+import static io.harness.cd.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.name;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.orgName;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.projectName;
@@ -29,15 +31,16 @@ import static org.apache.commons.lang3.StringUtils.SPACE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDLicenseType;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.impl.AggregateServiceUsageInfo;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
-import io.harness.cdng.usage.pojos.ServiceInstancesDateUsageFetchData;
+import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.licensing.usage.params.filter.ServiceInstanceReportType;
+import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -333,52 +336,54 @@ public class CDLicenseUsageDAL {
   }
 
   /**
-   * Fetch Service Instances usage by dates.
+   * Fetch license usage by dates.
    *
-   * @param instancesUsageFetchData instances usage fetch data needed for creating request to DB
-   * @return service instances usage per dates
+   * @param licenseUsageFetchDate license usage fetch data needed for creating request to DB
+   * @return license usage per dates
    */
-  public Map<String, Integer> fetchServiceInstancesDateUsage(
-      ServiceInstancesDateUsageFetchData instancesUsageFetchData) {
-    Map<String, Integer> serviceInstancesUsage = new LinkedHashMap<>();
-    String accountIdentifier = instancesUsageFetchData.getAccountIdentifier();
+  public Map<String, Integer> fetchLicenseDateUsage(LicenseDateUsageFetchData licenseUsageFetchDate) {
+    Map<String, Integer> licenseUsage = new LinkedHashMap<>();
+    String accountIdentifier = licenseUsageFetchDate.getAccountIdentifier();
+    CDLicenseType licenseType = licenseUsageFetchDate.getLicenseType();
     if (isEmpty(accountIdentifier)) {
-      throw new InvalidArgumentsException("AccountIdentifier cannot be null or empty for fetching active services");
+      throw new InvalidArgumentsException("AccountIdentifier cannot be null or empty for fetching license date usage");
+    }
+    if (licenseType == null) {
+      throw new InvalidArgumentsException("CD license type cannot be null for fetching license date usage");
     }
 
     int retry = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && retry <= MAX_RETRY) {
       try (Connection dbConnection = timeScaleDBService.getDBConnection();
-           CallableStatement callableStatement =
-               dbConnection.prepareCall("{ call get_service_instances_by_date(?,?,?,?,?)}")) {
+           CallableStatement callableStatement = getLicenseDataUsageCallableStatement(licenseType, dbConnection)) {
         callableStatement.setString(1, accountIdentifier);
-        callableStatement.setDate(2, valueOf(instancesUsageFetchData.getFromDate()));
-        callableStatement.setDate(3, valueOf(instancesUsageFetchData.getToDate()));
-        callableStatement.setBoolean(4, isMonthlyServiceInstanceUsageReportType(instancesUsageFetchData));
+        callableStatement.setDate(2, valueOf(licenseUsageFetchDate.getFromDate()));
+        callableStatement.setDate(3, valueOf(licenseUsageFetchDate.getToDate()));
+        callableStatement.setBoolean(4, isMonthlyLicenseUsageReportType(licenseUsageFetchDate));
         callableStatement.setBoolean(5, false);
 
         callableStatement.execute();
         ResultSet results = callableStatement.getResultSet();
         while (results.next()) {
           Date usageDate = results.getDate(1);
-          Integer instanceCount = results.getInt(2);
-          serviceInstancesUsage.put(String.valueOf(usageDate), instanceCount);
+          Integer licenseCount = results.getInt(2);
+          licenseUsage.put(String.valueOf(usageDate), licenseCount);
         }
 
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instances date usage after " + MAX_RETRY_MSG;
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch license date usage after " + MAX_RETRY_MSG;
           throw new CgLicenseUsageException(errorLog, exception);
         }
-        log.error("Failed to fetch service instances date usage, accountIdentifier : [{}] , retry : [{}]",
-            accountIdentifier, retry, exception);
+        log.error("Failed to fetch license date usage, accountIdentifier : [{}] , retry : [{}]", accountIdentifier,
+            retry, exception);
         retry++;
       }
     }
 
-    return serviceInstancesUsage;
+    return licenseUsage;
   }
 
   private List<AggregateServiceUsageInfo> processResultSet(ResultSet resultSet) throws SQLException {
@@ -531,7 +536,17 @@ public class CDLicenseUsageDAL {
     return activeServices;
   }
 
-  private boolean isMonthlyServiceInstanceUsageReportType(ServiceInstancesDateUsageFetchData fetchData) {
-    return ServiceInstanceReportType.MONTHLY == fetchData.getReportType();
+  private CallableStatement getLicenseDataUsageCallableStatement(CDLicenseType licenseType, Connection dbConnection)
+      throws SQLException {
+    if (licenseType != SERVICE_INSTANCES && licenseType != SERVICES) {
+      throw new InvalidArgumentsException("Not supported CD license type for fetching license date usage");
+    }
+    return SERVICE_INSTANCES == licenseType
+        ? dbConnection.prepareCall("{ call get_service_instances_by_date(?,?,?,?,?)}")
+        : dbConnection.prepareCall("{ call get_active_services_by_date(?,?,?,?,?)}");
+  }
+
+  private boolean isMonthlyLicenseUsageReportType(LicenseDateUsageFetchData fetchData) {
+    return LicenseDateUsageReportType.MONTHLY == fetchData.getReportType();
   }
 }

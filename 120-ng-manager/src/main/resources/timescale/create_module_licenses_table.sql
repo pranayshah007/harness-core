@@ -5,20 +5,20 @@
 
 ---------- MODULE LICENSES TABLE START ------------
 BEGIN;
- CREATE TABLE IF NOT EXISTS public.module_licenses (
-     id text  NOT NULL,
-     account_identifier text  NOT NULL,
-     module_type text NOT NULL,
-     edition text  NOT NULL,
-     license_type text NOT NULL,
-     expiry_time bigint  NULL,
-     start_time bigint  NULL,
-     premium_support boolean  NULL,
-     trial_extended boolean NULL,
-     self_service boolean  NULL,
-     created_at bigint  NULL,
-     last_updated_at bigint  NULL);
-COMMIT;
-ALTER TABLE ONLY public.module_licenses
-    ADD CONSTRAINT module_licenses_pkey PRIMARY KEY (id);
+
+CREATE TABLE IF NOT EXISTS public.module_licenses (
+    id text  NOT NULL,
+    account_identifier text  NOT NULL,
+    module_type text NOT NULL,
+    edition text  NOT NULL,
+    license_type text NOT NULL,
+    expiry_time bigint  NULL,
+    start_time bigint  NULL,
+    premium_support boolean  NULL,
+    trial_extended boolean NULL,
+    self_service boolean  NULL,
+    created_at bigint  NULL,
+    last_updated_at bigint  NULL,
+    PRIMARY KEY (id)
+ );
 COMMIT;

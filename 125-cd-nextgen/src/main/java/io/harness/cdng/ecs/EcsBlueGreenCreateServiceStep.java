@@ -213,7 +213,13 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
         ecsBlueGreenCreateServiceResponse, infrastructureOutcome.getInfrastructureKey());
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(ecsBlueGreenCreateServiceDataOutcome)
+                         .build())
+        .stepOutcome(stepOutcome)
+        .build();
   }
 
   @Override
