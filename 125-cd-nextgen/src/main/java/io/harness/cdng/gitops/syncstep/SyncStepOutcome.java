@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitops.models.Application;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -26,6 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SyncStepOutcome")
 @JsonTypeName("SyncStepOutcome")
 @RecasterAlias("io.harness.cdng.gitops.syncstep.SyncStepOutcome")
-public class SyncStepOutcome {
+public class SyncStepOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<Application> applications;
 }

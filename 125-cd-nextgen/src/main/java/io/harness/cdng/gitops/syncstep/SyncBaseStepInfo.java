@@ -20,6 +20,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,22 +42,28 @@ public class SyncBaseStepInfo {
 
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> prune;
 
+  @NotNull
   @JsonProperty("applicationsList") List<AgentApplicationTargets> applicationsList;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> dryRun;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> applyOnly;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @NotNull
   public ParameterField<Boolean> forceApply;
 
+  @NotNull
   @JsonProperty("syncOptions") SyncOptions syncOptions;
 
   @JsonProperty("retryStrategy") SyncRetryStrategy retryStrategy;
