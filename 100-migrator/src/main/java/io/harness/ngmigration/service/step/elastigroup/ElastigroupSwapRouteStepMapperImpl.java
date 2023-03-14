@@ -53,8 +53,7 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 
   @Override
