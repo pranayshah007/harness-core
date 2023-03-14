@@ -87,8 +87,8 @@ public class ValidateAndMergeHelper {
             .build();
 
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      Optional<PipelineEntity> pipelineEntity =
+          pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
       if (pipelineEntity.isPresent()) {
         return pipelineEntity.get();
       } else {
@@ -106,13 +106,13 @@ public class ValidateAndMergeHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false, loadFromCache);
+        optionalPipelineEntity = pmsPipelineService.getPipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false, false, loadFromCache);
       }
     } else {
       long start = System.currentTimeMillis();
-      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false, loadFromCache);
+      optionalPipelineEntity = pmsPipelineService.getPipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false, false, loadFromCache);
       log.info(
           "[PMS_ValidateMerger] fetching and validating pipeline when update to new branch is false, took {}ms for projectId {}, orgId {}, accountId {}",
           System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
