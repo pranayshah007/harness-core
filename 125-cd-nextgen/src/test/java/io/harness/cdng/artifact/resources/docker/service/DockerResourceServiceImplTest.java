@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.docker.service;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +49,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -493,5 +495,36 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                                identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Connector not found for identifier : [identifier] with scope: [PROJECT]");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testExplanationExceptionForInvalidImagePath() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new ExplanationException(
+            "Commands tried https://index.docker.io/v2/library/nginx23 but no metadata was returned",
+            new DockerHubInvalidTagRuntimeRuntimeException("errorMessage")));
+
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenThrow(new WingsException("wings exception message"));
+
+    assertThatThrownBy(()
+                           -> dockerResourceService.getBuildDetails(
+                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+        .isInstanceOf(WingsException.class)
+        .hasMessage(HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH);
   }
 }
