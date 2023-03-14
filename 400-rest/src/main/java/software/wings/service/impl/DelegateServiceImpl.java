@@ -684,7 +684,6 @@ public class DelegateServiceImpl implements DelegateService {
     if (isBlank(delegateSetupDetails.getName())) {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
-    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     if (delegateSetupDetails.getSize() == null) {
       throw new InvalidRequestException("Delegate Size must be provided.", USER);
     }
@@ -4134,6 +4133,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateSetupDetails != null && delegateSetupDetails.getDelegateType().equals(DOCKER)) {
       validateDockerDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
     } else {
+      checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
       validateKubernetesSetupDetails(accountId, delegateSetupDetails);
     }
     DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
@@ -4227,6 +4227,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public File generateNgHelmValuesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl) throws IOException {
+    checkUniquenessOfDelegateName(accountId, delegateSetupDetails.getName(), true);
     validateKubernetesSetupDetails(accountId, delegateSetupDetails);
 
     String version;
@@ -4481,7 +4482,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegateTokenGlobalContextData != null) {
       return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
     }
-    log.warn("Delegate token name not found in Global Context Data. Please verify manually.");
+    // Global context thread is not the best way to save token name. There has been issues in past due to racing between
+    // threads
+    log.debug("Delegate token name not found in Global Context Data. Please verify manually.");
     return Optional.empty();
   }
 

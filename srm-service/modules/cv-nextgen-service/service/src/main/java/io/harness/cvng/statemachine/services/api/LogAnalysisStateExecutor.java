@@ -7,23 +7,22 @@
 
 package io.harness.cvng.statemachine.services.api;
 
-import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.LogAnalysisState;
-import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import java.util.Arrays;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> extends AnalysisStateExecutor<T> {
   @Inject protected transient LogAnalysisService logAnalysisService;
+
+  public abstract void handleFinalStatuses(DeploymentLogAnalysisState analysisState);
 
   protected abstract String scheduleAnalysis(AnalysisInput analysisInput);
 
@@ -34,30 +33,6 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
     analysisState.setStatus(AnalysisStatus.RUNNING);
     log.info("Executing service guard log analysis for {}", analysisState.getInputs());
     return analysisState;
-  }
-
-  @Override
-  public AnalysisStatus getExecutionStatus(T analysisState) {
-    if (analysisState.getStatus() != AnalysisStatus.SUCCESS) {
-      Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
-          logAnalysisService.getTaskStatus(Arrays.asList(analysisState.getWorkerTaskId()));
-      LearningEngineTask.ExecutionStatus taskStatus = taskStatuses.get(analysisState.getWorkerTaskId());
-      // This could be common code for all states.
-      switch (taskStatus) {
-        case SUCCESS:
-          return AnalysisStatus.SUCCESS;
-        case FAILED:
-        case TIMEOUT:
-          return AnalysisStatus.RETRY;
-        case QUEUED:
-        case RUNNING:
-          return AnalysisStatus.RUNNING;
-        default:
-          throw new AnalysisStateMachineException(
-              "Unknown worker state when executing service guard log analysis: " + taskStatus);
-      }
-    }
-    return AnalysisStatus.SUCCESS;
   }
 
   @Override
@@ -79,12 +54,6 @@ public abstract class LogAnalysisStateExecutor<T extends LogAnalysisState> exten
 
   @Override
   public AnalysisState handleSuccess(T analysisState) {
-    analysisState.setStatus(AnalysisStatus.SUCCESS);
-    return analysisState;
-  }
-
-  @Override
-  public AnalysisState handleTransition(T analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }

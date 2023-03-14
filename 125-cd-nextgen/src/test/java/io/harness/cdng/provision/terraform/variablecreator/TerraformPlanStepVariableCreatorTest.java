@@ -68,6 +68,7 @@ public class TerraformPlanStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.configFiles.store.spec.paths",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.configFiles.store.spec.repoName",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.backendConfig.spec.content",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.skipRefreshCommand",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.configFiles.store.spec.commitId",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.workspace",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.name",

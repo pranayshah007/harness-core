@@ -262,7 +262,7 @@ entityVersions {"name": "createdAt_1", "background": true} {"createdAt": 1}
 entityVersions {"name": "unique_locate", "unique": true} {"entityType": 1, "entityUuid": 1, "version": 1}
 entityYamlRecord {"name": "index_1", "background": true} {"accountId": 1, "entityId": 1, "entityType": 1, "createdAt": -1}
 entityYamlRecord {"name": "index_2", "background": true} {"accountId": 1, "entityType": 1, "createdAt": -1}
-environments {"name": "accountIdCreatedAt", "background": true} {"accountId": 1, "createdAt": -1}
+environments {"name": "accountIdCreatedAtAppIdId", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1, "_id": 1}
 environments {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
 environments {"name": "appId_1", "background": true} {"appId": 1}
 environments {"name": "createdAt_1", "background": true} {"createdAt": 1}

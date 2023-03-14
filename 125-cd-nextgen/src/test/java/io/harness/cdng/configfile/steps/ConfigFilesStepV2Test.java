@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFile;
@@ -72,9 +73,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class ConfigFilesStepV2Test {
+public class ConfigFilesStepV2Test extends CategoryTest {
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private CDExpressionResolver expressionResolver;
@@ -98,6 +100,10 @@ public class ConfigFilesStepV2Test {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
+
+    // mock serviceStepsHelper
+    doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any());
+    doReturn(mockNgLogCallback).when(serviceStepsHelper).getServiceLogCallback(Mockito.any(), Mockito.anyBoolean());
   }
 
   @After

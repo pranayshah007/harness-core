@@ -8,6 +8,7 @@
 package io.harness.repositories.entitysetupusage;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +17,7 @@ import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
 @HarnessRepo
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
@@ -62,5 +65,23 @@ public class EntitySetupUsageCustomRepositoryImpl implements EntitySetupUsageCus
   @Override
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
     return mongoTemplate.aggregate(aggregation, EntitySetupUsage.class, classToFillResultIn);
+  }
+
+  @Override
+  public CloseableIterator<EntitySetupUsage> stream(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.stream(query, EntitySetupUsage.class);
+  }
+
+  @Override
+  public List<String> findAllReferredEntityIds(Criteria criteria) {
+    Query query = new Query(criteria);
+    query.fields().include(EntitySetupUsageKeys.referredEntityRef);
+    return mongoTemplate.find(query, EntitySetupUsage.class)
+        .stream()
+        .filter(i -> i.getReferredEntity() != null && i.getReferredEntity().getEntityRef() != null)
+        .map(i -> i.getReferredEntity().getEntityRef().getIdentifier())
+        .distinct()
+        .collect(Collectors.toList());
   }
 }

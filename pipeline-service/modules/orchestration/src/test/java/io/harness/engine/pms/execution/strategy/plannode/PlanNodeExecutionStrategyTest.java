@@ -612,7 +612,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     String uuid = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(uuid).build()).build();
     NodeExecution nodeExecution = NodeExecution.builder().build();
-    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any(), any());
+    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
     executionStrategy.endNodeExecution(ambiance);
     verify(orchestrationEngine, times(1)).endNodeExecution(any());
   }
@@ -625,7 +625,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(uuid).build()).build();
     String notifyId = generateUuid();
     NodeExecution nodeExecution = NodeExecution.builder().notifyId(notifyId).build();
-    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any(), any());
+    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
     executionStrategy.endNodeExecution(ambiance);
     verify(waitNotifyEngine, times(1)).doneWith(any(), any(StepResponseNotifyData.class));
   }

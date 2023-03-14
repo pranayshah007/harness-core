@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -359,6 +360,49 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     HealthSourceMetricDefinition healthSourceMetricDefinition =
         ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
     assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredServiceScopedService() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-scoped-service.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getIdentifier())
+        .isEqualTo("account.cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM");
+    assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("account.cvng_service_UxrHvd7oNa");
+    assertThat(monitoredServiceDTO.getEnvironmentRefList())
+        .isEqualTo(Collections.singletonList("cvng_env_prod_NWceMzD9XM"));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredServiceScopeOrg() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-scoped-org.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("cvng_service_UxrHvd7oNa_org.cvng_env_prod_NWceMzD9XM");
+    assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
+    assertThat(monitoredServiceDTO.getEnvironmentRefList())
+        .isEqualTo(Collections.singletonList("org.cvng_env_prod_NWceMzD9XM"));
   }
 
   @Test

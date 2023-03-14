@@ -19,30 +19,29 @@ import java.util.Map;
 @OwnedBy(CDP)
 public interface ArtifactoryRegistryService {
   int MAX_NO_OF_TAGS_PER_ARTIFACT = 10000;
-  int MAX_NO_OF_BUILDS_PER_ARTIFACT = 10000;
   String DEFAULT_ARTIFACT_FILTER = "*";
   String DEFAULT_ARTIFACT_DIRECTORY = "/";
 
   /**
    * Gets builds.
    *
-   * @param artifactoryConfig      the artifactory config
-   * @param repositoryName         the repository name
-   * @param artifactName         the artifact name
-   * @param repoFormat         the repositroy format (docker,....)
-   * @param maxNumberOfBuilds the max number of builds
+   * @param artifactoryConfig the artifactory config
+   * @param repositoryName    the repository name
+   * @param artifactName      the artifact name
+   * @param repoFormat        the repositroy format (docker,....)
    * @return the builds
    */
-  List<BuildDetailsInternal> getBuilds(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
-      String artifactName, String repoFormat, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(
+      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactName, String repoFormat);
+
   /**
    * Gets last successful build.
    *
-   * @param artifactoryConfig       the artifactory config
-   * @param repositoryName          the repository name
-   * @param artifactName               the artifact name
-   * @param repoFormat              the repositroy format (docker,....)
-   * @param tagRegex                the regular expression of tag value
+   * @param artifactoryConfig the artifactory config
+   * @param repositoryName    the repository name
+   * @param artifactName      the artifact name
+   * @param repoFormat        the repositroy format (docker,....)
+   * @param tagRegex          the regular expression of tag value
    * @return the last successful build
    */
   BuildDetailsInternal getLastSuccessfulBuildFromRegex(ArtifactoryConfigRequest artifactoryConfig,

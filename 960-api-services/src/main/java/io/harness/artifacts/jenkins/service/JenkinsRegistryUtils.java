@@ -496,7 +496,7 @@ public class JenkinsRegistryUtils {
   /**
    * Constructs job path details by provided job name
    *
-   * @param jobname        job name
+   * @param jobname job name
    * @return job path details.
    */
   private JobPathDetails constructJobPathDetails(String jobname) {
@@ -544,8 +544,8 @@ public class JenkinsRegistryUtils {
   /**
    * Returns folder instance
    *
-   * @param parentJobName      parent job name
-   * @param parentJobUrl       parent job url
+   * @param parentJobName parent job name
+   * @param parentJobUrl  parent job url
    * @return new folder.
    */
   private FolderJob getFolderJob(String parentJobName, String parentJobUrl) {
@@ -635,21 +635,14 @@ public class JenkinsRegistryUtils {
   }
 
   public String getJenkinsConsoleLogs(JenkinsInternalConfig jenkinsInternalConfig, String jobName, String jobId) {
-    JobPathDetails jobPathDetails = constructJobPathDetails(jobName);
     try {
+      JobPathDetails jobPathDetails = constructJobPathDetails(jobName);
       FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
       JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
       return jenkinsServer.getJenkinsConsoleLogs(folderJob, jobName, jobId);
-    } catch (URISyntaxException e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          String.format("Error retrieving console logs for Job name %s: %s", jobName, e.getMessage()),
-          "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
-          new UnauthorizedException("Error retrieving console logs", USER));
-    } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          String.format("Error retrieving console logs for Job name %s: %s", jobName, e.getMessage()),
-          "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
-          new UnauthorizedException("Error retrieving console logs", USER));
+    } catch (Exception e) {
+      log.error(String.format("Could not fetch console logs for Job name %s", jobName), e);
+      return null;
     }
   }
 
@@ -764,8 +757,8 @@ public class JenkinsRegistryUtils {
   /**
    * Configures new executable property for Queue item
    *
-   * @param queueItem      the queue item
-   * @param buildUrl       the build URL
+   * @param queueItem the queue item
+   * @param buildUrl  the build URL
    */
   private void configureExecutable(QueueItem queueItem, String buildUrl) {
     Executable executable = new Executable();
@@ -777,9 +770,9 @@ public class JenkinsRegistryUtils {
   /**
    * Form and returns new build url from URL, job path and job name
    *
-   * @param url          the URL
-   * @param jobPath      the job path
-   * @param jobNumber    the job number
+   * @param url       the URL
+   * @param jobPath   the job path
+   * @param jobNumber the job number
    * @return build url.
    */
   private String getBuildUrl(String url, String jobPath, String jobNumber) {
@@ -793,8 +786,8 @@ public class JenkinsRegistryUtils {
   /**
    * Creates build with new url and number
    *
-   * @param build          existing build with Jenkins master URL
-   * @param buildUrl       build url with Jenkins connector URL
+   * @param build    existing build with Jenkins master URL
+   * @param buildUrl build url with Jenkins connector URL
    * @return new build.
    */
   private Build createBuild(Build build, String buildUrl, CustomJenkinsHttpClient jenkinsHttpClient) {

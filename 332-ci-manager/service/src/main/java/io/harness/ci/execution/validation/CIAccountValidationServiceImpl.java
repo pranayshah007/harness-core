@@ -15,6 +15,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.account.AccountTrustLevel;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.user.remote.UserClient;
@@ -32,6 +33,8 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CILicenseService ciLicenseService;
 
+  private static long APPLY_DAY = 1678368362000L; // 09.3.23 Day to apply the policy. In milliseconds
+
   @Inject
   public CIAccountValidationServiceImpl() {}
 
@@ -46,12 +49,20 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
           return true;
         }
       }
-      trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
 
-      if (trustLevel == AccountTrustLevel.UNINITIALIZED || trustLevel == AccountTrustLevel.BASIC_USER
-          || trustLevel == AccountTrustLevel.NEW_USER) {
+      AccountDTO accountDto = CGRestUtils.getResponse(accountClient.getAccountDTO(accountId));
+
+      if (accountDto.getCreatedAt() < APPLY_DAY) {
         return true;
       }
+
+      Set<String> whiteListed = ciMiningPatternJob.getWhiteListed();
+
+      if (whiteListed.contains(accountId)) {
+        return true;
+      }
+
+      trustLevel = CGRestUtils.getResponse(accountClient.getAccountTrustLevel(accountId));
 
       if (AccountTrustLevel.UNINITIALIZED.equals(trustLevel)) {
         trustLevel = initializeAccountTrustLevel(accountId);
@@ -65,8 +76,9 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
       trustLevel = AccountTrustLevel.BASIC_USER;
     }
 
-    if (trustLevel < AccountTrustLevel.UNINITIALIZED) {
-      throw new CIStageExecutionException("Account is not trusted for CI builds. Please reach support@harness.io");
+    if (trustLevel < AccountTrustLevel.BASIC_USER) {
+      throw new CIStageExecutionException(
+          "Your domain is not trusted for CI hosted builds. Please reach support@harness.io");
     }
 
     return true;
@@ -76,7 +88,8 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     if (ciExecutionServiceConfig.isLocal()) {
       return AccountTrustLevel.BASIC_USER;
     }
-    Set<String> domains = ciMiningPatternJob.getValidDomains();
+    Set<String> validDomains = ciMiningPatternJob.getValidDomains();
+    Set<String> whiteListed = ciMiningPatternJob.getWhiteListed();
 
     List<UserInfo> users = CGRestUtils.getResponse(userClient.listUsersEmails(accountId));
 
@@ -85,7 +98,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     for (String email : usersEmail) {
       String domain = email.split("@")[1];
 
-      if (domains.contains(domain)) {
+      if (validDomains.contains(domain) || whiteListed.contains(domain)) {
         return AccountTrustLevel.BASIC_USER;
       }
     }

@@ -46,7 +46,8 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
   final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
 
   @Override
-  public PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action) {
+  public PipelineValidationEvent startEvent(
+      PipelineEntity entity, String branch, Action action, boolean loadFromCache) {
     String fqn = PipelineAsyncValidationHelper.buildFQN(entity, branch);
     PipelineValidationEvent pipelineValidationEvent =
         PipelineValidationEvent.builder()
@@ -62,6 +63,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
 
     executorService.submit(PipelineAsyncValidationHandler.builder()
                                .validationEvent(savedPipelineValidationEvent)
+                               .loadFromCache(loadFromCache)
                                .validationService(this)
                                .pipelineTemplateHelper(pipelineTemplateHelper)
                                .pipelineGovernanceService(pipelineGovernanceService)

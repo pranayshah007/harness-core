@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -267,8 +266,7 @@ public class TerraformCloudTaskHelperTest {
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_REFRESH_STATE, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, false, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
@@ -286,8 +284,7 @@ public class TerraformCloudTaskHelperTest {
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, false, TerraformCloudTaskType.RUN_PLAN_AND_APPLY, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, false, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
@@ -300,13 +297,12 @@ public class TerraformCloudTaskHelperTest {
   @Category(UnitTests.class)
   public void testCreateRunPlanWithForceExecuteRun() throws IOException {
     RunRequest runRequest = RunRequest.builder().build();
-    doReturn(getCreateRunResponse(RunStatus.POLICY_CHECKED)).when(terraformCloudClient).createRun(any(), any(), any());
+    doReturn(getCreateRunResponse(RunStatus.PENDING)).when(terraformCloudClient).createRun(any(), any(), any());
     doReturn(getCreateRunResponse(RunStatus.PENDING)).when(terraformCloudClient).getRun(any(), any(), any());
     doReturn(getPlanResponse()).when(terraformCloudClient).getPlan(any(), any(), any());
     doReturn("log" + (char) 3).when(terraformCloudClient).getLogs(any(), anyInt(), anyInt());
 
-    RunData runData =
-        taskHelper.createRun("url", "token", runRequest, true, TerraformCloudTaskType.RUN_PLAN, logCallback);
+    RunData runData = taskHelper.createRun("url", "token", runRequest, true, logCallback);
 
     assertThat(runData.getId()).isEqualTo("run-123");
     verify(terraformCloudClient, times(1)).createRun(any(), any(), any());
@@ -335,10 +331,15 @@ public class TerraformCloudTaskHelperTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testStreamSentinelPoliciesFailed() throws IOException {
-    List<PolicyCheckData> policyCheckData = getPolicyCheckData(true);
     doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+    doReturn(TerraformCloudResponse.builder()
+                 .data(getPolicyCheckData(true))
+                 .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+                 .build())
+        .when(terraformCloudClient)
+        .listPolicyChecks(any(), any(), any(), anyInt());
 
-    taskHelper.streamSentinelPolicies("url", "token", policyCheckData, logCallback);
+    taskHelper.streamSentinelPolicies("url", "token", "runId", logCallback);
 
     verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
     verify(logCallback, times(1))
@@ -349,10 +350,15 @@ public class TerraformCloudTaskHelperTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testStreamSentinelPoliciesPassed() throws IOException {
-    List<PolicyCheckData> policyCheckData = getPolicyCheckData(false);
     doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+    doReturn(TerraformCloudResponse.builder()
+                 .data(getPolicyCheckData(false))
+                 .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+                 .build())
+        .when(terraformCloudClient)
+        .listPolicyChecks(any(), any(), any(), anyInt());
 
-    taskHelper.streamSentinelPolicies("url", "token", policyCheckData, logCallback);
+    taskHelper.streamSentinelPolicies("url", "token", "runId", logCallback);
 
     verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
     verify(logCallback, times(1))
@@ -370,6 +376,35 @@ public class TerraformCloudTaskHelperTest {
     verify(terraformCloudClient, times(1)).overridePolicyChecks("url", "token", "id1");
     verify(terraformCloudClient, times(1)).overridePolicyChecks("url", "token", "id2");
     verify(terraformCloudClient, times(0)).overridePolicyChecks("url", "token", "id3");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testStreamSentinelPoliciesNotPassedInFirstRun() throws IOException {
+    doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+    List<PolicyCheckData> policyCheckData = getPolicyCheckData(false);
+    policyCheckData.get(0).setLinks(JsonUtils.readTree("{\"dummy\" : \"dummy\"}"));
+    List<PolicyCheckData> policyCheckData2 = getPolicyCheckData(false);
+    doReturn(TerraformCloudResponse.builder()
+                 .data(policyCheckData)
+                 .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+                 .build(),
+        TerraformCloudResponse.builder()
+            .data(policyCheckData2)
+            .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
+            .build())
+        .when(terraformCloudClient)
+        .listPolicyChecks(any(), any(), any(), anyInt());
+
+    taskHelper.streamSentinelPolicies("url", "token", "runId", logCallback);
+
+    verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
+    verify(terraformCloudClient, times(2)).listPolicyChecks(any(), any(), any(), anyInt());
+    verify(logCallback, times(3))
+        .saveExecutionLog("policy check output", LogLevel.INFO, CommandExecutionStatus.RUNNING);
+    verify(logCallback, times(1))
+        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
   private TerraformCloudResponse getCreateRunResponse(RunStatus status) {
@@ -396,7 +431,7 @@ public class TerraformCloudTaskHelperTest {
   private TerraformCloudResponse getApplyResponse() {
     ApplyData applyData = new ApplyData();
     applyData.setRelationships(new HashMap<>());
-    applyData.setAttributes(ApplyData.Attributes.builder().status("finished").build());
+    applyData.setAttributes(ApplyData.Attributes.builder().status(ApplyData.Attributes.Status.FINISHED).build());
     Relationship relationshipCv = new Relationship();
     relationshipCv.setData(Collections.singletonList(ResourceLinkage.builder().id("cv-123").build()));
     applyData.getRelationships().put("state-versions", relationshipCv);
@@ -421,6 +456,7 @@ public class TerraformCloudTaskHelperTest {
                                       .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
                                       .build());
     policyCheckData.setId("id1");
+    policyCheckData.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
     list.add(policyCheckData);
     PolicyCheckData policyCheckData2 = new PolicyCheckData();
     policyCheckData2.setAttributes(PolicyCheckData.Attributes.builder()
@@ -428,6 +464,7 @@ public class TerraformCloudTaskHelperTest {
                                        .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
                                        .build());
     policyCheckData2.setId("id2");
+    policyCheckData2.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
     list.add(policyCheckData2);
     PolicyCheckData policyCheckData3 = new PolicyCheckData();
     policyCheckData3.setAttributes(
@@ -436,6 +473,7 @@ public class TerraformCloudTaskHelperTest {
             .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(false).build())
             .build());
     policyCheckData3.setId("id3");
+    policyCheckData3.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
     list.add(policyCheckData3);
     return list;
   }

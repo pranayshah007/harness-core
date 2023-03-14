@@ -49,11 +49,14 @@ import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.changestreams.controllers.PlgEventConsumerController;
+import io.harness.changestreams.redisconsumers.ModuleLicensesRedisEventConsumer;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
@@ -451,6 +454,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       registerNotificationTemplates(injector);
     }
     registerPmsSdkEvents(appConfig, injector);
+    registerDebeziumEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
@@ -639,6 +643,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NGEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(GitSyncEventConsumerService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(PlgEventConsumerController.class));
   }
 
   private void registerPmsSdkEvents(NextGenConfiguration appConfig, Injector injector) {
@@ -655,6 +660,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getPlanExecutionsSummaryStreaming().getThreads());
+  }
+
+  private void registerDebeziumEvents(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing sdk redis abstract consumers for PLG...");
+    PlgEventConsumerController plgEventConsumerController = injector.getInstance(PlgEventConsumerController.class);
+    plgEventConsumerController.register(injector.getInstance(ModuleLicensesRedisEventConsumer.class),
+        appConfig.getDebeziumConsumersConfigs().getModuleLicensesStreaming().getThreads());
   }
 
   private void registerYamlSdk(Injector injector) {
@@ -724,6 +736,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
     sdkFunctorMap.put(
         TerraformCloudPolicyChecksJsonFunctor.TFC_POLICY_CHECKS_JSON, TerraformCloudPolicyChecksJsonFunctor.class);
+    sdkFunctorMap.put(TerraformCloudPlanJsonFunctor.TERRAFORM_CLOUD_PLAN_JSON, TerraformCloudPlanJsonFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
     sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);

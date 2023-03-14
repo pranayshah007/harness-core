@@ -20,6 +20,7 @@ import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.helper.FilterValues;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
+import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -166,6 +167,36 @@ public class GovernanceRuleExecutionResource {
   filterValues(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
     return ResponseDTO.newResponse(ruleExecutionService.filterValue(accountId));
+  }
+
+  @GET
+  @Path("status/{ruleExecutionId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return logs for a rule execution status", nickname = "getRuleExecutionStatus")
+  @Operation(operationId = "getRuleExecutionStatus", summary = "Return logs for a rule execution status ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Return logs for a rule status",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+
+  public Response
+  getRuleExecutionStatus(
+      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @PathParam("ruleExecutionId") @NotNull @Valid String ruleExecutionId) {
+    RuleExecution ruleExecution = ruleExecutionService.get(accountId, ruleExecutionId);
+    if (ruleExecution.getExecutionStatus() == RuleExecutionStatusType.FAILED) {
+      if (ruleExecution.getErrorMessage() != null) {
+        throw new InvalidRequestException(ruleExecution.getErrorMessage());
+      } else {
+        throw new InvalidRequestException(
+            "Rule Execution Failed, Validate the policy or check if the you have relevant permission");
+      }
+    } else if (ruleExecution.getExecutionStatus() == RuleExecutionStatusType.SUCCESS) {
+      return getRuleExecutionDetails(accountId, ruleExecutionId);
+    }
+    return null;
   }
 
   @GET

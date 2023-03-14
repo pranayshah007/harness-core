@@ -21,7 +21,7 @@ import java.util.Optional;
 
 @OwnedBy(PIPELINE)
 public interface PipelineAsyncValidationService {
-  PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action);
+  PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action, boolean loadFromCache);
 
   PipelineValidationEvent createRecordForSuccessfulSyncValidation(
       PipelineEntity pipelineEntity, String branch, GovernanceMetadata governanceMetadata, Action action);

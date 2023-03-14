@@ -23,6 +23,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -53,7 +54,7 @@ public class NGActivityResource {
   @ApiOperation(value = "Get Activities where this resource was used", nickname = "listActivities")
   public ResponseDTO<Page<NGActivityDTO>> list(
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

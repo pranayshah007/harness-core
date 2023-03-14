@@ -7,7 +7,10 @@
 
 package io.harness.pms.outbox;
 
+import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
+import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,6 +31,9 @@ import io.harness.logging.AutoLogContext;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.pms.outbox.autoLog.OutboxLogContext;
+import io.harness.security.PrincipalContextData;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +62,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
   private boolean handlePipelineStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     PipelineStartEvent pipelineStartEvent =
         objectMapper.readValue(outboxEvent.getEventData(), PipelineStartEvent.class);
+
     NodeExecutionEventData nodeExecutionEventData = NodeExecutionEventData.builder()
                                                         .accountIdentifier(pipelineStartEvent.getAccountIdentifier())
                                                         .orgIdentifier(pipelineStartEvent.getOrgIdentifier())
@@ -112,6 +119,11 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
   private boolean publishAuditEntry(
       OutboxEvent outboxEvent, NodeExecutionEventData nodeExecutionEventData, Action action) {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
+
+    Principal principal = new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
+    if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
+      principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+    }
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(action)
                                 .module(ModuleType.PMS)
@@ -122,7 +134,7 @@ public class NodeExecutionOutboxEventHandler implements OutboxEventHandler {
                                 .insertId(outboxEvent.getId())
                                 .build();
 
-    return auditClientService.publishAudit(auditEntry, globalContext);
+    return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
 
   @Override

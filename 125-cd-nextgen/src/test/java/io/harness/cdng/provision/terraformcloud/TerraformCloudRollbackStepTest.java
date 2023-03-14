@@ -9,8 +9,8 @@ package io.harness.cdng.provision.terraformcloud;
 
 import static io.harness.rule.OwnerRule.BUHA;
 
-import static com.mongodb.assertions.Assertions.assertFalse;
-import static com.mongodb.assertions.Assertions.assertNull;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,8 +36,8 @@ import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformClou
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams;
-import io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams;
 import io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -46,7 +46,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -155,12 +154,13 @@ public class TerraformCloudRollbackStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terraform Cloud Task NG"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terraform Cloud Task NG : Rollback"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
-    TerraformCloudTaskParams params = (TerraformCloudTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
+    TerraformCloudRollbackTaskParams params =
+        (TerraformCloudRollbackTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(params.getAccountId()).isEqualTo("test-account");
-    assertThat(params.getTerraformCloudTaskType()).isEqualTo(TerraformCloudTaskType.ROLLBACK);
+    assertThat(params.getTaskType()).isEqualTo(TerraformCloudTaskType.ROLLBACK);
     assertThat(params.getRunId()).isEqualTo("lastRunId");
     assertFalse(params.isDiscardPendingRuns());
     assertThat(params.getTerraformCloudConnectorDTO().getTerraformCloudUrl()).isEqualTo("https://dummy.com");

@@ -9,4 +9,6 @@ package io.harness.idp.provision.service;
 
 public interface ProvisionService {
   void triggerPipeline(String accountIdentifier, String namespace);
+
+  void checkUserAuthorization();
 }

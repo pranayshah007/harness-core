@@ -87,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DeploymentStageVariableCreator extends AbstractStageVariableCreator<DeploymentStageNode> {
   private static final String SIDECARS_PREFIX = "artifacts.sidecars";
   private static final String PRIMARY = "primary";
+  private static final String SERVICE_CONFIG_EXPRESSION = "stage.spec.serviceConfig";
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
@@ -191,6 +192,18 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return responseMap;
   }
 
+  @Override
+  public VariableCreationResponse createVariablesForParentNodeV2(
+      VariableCreationContext ctx, DeploymentStageNode config) {
+    VariableCreationResponse response = super.createVariablesForParentNodeV2(ctx, config);
+    if (config.getDeploymentStageConfig().getDeploymentType() != null && response.getYamlExtraProperties() != null) {
+      // remove serviceConfig expression in case of service v2
+      response.getYamlExtraProperties().values().forEach(yamlExtraProperties
+          -> yamlExtraProperties.getPropertiesList().removeIf(
+              yamlProperties -> SERVICE_CONFIG_EXPRESSION.equals(yamlProperties.getLocalName())));
+    }
+    return response;
+  }
   private LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesPipelineV2Yaml(
       VariableCreationContext ctx, DeploymentStageNode config) {
     LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
@@ -424,6 +437,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     }
     yamlPropertiesMap.put(
         environmentYamlV2.getUuid(), YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
+    addProvisionerDependencyForSingleEnvironment(responseMap, specField);
     responseMap.put(
         environmentYamlV2.getUuid(), VariableCreationResponse.builder().yamlExtraProperties(yamlPropertiesMap).build());
 
@@ -432,6 +446,24 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       createVariablesForInfraDefinitions(ctx, specField, environmentRef, responseMap, environmentYamlV2);
     } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
       createVariablesForInfraDefinition(ctx, specField, environmentRef, responseMap, environmentYamlV2);
+    }
+  }
+
+  private void addProvisionerDependencyForSingleEnvironment(
+      LinkedHashMap<String, VariableCreationResponse> responseMap, YamlField specField) {
+    final YamlField envField = specField.getNode().getField(YAMLFieldNameConstants.ENVIRONMENT);
+    YamlField provisionerField = null;
+    if (envField != null) {
+      provisionerField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    }
+    if (provisionerField != null) {
+      Map<String, YamlField> provisionerFieldDependency =
+          new HashMap<>(InfraVariableCreator.addDependencyForProvisionerSteps(provisionerField));
+
+      responseMap.put(specField.getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(provisionerFieldDependency))
+              .build());
     }
   }
 

@@ -158,6 +158,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     userResource.setActive(!user.isDisabled());
     userResource.setUserName(user.getEmail());
     userResource.setDisplayName(user.getName());
+    userResource.setExternalId(user.getExternalUserId());
 
     boolean isJpmcFfOn = featureFlagService.isEnabled(PL_JPMC_SCIM_REQUIREMENTS, accountId);
 
@@ -451,8 +452,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
       if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
           && !userPrimaryEmail.equals(user.getEmail())) {
-        UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-        updateOperation.set(UserKeys.email, userPrimaryEmail);
+        updateOperations.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
         log.info(
             "SCIM: Updated users {}, email from {} to updated email id: {}", userId, user.getEmail(), userPrimaryEmail);

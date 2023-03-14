@@ -173,11 +173,15 @@ public class YamlNode implements Visitable {
   }
 
   public void replacePath(String path, JsonNode newNode) {
+    replacePathParametrisedOnPathSeparator(path, newNode, PATH_SEP);
+  }
+
+  public void replacePathParametrisedOnPathSeparator(String path, JsonNode newNode, String pathSeparator) {
     if (EmptyPredicate.isEmpty(path)) {
       return;
     }
 
-    List<String> pathList = Arrays.asList(path.split(PATH_SEP));
+    List<String> pathList = Arrays.asList(path.split(pathSeparator));
     if (EmptyPredicate.isEmpty(pathList)) {
       return;
     }

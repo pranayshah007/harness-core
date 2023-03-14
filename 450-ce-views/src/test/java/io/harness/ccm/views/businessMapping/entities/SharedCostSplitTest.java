@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
+import io.harness.ccm.views.businessMapping.helper.BusinessMappingTestHelper;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,10 +63,10 @@ public class SharedCostSplitTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEqualsAndHashCode() {
     final SharedCostSplit sharedCostSplit1 =
-        BusinessMappingHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
+        BusinessMappingTestHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
     final SharedCostSplit sharedCostSplit2 =
-        BusinessMappingHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
-    final SharedCostSplit sharedCostSplit3 = BusinessMappingHelper.getSharedCostSplit("TEST_NAME", 50.0);
+        BusinessMappingTestHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
+    final SharedCostSplit sharedCostSplit3 = BusinessMappingTestHelper.getSharedCostSplit("TEST_NAME", 50.0);
     assertThat(sharedCostSplit1).isEqualTo(sharedCostSplit2);
     assertThat(sharedCostSplit1).isNotEqualTo(sharedCostSplit3);
     assertThat(sharedCostSplit1.hashCode()).isEqualTo(sharedCostSplit2.hashCode());
@@ -78,10 +78,10 @@ public class SharedCostSplitTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToString() {
     final SharedCostSplit sharedCostSplit1 =
-        BusinessMappingHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
+        BusinessMappingTestHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
     final SharedCostSplit sharedCostSplit2 =
-        BusinessMappingHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
-    final SharedCostSplit sharedCostSplit3 = BusinessMappingHelper.getSharedCostSplit("TEST_NAME", 50.0);
+        BusinessMappingTestHelper.getSharedCostSplit(TEST_COST_TARGET_NAME, TEST_PERCENTAGE_CONTRIBUTION);
+    final SharedCostSplit sharedCostSplit3 = BusinessMappingTestHelper.getSharedCostSplit("TEST_NAME", 50.0);
     assertThat(sharedCostSplit1.toString()).isEqualTo(sharedCostSplit2.toString());
     assertThat(sharedCostSplit1.toString()).isNotEqualTo(sharedCostSplit3.toString());
   }

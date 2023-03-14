@@ -176,6 +176,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
   EntitySetupUsageService entitySetupUsageService;
+  private static final String CONNECTOR = "connector";
 
   @Override
   public Optional<ConnectorResponseDTO> get(
@@ -188,8 +189,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   @Override
   public Optional<ConnectorResponseDTO> getByRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
-    IdentifierRef identifierRef =
-        IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+        connectorRef, accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR);
     return get(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
         identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
   }

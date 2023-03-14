@@ -111,6 +111,8 @@ public interface SecretManager extends OwnedByAccount {
   EncryptedData encryptSecret(String accountId, SecretText secretText, boolean validateScopes);
   EncryptedData encryptSecretUsingGlobalSM(String accountId, SecretText secretText, boolean validateScopes);
 
+  String fetchSecretValue(String accountId, String secretRecordId);
+
   boolean updateSecretText(String accountId, String uuId, SecretText secretText, boolean validateScopes);
 
   String saveSecretFile(String accountId, SecretFile secretFile);

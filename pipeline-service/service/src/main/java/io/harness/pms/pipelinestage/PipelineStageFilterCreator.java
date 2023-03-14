@@ -58,8 +58,8 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
   }
 
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, PipelineStageNode stageNode) {
-    if (stageNode.getStrategy() != null) {
-      StrategyValidationUtils.validateStrategyNode(stageNode.getStrategy());
+    if (isNotNull(stageNode.getStrategy()) && stageNode.getStrategy().getValue() != null) {
+      StrategyValidationUtils.validateStrategyNode(stageNode.getStrategy().getValue());
     }
 
     YamlField variablesField =

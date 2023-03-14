@@ -20,7 +20,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
-import io.harness.licensing.LicenseType;
 import io.harness.licensing.checks.ModuleLicenseState;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
@@ -245,13 +244,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       throw new InvalidRequestException(String.format(
           "This account %s does not seem to be Product-Led and creating subscriptions for Sales-Led account is not supported at the moment. Please try again with the right account.",
           accountIdentifier));
-    }
-
-    List<ModuleLicense> moduleLicenses =
-        licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionRequest.getModuleType());
-    if (moduleLicenses.stream().anyMatch(
-            moduleLicense -> moduleLicense.isActive() && moduleLicense.getLicenseType().equals(LicenseType.PAID))) {
-      throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
     }
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);

@@ -38,6 +38,8 @@ public interface DelegateNgManagerCgManagerClient {
   String DELEGATE_SETUP_NG_API = "delegate-setup/internal";
   String DELEGATE_DOWNLOAD_API = "delegate-download";
 
+  String DELEGATE_VERSION_OVERRIDE_API = "version-override/internal";
+
   //------------------------ Delegate Token -------------------------------------
 
   @POST(DELEGATE_TOKEN_NG_API)
@@ -159,4 +161,11 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body @NotNull DelegateDownloadRequest delegateDownloadRequest);
+
+  //------------------------ Version Override API -----------------------------------
+  @PUT(DELEGATE_VERSION_OVERRIDE_API + "/delegate-tag")
+  Call<RestResponse<String>> overrideDelegateImage(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query("delegateTag") @NotNull String delegateTag, @Query("validTillNextRelease") Boolean validTillNextRelease,
+      @Query("validForDays") int validForDays);
 }

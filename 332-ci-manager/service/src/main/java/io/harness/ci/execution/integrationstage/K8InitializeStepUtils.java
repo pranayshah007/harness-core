@@ -32,6 +32,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_ME
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.ParameterField.isNull;
 
 import static java.lang.String.format;
 
@@ -180,7 +181,8 @@ public class K8InitializeStepUtils {
     Integer extraMemoryPerStep = 0;
     Integer extraCPUPerStep = 0;
 
-    if ((stepNode.getStrategy() == null) && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
+    if (((isNull(stepNode.getStrategy())) || stepNode.getStrategy().getValue() == null)
+        && !(stepNode.getStepSpecType() instanceof BackgroundStepInfo)) {
       extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
       extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
     }
