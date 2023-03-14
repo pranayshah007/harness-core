@@ -60,6 +60,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -258,7 +259,8 @@ public class IACMManagerServiceModule extends AbstractModule {
         iacmManagerConfiguration.getNgManagerServiceSecret(),
         IACM_MANAGER.getServiceId())); // token generation to communicate with NG manager
     install(PersistentLockModule.getInstance());
-
+    install(new OpaClientModule(iacmManagerConfiguration.getOpaClientConfig(),
+        iacmManagerConfiguration.getPolicyManagerSecret(), IACM_MANAGER.getServiceId()));
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {
