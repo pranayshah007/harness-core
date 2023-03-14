@@ -78,6 +78,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
@@ -308,6 +309,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
+    install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
+        ciManagerConfiguration.getPolicyManagerSecret(), CI_MANAGER.getServiceId()));
 
     install(new AbstractManagerGrpcClientModule() {
       @Override
