@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.gitintegration;
+package io.harness.idp.gitintegration.utils;
 
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.exception.InvalidRequestException;
@@ -14,7 +14,7 @@ import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class GitIntegrationUtil {
+public class GitIntegrationUtils {
   public EnvironmentSecret getEnvironmentSecret(SecretManagerClientService ngSecretService, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String tokenSecretIdentifier, String connectorIdentifier,
       String tokenType) {

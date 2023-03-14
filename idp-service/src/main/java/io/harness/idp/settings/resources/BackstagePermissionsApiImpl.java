@@ -7,8 +7,8 @@
 
 package io.harness.idp.settings.resources;
 
-import static io.harness.idp.constants.Constants.IDP_SETTINGS;
-import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   private BackstagePermissionsService backstagePermissionsService;
+
   @Override
   public Response getBackstagePermissions(String harnessAccount) {
     Optional<BackstagePermissions> backstagePermissions =
@@ -46,7 +47,7 @@ public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response createBackstagePermissions(@Valid BackstagePermissionsRequest body, String harnessAccount) {
     BackstagePermissions backstagePermissions;
     try {
@@ -63,7 +64,7 @@ public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response updateBackstagePermissions(@Valid BackstagePermissionsRequest body, String harnessAccount) {
     BackstagePermissions backstagePermissions;
     try {

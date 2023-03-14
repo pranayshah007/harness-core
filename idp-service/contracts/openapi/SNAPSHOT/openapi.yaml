@@ -309,20 +309,14 @@ paths:
         name: accountIdentifier
         in: path
         required: true
-  '/v1/account/{accountIdentifier}/onboarding/access-check':
-    parameters:
-      - name: accountIdentifier
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Identifier field of the account the resource is scoped to
+  /v1/onboarding/access-check:
+    parameters: []
     get:
       summary: Check if User is allowed to perform IDP onboarding workflow
       responses:
         '200':
           $ref: '#/components/responses/OnboardingAccessCheckResponse'
-      operationId: onboarding-access-check-v1
+      operationId: onboarding-access-check
       description: Check if User is allowed to perform IDP onboarding workflow
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -330,9 +324,8 @@ paths:
         - x-api-key: []
       tags:
         - OnboardingResource
-  '/v1/account/{accountIdentifier}/onboarding/harness-entities':
-    parameters:
-      - $ref: '#/components/parameters/AccountIdentifier'
+  /v1/onboarding/harness-entities:
+    parameters: []
     get:
       summary: Get Harness Entities
       tags:
@@ -340,7 +333,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/HarnessEntitiesResponse'
-      operationId: get-harness-entities-v1
+      operationId: get-harness-entities
       description: Get Harness Entities
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -351,12 +344,11 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
       security:
         - x-api-key: []
-  '/v1/account/{accountIdentifier}/onboarding/import-harness-entities':
-    parameters:
-      - $ref: '#/components/parameters/AccountIdentifier'
+  /v1/onboarding/import-harness-entities:
+    parameters: []
     post:
       summary: Import Harness Entities to IDP
-      operationId: import-harness-entities-v1
+      operationId: import-harness-entities
       description: Import Harness Entities to IDP
       security:
         - x-api-key: []
@@ -369,6 +361,24 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
+  /v1/onboarding/manual-import:
+    parameters: [ ]
+    post:
+      summary: Manually import entity to IDP
+      operationId: manual-import-entity
+      description: Manually import entity to IDP
+      security:
+        - x-api-key: [ ]
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ManualImportEntityRequest'
+      tags:
+        - OnboardingResource
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportEntitiesResponse'
+      x-internal: true
   /v1/layout:
     get:
       summary: Your GET endpoint
@@ -580,9 +590,13 @@ components:
           $ref: '#/components/schemas/CatalogConnectorInfo'
         entities:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: '#/components/schemas/EntitiesForImport'
+        allImport:
+          type: boolean
+          x-stoplight:
+            id: dsm3fnlholwsp
       required:
         - catalogConnectorInfo
         - entities
@@ -711,6 +725,25 @@ components:
         - identifier
         - type
       description: Connector details containing identifier and type
+    ManualImportEntityRequest:
+      title: ManualImportEntityRequest
+      x-stoplight:
+        id: ssbm06g65ld8t
+      type: object
+      description: Details of entity to import manually to IDP
+      properties:
+        yaml:
+          type: string
+          x-stoplight:
+            id: g8wygfate3kph
+          description: yaml in form on json
+        entityName:
+          type: string
+          x-stoplight:
+            id: 2axpvz6rwf0ds
+      required:
+        - yaml
+        - entityName
     GeneralResponse:
       title: GeneralResponse
       x-stoplight:
@@ -824,12 +857,20 @@ components:
           schema:
             $ref: '#/components/schemas/StatusInfoRequest'
     ImportHarnessEntitiesRequest:
+      required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
+    ManualImportEntityRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ManualImportEntityRequest'
+      description: Details of entity to import manually to IDP
   responses:
     EnvironmentSecretResponse:
       description: Example response

@@ -8,13 +8,14 @@
 package io.harness.idp.onboarding.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.idp.constants.Constants.IDP_SETTINGS;
-import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ACCOUNT_SCOPED;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_ALL_LOCATION_FILE_NAME;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_MESSAGE;
 import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
+import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT;
 import static io.harness.idp.onboarding.utils.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.SLASH_DELIMITER;
@@ -22,6 +23,7 @@ import static io.harness.idp.onboarding.utils.Constants.SOURCE_FORMAT;
 import static io.harness.idp.onboarding.utils.Constants.STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED;
 import static io.harness.idp.onboarding.utils.Constants.SUCCESS_RESPONSE_STRING;
 import static io.harness.idp.onboarding.utils.Constants.YAML_FILE_EXTENSION;
+import static io.harness.idp.onboarding.utils.FileUtils.cleanUpDirectories;
 import static io.harness.idp.onboarding.utils.FileUtils.createDirectories;
 import static io.harness.idp.onboarding.utils.FileUtils.writeObjectAsYamlInFile;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
@@ -40,18 +42,21 @@ import io.harness.clients.BackstageResourceClient;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
-import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.common.GsonUtils;
+import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
+import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
-import io.harness.idp.onboarding.OnboardingModuleConfig;
 import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogLocationEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.beans.CatalogInfraConnectorType;
+import io.harness.idp.onboarding.beans.CatalogRepositoryDetails;
 import io.harness.idp.onboarding.beans.OnboardingAccessResult;
+import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.entities.CatalogConnector;
+import io.harness.idp.onboarding.mappers.CatalogConnectorMapper;
 import io.harness.idp.onboarding.mappers.HarnessEntityToBackstageEntity;
 import io.harness.idp.onboarding.mappers.HarnessOrgToBackstageDomain;
 import io.harness.idp.onboarding.mappers.HarnessProjectToBackstageSystem;
@@ -76,6 +81,7 @@ import io.harness.spec.server.idp.v1.model.HarnessBackstageEntities;
 import io.harness.spec.server.idp.v1.model.HarnessEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportEntitiesResponse;
 import io.harness.spec.server.idp.v1.model.ImportHarnessEntitiesRequest;
+import io.harness.spec.server.idp.v1.model.ManualImportEntityRequest;
 import io.harness.spec.server.idp.v1.model.OnboardingAccessCheckResponse;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 import io.harness.utils.PageUtils;
@@ -88,12 +94,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.math3.util.Pair;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
@@ -117,13 +125,14 @@ public class OnboardingServiceImpl implements OnboardingService {
     List<PermissionCheckDTO> permissionCheckDTOS = new ArrayList<>();
     PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
                                                 .resourceScope(ResourceScope.of(accountIdentifier, null, null))
-                                                .resourceType(IDP_SETTINGS)
-                                                .permission(MANAGE_PERMISSION)
+                                                .resourceType(IDP_RESOURCE_TYPE)
+                                                .permission(IDP_PERMISSION)
                                                 .build();
     permissionCheckDTOS.add(permissionCheckDTO);
     AccessCheckResponseDTO accessCheckResponseDTO =
         accessControlClient.checkForAccess(Principal.of(PrincipalType.USER, userId), permissionCheckDTOS);
     boolean accessPermitted = accessCheckResponseDTO.getAccessControlList().get(0).isPermitted();
+    log.info("IDP onboarding access = {} for user = {}", accessPermitted, userId);
     OnboardingAccessCheckResponse onboardingAccessCheckResponse = new OnboardingAccessCheckResponse();
     onboardingAccessCheckResponse.setAccess(
         accessPermitted ? OnboardingAccessResult.ALLOWED.name() : OnboardingAccessResult.NOT_ALLOWED.name());
@@ -136,10 +145,13 @@ public class OnboardingServiceImpl implements OnboardingService {
     List<OrganizationDTO> organizationDTOS = getOrganizations(accountIdentifier);
     List<ProjectDTO> projectDTOS = getProjects(accountIdentifier);
     List<ServiceResponseDTO> serviceResponseDTOS = getServices(accountIdentifier);
+    log.info("Found {} organizations, {} projects, {} services for IDP onboarding import", organizationDTOS.size(),
+        projectDTOS.size(), serviceResponseDTOS.size());
 
     List<BackstageCatalogDomainEntity> catalogDomains = harnessOrgToBackstageDomain(organizationDTOS);
     List<BackstageCatalogSystemEntity> catalogSystems = harnessProjectToBackstageSystem(projectDTOS);
     List<BackstageCatalogComponentEntity> catalogComponents = harnessServiceToBackstageComponent(serviceResponseDTOS);
+    log.info("Mapped harness entities to backstage entities for IDP onboarding import");
 
     HarnessEntitiesResponse harnessEntitiesResponse = new HarnessEntitiesResponse();
 
@@ -147,17 +159,18 @@ public class OnboardingServiceImpl implements OnboardingService {
     harnessEntitiesResponse.setProjectCount(projectDTOS.size());
     harnessEntitiesResponse.setServiceCount(serviceResponseDTOS.size());
 
-    List<HarnessBackstageEntities> harnessEntitiesResponseHarnessBackstageEntities = new ArrayList<>();
+    List<HarnessBackstageEntities> harnessBackstageEntities = new ArrayList<>();
 
-    harnessEntitiesResponseHarnessBackstageEntities.addAll(BackstageCatalogDomainEntity.map(catalogDomains));
-    harnessEntitiesResponseHarnessBackstageEntities.addAll(BackstageCatalogSystemEntity.map(catalogSystems));
-    harnessEntitiesResponseHarnessBackstageEntities.addAll(BackstageCatalogComponentEntity.map(catalogComponents));
-    harnessEntitiesResponse.setHarnessBackstageEntities(harnessEntitiesResponseHarnessBackstageEntities);
+    harnessBackstageEntities.addAll(BackstageCatalogDomainEntity.map(catalogDomains));
+    harnessBackstageEntities.addAll(BackstageCatalogSystemEntity.map(catalogSystems));
+    harnessBackstageEntities.addAll(BackstageCatalogComponentEntity.map(catalogComponents));
+    harnessEntitiesResponse.setHarnessBackstageEntities(harnessBackstageEntities);
+    log.info("Converted harness backstage entities to response view");
 
-    PageResponse<HarnessBackstageEntities> harnessBackstageEntities =
-        PageUtils.offsetAndLimit(harnessEntitiesResponseHarnessBackstageEntities, page, limit);
+    PageResponse<HarnessBackstageEntities> harnessBackstageEntitiesResponse =
+        PageUtils.offsetAndLimit(harnessBackstageEntities, page, limit);
 
-    harnessEntitiesResponse.setHarnessBackstageEntities(harnessBackstageEntities.getContent());
+    harnessEntitiesResponse.setHarnessBackstageEntities(harnessBackstageEntitiesResponse.getContent());
 
     return harnessEntitiesResponse;
   }
@@ -165,61 +178,28 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Override
   public ImportEntitiesResponse importHarnessEntities(
       String accountIdentifier, ImportHarnessEntitiesRequest importHarnessEntitiesRequest) {
-    List<EntitiesForImport> idpSaveHarnessEntities = importHarnessEntitiesRequest.getEntities();
     CatalogConnectorInfo catalogConnectorInfo = importHarnessEntitiesRequest.getCatalogConnectorInfo();
 
-    List<String> orgToImport = idpSaveHarnessEntities.stream()
-                                   .filter(entitiesForImport -> entitiesForImport.getEntityType().equals(ORGANIZATION))
-                                   .map(EntitiesForImport::getIdentifier)
-                                   .collect(Collectors.toList());
-    List<String> projectToImport = idpSaveHarnessEntities.stream()
-                                       .filter(entitiesForImport -> entitiesForImport.getEntityType().equals(PROJECT))
-                                       .map(EntitiesForImport::getIdentifier)
-                                       .collect(Collectors.toList());
-    List<String> serviceToImport = idpSaveHarnessEntities.stream()
-                                       .filter(entitiesForImport -> entitiesForImport.getEntityType().equals(SERVICE))
-                                       .map(EntitiesForImport::getIdentifier)
-                                       .collect(Collectors.toList());
+    Triple<List<OrganizationDTO>, List<ProjectDTO>, List<ServiceResponseDTO>> orgProjectService =
+        getOrgProjectService(accountIdentifier, importHarnessEntitiesRequest);
 
-    if (orgToImport.size() + projectToImport.size() + serviceToImport.size() == 0) {
-      throw new InvalidRequestException(ENTITY_REQUIRED_ERROR_MESSAGE);
-    }
+    List<BackstageCatalogDomainEntity> catalogDomains = harnessOrgToBackstageDomain(orgProjectService.getLeft());
+    List<BackstageCatalogSystemEntity> catalogSystems = harnessProjectToBackstageSystem(orgProjectService.getMiddle());
+    List<BackstageCatalogComponentEntity> catalogComponents =
+        harnessServiceToBackstageComponent(orgProjectService.getRight());
+    log.info("Mapped harness entities to backstage entities for IDP onboarding import");
 
-    Map<String, Map<String, List<String>>> orgProjectsServicesMapping = getOrgProjectsServicesMapping(serviceToImport);
-    Map<String, List<String>> orgProjectsMapping = getOrgProjectsMapping(projectToImport);
-
-    List<OrganizationDTO> organizationDTOS =
-        !orgToImport.isEmpty() ? getOrganizations(accountIdentifier, orgToImport) : new ArrayList<>();
-    List<ProjectDTO> projectDTOS = orgProjectsMapping.size() > 0
-        ? getProjects(accountIdentifier, orgProjectsMapping.keySet(),
-            orgProjectsMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toList()))
-        : new ArrayList<>();
-    List<ServiceResponseDTO> serviceResponseDTOS = orgProjectsServicesMapping.size() > 0
-        ? getServices(accountIdentifier, orgProjectsServicesMapping)
-        : new ArrayList<>();
-
-    if (organizationDTOS.size() != orgToImport.size() || projectDTOS.size() != projectToImport.size()
-        || serviceResponseDTOS.size() != serviceToImport.size()) {
-      throw new UnexpectedException();
-    }
-
-    List<BackstageCatalogDomainEntity> catalogDomains = harnessOrgToBackstageDomain(organizationDTOS);
-    List<BackstageCatalogSystemEntity> catalogSystems = harnessProjectToBackstageSystem(projectDTOS);
-    List<BackstageCatalogComponentEntity> catalogComponents = harnessServiceToBackstageComponent(serviceResponseDTOS);
-
-    catalogConnectorInfo.getInfraConnector().setIdentifier(
-        catalogConnectorInfo.getInfraConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
-    catalogConnectorInfo.getSourceConnector().setIdentifier(
-        catalogConnectorInfo.getSourceConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
+    replaceAccountScopedValuesInCatalogConnectorInfo(catalogConnectorInfo);
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
         ConnectorType.fromString(catalogConnectorInfo.getSourceConnector().getType()));
+    log.info("IDP onboarding import - connector processor initialized for type = {}",
+        catalogConnectorInfo.getSourceConnector().getType());
 
     String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
         accountIdentifier, catalogConnectorInfo.getInfraConnector().getIdentifier());
 
-    saveIdpCatalogConnector(
-        accountIdentifier, catalogConnectorInfo, CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
+    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -228,12 +208,12 @@ public class OnboardingServiceImpl implements OnboardingService {
         : onboardingModuleConfig.getCatalogInfoLocationDefaultPath();
 
     String catalogInfoLocationParentPath = tmpPathForCatalogInfoYamlStore + entitiesFolderPath + SLASH_DELIMITER;
-
     String orgYamlPath = catalogInfoLocationParentPath + ORGANIZATION + SLASH_DELIMITER;
     String projectYamlPath = catalogInfoLocationParentPath + PROJECT + SLASH_DELIMITER;
     String serviceYamlPath = catalogInfoLocationParentPath + SERVICE + SLASH_DELIMITER;
 
     createDirectories(orgYamlPath, projectYamlPath, serviceYamlPath);
+    log.info("Initialized directories to write yaml files for IDP onboarding import");
 
     String entityTargetParentPath = catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
         + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER;
@@ -241,31 +221,22 @@ public class OnboardingServiceImpl implements OnboardingService {
     String projectEntityTargetPath = entityTargetParentPath + PROJECT + SLASH_DELIMITER;
     String serviceEntityTargetPath = entityTargetParentPath + SERVICE + SLASH_DELIMITER;
 
-    BackstageCatalogEntity backstageCatalogEntityInitial =
-        getFirstAmongAll(catalogDomains, catalogSystems, catalogComponents);
-
-    String yamlPath;
-    String entityTargetPath;
-    if (backstageCatalogEntityInitial instanceof BackstageCatalogDomainEntity) {
-      yamlPath = orgYamlPath;
-      entityTargetPath = orgEntityTargetPath;
-    } else if (backstageCatalogEntityInitial instanceof BackstageCatalogSystemEntity) {
-      yamlPath = projectYamlPath;
-      entityTargetPath = projectEntityTargetPath;
-    } else if (backstageCatalogEntityInitial instanceof BackstageCatalogComponentEntity) {
-      yamlPath = serviceYamlPath;
-      entityTargetPath = serviceEntityTargetPath;
-    } else {
-      throw new UnexpectedException();
-    }
-
+    Pair<BackstageCatalogEntity, Pair<String, String>> backstageCatalogEntityInitial = getFirstAmongAll(
+        catalogInfoLocationParentPath, entityTargetParentPath, catalogDomains, catalogSystems, catalogComponents);
+    log.info("Fetched {} for initial import in IDP onboarding flow", backstageCatalogEntityInitial);
     List<String> filesToPush =
-        writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial), yamlPath);
-    String target =
-        prepareEntitiesTarget(Collections.singletonList(backstageCatalogEntityInitial), entityTargetPath).get(0);
-    connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, filesToPush);
-    registerLocationInBackstage(BACKSTAGE_LOCATION_URL_TYPE, target);
+        writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
+            backstageCatalogEntityInitial.getSecond().getFirst());
+    String target = prepareEntitiesTarget(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
+        backstageCatalogEntityInitial.getSecond().getSecond())
+                        .get(0);
+    connectorProcessor.performPushOperation(
+        accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore, entitiesFolderPath, filesToPush);
+    registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, target);
+    log.info(
+        "Finished operation of yaml generation, pushing to source, registering in backstage for one initial entity");
 
+    log.info("Starting async operations for remaining entities import");
     new Thread(() -> {
       List<String> locationTargets = new ArrayList<>(Collections.singleton(target));
 
@@ -283,8 +254,6 @@ public class OnboardingServiceImpl implements OnboardingService {
       targets = prepareEntitiesTarget(catalogComponents, serviceEntityTargetPath);
       locationTargets.addAll(targets);
 
-      locationTargets.addAll(onboardingModuleConfig.getSampleEntities());
-
       BackstageCatalogLocationEntity backstageCatalogLocationEntity =
           buildBackstageCatalogLocationEntity(onboardingModuleConfig.getBackstageLocationEntityAllHarnessEntitiesName(),
               onboardingModuleConfig.getBackstageLocationEntityAllHarnessEntitiesDesc(), BACKSTAGE_LOCATION_URL_TYPE,
@@ -296,14 +265,62 @@ public class OnboardingServiceImpl implements OnboardingService {
           + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER + BACKSTAGE_ALL_LOCATION_FILE_NAME
           + YAML_FILE_EXTENSION;
 
-      connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, filesToPush);
+      connectorProcessor.performPushOperation(
+          accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore, entitiesFolderPath, filesToPush);
 
-      registerLocationInBackstage(BACKSTAGE_LOCATION_URL_TYPE, allTargetLocation);
+      registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, allTargetLocation);
+      onboardingModuleConfig.getSampleEntities().forEach(
+          sampleEntity -> registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, sampleEntity));
+
       createCatalogInfraConnectorSecretInBackstageK8S(accountIdentifier, catalogConnectorInfo);
 
       saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
           STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
+
+      log.info("Finished operation of yaml generation, pushing to source, registering in backstage, "
+          + "creating connector secret in K8S, saving status info for all entities");
+
+      log.info("Cleaning up directories created during IDP onboarding");
+      cleanUpDirectories(tmpPathForCatalogInfoYamlStore);
     }).start();
+
+    return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
+  }
+
+  @Override
+  public ImportEntitiesResponse manualImportEntity(
+      String harnessAccount, ManualImportEntityRequest manualImportEntityRequest) {
+    CatalogConnector catalogConnector = getCatalogConnector(harnessAccount);
+    CatalogConnectorInfo catalogConnectorInfo = CatalogConnectorMapper.toDTO(catalogConnector);
+
+    String tmpPathForCatalogInfoYamlStore =
+        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + harnessAccount;
+    String entitiesFolderPath = !catalogConnectorInfo.getPath().isEmpty()
+        ? catalogConnectorInfo.getPath()
+        : onboardingModuleConfig.getCatalogInfoLocationDefaultPath();
+    String catalogInfoLocationParentPath = tmpPathForCatalogInfoYamlStore + entitiesFolderPath + SLASH_DELIMITER;
+    String catalogInfoLocationFilePath =
+        catalogInfoLocationParentPath + manualImportEntityRequest.getEntityName() + YAML_FILE_EXTENSION;
+    String entityTargetParentPath = catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
+        + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER;
+    String entityTargetFilePath =
+        entityTargetParentPath + manualImportEntityRequest.getEntityName() + YAML_FILE_EXTENSION;
+
+    createDirectories(catalogInfoLocationParentPath);
+    log.info("Initialized directory to write yaml files for IDP manual entity import");
+
+    writeObjectAsYamlInFile(GsonUtils.convertJsonStringToObject(manualImportEntityRequest.getYaml(), Object.class),
+        catalogInfoLocationFilePath);
+
+    ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
+        ConnectorType.fromString(catalogConnector.getSourceConnector().getType()));
+    connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
+        entitiesFolderPath, Collections.singletonList(catalogInfoLocationFilePath));
+
+    registerLocationInBackstage(harnessAccount, BACKSTAGE_LOCATION_URL_TYPE, entityTargetFilePath);
+
+    log.info(
+        "Finished operation of yaml generation, pushing to source, registering in backstage for manual import entity");
 
     return new ImportEntitiesResponse().status(SUCCESS_RESPONSE_STRING);
   }
@@ -323,18 +340,17 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private List<ServiceResponseDTO> getServices(String accountIdentifier) {
     List<ServiceResponseDTO> serviceResponseDTOS = new ArrayList<>();
-    AtomicReference<PageResponse<ServiceResponse>> services = new AtomicReference<>();
+    PageResponse<ServiceResponse> services;
     int page = 0;
-    int size = 100;
     do {
-      services.set(getResponse(
-          serviceResourceClient.listServicesForProject(page, size, accountIdentifier, null, null, null, null)));
-      if (services.get() != null && isNotEmpty(services.get().getContent())) {
+      services = getResponse(serviceResourceClient.getAllServicesList(
+          accountIdentifier, null, null, page, PAGE_LIMIT_FOR_ENTITY_FETCH, null));
+      if (services != null && isNotEmpty(services.getContent())) {
         serviceResponseDTOS.addAll(
-            services.get().getContent().stream().map(ServiceResponse::getService).collect(Collectors.toList()));
+            services.getContent().stream().map(ServiceResponse::getService).collect(Collectors.toList()));
       }
       page++;
-    } while (services.get() != null && isNotEmpty(services.get().getContent()));
+    } while (services != null && isNotEmpty(services.getContent()));
     return serviceResponseDTOS;
   }
 
@@ -370,6 +386,55 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
+  private Triple<List<OrganizationDTO>, List<ProjectDTO>, List<ServiceResponseDTO>> getOrgProjectService(
+      String accountIdentifier, ImportHarnessEntitiesRequest importHarnessEntitiesRequest) {
+    List<EntitiesForImport> idpSaveHarnessEntities = importHarnessEntitiesRequest.getEntities();
+    boolean allImport = importHarnessEntitiesRequest.isAllImport();
+
+    List<String> orgToImport = getEntitiesByType(idpSaveHarnessEntities, ORGANIZATION);
+    List<String> projectToImport = getEntitiesByType(idpSaveHarnessEntities, PROJECT);
+    List<String> serviceToImport = getEntitiesByType(idpSaveHarnessEntities, SERVICE);
+    log.info("Found {} organizations, {} projects, {} services for IDP onboarding import", orgToImport.size(),
+        projectToImport.size(), serviceToImport.size());
+    throwExceptionIfNothingToImport(orgToImport, projectToImport, serviceToImport, allImport);
+
+    Map<String, List<String>> orgProjectsMapping = getOrgProjectsMapping(projectToImport);
+    Map<String, Map<String, List<String>>> orgProjectsServicesMapping = getOrgProjectsServicesMapping(serviceToImport);
+
+    List<OrganizationDTO> organizationDTOS;
+    List<ProjectDTO> projectDTOS;
+    List<ServiceResponseDTO> serviceDTOS;
+    if (allImport) {
+      organizationDTOS = getOrganizations(accountIdentifier);
+      projectDTOS = getProjects(accountIdentifier);
+      serviceDTOS = getServices(accountIdentifier);
+    } else {
+      organizationDTOS = getOrganizationDTOS(accountIdentifier, orgToImport);
+      projectDTOS = getProjectDTOS(accountIdentifier, orgProjectsMapping);
+      serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMapping);
+    }
+    log.info("Fetched {} organizations, {} projects, {} services for IDP onboarding import", organizationDTOS.size(),
+        projectDTOS.size(), serviceDTOS.size());
+    throwExceptionIfMismatchBetweenFoundAndProvided(
+        orgToImport, projectToImport, serviceToImport, organizationDTOS, projectDTOS, serviceDTOS, allImport);
+
+    return Triple.of(organizationDTOS, projectDTOS, serviceDTOS);
+  }
+
+  private List<String> getEntitiesByType(List<EntitiesForImport> idpSaveHarnessEntities, String type) {
+    return idpSaveHarnessEntities.stream()
+        .filter(entitiesForImport -> entitiesForImport.getEntityType().equals(type))
+        .map(EntitiesForImport::getIdentifier)
+        .collect(Collectors.toList());
+  }
+
+  private void throwExceptionIfNothingToImport(
+      List<String> orgToImport, List<String> projectToImport, List<String> serviceToImport, boolean allImport) {
+    if ((orgToImport.size() + projectToImport.size() + serviceToImport.size() == 0) && !allImport) {
+      throw new InvalidRequestException(ENTITY_REQUIRED_ERROR_MESSAGE);
+    }
+  }
+
   private Map<String, List<String>> getOrgProjectsMapping(List<String> harnessEntitiesProjects) {
     Map<String, List<String>> projectIdentifiers = new HashMap<>();
     harnessEntitiesProjects.forEach(project -> {
@@ -390,9 +455,10 @@ public class OnboardingServiceImpl implements OnboardingService {
     harnessEntitiesServices.forEach(service -> {
       String[] orgProjectService = service.split("\\|");
       if (serviceIdentifiers.containsKey(orgProjectService[0])) {
-        Map<String, List<String>> existingProjectsServices = serviceIdentifiers.get(orgProjectService[0]);
+        Map<String, List<String>> existingProjectsServices =
+            new HashMap<>(serviceIdentifiers.get(orgProjectService[0]));
         if (existingProjectsServices.containsKey(orgProjectService[1])) {
-          List<String> existingServices = existingProjectsServices.get(orgProjectService[1]);
+          List<String> existingServices = new ArrayList<>(existingProjectsServices.get(orgProjectService[1]));
           existingServices.add(orgProjectService[2]);
           existingProjectsServices.put(orgProjectService[1], existingServices);
           serviceIdentifiers.put(orgProjectService[0], existingProjectsServices);
@@ -408,14 +474,39 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceIdentifiers;
   }
 
+  private List<OrganizationDTO> getOrganizationDTOS(String accountIdentifier, List<String> orgToImport) {
+    return !orgToImport.isEmpty() ? getOrganizations(accountIdentifier, orgToImport) : new ArrayList<>();
+  }
+
+  private List<ProjectDTO> getProjectDTOS(String accountIdentifier, Map<String, List<String>> orgProjectsMapping) {
+    return orgProjectsMapping.size() > 0 ? getProjects(accountIdentifier, orgProjectsMapping.keySet(),
+               orgProjectsMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toList()))
+                                         : new ArrayList<>();
+  }
+
+  private List<ServiceResponseDTO> getServiceDTOS(
+      String accountIdentifier, Map<String, Map<String, List<String>>> orgProjectsServicesMapping) {
+    return orgProjectsServicesMapping.size() > 0 ? getServices(accountIdentifier, orgProjectsServicesMapping)
+                                                 : new ArrayList<>();
+  }
+
+  private void throwExceptionIfMismatchBetweenFoundAndProvided(List<String> orgToImport, List<String> projectToImport,
+      List<String> serviceToImport, List<OrganizationDTO> organizationDTOS, List<ProjectDTO> projectDTOS,
+      List<ServiceResponseDTO> serviceResponseDTOS, boolean allImport) {
+    if ((organizationDTOS.size() != orgToImport.size() || projectDTOS.size() != projectToImport.size()
+            || serviceResponseDTOS.size() != serviceToImport.size())
+        && !allImport) {
+      throw new UnexpectedException("Mismatch between provided and found harness entities for IDP import");
+    }
+  }
+
   private List<OrganizationDTO> getOrganizations(String accountIdentifier, List<String> identifiers) {
     List<OrganizationDTO> organizationDTOS = new ArrayList<>();
     PageResponse<OrganizationResponse> organizations;
     int page = 0;
-    int size = 100;
     do {
-      organizations =
-          getResponse(organizationClient.listOrganization(accountIdentifier, identifiers, null, page, size, null));
+      organizations = getResponse(organizationClient.listOrganization(
+          accountIdentifier, identifiers, null, page, PAGE_LIMIT_FOR_ENTITY_FETCH, null));
       if (organizations != null && isNotEmpty(organizations.getContent())) {
         organizationDTOS.addAll(organizations.getContent()
                                     .stream()
@@ -432,10 +523,9 @@ public class OnboardingServiceImpl implements OnboardingService {
     List<ProjectDTO> projectDTOS = new ArrayList<>();
     PageResponse<ProjectResponse> projects;
     int page = 0;
-    int size = 100;
     do {
-      projects = getResponse(projectClient.listWithMultiOrg(
-          accountIdentifier, organizationIdentifiers, false, identifiers, null, null, page, size, null));
+      projects = getResponse(projectClient.listWithMultiOrg(accountIdentifier, organizationIdentifiers, false,
+          identifiers, null, null, page, PAGE_LIMIT_FOR_ENTITY_FETCH, null));
       if (projects != null && isNotEmpty(projects.getContent())) {
         projectDTOS.addAll(
             projects.getContent().stream().map(ProjectResponse::getProject).collect(Collectors.toList()));
@@ -453,10 +543,9 @@ public class OnboardingServiceImpl implements OnboardingService {
       for (var projectService : serviceIdentifier.getValue().entrySet()) {
         PageResponse<ServiceResponse> services;
         int page = 0;
-        int size = 100;
         do {
-          services = getResponse(serviceResourceClient.listServicesForProject(
-              page, size, accountIdentifier, org, projectService.getKey(), projectService.getValue(), null));
+          services = getResponse(serviceResourceClient.listServicesForProject(page, PAGE_LIMIT_FOR_ENTITY_FETCH,
+              accountIdentifier, org, projectService.getKey(), projectService.getValue(), null));
           if (services != null && isNotEmpty(services.getContent())) {
             serviceResponseDTOS.addAll(
                 services.getContent().stream().map(ServiceResponse::getService).collect(Collectors.toList()));
@@ -468,30 +557,50 @@ public class OnboardingServiceImpl implements OnboardingService {
     return serviceResponseDTOS;
   }
 
-  private void saveIdpCatalogConnector(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      CatalogInfraConnectorType catalogInfraConnectorType) {
-    CatalogConnector catalogConnector = new CatalogConnector();
-
-    catalogConnector.setAccountId(accountIdentifier);
-    catalogConnector.setIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier() + "_"
-        + catalogConnectorInfo.getSourceConnector().getIdentifier());
-    catalogConnector.setType(catalogInfraConnectorType);
-    catalogConnector.setInfraConnector(catalogConnectorInfo.getInfraConnector());
-    catalogConnector.setSourceConnector(catalogConnectorInfo.getSourceConnector());
-    catalogConnector.setRepo(catalogConnectorInfo.getRepo());
-    catalogConnector.setBranch(catalogConnectorInfo.getBranch());
-    catalogConnector.setPath(catalogConnectorInfo.getPath());
-
-    catalogConnectorRepository.save(catalogConnector);
+  private void replaceAccountScopedValuesInCatalogConnectorInfo(CatalogConnectorInfo catalogConnectorInfo) {
+    catalogConnectorInfo.getInfraConnector().setIdentifier(
+        catalogConnectorInfo.getInfraConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
+    catalogConnectorInfo.getSourceConnector().setIdentifier(
+        catalogConnectorInfo.getSourceConnector().getIdentifier().replace(ACCOUNT_SCOPED, ""));
   }
 
-  private BackstageCatalogEntity getFirstAmongAll(List<? extends BackstageCatalogEntity>... backstageCatalogEntities) {
+  private void saveCatalogConnector(
+      String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType) {
+    CatalogConnector catalogConnector = new CatalogConnector();
+
+    catalogConnector.setAccountIdentifier(accountIdentifier);
+    catalogConnector.setIdentifier(catalogConnectorInfo.getInfraConnector().getIdentifier() + "_"
+        + catalogConnectorInfo.getSourceConnector().getIdentifier());
+    catalogConnector.setType(CatalogInfraConnectorType.valueOf(catalogInfraConnectorType));
+    catalogConnector.setInfraConnector(catalogConnectorInfo.getInfraConnector());
+    catalogConnector.setSourceConnector(catalogConnectorInfo.getSourceConnector());
+    catalogConnector.setCatalogRepositoryDetails(new CatalogRepositoryDetails(
+        catalogConnectorInfo.getRepo(), catalogConnectorInfo.getBranch(), catalogConnectorInfo.getPath()));
+
+    catalogConnectorRepository.save(catalogConnector);
+    log.info("Saved catalogConnector to DB. Account = {}", accountIdentifier);
+  }
+
+  private Pair<BackstageCatalogEntity, Pair<String, String>> getFirstAmongAll(String catalogInfoLocationParentPath,
+      String entityTargetParentPath, List<? extends BackstageCatalogEntity>... backstageCatalogEntities) {
     for (List<? extends BackstageCatalogEntity> backstageCatalogEntity : backstageCatalogEntities) {
       for (BackstageCatalogEntity catalogEntity : backstageCatalogEntity) {
-        return catalogEntity;
+        if (catalogEntity instanceof BackstageCatalogDomainEntity) {
+          return new Pair<>(catalogEntity,
+              new Pair<>(catalogInfoLocationParentPath + ORGANIZATION + SLASH_DELIMITER,
+                  entityTargetParentPath + ORGANIZATION + SLASH_DELIMITER));
+        } else if (catalogEntity instanceof BackstageCatalogSystemEntity) {
+          return new Pair<>(catalogEntity,
+              new Pair<>(catalogInfoLocationParentPath + PROJECT + SLASH_DELIMITER,
+                  entityTargetParentPath + PROJECT + SLASH_DELIMITER));
+        } else if (catalogEntity instanceof BackstageCatalogComponentEntity) {
+          return new Pair<>(catalogEntity,
+              new Pair<>(catalogInfoLocationParentPath + SERVICE + SLASH_DELIMITER,
+                  entityTargetParentPath + SERVICE + SLASH_DELIMITER));
+        }
       }
     }
-    throw new UnexpectedException();
+    throw new UnexpectedException("Found invalid entity to import in IDP onboarding flow");
   }
 
   private List<String> writeEntityAsYamlInFile(List<? extends BackstageCatalogEntity> entities, String prefixPath) {
@@ -526,13 +635,14 @@ public class OnboardingServiceImpl implements OnboardingService {
     return backstageCatalogLocationEntity;
   }
 
-  private void registerLocationInBackstage(String type, String allTarget) {
+  private void registerLocationInBackstage(String accountIdentifier, String type, String allTarget) {
     try {
-      getGeneralResponse(
-          backstageResourceClient.createCatalogLocation(String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret),
-              new BackstageCatalogLocationCreateRequest(type, allTarget)));
+      getGeneralResponse(backstageResourceClient.createCatalogLocation(accountIdentifier,
+          String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret),
+          new BackstageCatalogLocationCreateRequest(type, allTarget)));
     } catch (Exception e) {
-      log.error("Unable to register target location in backstage, ex = {}", e.getMessage(), e);
+      log.error("Unable to register target of type = {} with location = {} in backstage, ex = {}", type, allTarget,
+          e.getMessage(), e);
     }
   }
 
@@ -553,5 +663,14 @@ public class OnboardingServiceImpl implements OnboardingService {
     statusInfo.setCurrentStatus(currentStatus);
     statusInfo.setReason(reason);
     statusInfoService.save(statusInfo, accountIdentifier, type);
+  }
+
+  private CatalogConnector getCatalogConnector(String accountIdentifier) {
+    Optional<CatalogConnector> catalogConnector = catalogConnectorRepository.findByAccountIdentifier(accountIdentifier);
+    if (catalogConnector.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Catalog connector not found for accountIdentifier: [%s]]", accountIdentifier));
+    }
+    return catalogConnector.get();
   }
 }

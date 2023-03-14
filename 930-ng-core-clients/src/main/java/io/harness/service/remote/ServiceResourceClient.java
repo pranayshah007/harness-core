@@ -54,4 +54,11 @@ public interface ServiceResourceClient {
   Call<ResponseDTO<NGEntityTemplateResponseDTO>> getServiceRuntimeInputs(
       @Path("serviceIdentifier") String serviceIdentifier, @Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier);
+
+  @GET(SERVICE_API + "/all-services")
+  Call<ResponseDTO<PageResponse<ServiceResponse>>> getAllServicesList(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Query("page") @DefaultValue("0") int page,
+      @Query("size") @DefaultValue("100") int size, @Query("sort") List<String> sort);
 }

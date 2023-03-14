@@ -19,5 +19,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.IDP)
 public interface CatalogConnectorRepository
     extends CrudRepository<CatalogConnector, String>, CatalogConnectorRepositoryCustom {
-  Optional<CatalogConnector> findByAccountId(String accountId);
+  Optional<CatalogConnector> findByAccountIdentifier(String accountIdentifier);
 }

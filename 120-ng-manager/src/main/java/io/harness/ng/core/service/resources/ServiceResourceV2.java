@@ -84,6 +84,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -449,6 +450,45 @@ public class ServiceResourceV2 {
     });
     return ResponseDTO.newResponse(getNGPageResponse(
         serviceEntities.map(entity -> ServiceElementMapper.toResponseWrapper(entity, includeVersionInfo))));
+  }
+
+  @GET
+  @Hidden
+  @Path("all-services")
+  @ApiOperation(value = "Get all services list", nickname = "getAllServicesList")
+  @Operation(operationId = "getAllServicesList",
+      summary = "Get all services list across organizations and projects within account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of all Services across organizations and projects within account")
+      },
+      hidden = true)
+  @InternalApi
+  @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
+  public ResponseDTO<PageResponse<ServiceResponse>>
+  getAllServicesList(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = NGResourceFilterConstants.SEARCH_TERM) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") @Max(1000) int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SORT) List<String> sort) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForListingAllServices(
+        accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, false);
+
+    Pageable pageRequest = isEmpty(sort)
+        ? PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceEntityKeys.createdAt))
+        : PageUtils.getPageRequest(page, size, sort);
+    Page<ServiceEntity> serviceEntities = serviceEntityService.list(criteria, pageRequest);
+    return ResponseDTO.newResponse(getNGPageResponse(serviceEntities.map(ServiceElementMapper::toResponseWrapper)));
   }
 
   @GET

@@ -78,12 +78,12 @@ backstageHttpClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-ngManagerServiceSecret: ""
-managerServiceSecret: ""
-backstageServiceSecret: ""
-idpServiceSecret: ""
-jwtAuthSecret: ""
-jwtIdentityServiceSecret: ""
+ngManagerServiceSecret: "UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW"
+managerServiceSecret: "UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW"
+backstageServiceSecret: "UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW"
+idpServiceSecret: "UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW"
+jwtAuthSecret: "vGz61yEdnL3oVkM6hmDipOVQDTKwnBn75RDgUCclJadYUuDt88tYstwITDtdqW6jTmI"
+jwtIdentityServiceSecret: "vGz61yEdnL3oVkM6hmDipOVQDTKwnBn75RDgUCclJadYUuDt88tYstwITDtdqW6jTmI"
 
 onboardingModuleConfig:
   tmpPathForCatalogInfoYamlStore: /tmp
@@ -91,11 +91,11 @@ onboardingModuleConfig:
   backstageLocationEntityAllHarnessEntitiesName: "all-harness-entities"
   backstageLocationEntityAllHarnessEntitiesDesc: "Collection of all harness entities - organizations, projects, services and sample entities"
   sampleEntities:
-    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/one.yaml
-    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/two.yaml
-    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/three.yaml
-    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/four.yaml
-    - https://github.com/harness/harness-core/blob/IDP-Software-Catalog/idp-service/.sample-catalog-entities/five.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/two.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
+    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
 
 accessControlClient:
   enableAccessControl: false
@@ -103,7 +103,7 @@ accessControlClient:
     baseUrl: http://localhost:9006/api/
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  accessControlServiceSecret: ""
+  accessControlServiceSecret: "UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW"
 
 backstageSaToken: ""
 backstageSaCaCrt: ""

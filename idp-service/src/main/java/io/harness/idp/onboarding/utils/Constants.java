@@ -22,6 +22,7 @@ public class Constants {
   public static final String PIPE_DELIMITER = "|";
   public static final String ENTITY_UNKNOWN_OWNER = "Unknown";
   public static final String ENTITY_UNKNOWN_LIFECYCLE = "Unknown";
+  public static final int PAGE_LIMIT_FOR_ENTITY_FETCH = 1000;
   public static final String ENTITY_REQUIRED_ERROR_MESSAGE =
       "At-least one entity of type organization / project / service should be provided";
   public static final String ACCOUNT_SCOPED = "account.";

@@ -15,8 +15,8 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
-import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
-import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
+import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
 
@@ -36,7 +36,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   public void createConnectorSecretsEnvVariable(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifier, ConnectorType connectorType) {
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(connectorType);
-    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorEnvSecrets = connectorProcessor.getConnectorSecretsInfo(
+    Pair<ConnectorInfoDTO, List<EnvironmentSecret>> connectorEnvSecrets = connectorProcessor.getConnectorAndSecretsInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     environmentSecretService.syncK8sSecret(connectorEnvSecrets.getSecond(), accountIdentifier);
   }

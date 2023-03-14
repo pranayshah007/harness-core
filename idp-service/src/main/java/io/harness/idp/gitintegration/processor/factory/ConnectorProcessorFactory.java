@@ -5,16 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.gitintegration.factory;
+package io.harness.idp.gitintegration.processor.factory;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.idp.gitintegration.baseclass.ConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.AzureRepoConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.BitbucketConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.GitlabConnectorProcessor;
+import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.AzureRepoConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.BitbucketConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
 
 import com.google.inject.Inject;
 

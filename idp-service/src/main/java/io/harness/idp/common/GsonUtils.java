@@ -5,15 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.repositories;
+package io.harness.idp.common;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.google.inject.Inject;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import com.google.gson.Gson;
 
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRepositoryCustom {}
+public class GsonUtils {
+  private GsonUtils() {}
+
+  private static final Gson gson = new Gson();
+
+  public static <T> T convertJsonStringToObject(String jsonString, Class<T> targetType) {
+    return gson.fromJson(jsonString, targetType);
+  }
+}

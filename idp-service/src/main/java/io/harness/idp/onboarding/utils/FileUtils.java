@@ -9,15 +9,19 @@ package io.harness.idp.onboarding.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.UnexpectedException;
 import io.harness.utils.YamlPipelineUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class FileUtils {
   private FileUtils() {}
@@ -27,7 +31,7 @@ public class FileUtils {
       try {
         Files.createDirectories(Path.of(dir));
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new UnexpectedException("Error while creating directories");
       }
     }
   }
@@ -38,7 +42,18 @@ public class FileUtils {
       Path file = Paths.get(filePath);
       Files.write(file, Collections.singletonList(yaml), StandardCharsets.UTF_8);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new UnexpectedException("Error writing object as yaml in file");
+    }
+  }
+
+  public static void cleanUpDirectories(String... dirs) {
+    for (String dir : dirs) {
+      try {
+        org.apache.commons.io.FileUtils.deleteDirectory(new File(dir));
+      } catch (IOException e) {
+        log.error("Error in cleaning up directories. Exception = {}", e.getMessage(), e);
+        throw new UnexpectedException("Error while cleaning up directories");
+      }
     }
   }
 }

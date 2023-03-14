@@ -28,7 +28,9 @@ public class GitIntegrationConstants {
   public static final String BITBUCKET_CONNECTOR_TYPE = "Bitbucket";
   public static final String AZURE_REPO_CONNECTOR_TYPE = "AzureRepo";
   public static final String AZURE_REPO_TOKEN = "AZURE_REPO_TOKEN";
-  public static final String TMP_LOCATION_FOR_GIT_CLONE = "/tmp/git_repos/";
   public static final String CATALOG_INFRA_CONNECTOR_TYPE_DIRECT = "DIRECT";
   public static final String CATALOG_INFRA_CONNECTOR_TYPE_PROXY = "PROXY";
+  public static final String TMP_LOCATION_FOR_GIT_CLONE = "/tmp/git_repos/";
+  public static final String HARNESS_ENTITIES_IMPORT_AUTHOR_EMAIL = "idp-harness@harness.io";
+  public static final String HARNESS_ENTITIES_IMPORT_COMMIT_MESSAGE = "Importing Harness Entities to IDP";
 }

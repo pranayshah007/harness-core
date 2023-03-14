@@ -4,14 +4,17 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
 
 java_library(
     name = "module",
     srcs = glob(["**/*.java"]),
     resources = [],
-    visibility = ["//visibility:public"],
+    visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
         "//999-annotations:module",
+        "@maven//:com_google_code_gson_gson",
     ],
 )

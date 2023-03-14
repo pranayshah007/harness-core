@@ -7,8 +7,8 @@
 
 package io.harness.idp.proxy.layout;
 
-import static io.harness.idp.constants.Constants.IDP_SETTINGS;
-import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -33,7 +33,7 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
   @Inject BackstageResourceClient backstageResourceClient;
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response createLayout(String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.createLayout(
         String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
@@ -41,7 +41,7 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
   }
 
   @Override
-  @NGAccessControlCheck(resourceType = IDP_SETTINGS, permission = MANAGE_PERMISSION)
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response deleteLayout(String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(
         String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));

@@ -21,7 +21,7 @@ public interface BackstageResourceClient {
   String LAYOUT_API = "{accountIdentifier}/idp/api/layout";
 
   @POST(CATALOG_API + "/locations")
-  Call<Object> createCatalogLocation(
+  Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,
       @Header("Authorization") String authorization, @Body BackstageCatalogLocationCreateRequest request);
 
   @GET(LAYOUT_API)
