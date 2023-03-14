@@ -246,24 +246,31 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   @Override
   protected Object evaluatePrefixCombinations(
       String expressionBlock, EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
-    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
-      // Apply all the prefixes and return first one that evaluates successfully.
-      List<String> finalExpressions = ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, expressionBlock);
-      Object obj = ExpandedJsonFunctor.builder()
-                       .planExpansionService(planExpansionService)
-                       .ambiance(ambiance)
-                       .groupAliases(groupAliases)
-                       .build()
-                       .asJson(finalExpressions);
-      if (obj != null) {
-        ctx.addToContext(Map.of("expandedJson", obj));
-      }
-      Object object = evaluateCombinations(expressionBlock, finalExpressions, ctx, depth, expressionMode);
+    try {
+      if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXPRESSION_ENGINE_V2)) {
+        String normalizedExpression = applyStaticAliases(expressionBlock);
+        // Apply all the prefixes and return first one that evaluates successfully.
+        List<String> finalExpressions =
+            ExpandedJsonFunctorUtils.getExpressions(ambiance, groupAliases, normalizedExpression);
+        Object obj = ExpandedJsonFunctor.builder()
+                         .planExpansionService(planExpansionService)
+                         .ambiance(ambiance)
+                         .groupAliases(groupAliases)
+                         .build()
+                         .asJson(finalExpressions);
+        if (obj != null) {
+          ctx.addToContext(Map.of("expandedJson", obj));
+        }
+        Object object = evaluateCombinations(normalizedExpression, finalExpressions, ctx, depth, expressionMode);
 
-      if (object != null) {
-        return object;
+        if (object != null) {
+          return object;
+        }
+        log.warn(String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock));
       }
-      log.error(String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock));
+    } catch (Exception ex) {
+      log.error(
+          String.format("Could not resolve via V2 expression engine: %s. Falling back to V1", expressionBlock), ex);
     }
     return super.evaluatePrefixCombinations(expressionBlock, ctx, depth, expressionMode);
   }

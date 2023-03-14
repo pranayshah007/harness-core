@@ -11,12 +11,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Builder;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -46,6 +49,15 @@ public class ExpandedJsonFunctor {
         finalExpressions.add(expression);
       }
     }
-    return planExpansionService.resolveExpressions(ambiance, finalExpressions);
+    Map<String, Object> response = planExpansionService.resolveExpressions(ambiance, finalExpressions);
+    if (response == null) {
+      return null;
+    }
+    List<Level> levelsWithStrategyMetadata =
+        ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
+    if (EmptyPredicate.isNotEmpty(levelsWithStrategyMetadata)) {
+      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata));
+    }
+    return response;
   }
 }
