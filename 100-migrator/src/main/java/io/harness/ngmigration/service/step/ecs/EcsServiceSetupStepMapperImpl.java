@@ -25,6 +25,7 @@ import software.wings.sm.states.EcsServiceSetup;
 
 import java.util.Collections;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EcsServiceSetupStepMapperImpl extends StepMapper {
@@ -56,9 +57,13 @@ public class EcsServiceSetupStepMapperImpl extends StepMapper {
     EcsServiceSetup state = (EcsServiceSetup) getState(graphNode);
     EcsRollingDeployStepNode stepNode = new EcsRollingDeployStepNode();
     baseSetup(state, stepNode);
+    ParameterField<Boolean> sameAsAlreadyRunningInstances = ParameterField.createValueField(false);
+    if ("runningInstances".equals(state.getDesiredInstanceCount())) {
+      sameAsAlreadyRunningInstances = ParameterField.createValueField(true);
+    }
     EcsRollingDeployStepInfo stepInfo = EcsRollingDeployStepInfo.infoBuilder()
                                             .forceNewDeployment(ParameterField.createValueField(false))
-                                            .sameAsAlreadyRunningInstances(ParameterField.createValueField(true))
+                                            .sameAsAlreadyRunningInstances(sameAsAlreadyRunningInstances)
                                             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
                                             .build();
     stepNode.setEcsRollingDeployStepInfo(stepInfo);
@@ -67,7 +72,8 @@ public class EcsServiceSetupStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    EcsServiceSetup state1 = (EcsServiceSetup) getState(stepYaml1);
+    EcsServiceSetup state2 = (EcsServiceSetup) getState(stepYaml2);
+    return StringUtils.equals(state1.getDesiredInstanceCount(), state2.getDesiredInstanceCount());
   }
 }
