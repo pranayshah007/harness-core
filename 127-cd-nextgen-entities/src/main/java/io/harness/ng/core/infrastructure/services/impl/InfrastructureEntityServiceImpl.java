@@ -924,7 +924,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       throw new InvalidRequestException("Infrastructure Yaml cannot be empty");
     }
     try {
-      String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+      String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
       if (isEmpty(infraDefinitionInputs)) {
         return null;
       }

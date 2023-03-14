@@ -613,7 +613,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Map<String, Object> createEnvironmentInputsYamlInternal(String environmentYaml) {
     Map<String, Object> yamlInputs = new HashMap<>();
     try {
-      String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environmentYaml, true);
+      String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(environmentYaml);
       if (isEmpty(environmentInputsYaml)) {
         return null;
       }
