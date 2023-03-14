@@ -14,6 +14,7 @@ import io.harness.licensing.interfaces.clients.local.CELocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
 import io.harness.licensing.interfaces.clients.local.ChaosLocalClient;
+import io.harness.licensing.interfaces.clients.local.IACMLocalClient;
 import io.harness.licensing.interfaces.clients.local.SRMLocalClient;
 import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.licensing.mappers.LicenseObjectMapper;
@@ -22,6 +23,7 @@ import io.harness.licensing.mappers.modules.CELicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CFLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CILicenseObjectMapper;
 import io.harness.licensing.mappers.modules.ChaosLicenseObjectMapper;
+import io.harness.licensing.mappers.modules.IACMLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.SRMLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.STOLicenseObjectMapper;
 
@@ -51,6 +53,8 @@ public class ModuleLicenseRegistrarFactory {
         ModuleType.STO, new ModuleLicenseRegistrar(ModuleType.STO, STOLicenseObjectMapper.class, STOLocalClient.class));
     registrar.put(ModuleType.CHAOS,
         new ModuleLicenseRegistrar(ModuleType.CHAOS, ChaosLicenseObjectMapper.class, ChaosLocalClient.class));
+    registrar.put(ModuleType.IACM,
+        new ModuleLicenseRegistrar(ModuleType.IACM, IACMLicenseObjectMapper.class, IACMLocalClient.class));
   }
 
   public static Class<? extends LicenseObjectMapper> getLicenseObjectMapper(ModuleType moduleType) {

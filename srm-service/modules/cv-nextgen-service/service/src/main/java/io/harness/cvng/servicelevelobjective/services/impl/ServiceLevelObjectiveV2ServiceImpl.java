@@ -766,6 +766,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<String> notificationRuleRefs = serviceLevelObjective.getNotificationRuleRefs()
                                             .stream()
                                             .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
+                                            .filter(ref -> ref.isEnabled())
                                             .map(NotificationRuleRef::getNotificationRuleRef)
                                             .collect(Collectors.toList());
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);

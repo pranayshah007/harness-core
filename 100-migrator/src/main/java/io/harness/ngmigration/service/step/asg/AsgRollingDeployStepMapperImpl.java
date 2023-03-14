@@ -78,8 +78,9 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    AwsAmiServiceSetup state1 = (AwsAmiServiceSetup) getState(stepYaml1);
+    AwsAmiServiceSetup state2 = (AwsAmiServiceSetup) getState(stepYaml2);
+    return state1.isUseCurrentRunningCount() == state2.isUseCurrentRunningCount();
   }
 
   @Override

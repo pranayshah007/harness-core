@@ -864,10 +864,7 @@ workflowExecutionBaselines {"name": "createdAt_1", "background": true} {"created
 workflowExecutionBaselines {"name": "unique_baseline", "unique": true} {"workflowId": 1, "envId": 1, "serviceId": 1}
 workflowExecutionBaselines {"name": "workflowExecutionId_1", "background": true} {"workflowExecutionId": 1}
 workflowExecutions {"name": "accountId_1_createdAt_-1_rejectedByFreezeWindowIds_1", "background": true} {"accountId": 1, "createdAt": -1, "rejectedByFreezeWindowIds": 1}
-workflowExecutions {"name": "accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1", "background": true} {"accountId": 1, "deployedServices": 1, "createdAt": -1, "appId": 1, "status": 1}
 workflowExecutions {"name": "accountId_appId_onDemandRollback_createdAt", "background": true} {"accountId": 1, "appId": 1, "onDemandRollback": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_appId_tags_createdAt", "background": true} {"accountId": 1, "appId": 1, "tags.name": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_serviceIds_appId", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1, "serviceIds": 1, "appId": 1}
 workflowExecutions {"name": "accountId_cdPageCandidate_keywords_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "keywords": "text", "createdAt": -1}
 workflowExecutions {"name": "accountId_endTs_status_pipelineExecutionId", "background": true} {"accountId": 1, "endTs": 1, "status": 1, "pipelineExecutionId": 1}
 workflowExecutions {"name": "accountId_pipExecutionId_createdAt", "background": true} {"accountId": 1, "pipelineExecutionId": 1, "createdAt": -1}
@@ -875,7 +872,6 @@ workflowExecutions {"name": "accountId_startTs_serviceIds", "background": true} 
 workflowExecutions {"name": "accountId_startTs_status_pipelineExecutionId", "background": true} {"accountId": 1, "startTs": 1, "status": 1, "pipelineExecutionId": 1}
 workflowExecutions {"name": "accountId_tags_createdAt", "background": true} {"accountId": 1, "tags.name": 1, "createdAt": -1}
 workflowExecutions {"name": "appId_createdAt", "background": true} {"appId": 1, "createdAt": -1}
-workflowExecutions {"name": "appId_endTs", "background": true} {"appId": 1, "endTs": 1}
 workflowExecutions {"name": "app_pipExecutionId_createdAt", "background": true} {"appId": 1, "pipelineExecutionId": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_status_workflowid_infraMappingIds_createdat", "background": true} {"appId": 1, "status": 1, "workflowId": 1, "infraMappingIds": 1, "createdAt": -1}
 workflowExecutions {"name": "appid_workflowid_infraMappingIds_status_createdat", "background": true} {"appId": 1, "workflowId": 1, "infraMappingIds": 1, "status": 1, "createdAt": -1}

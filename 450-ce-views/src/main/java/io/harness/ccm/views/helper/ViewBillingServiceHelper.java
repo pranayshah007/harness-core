@@ -380,7 +380,7 @@ public class ViewBillingServiceHelper {
           filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, groupBy, aggregateFunction,
-        Collections.emptyList(), cloudProviderTableName, sharedCostBusinessMappings);
+        Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -627,8 +627,7 @@ public class ViewBillingServiceHelper {
     }
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters,
         viewParametersHelper.getInExpressionFilters(filters), modifiedGroupBy, aggregateFunction, sort,
-        cloudProviderTableName, queryParams.getTimeOffsetInDays(), sharedCostBusinessMapping,
-        sharedCostBusinessMappings);
+        cloudProviderTableName, queryParams, sharedCostBusinessMapping, sharedCostBusinessMappings);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

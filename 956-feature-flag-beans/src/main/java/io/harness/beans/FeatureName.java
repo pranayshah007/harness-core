@@ -630,8 +630,7 @@ public enum FeatureName {
   CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
   SSCA_ENABLED("FF to enable SSCA on Harness", HarnessTeam.SSCA),
-  PL_JPMC_SCIM_REQUIREMENTS(
-      "This flag relates to all the changes requested by JPMC towards SCIM API calls", HarnessTeam.PL),
+  PL_NEW_SCIM_STANDARDS("Changes required for being SCIM 2 compliant API calls", HarnessTeam.PL),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),

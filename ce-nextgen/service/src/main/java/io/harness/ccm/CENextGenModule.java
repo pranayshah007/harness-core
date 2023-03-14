@@ -8,6 +8,7 @@
 package io.harness.ccm;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.audit.ResourceTypeConstants.BUDGET_GROUP;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET;
@@ -36,6 +37,7 @@ import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.audittrails.eventhandler.BudgetEventHandler;
+import io.harness.ccm.audittrails.eventhandler.BudgetGroupEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CENextGenOutboxEventHandler;
 import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
 import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
@@ -452,6 +454,7 @@ public class CENextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_SET).to(RuleSetEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT)
         .to(RuleEnforcementEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(BUDGET_GROUP).to(BudgetGroupEventHandler.class);
   }
 
   private void registerDelegateTaskService() {

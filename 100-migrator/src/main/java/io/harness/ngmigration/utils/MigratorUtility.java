@@ -32,6 +32,7 @@ import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -611,5 +612,15 @@ public class MigratorUtility {
         .defaults(defaults)
         .customExpressions(expressions)
         .build();
+  }
+
+  public static Map<String, Object> getExpressions(WorkflowPhase phase, List<StepExpressionFunctor> functors) {
+    Map<String, Object> expressions = new HashMap<>();
+
+    for (StepExpressionFunctor functor : functors) {
+      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
+      expressions.put(functor.getCgExpression(), functor);
+    }
+    return expressions;
   }
 }

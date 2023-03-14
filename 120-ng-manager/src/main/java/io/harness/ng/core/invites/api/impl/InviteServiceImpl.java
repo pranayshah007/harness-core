@@ -345,6 +345,15 @@ public class InviteServiceImpl implements InviteService {
       } else {
         Optional<Invite> inviteOpt = getInviteFromToken(jwtToken, false);
         completeInvite(inviteOpt);
+
+        TwoFactorAuthSettingsInfo twoFactorAuthSettingsInfo = getTwoFactorAuthSettingsInfo(accountIdentifier, email);
+        if (twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()
+            && !userInfo.isTwoFactorAuthenticationEnabled()) {
+          updateUserTwoFactorAuthInfo(userInfo.getEmail(), twoFactorAuthSettingsInfo);
+          CGRestUtils.getResponse(
+              userClient.sendTwoFactorAuthenticationResetEmail(userInfo.getUuid(), accountIdentifier),
+              String.format("Failed to send two factor authentication setup email for user %s", userInfo.getUuid()));
+        }
         return resourceUrl;
       }
     }
@@ -607,11 +616,12 @@ public class InviteServiceImpl implements InviteService {
       if (scimLdapArray[0]) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false, invite.getGivenName(),
             invite.getFamilyName(), invite.getExternalId());
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
             invite.getFamilyName(), invite.getExternalId());
+        updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
-      updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
 
       if (isPLNoEmailForSamlAccountInvitesEnabled && !twoFactorAuthSettingsInfo.isTwoFactorAuthenticationEnabled()) {
         return InviteOperationResponse.USER_INVITE_NOT_REQUIRED;

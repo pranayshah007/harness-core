@@ -37,8 +37,9 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
                             .addAllLevels(getNormalStepLevels("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
                             .build();
     String expression = "stage.identifier";
+    String expectedExpression = String.format("expandedJson.%s", expression);
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("stage", "stage"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.identifier",
@@ -50,8 +51,9 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
             "expandedJson.pipeline.stages.stage1.outcome.identifier",
             "expandedJson.pipeline.stages.stage1.stepInputs.identifier"));
     expression = "stage1.identifier";
+    expectedExpression = String.format("expandedJson.%s", expression);
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("stage", "stage"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.identifier",
@@ -72,8 +74,10 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
                             .addAllLevels(getNormalStepLevels("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
                             .build();
     String expression = "step.identifier";
+    String expectedExpression = String.format("expandedJson.%s", expression);
+
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("step", "step"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.shell1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.shell1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.shell1.identifier",
@@ -87,8 +91,10 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
             "expandedJson.pipeline.stages.stage1.shell1.outcome.identifier",
             "expandedJson.pipeline.stages.stage1.shell1.stepInputs.identifier"));
     expression = "shell1.identifier";
+    expectedExpression = String.format("expandedJson.%s", expression);
+
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("stage", "stage"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.shell1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.shell1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.shell1.identifier",
@@ -111,8 +117,9 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
                             .addAllLevels(getStepLevelInsideParallel("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
                             .build();
     String expression = "step.identifier";
+    String expectedExpression = String.format("expandedJson.%s", expression);
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("step", "step"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.shell1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.shell1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.shell1.identifier",
@@ -126,8 +133,10 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
             "expandedJson.pipeline.stages.stage1.shell1.outcome.identifier",
             "expandedJson.pipeline.stages.stage1.shell1.stepInputs.identifier"));
     expression = "shell1.identifier";
+    expectedExpression = String.format("expandedJson.%s", expression);
+
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("stage", "stage"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.shell1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.shell1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.shell1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.shell1.identifier",
@@ -150,8 +159,11 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
                             .addAllLevels(getStepLevelInsideStrategy("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
                             .build();
     String expression = "step.identifier";
+    String expectedExpression = String.format("expandedJson.%s", expression);
+
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("step", "step"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.identifier",
+        .isEqualTo(Lists.newArrayList(expectedExpression,
+            "expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.identifier",
             "outcome.expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.identifier",
             "stepInputs.expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.identifier",
             "expandedJson.outcome.pipeline.stages.stage1.strategy.shell1.shell1.identifier",
@@ -169,22 +181,25 @@ public class ExpandedJsonFunctorUtilsTest extends CategoryTest {
             "expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.outcome.identifier",
             "expandedJson.pipeline.stages.stage1.strategy.shell1.shell1.stepInputs.identifier"));
     expression = "shell1.identifier";
+    expectedExpression = String.format("expandedJson.%s", expression);
+
     assertThat(ExpandedJsonFunctorUtils.getExpressions(ambiance, Map.of("stage", "stage"), expression))
-        .isEqualTo(Lists.newArrayList("expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
-            "outcome.expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
-            "stepInputs.expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
-            "expandedJson.outcome.pipeline.stages.stage1.strategy.shell1.identifier",
-            "expandedJson.stepInputs.pipeline.stages.stage1.strategy.shell1.identifier",
-            "expandedJson.pipeline.outcome.stages.stage1.strategy.shell1.identifier",
-            "expandedJson.pipeline.stepInputs.stages.stage1.strategy.shell1.identifier",
-            "expandedJson.pipeline.stages.outcome.stage1.strategy.shell1.identifier",
-            "expandedJson.pipeline.stages.stepInputs.stage1.strategy.shell1.identifier",
-            "expandedJson.pipeline.stages.stage1.outcome.strategy.shell1.identifier",
-            "expandedJson.pipeline.stages.stage1.stepInputs.strategy.shell1.identifier",
-            "expandedJson.pipeline.stages.stage1.strategy.outcome.shell1.identifier",
-            "expandedJson.pipeline.stages.stage1.strategy.stepInputs.shell1.identifier",
-            "expandedJson.pipeline.stages.stage1.strategy.shell1.outcome.identifier",
-            "expandedJson.pipeline.stages.stage1.strategy.shell1.stepInputs.identifier"));
+        .isEqualTo(
+            Lists.newArrayList(expectedExpression, "expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
+                "outcome.expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
+                "stepInputs.expandedJson.pipeline.stages.stage1.strategy.shell1.identifier",
+                "expandedJson.outcome.pipeline.stages.stage1.strategy.shell1.identifier",
+                "expandedJson.stepInputs.pipeline.stages.stage1.strategy.shell1.identifier",
+                "expandedJson.pipeline.outcome.stages.stage1.strategy.shell1.identifier",
+                "expandedJson.pipeline.stepInputs.stages.stage1.strategy.shell1.identifier",
+                "expandedJson.pipeline.stages.outcome.stage1.strategy.shell1.identifier",
+                "expandedJson.pipeline.stages.stepInputs.stage1.strategy.shell1.identifier",
+                "expandedJson.pipeline.stages.stage1.outcome.strategy.shell1.identifier",
+                "expandedJson.pipeline.stages.stage1.stepInputs.strategy.shell1.identifier",
+                "expandedJson.pipeline.stages.stage1.strategy.outcome.shell1.identifier",
+                "expandedJson.pipeline.stages.stage1.strategy.stepInputs.shell1.identifier",
+                "expandedJson.pipeline.stages.stage1.strategy.shell1.outcome.identifier",
+                "expandedJson.pipeline.stages.stage1.strategy.shell1.stepInputs.identifier"));
   }
 
   private List<Level> getNormalStageLevels(String stageRuntimeId, String stageSetupId) {

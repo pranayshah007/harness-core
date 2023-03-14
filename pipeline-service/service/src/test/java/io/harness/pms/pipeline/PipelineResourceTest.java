@@ -717,7 +717,7 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetTemplateResolvedPipelineYaml() {
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
     assertThatThrownBy(()
                            -> pipelineResource.getTemplateResolvedPipelineYaml(
                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null))
@@ -725,7 +725,7 @@ public class PipelineResourceTest extends CategoryTest {
 
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
 
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
