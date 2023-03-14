@@ -245,11 +245,12 @@ public class PluginSettingUtils {
         return map;
       case SECURITY:
       case DOCKER:
-      case SSCA_ORCHESTRATION:
         map.put(EnvVariableEnum.DOCKER_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.DOCKER_PASSWORD, PLUGIN_PASSW);
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);
         return map;
+      case SSCA_ORCHESTRATION:
+        return SscaOrchestrationPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
