@@ -14639,15 +14639,11 @@
           ]
         },
         "prunePropagationPolicy": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
+          "type": "string",
+          "enum": [
+            "foreground",
+            "background",
+            "orphan"
           ]
         },
         "pruneResourcesAtLast": {
@@ -14686,6 +14682,29 @@
     "SyncRetryStrategy": {
       "type": "object",
       "properties": {
+        "baseBackoffDuration": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "increaseBackoffByFactor": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "limit": {
           "oneOf": [
             {
@@ -14697,7 +14716,7 @@
             }
           ]
         },
-        "maxRetryBackoffDuration": {
+        "maxBackoffDuration": {
           "oneOf": [
             {
               "type": "string"
@@ -14706,29 +14725,6 @@
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
-            }
-          ]
-        },
-        "retryBackoffBaseDuration": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "waitAfterRetryFactor": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string"
             }
           ]
         }

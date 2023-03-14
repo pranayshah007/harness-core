@@ -150,6 +150,7 @@ public class HintException extends WingsException {
 
   public static final String HINT_INPUT_SET_ACCOUNT_SETTING =
       "1) Please check if account level setting is expected to be enabled. \n2) Please check if requested input-set is in same repository as the linked pipeline.";
+  public static final String HINT_DOCKER_HUB_INVALID_IMAGE_PATH = "No tag found for given Image Path";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);
