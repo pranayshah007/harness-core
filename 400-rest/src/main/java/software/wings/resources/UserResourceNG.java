@@ -187,6 +187,26 @@ public class UserResourceNG {
     return new RestResponse<>(userInfo);
   }
 
+  @POST
+  @Path("/signup-invite/marketplace")
+  public Response createMarketplaceInviteAndRedirectUrl() {
+    UserInvite userInvite = userService.createUserInviteForMarketPlace();
+    log.info("New User Invite:", userInvite);
+
+    String marketPlaceToken = getMarketPlaceToken(marketPlace, userInvite);
+
+    URI redirectUrl = null;
+    try {
+      redirectUrl = new URI(authenticationUtils.getBaseUrl()
+          + ("#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
+    } catch (URISyntaxException e) {
+      throw new WingsException(e);
+    }
+    log.info("Redirect URL:", redirectUrl);
+
+    return Response.seeOther(redirectUrl).build();
+  }
+
   @GET
   @Path("/signup-invite")
   public RestResponse<SignupInviteDTO> getSignupInvite(@QueryParam("email") String email) {
