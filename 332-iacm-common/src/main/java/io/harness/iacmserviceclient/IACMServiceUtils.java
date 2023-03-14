@@ -7,6 +7,7 @@
 
 package io.harness.iacmserviceclient;
 
+import static java.lang.String.format;
 import static org.joda.time.Minutes.minutes;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,11 +32,13 @@ import com.google.gson.JsonObject;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
-import retrofit2.Call;
 import retrofit2.Response;
 
 @Getter
@@ -46,7 +49,8 @@ import retrofit2.Response;
 public class IACMServiceUtils {
   private final IACMServiceClient iacmServiceClient;
   private final IACMServiceConfig iacmServiceConfig;
-
+  private final Duration retrySleepDuration = Duration.ofSeconds(2);
+  private static final int maxAttempts = 3;
   @Inject
   public IACMServiceUtils(IACMServiceClient iacmServiceClient, IACMServiceConfig iacmServiceConfig) {
     this.iacmServiceClient = iacmServiceClient;
@@ -55,13 +59,20 @@ public class IACMServiceUtils {
 
   public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonObject> connectorCall =
-        iacmServiceClient.getStackInfo(org, projectId, stackID, generateJWTToken(accountId, org, projectId), accountId);
+
+    RetryPolicy<Response<JsonObject>> retryPolicy =
+        getRetryPolicyJsonObject(format("[Retrying failed call to retrieve stack info: {}"),
+            format("Failed to retrieve stack info after retrying {} times"));
 
     Response<JsonObject> response;
 
     try {
-      response = connectorCall.execute();
+      response = Failsafe.with(retryPolicy)
+                     .get(()
+                              -> iacmServiceClient
+                                     .getStackInfo(org, projectId, stackID, generateJWTToken(accountId, org, projectId),
+                                         accountId)
+                                     .execute());
     } catch (Exception e) {
       log.error("Error while trying to execute the query in the IACM Service: ", e);
       throw new GeneralException("Stack Info request to IACM service call failed", e);
@@ -69,14 +80,18 @@ public class IACMServiceUtils {
     if (!response.isSuccessful()) {
       String errorBody = null;
       try {
-        errorBody = response.errorBody().string();
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
       } catch (IOException e) {
         log.error("Could not read error body {}", response.errorBody());
       }
 
-      throw new GeneralException(String.format(
-          "Could not retrieve IACM stack info from the IACM service. status code = %s, message = %s, response = %s",
-          response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
+      log.error("error querying the iac server{}", errorBody);
+
+      throw new GeneralException(
+          String.format("Could not retrieve IACM stack info from the IACM service. status code = %s, message = %s",
+              response.code(), response.message()));
     }
 
     if (response.body() == null) {
@@ -100,11 +115,15 @@ public class IACMServiceUtils {
   @NotNull
   public String getIACMServiceToken(String accountID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonObject> tokenCall = iacmServiceClient.generateToken(accountID, this.iacmServiceConfig.getGlobalToken());
-    Response<JsonObject> response = null;
+    Response<JsonObject> response;
+    RetryPolicy<Response<JsonObject>> retryPolicy =
+        getRetryPolicyJsonObject(format("[Retrying failed call to retrieve token from the IAC Server info: {}"),
+            format("Failed to retrieve token from the IAC Server after retrying {} times"));
     try {
-      response = tokenCall.execute();
-    } catch (IOException e) {
+      response =
+          Failsafe.with(retryPolicy)
+              .get(() -> iacmServiceClient.generateToken(accountID, this.iacmServiceConfig.getGlobalToken()).execute());
+    } catch (Exception e) {
       throw new GeneralException("Token request to IACM service call failed", e);
     }
 
@@ -112,14 +131,18 @@ public class IACMServiceUtils {
     if (!response.isSuccessful()) {
       String errorBody = null;
       try {
-        errorBody = response.errorBody().string();
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
       } catch (IOException e) {
         log.error("Could not read error body {}", response.errorBody());
       }
 
+      log.error("error querying the iac server{}", errorBody);
+
       throw new GeneralException(
-          String.format("Could not fetch token from IACM service. status code = %s, message = %s, response = %s",
-              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
+          String.format("Could not fetch token from IACM service. status code = %s, message = %s", response.code(),
+              response.message()));
     }
 
     if (response.body() == null) {
@@ -130,12 +153,19 @@ public class IACMServiceUtils {
 
   public StackVariables[] getIacmStackEnvs(String org, String projectId, String accountId, String stackID) {
     log.info("Initiating request to IACM service for env retrieval: {}", this.iacmServiceConfig.getBaseUrl());
-    Call<JsonArray> connectorCall = iacmServiceClient.getStackVariables(
-        org, projectId, stackID, generateJWTToken(accountId, org, projectId), accountId);
+    RetryPolicy<Response<JsonArray>> retryPolicy =
+        getRetryPolicyJsonArray(format("[Retrying failed call to retrieve envs variables from the IAC Server info: {}"),
+            format("Failed to retrieve envs variables from the IAC Server after retrying {} times"));
+
     Response<JsonArray> response;
 
     try {
-      response = connectorCall.execute();
+      response = Failsafe.with(retryPolicy)
+                     .get(()
+                              -> iacmServiceClient
+                                     .getStackVariables(org, projectId, stackID,
+                                         generateJWTToken(accountId, org, projectId), accountId)
+                                     .execute());
     } catch (Exception e) {
       log.error("Error while trying to execute the query in the IACM Service: ", e);
       throw new GeneralException("Error retrieving the variables from the IACM service. Call failed", e);
@@ -143,14 +173,16 @@ public class IACMServiceUtils {
     if (!response.isSuccessful()) {
       String errorBody = null;
       try {
-        errorBody = response.errorBody().string();
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
       } catch (IOException e) {
         log.error("Could not read error body {}", response.errorBody());
       }
+      log.error("error querying the iac server{}", errorBody);
 
-      throw new GeneralException(
-          String.format("Could not parse body for the env retrieval response = %s, message = %s, response = %s",
-              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
+      throw new GeneralException(String.format("Could not parse body for the env retrieval response = %s, message = %s",
+          response.code(), response.message()));
     }
 
     if (response.body() == null) {
@@ -195,6 +227,10 @@ public class IACMServiceUtils {
 
   public void createIACMExecution(Ambiance ambiance, String stackId, String action) {
     log.info("Initiating post request to IACM service for execution creation: {}", this.iacmServiceConfig.getBaseUrl());
+    RetryPolicy<Response<JsonObject>> retryPolicy =
+        getRetryPolicyJsonObject(format("[Retrying failed call to create an execution in the IAC Server info: {}"),
+            format("Failed to create an execution in the IAC Server after retrying {} times"));
+
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     Execution execution = Execution.builder()
@@ -208,14 +244,18 @@ public class IACMServiceUtils {
                               .action(action)
                               .build();
 
-    Call<JsonObject> connectorCall = iacmServiceClient.postIACMExecution(ngAccess.getOrgIdentifier(),
-        ngAccess.getProjectIdentifier(), execution,
-        generateJWTToken(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()),
-        ngAccess.getAccountIdentifier());
     Response<JsonObject> response;
 
     try {
-      response = connectorCall.execute();
+      response = Failsafe.with(retryPolicy)
+                     .get(()
+                              -> iacmServiceClient
+                                     .postIACMExecution(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
+                                         execution,
+                                         generateJWTToken(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
+                                             ngAccess.getProjectIdentifier()),
+                                         ngAccess.getAccountIdentifier())
+                                     .execute());
     } catch (Exception e) {
       log.error("Error while trying to execute the request in the IACM Service: ", e);
       throw new GeneralException("Error creating the execution from the IACM service. Call failed", e);
@@ -226,13 +266,16 @@ public class IACMServiceUtils {
       }
       String errorBody = null;
       try {
-        errorBody = response.errorBody().string();
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
       } catch (IOException e) {
         log.error("Could not read error body {}", response.errorBody());
       }
-      throw new GeneralException(
-          String.format("Could not parse body for the execution response = %s, message = %s, response = %s",
-              response.code(), response.message(), response.errorBody() == null ? "null" : errorBody));
+      log.error("error querying the iac server{}", errorBody);
+
+      throw new GeneralException(String.format(
+          "Could not parse body for the execution response = %s, message = %s", response.code(), response.message()));
     }
   }
 
@@ -240,5 +283,26 @@ public class IACMServiceUtils {
     return JWTTokenServiceUtils.generateJWTToken(
         ImmutableMap.of("accountId", accountId, "orgId", orgId, "projectId", projectId),
         minutes(120).toStandardDuration().getMillis(), iacmServiceConfig.getGlobalToken());
+  }
+
+  private RetryPolicy<Response<JsonObject>> getRetryPolicyJsonObject(
+      String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<Response<JsonObject>>()
+        .handleResultIf(event -> !event.isSuccessful())
+        .onRetry(event -> log.info("Retrying again"))
+        .withDelay(retrySleepDuration)
+        .withMaxAttempts(maxAttempts)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  private RetryPolicy<Response<JsonArray>> getRetryPolicyJsonArray(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<Response<JsonArray>>()
+        .handleResultIf(event -> !event.isSuccessful())
+        .onRetry(event -> log.info("Retrying again"))
+        .withDelay(retrySleepDuration)
+        .withMaxAttempts(maxAttempts)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }
