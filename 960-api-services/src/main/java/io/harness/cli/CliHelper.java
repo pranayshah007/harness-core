@@ -21,7 +21,10 @@ import io.harness.logging.LogLevel;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -72,22 +75,25 @@ public class CliHelper {
     // suspect that there is a monitor (probably JVM) that forces process destroy.
 
     if (secondsToWaitForGracefulShutdown > 0) {
-      processExecutor.stopper(process -> {
-        // Since Process destroy doesn't wait for process to terminate after invoking, sigterm will close all existing
-        // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
-        // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process destroy,
-        // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
+      //      processExecutor.stopper(process -> {
+      //        // Since Process destroy doesn't wait for process to terminate after invoking, sigterm will close all
+      //        existing
+      //        // (stdin, stdout, stderr) streams, and if process during shutdown writes to these streams, process
+      //        // will automatically fail with 141 exit code (which means sigpipe error). Instead of rely on process
+      //        destroy,
+      //        // we rely on ProcessHandle destroy which invokes sigterm without closing the stream.
+      //
+      //        ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
+      //        try {
+      //          process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
+      //          process.destroyForcibly();
+      //        } catch (InterruptedException e) {
+      //          process.destroyForcibly();
+      //          Thread.currentThread().interrupt();
+      //        }
+      //      });
 
-        process.descendants().collect(Collectors.toList()).forEach(ProcessHandle::destroy);
-        ProcessHandle.of(process.pid()).ifPresentOrElse(ProcessHandle::destroy, process::destroy);
-        try {
-          process.waitFor(secondsToWaitForGracefulShutdown, TimeUnit.SECONDS);
-          process.destroyForcibly();
-        } catch (InterruptedException e) {
-          process.destroyForcibly();
-          Thread.currentThread().interrupt();
-        }
-      });
+      processExecutor.stopper(new RecursiveProcessStopper());
     }
 
     ProcessResult processResult = processExecutor.execute();
