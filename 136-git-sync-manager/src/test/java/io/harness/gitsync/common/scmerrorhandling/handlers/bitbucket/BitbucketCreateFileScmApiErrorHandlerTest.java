@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket;
 
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreateFileScmApiErrorHandler.CREATE_FILE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
@@ -23,6 +24,7 @@ import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreateFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorDefaultMessage;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -104,6 +106,20 @@ public class BitbucketCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
+    }
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testHandleErrorWhenErrorMessageIsEmpty() {
+    try {
+      bitbucketCreateFileScmApiErrorHandler.handleError(429, "", ErrorMetadata.builder().build());
+    } catch (Exception ex) {
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
+      assertThat(exception).isNotNull();
+      assertThat(exception.getMessage())
+          .isEqualTo(String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, CREATE_FILE));
     }
   }
 }

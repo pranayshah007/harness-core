@@ -36,8 +36,13 @@ public class BitbucketListFilesScmApiErrorHandler implements ScmApiErrorHandler 
       + "3. If the requested directory<FILEPATH> exists or not at ref<REF>.";
   public static final String LIST_FILES_FAILED_MESSAGE = "Listing files from Bitbucket failed. ";
 
+  public static final String LIST_FILES = "listing files";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, LIST_FILES)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

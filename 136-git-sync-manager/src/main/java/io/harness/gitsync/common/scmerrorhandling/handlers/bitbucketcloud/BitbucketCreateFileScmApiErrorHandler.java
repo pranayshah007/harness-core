@@ -35,8 +35,13 @@ public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler
   public static final String CREATE_FILE_BAD_REQUEST_HINT =
       "Please use a pull request to create file<FILEPATH> in this branch<BRANCH>.";
 
+  public static final String CREATE_FILE = "create file";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, CREATE_FILE)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

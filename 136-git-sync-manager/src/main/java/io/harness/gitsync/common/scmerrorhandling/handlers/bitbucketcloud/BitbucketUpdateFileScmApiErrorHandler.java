@@ -43,8 +43,13 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
   public static final String UPDATE_FILE_BAD_REQUEST_HINT =
       "Please use a pull request to update file<FILEPATH> in this branch<BRANCH>.";
 
+  public static final String UPDATE_FILE = "updating file";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, UPDATE_FILE)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

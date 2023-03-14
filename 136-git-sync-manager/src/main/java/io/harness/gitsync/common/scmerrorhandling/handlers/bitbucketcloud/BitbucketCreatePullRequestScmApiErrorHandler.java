@@ -27,8 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Bitbucket. ";
 
+  public static final String CREATE_PULL_REQUEST = "create pull request";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, CREATE_PULL_REQUEST)
+        : errorMessage;
     switch (statusCode) {
       case 400:
         // bitbucket already throws well formatted error messages, so no need of any hints/explanations here

@@ -27,8 +27,13 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketGetDefaultBranchScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_DEFAULT_BRANCH_FAILED_MESSAGE = "Fetching default branch from Bitbucket failed. ";
 
+  public static final String GET_DEFAULT_BRANCH = "getting default branch";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, GET_DEFAULT_BRANCH)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

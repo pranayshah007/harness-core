@@ -17,4 +17,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class ScmErrorDefaultMessage {
   public static final String RATE_LIMIT = "Too Many Requests.";
+
+  public static final String DEFAULT_ERROR_MESSAGE = "Encountered unexpected scm error during BitBucket %s operation";
 }

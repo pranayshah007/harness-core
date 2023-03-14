@@ -31,8 +31,13 @@ public class BitbucketGetFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> could not be fetched from Bitbucket. ";
 
+  public static final String GET_FILE = "getting file";
+
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, GET_FILE)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

@@ -26,8 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class BitbucketListRepoScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String LIST_REPO_FAILED_MESSAGE = "Listing repositories from Github failed. ";
+  public static final String LISTING_REPOS = "listing repos";
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, LISTING_REPOS)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

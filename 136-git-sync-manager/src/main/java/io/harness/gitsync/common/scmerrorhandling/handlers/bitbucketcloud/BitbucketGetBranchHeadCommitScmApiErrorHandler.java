@@ -28,9 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketGetBranchHeadCommitScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_BRANCH_HEAD_COMMIT_FAILED_MESSAGE =
       "Failed to fetch branch head commit details from Bitbucket";
+  public static final String GET_BRANCH_HEAD_COMMIT = "getting branch head commit";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, GET_BRANCH_HEAD_COMMIT)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:

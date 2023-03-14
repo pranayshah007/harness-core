@@ -37,8 +37,12 @@ public class BitbucketCreateBranchScmApiErrorHandler implements ScmApiErrorHandl
   public static final String CREATE_BRANCH_NOT_FOUND_ERROR_EXPLANATION = "Possible reasons can be:\n"
       + "1. The given bitbucket repository<REPO> is invalid.\n"
       + "2. The given base branch<BRANCH> does not exists.";
+  public static final String CREATE_BRANCH = "create branch";
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
+    errorMessage = EmptyPredicate.isEmpty(errorMessage)
+        ? String.format(ScmErrorDefaultMessage.DEFAULT_ERROR_MESSAGE, CREATE_BRANCH)
+        : errorMessage;
     switch (statusCode) {
       case 401:
       case 403:
