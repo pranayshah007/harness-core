@@ -21,4 +21,5 @@ public class Application {
   String url;
   String healthStatus;
   String syncStatus;
+  String syncErrorMessage;
 }
