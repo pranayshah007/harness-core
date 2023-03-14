@@ -436,7 +436,7 @@ public class TemplateMergeServiceHelper {
 
   private FetchRemoteEntityRequest buildFetchRemoteEntityRequest(
       Scope scope, TemplateEntity savedEntity, boolean loadFromCache) {
-    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
 
     GetFileGitContextRequestParams getFileGitContextRequestParams =
         buildGitContextRequestParams(savedEntity, branchName, loadFromCache);
