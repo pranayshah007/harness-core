@@ -52,7 +52,9 @@ public class AsgBlueGreenSwapStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    return true;
+    AwsAmiSwitchRoutesState state1 = (AwsAmiSwitchRoutesState) getState(stepYaml1);
+    AwsAmiSwitchRoutesState state2 = (AwsAmiSwitchRoutesState) getState(stepYaml2);
+    return state1.isDownsizeOldAsg() == state2.isDownsizeOldAsg();
   }
 
   @Override
