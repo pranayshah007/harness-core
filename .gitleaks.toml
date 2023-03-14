@@ -488,6 +488,8 @@ keywords = [
 paths = [
     '''Database.refactorlog'''
 ]
+#Exception created by Harness Security SECAPP-823
+regexes = ['''IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM''']
 stopwords= [
     "client",
     "endpoint",
