@@ -67,6 +67,7 @@ public class PipelineGitXHelper {
         gitEntityInfo.setParentEntityRepoName(entityGitDetails.getParentEntityRepoName());
       }
     }
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
   }
 
   public boolean shouldRetryWithFallBackBranch(
