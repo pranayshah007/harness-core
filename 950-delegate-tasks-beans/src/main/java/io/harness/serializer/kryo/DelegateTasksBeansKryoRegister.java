@@ -2431,7 +2431,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudGetWorkspacesTaskParams.class, 680029);
     kryo.register(TerraformCloudRollbackTaskParams.class, 680030);
     kryo.register(TerraformCloudValidationTaskParams.class, 680031);
-    kryo.register(BambooBuildTaskNGResponse.class, 229305);
     kryo.register(AwsSamInstallationCapability.class, 10000401);
     kryo.register(AwsLambdaDeployRequest.class, 10000502);
     kryo.register(AwsLambdaDeployResponse.class, 10000503);

@@ -15,11 +15,9 @@ import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
 import io.harness.polling.contracts.ArtifactPathList;
 import io.harness.polling.contracts.BambooPayload;
-import io.harness.polling.contracts.JenkinsPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Type;
-import io.harness.yaml.core.variables.NGVariableTrigger;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
