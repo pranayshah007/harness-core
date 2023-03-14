@@ -55,7 +55,7 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, MetricPack.class, HeatMap.class, TimeSeriesThreshold.class,
             CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class, SLOHealthIndicator.class,
-            SLOErrorBudgetReset.class, NotificationRule.class, EntityUnavailabilityStatuses.class, Annotation.class);
+            SLOErrorBudgetReset.class, NotificationRule.class, EntityUnavailabilityStatuses.class);
     ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
