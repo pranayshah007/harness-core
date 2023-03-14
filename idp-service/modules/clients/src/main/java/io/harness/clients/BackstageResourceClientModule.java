@@ -21,13 +21,13 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 
 @OwnedBy(IDP)
-public class BackstageCatalogResourceClientModule extends AbstractModule {
+public class BackstageResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig backstageClientConfig;
   private final String serviceSecret;
   private final String clientId;
 
   @Inject
-  public BackstageCatalogResourceClientModule(
+  public BackstageResourceClientModule(
       ServiceHttpClientConfig backstageClientConfig, String serviceSecret, String clientId) {
     this.backstageClientConfig = backstageClientConfig;
     this.serviceSecret = serviceSecret;
@@ -36,16 +36,14 @@ public class BackstageCatalogResourceClientModule extends AbstractModule {
 
   @Provides
   @Singleton
-  private BackstageCatalogResourceClientHttpFactory backstageCatalogResourceClientHttpFactory(
+  private BackstageResourceClientHttpFactory backstageResourceClientHttpFactory(
       KryoConverterFactory kryoConverterFactory) {
-    return new BackstageCatalogResourceClientHttpFactory(
+    return new BackstageResourceClientHttpFactory(
         this.backstageClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }
 
   @Override
   protected void configure() {
-    this.bind(BackstageCatalogResourceClient.class)
-        .toProvider(BackstageCatalogResourceClientHttpFactory.class)
-        .in(Scopes.SINGLETON);
+    this.bind(BackstageResourceClient.class).toProvider(BackstageResourceClientHttpFactory.class).in(Scopes.SINGLETON);
   }
 }

@@ -7,6 +7,9 @@
 
 package io.harness.idp.settings.resources;
 
+import static io.harness.idp.constants.Constants.IDP_SETTINGS;
+import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
+
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   private BackstagePermissionsService backstagePermissionsService;
-  public static final String IDP_SETTINGS = "IDP_SETTINGS";
-  public static final String MANAGE_PERMISSION = "idp_idpsettings_manage";
   @Override
   public Response getBackstagePermissions(String harnessAccount) {
     Optional<BackstagePermissions> backstagePermissions =

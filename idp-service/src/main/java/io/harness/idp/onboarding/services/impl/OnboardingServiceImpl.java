@@ -8,6 +8,8 @@
 package io.harness.idp.onboarding.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.idp.constants.Constants.IDP_SETTINGS;
+import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
 import static io.harness.idp.onboarding.utils.Constants.ACCOUNT_SCOPED;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_ALL_LOCATION_FILE_NAME;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
@@ -22,6 +24,7 @@ import static io.harness.idp.onboarding.utils.Constants.SUCCESS_RESPONSE_STRING;
 import static io.harness.idp.onboarding.utils.Constants.YAML_FILE_EXTENSION;
 import static io.harness.idp.onboarding.utils.FileUtils.createDirectories;
 import static io.harness.idp.onboarding.utils.FileUtils.writeObjectAsYamlInFile;
+import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
@@ -33,7 +36,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageCatalogLocationCreateRequest;
-import io.harness.clients.BackstageCatalogResourceClient;
+import io.harness.clients.BackstageResourceClient;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -88,11 +91,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingServiceImpl implements OnboardingService {
+  static final String BEARER_TOKEN_FORMAT = "Bearer %s";
   @Inject @Named("onboardingModuleConfig") OnboardingModuleConfig onboardingModuleConfig;
   @Inject @Named("PRIVILEGED") AccessControlClient accessControlClient;
   @Inject @Named("PRIVILEGED") OrganizationClient organizationClient;
@@ -100,17 +107,18 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject ServiceResourceClient serviceResourceClient;
   @Inject ConnectorProcessorFactory connectorProcessorFactory;
   @Inject CatalogConnectorRepository catalogConnectorRepository;
-  @Inject BackstageCatalogResourceClient backstageCatalogResourceClient;
+  @Inject BackstageResourceClient backstageResourceClient;
   @Inject GitIntegrationService gitIntegrationService;
   @Inject StatusInfoService statusInfoService;
+  @Inject @Named("backstageServiceSecret") private String backstageServiceSecret;
 
   @Override
   public OnboardingAccessCheckResponse accessCheck(String accountIdentifier, String userId) {
     List<PermissionCheckDTO> permissionCheckDTOS = new ArrayList<>();
     PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
                                                 .resourceScope(ResourceScope.of(accountIdentifier, null, null))
-                                                .resourceType("IDP_SETTINGS")
-                                                .permission("idp_idpsettings_manage")
+                                                .resourceType(IDP_SETTINGS)
+                                                .permission(MANAGE_PERMISSION)
                                                 .build();
     permissionCheckDTOS.add(permissionCheckDTO);
     AccessCheckResponseDTO accessCheckResponseDTO =
@@ -520,8 +528,9 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private void registerLocationInBackstage(String type, String allTarget) {
     try {
-      getResponse(backstageCatalogResourceClient.createCatalogLocation(
-          new BackstageCatalogLocationCreateRequest(type, allTarget)));
+      getGeneralResponse(
+          backstageResourceClient.createCatalogLocation(String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret),
+              new BackstageCatalogLocationCreateRequest(type, allTarget)));
     } catch (Exception e) {
       log.error("Unable to register target location in backstage, ex = {}", e.getMessage(), e);
     }

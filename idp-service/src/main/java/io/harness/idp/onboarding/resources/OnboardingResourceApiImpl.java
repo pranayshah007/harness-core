@@ -7,6 +7,8 @@
 
 package io.harness.idp.onboarding.resources;
 
+import static io.harness.idp.constants.Constants.IDP_SETTINGS;
+import static io.harness.idp.constants.Constants.MANAGE_PERMISSION;
 import static io.harness.idp.onboarding.utils.Constants.UI_DEFAULT_PAGE;
 import static io.harness.idp.onboarding.utils.Constants.UI_DEFAULT_PAGE_LIMIT;
 
@@ -41,13 +43,10 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   @Inject @Named("PRIVILEGED") AccessControlClient accessControlClient;
   private OnboardingService onboardingService;
 
-  static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
-  static final String IDP_PERMISSION = "idp_idpsettings_manage";
-
   @Override
   public Response onboardingAccessCheckV1(String accountIdentifier, String harnessAccount) {
     accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_RESOURCE_TYPE, null), IDP_PERMISSION);
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_SETTINGS, null), MANAGE_PERMISSION);
     if (SecurityContextBuilder.getPrincipal().getType() != PrincipalType.USER) {
       throw new InvalidRequestException("Harness IDP Onboarding allowed only for User Type");
     }
@@ -60,7 +59,7 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   public Response getHarnessEntitiesV1(String accountIdentifier, String harnessAccount, Integer page, Integer limit,
       String sort, String order, String searchTerm) {
     accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_RESOURCE_TYPE, null), IDP_PERMISSION);
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_SETTINGS, null), MANAGE_PERMISSION);
     int pageIndex = page == null ? UI_DEFAULT_PAGE : page;
     int pageLimit = limit == null ? UI_DEFAULT_PAGE_LIMIT : limit;
     HarnessEntitiesResponse harnessEntities =
@@ -76,7 +75,7 @@ public class OnboardingResourceApiImpl implements OnboardingResourceApi {
   public Response importHarnessEntitiesV1(String accountIdentifier,
       @Valid ImportHarnessEntitiesRequest importHarnessEntitiesRequest, String harnessAccount) {
     accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_RESOURCE_TYPE, null), IDP_PERMISSION);
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(IDP_SETTINGS, null), MANAGE_PERMISSION);
     ImportEntitiesResponse importHarnessEntities =
         onboardingService.importHarnessEntities(accountIdentifier, importHarnessEntitiesRequest);
     return Response.status(Response.Status.OK).entity(importHarnessEntities).build();

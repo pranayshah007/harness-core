@@ -26,16 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @OwnedBy(IDP)
-public class BackstageCatalogResourceClientHttpFactory
-    extends AbstractHttpClientFactory implements Provider<BackstageCatalogResourceClient> {
-  public BackstageCatalogResourceClientHttpFactory(ServiceHttpClientConfig backstageClientConfig, String serviceSecret,
+public class BackstageResourceClientHttpFactory
+    extends AbstractHttpClientFactory implements Provider<BackstageResourceClient> {
+  public BackstageResourceClientHttpFactory(ServiceHttpClientConfig backstageClientConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
     super(backstageClientConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false,
         ClientMode.PRIVILEGED);
   }
 
   @Override
-  public BackstageCatalogResourceClient get() {
-    return getRetrofit().create(BackstageCatalogResourceClient.class);
+  public BackstageResourceClient get() {
+    return getRetrofit().create(BackstageResourceClient.class);
   }
 }
