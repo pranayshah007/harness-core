@@ -57,6 +57,8 @@ import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.FINISH
 import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.UNREACHABLE;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -85,6 +87,9 @@ import io.harness.terraformcloud.model.RunStatus;
 import io.harness.terraformcloud.model.StateVersionOutputData;
 import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -406,17 +411,12 @@ public class TerraformCloudTaskHelper {
   }
 
   public void streamSentinelPolicies(String url, String token, String runId, LogCallback logCallback) {
-    boolean failed = false;
     logCallback.saveExecutionLog("Policy checks...", INFO, CommandExecutionStatus.RUNNING);
     Set<String> completedPolicies = new HashSet<>();
     List<PolicyCheckData> policyCheckData = getPolicyCheckData(url, token, runId);
     while (true) {
       for (PolicyCheckData policyCheck : policyCheckData) {
         if (policyCheck.getLinks().hasNonNull("output") && !completedPolicies.contains(policyCheck.getId())) {
-          String status = policyCheck.getAttributes().getStatus();
-          if (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED) || status.equals(ADVISORY_FAILED)) {
-            failed = true;
-          }
           String policyCheckOutput;
           try {
             policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
@@ -426,6 +426,7 @@ public class TerraformCloudTaskHelper {
           }
           Arrays.stream(policyCheckOutput.split("\n"))
               .forEach(raw -> logCallback.saveExecutionLog(raw, INFO, CommandExecutionStatus.RUNNING));
+          printPolicyChecksSummary(policyCheck, logCallback);
           completedPolicies.add(policyCheck.getId());
         }
       }
@@ -436,8 +437,7 @@ public class TerraformCloudTaskHelper {
         policyCheckData = getPolicyCheckData(url, token, runId);
       }
     }
-    logCallback.saveExecutionLog(
-        "Policy check finished", INFO, failed ? CommandExecutionStatus.FAILURE : CommandExecutionStatus.SUCCESS);
+    logCallback.saveExecutionLog("Policy check finished", INFO, CommandExecutionStatus.SUCCESS);
   }
 
   public List<PolicyCheckData> getPolicyCheckData(String url, String token, String runId) {
@@ -483,6 +483,37 @@ public class TerraformCloudTaskHelper {
       throw NestedExceptionUtils.hintWithExplanationException(PLEASE_CHECK_TFC_CONFIG,
           format(COULD_NOT_GET_LAST_APPLIED, workspace),
           new TerraformCloudException(ERROR_GETTING_APPLIED_POLICIES, e));
+    }
+  }
+
+  private void printPolicyChecksSummary(PolicyCheckData policyCheckData, LogCallback logCallback) {
+    PolicyCheckData.Attributes attributes = policyCheckData.getAttributes();
+    if (attributes != null) {
+      String status = attributes.getStatus();
+      if (status != null) {
+        LogColor logColor = (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED) || status.equals(ADVISORY_FAILED))
+            ? LogColor.Red
+            : LogColor.Green;
+        logCallback.saveExecutionLog(
+            color(format("Policy check [%s]", status), logColor, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
+        PolicyCheckData.Attributes.Result result = attributes.getResult();
+        if (result != null) {
+          PolicyCheckData.Attributes.Result.Sentinel sentinel = result.getSentinel();
+          if (sentinel != null) {
+            Map<String, PolicyCheckData.Attributes.Result.Sentinel.PolicyData> data = sentinel.getData();
+            if (isNotEmpty(data) && isNotEmpty(data.values())) {
+              data.values().forEach(policyData
+                  -> policyData.getPolicies().forEach(policySummary
+                      -> logCallback.saveExecutionLog(
+                          format("%s : %s",
+                              policySummary.isResult() ? color("passed", LogColor.Green, LogWeight.Bold)
+                                                       : color("failed", LogColor.Red, LogWeight.Bold),
+                              policySummary.getPolicy() != null ? policySummary.getPolicy().getName() : "unknown name"),
+                          INFO, CommandExecutionStatus.RUNNING)));
+            }
+          }
+        }
+      }
     }
   }
 }
