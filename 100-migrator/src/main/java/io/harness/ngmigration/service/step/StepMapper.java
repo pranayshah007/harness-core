@@ -36,6 +36,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,11 +86,12 @@ public abstract class StepMapper {
     return MigratorExpressionUtils.getExpressions(properties);
   }
 
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
     return null;
   }
 
-  public TemplateStepNode defaultTemplateSpecMapper(WorkflowMigrationContext context, GraphNode graphNode) {
+  public TemplateStepNode defaultTemplateSpecMapper(
+      WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
     NGYamlFile template;
     if (StringUtils.isBlank(templateId)) {
@@ -98,21 +100,27 @@ public abstract class StepMapper {
       template = context.getMigratedEntities().get(
           CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
     }
-    return getTemplateStepNode(context, graphNode, template);
+    return getTemplateStepNode(context, phase, graphNode, template);
   }
 
   @NotNull
-  TemplateStepNode getTemplateStepNode(WorkflowMigrationContext context, GraphNode graphNode, NGYamlFile template) {
+  TemplateStepNode getTemplateStepNode(
+      WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode, NGYamlFile template) {
     if (template == null) {
       log.warn("Found a step with template ID but not found in migrated context. Workflow ID - {} & Step - {}",
           context.getWorkflow().getUuid(), graphNode.getName());
       throw new InvalidRequestException(
           String.format("The template used for step %s was not migrated", graphNode.getName()));
     }
+
+    JsonNode templateInputs =
+        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId());
+    if (templateInputs != null) {
+      overrideTemplateInputs(context, phase, graphNode, template, templateInputs);
+    }
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(template.getNgEntityDetail()));
-    templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId()));
+    templateLinkConfig.setTemplateInputs(templateInputs);
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
@@ -121,6 +129,9 @@ public abstract class StepMapper {
     templateStepNode.setTemplate(templateLinkConfig);
     return templateStepNode;
   }
+
+  public void overrideTemplateInputs(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode,
+      NGYamlFile templateFile, JsonNode templateInputs) {}
 
   public abstract boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2);
 

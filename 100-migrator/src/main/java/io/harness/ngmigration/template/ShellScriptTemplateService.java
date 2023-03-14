@@ -20,11 +20,11 @@ import software.wings.beans.template.command.ShellScriptTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptTemplateService implements NgTemplateService {
@@ -50,20 +50,29 @@ public class ShellScriptTemplateService implements NgTemplateService {
     }
 
     Set<String> expressions = MigratorExpressionUtils.getExpressions(shellScriptTemplate);
-
+    List<Map<String, String>> variables = new ArrayList<>();
+    Map<String, Object> customExpressions = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(expressions)) {
       final Pattern pattern = Pattern.compile("[a-zA-Z_]+[\\w.]*");
-      outputVariables.addAll(expressions.stream()
-                                 .filter(exp -> exp.contains("."))
-                                 .filter(exp -> pattern.matcher(exp).matches())
-                                 .map(exp -> exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp)
-                                 .map(exp -> exp.replace('.', '_'))
-                                 .distinct()
-                                 .map(exp -> getOutputVariable(exp, "String"))
-                                 .collect(Collectors.toList()));
+      expressions.stream()
+          .filter(exp -> exp.contains("."))
+          .filter(exp -> pattern.matcher(exp).matches())
+          .forEach(exp -> {
+            String value = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
+            value = value.replace('.', '_');
+            customExpressions.put(exp, "${" + value + "}");
+          });
+      customExpressions.values()
+          .stream()
+          .distinct()
+          .map(String.class ::cast)
+          .map(value -> value.substring(2, value.length() - 1))
+          .forEach(value -> variables.add(getEnvironmentVariable(value, null)));
     }
 
-    List<Map<String, String>> variables = new ArrayList<>();
+    MigratorExpressionUtils.render(
+        context.getEntities(), context.getMigratedEntities(), shellScriptTemplate, customExpressions);
+
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables()
           .stream()
