@@ -56,7 +56,9 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.container.ContainerTask;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -71,6 +73,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -622,5 +625,22 @@ public class MigratorUtility {
       expressions.put(functor.getCgExpression(), functor);
     }
     return expressions;
+  }
+
+  public static boolean containsEcsTask(Set<CgEntityId> containerTaskIds, Map<CgEntityId, CgEntityNode> entities) {
+    if (isEmpty(containerTaskIds)) {
+      return false;
+    }
+
+    for (CgEntityId configEntityId : containerTaskIds) {
+      CgEntityNode configNode = entities.get(configEntityId);
+      if (configNode != null) {
+        ContainerTask specification = (ContainerTask) configNode.getEntity();
+        if ("ECS".equalsIgnoreCase(specification.getDeploymentType())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
+import software.wings.utils.ArtifactType;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -28,13 +29,15 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper customDeploymentServiceV2Mapper = new CustomDeploymentServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
-  public static ServiceV2Mapper getService2Mapper(Service service) {
+  public static ServiceV2Mapper getService2Mapper(Service service, boolean ecsTask) {
     DeploymentType deploymentType = service.getDeploymentType();
-    return getServiceV2Mapper(deploymentType);
+    ArtifactType artifactType = service.getArtifactType();
+    return getServiceV2Mapper(deploymentType, artifactType, ecsTask);
   }
 
   @NotNull
-  public static ServiceV2Mapper getServiceV2Mapper(DeploymentType deploymentType) {
+  public static ServiceV2Mapper getServiceV2Mapper(
+      DeploymentType deploymentType, ArtifactType artifactType, boolean ecsTask) {
     if (DeploymentType.KUBERNETES.equals(deploymentType)) {
       return k8sServiceV2Mapper;
     }
@@ -61,6 +64,40 @@ public class ServiceV2Factory {
     }
     if (DeploymentType.CUSTOM.equals(deploymentType)) {
       return customDeploymentServiceV2Mapper;
+    }
+    if (null == deploymentType && null != artifactType) {
+      switch (artifactType) {
+        case AMI:
+          return elastigroupServiceV2Mapper;
+        case IIS:
+        case IIS_APP:
+        case IIS_VirtualDirectory:
+          return winrmServiceV2Mapper;
+        case JAR:
+        case WAR:
+        case RPM:
+        case ZIP:
+        case TAR:
+        case OTHER:
+        case NUGET:
+          return sshServiceV2Mapper;
+        case PCF:
+          return pcfServiceV2Mapper;
+        case DOCKER:
+          if (ecsTask) {
+            return ecsServiceV2Mapper;
+          } else {
+            return k8sServiceV2Mapper;
+          }
+        case AZURE_WEBAPP:
+          return azureWebappServiceV2Mapper;
+        case AWS_CODEDEPLOY:
+        case AWS_LAMBDA:
+        case AZURE_MACHINE_IMAGE:
+          return unsupportedServiceV2Mapper;
+        default:
+          return unsupportedServiceV2Mapper;
+      }
     }
     return unsupportedServiceV2Mapper;
   }
