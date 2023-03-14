@@ -15,9 +15,9 @@ import io.harness.iacm.plan.creator.IACMCreatorUtils;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IACM)
-public class IACMPMSStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
+public class IACMPMSStepFilterJsonCreatorV1 extends GenericStepPMSFilterJsonCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return IACMCreatorUtils.getSupportedSteps();
+    return IACMCreatorUtils.getSupportedStepsV3();
   }
 }
