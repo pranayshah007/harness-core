@@ -16,18 +16,16 @@ import static java.util.Objects.isNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
-import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
+import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
@@ -88,7 +86,6 @@ public class CgInstanceSyncServiceV2 {
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
   public static final int HANDLE_NEW_DEPLOYMENT_MAX_RETRIES = 3;
   private final CgInstanceSyncV2DeploymentHelperFactory helperFactory;
-  private final DelegateServiceGrpcClient delegateServiceClient;
   private final CgInstanceSyncTaskDetailsService taskDetailsService;
   private final InfrastructureMappingService infrastructureMappingService;
   private final SettingsServiceImpl cloudProviderService;
@@ -98,6 +95,7 @@ public class CgInstanceSyncServiceV2 {
   private final FeatureFlagService featureFlagService;
   private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
   private final InstanceService instanceService;
+  private final PerpetualTaskService perpetualTaskService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -264,8 +262,7 @@ public class CgInstanceSyncServiceV2 {
 
   private void instanceSyncV2CleanupIfPresent(String perpetualTaskId, CgInstanceSyncResponse result) {
     if (!taskDetailsService.isInstanceSyncTaskDetailsExist(result.getAccountId(), perpetualTaskId)) {
-      delegateServiceClient.deletePerpetualTask(AccountId.newBuilder().setId(result.getAccountId()).build(),
-          PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
+      perpetualTaskService.deleteTask(result.getAccountId(), perpetualTaskId);
       log.info("Deleted Instance Sync V2 Perpetual task: [{}] .", perpetualTaskId);
     }
   }
@@ -378,8 +375,7 @@ public class CgInstanceSyncServiceV2 {
       }
     }
     if (!taskDetailsService.isInstanceSyncTaskDetailsExist(result.getAccountId(), perpetualTaskId)) {
-      delegateServiceClient.deletePerpetualTask(AccountId.newBuilder().setId(result.getAccountId()).build(),
-          PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
+      perpetualTaskService.deleteTask(result.getAccountId(), perpetualTaskId);
     }
   }
 
@@ -422,24 +418,25 @@ public class CgInstanceSyncServiceV2 {
   }
 
   private void updateInstanceSyncPerpetualTask(SettingAttribute cloudProvider, String perpetualTaskId) {
-    delegateServiceClient.resetPerpetualTask(AccountId.newBuilder().setId(cloudProvider.getAccountId()).build(),
-        PerpetualTaskId.newBuilder().setId(perpetualTaskId).build(),
+    perpetualTaskService.resetTask(cloudProvider.getAccountId(), perpetualTaskId,
         helperFactory.getHelper(cloudProvider.getValue().getSettingType()).fetchInfraConnectorDetails(cloudProvider));
   }
 
   private String createInstanceSyncPerpetualTask(SettingAttribute cloudProvider) {
     String accountId = cloudProvider.getAccountId();
 
-    PerpetualTaskId taskId = delegateServiceClient.createPerpetualTask(AccountId.newBuilder().setId(accountId).build(),
-        "CG_INSTANCE_SYNC_V2", preparePerpetualTaskSchedule(),
-        PerpetualTaskClientContextDetails.newBuilder()
-            .setExecutionBundle(helperFactory.getHelper(cloudProvider.getValue().getSettingType())
-                                    .fetchInfraConnectorDetails(cloudProvider))
+    String taskId = perpetualTaskService.createTask("CG_INSTANCE_SYNC_V2", accountId,
+        PerpetualTaskClientContext.builder()
+            .executionBundle(helperFactory.getHelper(cloudProvider.getValue().getSettingType())
+                                 .fetchInfraConnectorDetails(cloudProvider)
+                                 .toByteArray())
             .build(),
-        true, "CloudProvider: [" + cloudProvider.getUuid() + "] Instance Sync V2 Perpetual Task");
-    log.info("Created Perpetual Task with ID: [{}], for account: [{}], and cloud provider: [{}]", taskId.getId(),
-        accountId, cloudProvider.getUuid());
-    return taskId.getId();
+        preparePerpetualTaskSchedule(), true,
+        "CloudProvider: [" + cloudProvider.getUuid() + "] Instance Sync V2 Perpetual Task");
+
+    log.info("Created Perpetual Task with ID: [{}], for account: [{}], and cloud provider: [{}]", taskId, accountId,
+        cloudProvider.getUuid());
+    return taskId;
   }
 
   private PerpetualTaskSchedule preparePerpetualTaskSchedule() {
