@@ -1,13 +1,13 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.license.impl;
+package io.harness.licence.impl;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import static java.lang.String.format;
 
@@ -32,10 +32,10 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import retrofit2.Response;
 
-@OwnedBy(CI)
+@OwnedBy(IACM)
 @Slf4j
 @Singleton
-public class CILicenseServiceImpl implements CILicenseService {
+public class IACMLicenseServiceImpl implements CILicenseService {
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
   @Inject NgLicenseHttpClient ngLicenseHttpClient;
@@ -45,7 +45,7 @@ public class CILicenseServiceImpl implements CILicenseService {
   private final LoadingCache<String, LicensesWithSummaryDTO> licenseCache =
       CacheBuilder.newBuilder()
           .expireAfterWrite(CACHE_EVICTION_TIME_MINUTES, TimeUnit.MINUTES)
-          .build(new CacheLoader<String, LicensesWithSummaryDTO>() {
+          .build(new CacheLoader<>() {
             @Override
             public LicensesWithSummaryDTO load(@org.jetbrains.annotations.NotNull final String accountId) {
               return fetchLicenseSummary(accountId);
@@ -65,9 +65,9 @@ public class CILicenseServiceImpl implements CILicenseService {
     try {
       RetryPolicy<Object> retryPolicy = getRetryPolicy(format("[Retrying failed call to fetch license summary: {}"),
           format("Failed to fetch license summary after retrying {} times"));
-      Response<ResponseDTO<LicensesWithSummaryDTO>> response = Failsafe.with(retryPolicy).get(() -> {
-        return ngLicenseHttpClient.getLicenseSummary(accountId, ModuleType.CI.toString()).execute();
-      });
+      Response<ResponseDTO<LicensesWithSummaryDTO>> response =
+          Failsafe.with(retryPolicy)
+              .get(() -> ngLicenseHttpClient.getLicenseSummary(accountId, ModuleType.IACM.toString()).execute());
       if (response.isSuccessful()) {
         ResponseDTO<LicensesWithSummaryDTO> responseDTO = response.body();
         if (responseDTO != null && responseDTO.getData() != null) {
