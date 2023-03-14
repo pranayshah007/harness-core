@@ -41,10 +41,10 @@ public class ProvisionApiImpl implements ProvisionApi {
       return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (DuplicateKeyException e) {
       String logMessage = String.format("Namespace already created for given account Id - %s", accountIdentifier);
-      log.error(logMessage);
-      return Response.status(Response.Status.CONFLICT)
-          .entity(ResponseMessage.builder().message(logMessage).build())
-          .build();
+      log.info(logMessage);
+      NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
+      provisionService.triggerPipeline(accountIdentifier, namespaceInfo.getNamespace());
+      return Response.status(Response.Status.CREATED).entity(namespaceInfo).build();
     } catch (Exception e) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
