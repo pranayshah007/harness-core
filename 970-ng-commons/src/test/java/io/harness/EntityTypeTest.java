@@ -230,6 +230,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(196, "AWS_LAMBDA_ROLLBACK");
     entityTypeOrdinalMapping.put(197, "GITOPS_SYNC");
     entityTypeOrdinalMapping.put(198, "BAMBOO_BUILD");
+    entityTypeOrdinalMapping.put(199, "CD_SSCA_ORCHESTRATION");
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

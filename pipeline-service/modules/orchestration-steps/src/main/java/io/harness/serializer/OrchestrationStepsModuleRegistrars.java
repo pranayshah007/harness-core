@@ -33,6 +33,7 @@ import io.harness.serializer.kryo.YamlKryoRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.OrchestrationStepsContractMorphiaRegistrar;
 import io.harness.serializer.morphia.OrchestrationStepsMorphiaRegistrar;
+import io.harness.ssca.cd.CdSscaBeansRegistrar;
 import io.harness.steps.approval.stage.ApprovalStageNode;
 import io.harness.steps.approval.step.custom.CustomApprovalStepNode;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
@@ -113,6 +114,7 @@ public class OrchestrationStepsModuleRegistrars {
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
       ImmutableList.<YamlSchemaRootClass>builder()
+          .addAll(CdSscaBeansRegistrar.yamlSchemaRegistrars)
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.PIPELINES)
                    .availableAtProjectLevel(true)

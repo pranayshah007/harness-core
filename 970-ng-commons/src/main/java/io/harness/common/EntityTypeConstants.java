@@ -225,4 +225,5 @@ public interface EntityTypeConstants {
   String SSCA_ORCHESTRATION = "SscaOrchestration";
 
   String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+  String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
 }
