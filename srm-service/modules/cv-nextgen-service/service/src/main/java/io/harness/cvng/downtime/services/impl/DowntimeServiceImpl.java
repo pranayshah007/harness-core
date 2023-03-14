@@ -28,7 +28,6 @@ import io.harness.cvng.downtime.beans.EntitiesRule;
 import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
-import io.harness.cvng.downtime.beans.EntityUnavailabilityInstance;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
@@ -37,6 +36,7 @@ import io.harness.cvng.downtime.beans.RuleType;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeKeys;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
@@ -313,9 +313,9 @@ public class DowntimeServiceImpl implements DowntimeService {
   }
 
   @Override
-  public List<EntityUnavailabilityInstance> filterDowntimeInstancesOnMSs(ProjectParams projectParams,
-      List<EntityUnavailabilityInstance> entityUnavailabilityInstances, Set<String> monitoredServiceIdentifiers) {
-    return entityUnavailabilityInstances.stream()
+  public List<EntityUnavailabilityStatuses> filterDowntimeInstancesOnMSs(ProjectParams projectParams,
+      List<EntityUnavailabilityStatuses> entityUnavailabilityStatuses, Set<String> monitoredServiceIdentifiers) {
+    return entityUnavailabilityStatuses.stream()
         .filter(instance
             -> monitoredServiceIdentifiers.stream().anyMatch(monitoredServiceIdentifier
                 -> instance.getEntitiesRule().isPresent(

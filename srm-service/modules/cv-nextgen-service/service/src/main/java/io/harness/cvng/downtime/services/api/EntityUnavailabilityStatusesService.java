@@ -10,7 +10,6 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityType;
-import io.harness.cvng.downtime.beans.EntityUnavailabilityInstance;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 
@@ -37,7 +36,7 @@ public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandl
 
   List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams, long startTime, long endTime);
 
-  List<EntityUnavailabilityInstance> getAllUnavailabilityInstances(
+  List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime);
 
   List<EntityUnavailabilityStatusesDTO> getActiveOrFirstUpcomingInstance(

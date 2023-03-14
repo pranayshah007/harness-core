@@ -7,7 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -95,8 +94,11 @@ public class AnnotationServiceImpl implements AnnotationService {
                                        .in(annotationIds)
                                        .order(Sort.ascending(AnnotationKeys.createdAt))
                                        .asList();
-    if (isEmpty(annotationIds) || annotations.size() != annotationIds.size()) {
-      throw new InvalidRequestException("Message in the thread has been updated/deleted. Please refresh.");
+
+    Map<Pair<Long, Long>, List<Annotation>> timeToIdentifiersMap = annotations.stream().collect(
+        Collectors.groupingBy(instance -> new ImmutablePair<>(instance.getStartTime(), instance.getEndTime())));
+    if (timeToIdentifiersMap.size() != 1) {
+      throw new InvalidRequestException("All the messages should be of the same thread");
     }
 
     List<AnnotationInstance> annotationInstances = annotations.stream()
@@ -104,10 +106,8 @@ public class AnnotationServiceImpl implements AnnotationService {
                                                            -> AnnotationInstance.builder()
                                                                   .uuid(annotation.getUuid())
                                                                   .message(annotation.getMessage())
-                                                                  .startTime(annotation.getStartTime())
-                                                                  .endTime(annotation.getEndTime())
                                                                   .createdAt(annotation.getCreatedAt())
-                                                                  .createdBy(annotation.getCreatedBy())
+                                                                  .createdBy(annotation.getCreatedBy().getEmail())
                                                                   .build())
                                                        .collect(Collectors.toList());
     return SecondaryEventDetailsResponse.builder()
@@ -204,7 +204,7 @@ public class AnnotationServiceImpl implements AnnotationService {
                    .message(annotation.getMessage())
                    .startTime(annotation.getStartTime())
                    .endTime(annotation.getEndTime())
-                   .createdBy(annotation.getCreatedBy())
+                   .createdBy(annotation.getCreatedBy().getEmail())
                    .createdAt(annotation.getCreatedAt())
                    .build())
         .collect(Collectors.toList());

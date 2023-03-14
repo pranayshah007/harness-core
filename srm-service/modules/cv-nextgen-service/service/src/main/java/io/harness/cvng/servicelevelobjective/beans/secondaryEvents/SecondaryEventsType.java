@@ -11,6 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum SecondaryEventsType {
   @JsonProperty("Downtime") DOWNTIME,
-  @JsonProperty("DataCollectionFailed") DATA_COLLECTION_FAILED,
+  @JsonProperty("DataCollectionFailure") DATA_COLLECTION_FAILURE,
   @JsonProperty("Annotation") ANNOTATION
 }

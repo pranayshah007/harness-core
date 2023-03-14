@@ -15,7 +15,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class EntityUnavailabilityInstanceDetails extends SecondaryEventDetails {
+public class DowntimeInstanceDetails extends SecondaryEventDetails {
   @Override
   public SecondaryEventsType getType() {
     return SecondaryEventsType.DOWNTIME;

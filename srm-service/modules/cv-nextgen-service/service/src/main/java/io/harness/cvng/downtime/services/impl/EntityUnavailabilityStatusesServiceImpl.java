@@ -10,7 +10,6 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityType;
-import io.harness.cvng.downtime.beans.EntityUnavailabilityInstance;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
@@ -139,23 +138,19 @@ public class EntityUnavailabilityStatusesServiceImpl implements EntityUnavailabi
   }
 
   @Override
-  public List<EntityUnavailabilityInstance> getAllUnavailabilityInstances(
+  public List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(
       ProjectParams projectParams, long startTime, long endTime) {
-    List<EntityUnavailabilityStatuses> allInstances =
-        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
-            .disableValidation()
-            .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
-            .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .field(EntityUnavailabilityStatusesKeys.startTime)
-            .lessThanOrEq(endTime)
-            .field(EntityUnavailabilityStatusesKeys.endTime)
-            .greaterThanOrEq(startTime)
-            .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
-            .asList();
-    return allInstances.stream()
-        .map(EntityUnavailabilityInstance::getEntityUnavailabilityInstance)
-        .collect(Collectors.toList());
+    return hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+        .disableValidation()
+        .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .field(EntityUnavailabilityStatusesKeys.startTime)
+        .lessThanOrEq(endTime)
+        .field(EntityUnavailabilityStatusesKeys.endTime)
+        .greaterThanOrEq(startTime)
+        .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+        .asList();
   }
 
   @Override

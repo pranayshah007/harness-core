@@ -16,11 +16,12 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
+import static io.harness.rule.TestUserProvider.testUserProvider;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.offset;
+import static org.assertj.core.api.Assertions.*;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -36,7 +37,9 @@ import io.harness.cvng.downtime.beans.DowntimeDTO;
 import io.harness.cvng.downtime.beans.EntityDetails;
 import io.harness.cvng.downtime.beans.EntityIdentifiersRule;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationInstanceDetails;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -79,6 +82,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -112,6 +116,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private GraphDataService graphDataService;
 
   @Inject private DowntimeService downtimeService;
+  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Inject private AnnotationService annotationService;
   private Instant startTime;
   private Instant endTime;
@@ -131,6 +136,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
     startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
     endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
+    testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").email("user1@harness.io").build());
   }
 
   @Test
@@ -1322,7 +1328,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetSecondaryEventsForSimpleSLO() {
+  public void testGetSecondaryEventsForSimpleSLO_Success() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -1366,7 +1372,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetSecondaryEventsForCompositeSLO() {
+  public void testGetSecondaryEventsForCompositeSLO_Success() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -1460,7 +1466,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetSecondaryEventDetails() {
+  public void testGetSecondaryEventDetails_Success() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -1478,17 +1484,33 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond() + Duration.ofMinutes(1).toSeconds();
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
 
-    AnnotationDTO annotationDTO1 = builderFactory.getAnnotationDTO();
-    annotationService.create(builderFactory.getProjectParams(), annotationDTO1);
-    annotationDTO1.setMessage("new one");
-    annotationService.create(builderFactory.getProjectParams(), annotationDTO1);
+    DowntimeDTO downtimeDTO = builderFactory.getOnetimeDurationBasedDowntimeDTO();
+    downtimeDTO.setEntitiesRule(
+        EntityIdentifiersRule.builder()
+            .entityIdentifiers(Collections.singletonList(
+                EntityDetails.builder().entityRef(monitoredServiceIdentifier).enabled(true).build()))
+            .build());
+    downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
+
+    List<EntityUnavailabilityStatuses> instances = entityUnavailabilityStatusesService.getAllUnavailabilityInstances(
+        builderFactory.getProjectParams(), startTime, endTime);
+
+    AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO);
+    annotationDTO.setMessage("new one");
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO);
 
     List<Annotation> annotations =
         annotationService.get(builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
     List<String> annotationIds = annotations.stream().map(Annotation::getUuid).collect(Collectors.toList());
 
-    SecondaryEventDetailsResponse response =
-        sloDashboardService.getSecondaryEventDetails(SecondaryEventsType.ANNOTATION, annotationIds);
+    SecondaryEventDetailsResponse response = sloDashboardService.getSecondaryEventDetails(
+        SecondaryEventsType.DOWNTIME, Collections.singletonList(instances.get(0).getUuid()));
+
+    assertThat(response.getType()).isEqualTo(SecondaryEventsType.DOWNTIME);
+    assertThat(response.getStartTime()).isEqualTo(CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond());
+
+    response = sloDashboardService.getSecondaryEventDetails(SecondaryEventsType.ANNOTATION, annotationIds);
 
     assertThat(response.getStartTime()).isEqualTo(startTime);
     assertThat(response.getEndTime()).isEqualTo(endTime);
@@ -1498,6 +1520,41 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(instanceDetails.getAnnotations().size()).isEqualTo(annotationIds.size());
     assertThat(instanceDetails.getAnnotations().get(0).getUuid()).isEqualTo(annotations.get(0).getUuid());
     assertThat(instanceDetails.getAnnotations().get(0).getMessage()).isEqualTo(annotations.get(0).getMessage());
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSecondaryEventDetails_WithDifferentThreadMessageError() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveV2DTO serviceLevelObjective =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    spec.setHealthSourceRef(healthSource.getIdentifier());
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+
+    AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO);
+    annotationDTO.setStartTime(startTime + Duration.ofMinutes(5).toSeconds());
+    annotationService.create(builderFactory.getProjectParams(), annotationDTO);
+
+    List<Annotation> annotations =
+        annotationService.get(builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
+    List<String> annotationIds = annotations.stream().map(Annotation::getUuid).collect(Collectors.toList());
+
+    assertThatThrownBy(
+        () -> sloDashboardService.getSecondaryEventDetails(SecondaryEventsType.ANNOTATION, annotationIds))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("All the messages should be of the same thread");
   }
 
   private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, String sliId) {

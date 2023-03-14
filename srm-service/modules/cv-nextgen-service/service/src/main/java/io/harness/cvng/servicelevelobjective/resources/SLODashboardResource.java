@@ -45,6 +45,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -233,7 +234,7 @@ public class SLODashboardResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<SecondaryEventDetailsResponse> getSecondaryEventDetails(
       @NotNull @Valid @QueryParam("secondaryEventType") SecondaryEventsType type,
-      @QueryParam("identifiers") List<String> uuids) {
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> uuids) {
     return ResponseDTO.newResponse(sloDashboardService.getSecondaryEventDetails(type, uuids));
   }
 }
