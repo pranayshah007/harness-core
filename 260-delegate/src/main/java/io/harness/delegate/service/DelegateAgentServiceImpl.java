@@ -572,13 +572,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
       }
 
-      boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
-
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
       final List<String> unsupportedTasks =
-          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+          Arrays.stream(TaskType.values()).filter(TaskType::isUnsupported).map(Enum::name).collect(toList());
 
       if (BLOCK_SHELL_TASK) {
         log.info("Delegate is blocked from executing shell script tasks.");
