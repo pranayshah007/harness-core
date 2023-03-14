@@ -8,7 +8,6 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -35,7 +34,6 @@ import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
-import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
@@ -63,7 +61,6 @@ import com.google.inject.Singleton;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -74,7 +71,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.util.CollectionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -107,7 +103,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       if (ignoreError) {
         createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       } else {
-        ngTriggerService.validateInputSets(triggerDetails);
+        ngTriggerService.validatePipelineRef(triggerDetails);
         createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
@@ -160,7 +156,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       if (ignoreError) {
         updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       } else {
-        ngTriggerService.validateInputSets(triggerDetails);
+        ngTriggerService.validatePipelineRef(triggerDetails);
         updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
       }
       return ResponseDTO.newResponse(
@@ -222,28 +218,11 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       @NotNull @ResourceIdentifier String targetIdentifier) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-
     if (!ngTriggerEntity.isPresent()) {
       return ResponseDTO.newResponse(null);
     }
-
-    TriggerDetails triggerDetails = ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier,
-        projectIdentifier, targetIdentifier, ngTriggerEntity.get().getIdentifier(), ngTriggerEntity.get().getYaml(),
-        ngTriggerEntity.get().getWithServiceV2());
-    boolean isPipelineInputOutdated = false;
-    if (triggerDetails.getNgTriggerConfigV2() != null
-        && isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
-        && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-      // Only validate pipeline inputs if trigger is not for remote pipeline and not using input sets
-      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        isPipelineInputOutdated = true;
-      }
-    }
-
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(
-            ngTriggerEntity.get(), true, true, isPipelineInputOutdated));
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false));
   }
 
   @Timed
@@ -256,32 +235,6 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<NGTriggerCatalogDTO> getTriggerCatalog(String accountIdentifier) {
     List<TriggerCatalogItem> triggerCatalog = ngTriggerService.getTriggerCatalog(accountIdentifier);
     return ResponseDTO.newResponse(ngTriggerElementMapper.toCatalogDTO(triggerCatalog));
-  }
-
-  @Override
-  public ResponseDTO<ValidatePipelineInputsResponseDTO> validatePipelineInputs(
-      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
-      String triggerIdentifier) {
-    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
-    if (!ngTriggerEntity.isPresent()) {
-      throw new EntityNotFoundException(String.format("Trigger %s does not exist", triggerIdentifier));
-    }
-    try {
-      TriggerDetails triggerDetails =
-          ngTriggerService.fetchTriggerEntity(accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier,
-              triggerIdentifier, ngTriggerEntity.get().getYaml(), ngTriggerEntity.get().getWithServiceV2());
-
-      Map<String, Map<String, String>> errorMap = ngTriggerService.validatePipelineRef(triggerDetails);
-      if (!CollectionUtils.isEmpty(errorMap)) {
-        return ResponseDTO.newResponse(
-            ValidatePipelineInputsResponseDTO.builder().validYaml(false).errorMap(errorMap).build());
-      }
-    } catch (Exception exception) {
-      throw new InvalidRequestException("Failed while validating trigger yaml: ", exception);
-    }
-    return ResponseDTO.newResponse(ValidatePipelineInputsResponseDTO.builder().validYaml(true).build());
   }
 
   @Override
