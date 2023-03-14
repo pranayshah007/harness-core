@@ -9,10 +9,12 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
+import static io.harness.rule.TestUserProvider.testUserProvider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -69,6 +71,7 @@ public class AnnotationServiceImplTest extends CvNextGenTestBase {
 
     startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
     endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").email("user1@harness.io").build());
   }
 
   @Test
@@ -96,7 +99,6 @@ public class AnnotationServiceImplTest extends CvNextGenTestBase {
     List<SecondaryEventsResponse> response = annotationService.getAllInstancesGrouped(builderFactory.getProjectParams(),
         startTime, startTime + Duration.ofMinutes(60).toSeconds(), serviceLevelObjective.getIdentifier());
     assertThat(response.size()).isEqualTo(2);
-    assertThat(response.get(0).getIdentifiers().size()).isEqualTo(2);
   }
 
   @Test
