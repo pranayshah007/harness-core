@@ -209,6 +209,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGEmailChannelSpec;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
+import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
@@ -1973,6 +1974,19 @@ public class BuilderFactory {
         .endTime(endTime)
         .projectIdentifier(context.getProjectIdentifier())
         .orgIdentifier(context.getOrgIdentifier())
+        .build();
+  }
+
+  public AnnotationDTO getAnnotationDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return AnnotationDTO.builder()
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .message("Errors spiked")
+        .startTime(startTime)
+        .endTime(endTime)
+        .sloIdentifier("sloIdentifier")
         .build();
   }
 
