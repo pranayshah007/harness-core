@@ -25,7 +25,7 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
 
   @Override
   public void release() {
-    if (lock != null && (lock.isLocked() || isLeaseInfinite)) {
+    if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite)) {
       lock.unlock();
     }
   }
