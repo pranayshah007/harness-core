@@ -8,7 +8,6 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
-import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
 import static io.harness.cvng.core.services.CVNextGenConstants.ANNOTATION_ACCOUNT_PATH;
 
 import io.harness.annotations.ExposeInternalException;

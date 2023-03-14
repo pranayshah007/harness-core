@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.beans.EmbeddedUser;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -20,6 +22,6 @@ public class AnnotationInstance {
   @NotNull String message;
   long startTime;
   long endTime;
-  String createdBy;
+  EmbeddedUser createdBy;
   long createdAt;
 }

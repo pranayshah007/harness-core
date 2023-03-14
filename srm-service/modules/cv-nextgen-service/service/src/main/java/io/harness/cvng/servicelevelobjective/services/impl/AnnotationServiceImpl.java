@@ -107,7 +107,7 @@ public class AnnotationServiceImpl implements AnnotationService {
                                                                   .startTime(annotation.getStartTime())
                                                                   .endTime(annotation.getEndTime())
                                                                   .createdAt(annotation.getCreatedAt())
-                                                                  .createdBy(annotation.getCreatedBy().getEmail())
+                                                                  .createdBy(annotation.getCreatedBy())
                                                                   .build())
                                                        .collect(Collectors.toList());
     return SecondaryEventDetailsResponse.builder()
@@ -204,7 +204,7 @@ public class AnnotationServiceImpl implements AnnotationService {
                    .message(annotation.getMessage())
                    .startTime(annotation.getStartTime())
                    .endTime(annotation.getEndTime())
-                   .createdBy(annotation.getCreatedBy().getEmail())
+                   .createdBy(annotation.getCreatedBy())
                    .createdAt(annotation.getCreatedAt())
                    .build())
         .collect(Collectors.toList());
