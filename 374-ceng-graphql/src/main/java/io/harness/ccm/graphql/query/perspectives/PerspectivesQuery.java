@@ -86,13 +86,15 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
+
     // Group by is only needed in case of business mapping
     if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      groupBy = Collections.emptyList();
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
     }
 
-    QLCEViewTrendData trendStatsData = viewsBillingService.getTrendStatsDataNg(
-        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendData trendStatsData =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregateFunction, viewQueryParams);
     return PerspectiveTrendStats.builder()
         .cost(getStats(trendStatsData.getTotalCost()))
         .idleCost(getStats(trendStatsData.getIdleCost()))
@@ -114,13 +116,15 @@ public class PerspectivesQuery {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
 
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
+
     // Group by is only needed in case of business mapping
     if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      groupBy = Collections.emptyList();
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
     }
 
-    QLCEViewTrendInfo forecastCostData = viewsBillingService.getForecastCostData(
-        filters, groupBy, aggregateFunction, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery));
+    QLCEViewTrendInfo forecastCostData =
+        viewsBillingService.getForecastCostData(filters, groupBy, aggregateFunction, viewQueryParams);
     return PerspectiveTrendStats.builder()
         .cost(StatsInfo.builder()
                   .statsTrend(forecastCostData.getStatsTrend())

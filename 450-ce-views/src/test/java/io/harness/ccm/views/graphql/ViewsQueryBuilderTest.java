@@ -17,6 +17,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.rule.Owner;
@@ -102,9 +103,10 @@ public class ViewsQueryBuilderTest extends CategoryTest {
                                                      .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
                                                      .build())
                                   .build();
+    ViewQueryParams viewQueryParams = ViewQueryParams.builder().accountId(awsAccount.getFieldId()).build();
     SelectQuery selectQuery = viewsQueryBuilder.getQuery(viewRules, Collections.emptyList(),
         Arrays.asList(startTimeFilter, endTimeFilter), Collections.singletonList(groupBy), Collections.emptyList(),
-        Collections.emptyList(), "TableName", Collections.emptyList());
+        Collections.emptyList(), "TableName", viewQueryParams, Collections.emptyList());
     assertThat(selectQuery.toString()).contains("GROUP BY awsUsageAccountId");
     assertThat(selectQuery.toString()).contains("((awsServicecode IN ('service1') )");
     assertThat(selectQuery.toString()).contains("SELECT awsUsageAccountId FROM TableName");
@@ -171,10 +173,11 @@ public class ViewsQueryBuilderTest extends CategoryTest {
     QLCEViewSortCriteria startTimeDescSort =
         QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.TIME).build();
 
+    ViewQueryParams viewQueryParams = ViewQueryParams.builder().accountId("accountId").isClusterQuery(true).build();
     SelectQuery selectQuery = viewsQueryBuilder.getQuery(viewRules, Collections.singletonList(clusterFilter),
         Arrays.asList(startTimeFilter, endTimeFilter), Collections.singletonList(groupBy),
         Arrays.asList(costAgg, minStartTimeAgg, maxStartTimeAgg), Arrays.asList(costAscSort, startTimeDescSort),
-        "TableName", Collections.emptyList());
+        "TableName", viewQueryParams, Collections.emptyList());
     assertThat(selectQuery.toString()).contains("GROUP BY namespace");
     assertThat(selectQuery.toString())
         .contains("(clusterName IN ('cluster1') ) AND (namespace NOT IN ('dummyCluster') )");
