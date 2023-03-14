@@ -53,7 +53,9 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    return true;
+    SpotInstListenerUpdateState state1 = (SpotInstListenerUpdateState) getState(stepYaml1);
+    SpotInstListenerUpdateState state2 = (SpotInstListenerUpdateState) getState(stepYaml2);
+    return state1.isDownsizeOldElastiGroup() == state2.isDownsizeOldElastiGroup();
   }
 
   @Override
