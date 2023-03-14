@@ -12,7 +12,7 @@ import static io.harness.NGConstants.LOCATION;
 import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
@@ -104,7 +104,7 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
                               .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
                               .build();
     when(userGroupService.create(any())).thenReturn(userGroup);
-    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
 
     assertThat(userGroupCreated.getDisplayName()).isNotNull();
@@ -133,7 +133,7 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
                               .identifier(scimGroup.getDisplayName().replaceAll("\\.", "_"))
                               .build();
     when(userGroupService.create(any())).thenReturn(userGroup);
-    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
 
     assertThat(userGroupCreated.getDisplayName()).isNotNull();

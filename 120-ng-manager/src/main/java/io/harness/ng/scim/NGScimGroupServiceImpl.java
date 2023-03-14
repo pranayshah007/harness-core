@@ -14,7 +14,7 @@ import static io.harness.NGConstants.LOCATION;
 import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.GROUP;
@@ -173,7 +173,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
         }
       }
 
-      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_JPMC_SCIM_REQUIREMENTS)) {
+      if (ngFeatureFlagHelperService.isEnabled(accountId, PL_NEW_SCIM_STANDARDS)) {
         Map<String, String> metaMap = new HashMap<String, String>() {
           {
             put(RESOURCE_TYPE, "Group");

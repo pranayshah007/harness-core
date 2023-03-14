@@ -8,7 +8,7 @@
 package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -160,7 +160,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     userResource.setDisplayName(user.getName());
     userResource.setExternalId(user.getExternalUserId());
 
-    boolean isJpmcFfOn = featureFlagService.isEnabled(PL_JPMC_SCIM_REQUIREMENTS, accountId);
+    boolean isJpmcFfOn = featureFlagService.isEnabled(PL_NEW_SCIM_STANDARDS, accountId);
 
     Map<String, String> nameMap = new HashMap<String, String>() {
       {
