@@ -8,6 +8,7 @@
 package io.harness.secrets.yamlhandlers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
 import static io.harness.eraro.ErrorCode.INVALID_FORMAT;
 import static io.harness.eraro.ErrorCode.RESOURCE_NOT_FOUND;
@@ -22,6 +23,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.SecretsDao;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.VaultConfig;
 
@@ -42,6 +44,7 @@ public class SecretYamlHandlerImpl implements SecretYamlHandler {
   private final SecretService secretService;
   private final SecretManagerConfigService secretManagerConfigService;
   private final SecretsDao secretsDao;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   @Inject
   public SecretYamlHandlerImpl(
@@ -67,8 +70,10 @@ public class SecretYamlHandlerImpl implements SecretYamlHandler {
   }
 
   @Override
+  // mexer aqui
   public String toYaml(EncryptedData encryptedData) {
-    if (encryptedData.getEncryptionType() == VAULT) {
+    if (encryptedData.getEncryptionType() == VAULT
+        && featureFlagHelperService.isEnabled(encryptedData.getAccountId(), SPG_CHANGE_SECRET_VAULT_PATTERN_ON_YAML)) {
       return encryptedData.getEncryptionType().getYamlName() + ":" + getVaultSecretRefUrl(encryptedData);
     } else {
       return encryptedData.getEncryptionType().getYamlName() + ":" + encryptedData.getName();
