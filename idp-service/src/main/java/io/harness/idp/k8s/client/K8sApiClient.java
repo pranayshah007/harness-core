@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.net.ConnectException;
@@ -108,7 +109,12 @@ public class K8sApiClient implements K8sClient {
     }
     final Supplier<V1Secret> secretSupplier = Retry.decorateSupplier(retry, () -> {
       try {
+        V1Namespace v1Namespace = new V1Namespace();
+        V1ObjectMeta v1ObjectMeta = new V1ObjectMeta();
+        v1ObjectMeta.setNamespace("gfhh");
+        v1Namespace.setMetadata(v1ObjectMeta);
         return coreV1Api.readNamespacedSecret(secretName, namespace, null);
+
       } catch (ApiException e) {
         if (e.getCode() == 404) {
           return createSecret(coreV1Api, namespace, secretName);

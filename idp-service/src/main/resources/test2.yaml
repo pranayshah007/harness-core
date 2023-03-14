@@ -1,0 +1,20 @@
+proxy:
+  '/jenkins/api':
+    target: http://localhost:8080
+    headers:
+      Authorization: ${JENKINS_BASIC_AUTH_HEADER}
+
+kubernetes:
+  serviceLocatorMethod:
+    type: 'multiTenant'
+  clusterLocatorMethods:
+    - type: 'config'
+      clusters: []
+
+kafka:
+  clientId: backstage
+  clusters:
+    - name: cluster
+      dashboardUrl: https://akhq.io/
+      brokers:
+        - localhost:9092

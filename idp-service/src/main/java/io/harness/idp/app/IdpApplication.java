@@ -20,6 +20,7 @@ import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
+import io.harness.idp.namespace.Merging;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
@@ -120,6 +121,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     List<Module> modules = new ArrayList<>();
     modules.add(new IdpModule(configuration));
     Injector injector = Guice.createInjector(modules);
+    Merging merging = injector.getInstance(Merging.class);
+    merging.testingMerging();
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);

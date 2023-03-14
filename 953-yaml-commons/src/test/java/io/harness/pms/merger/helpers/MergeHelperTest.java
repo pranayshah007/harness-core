@@ -98,6 +98,7 @@ public class MergeHelperTest extends CategoryTest {
   public void testMergeYamlUpdates() throws IOException {
     String filename = "opa-pipeline.yaml";
     String pipeline = readFile(filename);
+    System.out.println("********"+pipeline);
 
     String fqn1 = "pipeline/stages/[0]/stage/spec/execution/steps/[0]/step/spec/connector";
     String exp1 = "{\n"
@@ -146,7 +147,7 @@ public class MergeHelperTest extends CategoryTest {
     assertThat(noUpdates).isEqualTo(expandedPipeline);
 
     String noUpdatesOnYaml = MergeHelper.mergeUpdatesIntoJson(pipeline, null);
-    assertThat(noUpdatesOnYaml).isEqualTo(readFile("opa-pipeline.json"));
+    assertThat(noUpdatesOnYaml).isEqualTo(readFile("opa-pipeline.json123"));
   }
 
   @Test
