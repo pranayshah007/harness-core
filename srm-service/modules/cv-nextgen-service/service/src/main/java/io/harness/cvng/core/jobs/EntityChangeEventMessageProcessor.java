@@ -69,5 +69,6 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
 
     EXCEPTIONS = new HashSet<>();
     EXCEPTIONS.add(ServiceLevelIndicator.class);
+    EXCEPTIONS.add(Annotation.class);
   }
 }
