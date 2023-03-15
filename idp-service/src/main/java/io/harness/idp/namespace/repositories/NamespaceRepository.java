@@ -26,5 +26,4 @@ public interface NamespaceRepository extends CrudRepository<NamespaceEntity, Str
   List<NamespaceEntity> findAllByIsDeleted(boolean deleted);
 
   NamespaceEntity save(NamespaceEntity namespaceEntity);
-
 }

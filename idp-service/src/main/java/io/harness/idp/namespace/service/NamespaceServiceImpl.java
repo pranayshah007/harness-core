@@ -50,11 +50,10 @@ public class NamespaceServiceImpl implements NamespaceService {
     return insertedData;
   }
   @Override
-  public List<String> getAccountIds()
-  {
-    List<NamespaceEntity> namespaceEntities=namespaceRepository.findAllByIsDeleted(false);
-    List<String> accountIdsList=namespaceEntities.stream().map(entity -> entity.getAccountIdentifier()).collect(Collectors.toList());
+  public List<String> getAccountIds() {
+    List<NamespaceEntity> namespaceEntities = namespaceRepository.findAllByIsDeleted(false);
+    List<String> accountIdsList =
+        namespaceEntities.stream().map(entity -> entity.getAccountIdentifier()).collect(Collectors.toList());
     return accountIdsList;
-
   }
 }
