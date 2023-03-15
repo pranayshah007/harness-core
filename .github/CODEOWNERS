@@ -89,7 +89,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /srm-service/modules/cv-nextgen-service/service/src/test/resources/recaster/alias/alias.txt archit.singla@harness.io sahil.hindwani@harness.io
 /tools/build-cleaner/ gaurav.nanda@harness.io
 
-/100-migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io brett@harness.io arvind.choudhary@harness.io abhinav.singh@harness.io
+/100-migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io brett@harness.io arvind.choudhary@harness.io abhinav.singh@harness.io vaibhav.si@harness.io
 /dockerization/migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io brett@harness.io arvind.choudhary@harness.io abhinav.singh@harness.io
 /120-ng-manager/modules/ng-settings/ nishant.saini@harness.io piyush.patel@harness.io manish.manchanda@harness.io
 /970-ng-commons/src/main/java/io/harness/ModuleType.java piyush.patel@harness.io manish.manchanda@harness.io shashank.singh@harness.io meenakshi.raikwar@harness.io

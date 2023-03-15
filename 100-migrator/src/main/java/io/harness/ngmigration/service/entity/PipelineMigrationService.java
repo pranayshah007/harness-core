@@ -411,6 +411,7 @@ public class PipelineMigrationService extends NgMigrationService {
         .filter(entry -> StringUtils.isNotBlank(entry.getValue()) && isExpression(entry.getValue()))
         .filter(entry -> !toSkip.contains(entry.getKey()))
         .map(entry -> entry.getValue().substring(2, entry.getValue().length() - 1))
+        .distinct()
         .map(val -> StringNGVariable.builder().type(NGVariableType.STRING).name(val).value(RUNTIME_FIELD).build())
         .collect(Collectors.toList());
   }
