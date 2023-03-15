@@ -1,0 +1,25 @@
+moduleType: CET
+clients:
+  - name: cv-nextgen
+    clientConfig: cvngClientConfig
+    secretConfig: nextGenConfig.cvngServiceSecret
+features:
+  - name: CET_AGENTS
+    description: Maximum active agents at any point in time
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 1
+        clientName: cv-nextgen
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 5
+        clientName: cv-nextgen
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 10
+        clientName: cv-nextgen
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        limit: 30
+        clientName: cv-nextgen

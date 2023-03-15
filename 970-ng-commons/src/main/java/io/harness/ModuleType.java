@@ -34,6 +34,7 @@ public enum ModuleType {
   @JsonProperty("CHAOS") CHAOS("Chaos Engineering", PUBLIC, ONBOARDED),
   @JsonProperty("SRM") SRM("Service Reliability Management", PUBLIC, ONBOARDED),
   @JsonProperty("IACM") IACM("Infrastructure as Code Manager", PUBLIC, ONBOARDED),
+  @JsonProperty("CET") CET("Continuous Error Tracking", PUBLIC, ONBOARDED),
 
   // Internal modules which have been onboarded
   @JsonProperty("CODE") CODE("Code", INTERNAL, ONBOARDED), // TODO: Remove internal flag once licensing is added.

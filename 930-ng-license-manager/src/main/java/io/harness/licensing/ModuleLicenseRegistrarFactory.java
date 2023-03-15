@@ -9,21 +9,9 @@ package io.harness.licensing;
 
 import io.harness.ModuleType;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
-import io.harness.licensing.interfaces.clients.local.CDLocalClient;
-import io.harness.licensing.interfaces.clients.local.CELocalClient;
-import io.harness.licensing.interfaces.clients.local.CFLocalClient;
-import io.harness.licensing.interfaces.clients.local.CILocalClient;
-import io.harness.licensing.interfaces.clients.local.ChaosLocalClient;
-import io.harness.licensing.interfaces.clients.local.SRMLocalClient;
-import io.harness.licensing.interfaces.clients.local.STOLocalClient;
+import io.harness.licensing.interfaces.clients.local.*;
 import io.harness.licensing.mappers.LicenseObjectMapper;
-import io.harness.licensing.mappers.modules.CDLicenseObjectMapper;
-import io.harness.licensing.mappers.modules.CELicenseObjectMapper;
-import io.harness.licensing.mappers.modules.CFLicenseObjectMapper;
-import io.harness.licensing.mappers.modules.CILicenseObjectMapper;
-import io.harness.licensing.mappers.modules.ChaosLicenseObjectMapper;
-import io.harness.licensing.mappers.modules.SRMLicenseObjectMapper;
-import io.harness.licensing.mappers.modules.STOLicenseObjectMapper;
+import io.harness.licensing.mappers.modules.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +39,8 @@ public class ModuleLicenseRegistrarFactory {
         ModuleType.STO, new ModuleLicenseRegistrar(ModuleType.STO, STOLicenseObjectMapper.class, STOLocalClient.class));
     registrar.put(ModuleType.CHAOS,
         new ModuleLicenseRegistrar(ModuleType.CHAOS, ChaosLicenseObjectMapper.class, ChaosLocalClient.class));
+    registrar.put(
+        ModuleType.CET, new ModuleLicenseRegistrar(ModuleType.CET, CETLicenseObjectMapper.class, CETLocalClient.class));
   }
 
   public static Class<? extends LicenseObjectMapper> getLicenseObjectMapper(ModuleType moduleType) {
