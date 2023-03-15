@@ -55,7 +55,7 @@ public class EcsListenerUpdateStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsBGUpdateListnerState state = (EcsBGUpdateListnerState) getState(graphNode);
     EcsBlueGreenSwapTargetGroupsStepNode stepNode = new EcsBlueGreenSwapTargetGroupsStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     EcsBlueGreenSwapTargetGroupsStepInfo stepInfo =
         EcsBlueGreenSwapTargetGroupsStepInfo.infoBuilder()
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
