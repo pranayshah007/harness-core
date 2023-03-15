@@ -30,7 +30,7 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
     try {
       if (lock != null && (lock.isHeldByCurrentThread() || isLeaseInfinite())) {
         log.info("[RedisAcquiredLock]: Unlocking lock for Thread ID: {}", Thread.currentThread().getId());
-        lock.unlock();
+        lock.forceUnlock();
         log.info("[RedisAcquiredLock]: Unlocked lock successfully for Thread ID {}", Thread.currentThread().getId());
       }
     } catch (Exception e) {
