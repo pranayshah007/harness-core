@@ -161,7 +161,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeSyncServiceRefNotResolved() {
-    assertThatExceptionOfType(UnresolvedExpressionsException.class)
+    assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(()
                         -> step.obtainChildren(buildAmbiance(),
                             ServiceStepV3Parameters.builder()
@@ -169,8 +169,10 @@ public class ServiceStepV3Test extends CategoryTest {
                                                 .expression(true)
                                                 .expressionValue("<+randomExpression>")
                                                 .build())
+                                .envRef(ParameterField.createValueField("envRef"))
                                 .build(),
-                            null));
+                            null))
+        .withMessageContaining("Expression (<+randomExpression>) given for service ref could not be resolved. ");
   }
 
   @Test
@@ -194,7 +196,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
-  public void executeSyncServiceWithNoServiceDef() {
+  public void testExecuteSyncServiceWithNoServiceDef() {
     final ServiceEntity serviceEntity = testServiceEntityWithNoServiceDef();
     final Environment environment = testEnvEntity();
     mockService(serviceEntity);
@@ -211,6 +213,65 @@ public class ServiceStepV3Test extends CategoryTest {
                             null))
         .withMessageContaining(String.format("Unable to read yaml for service [Name: %s, Identifier: %s]",
             serviceEntity.getName(), serviceEntity.getIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateParametersForEnvRef() {
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(
+            ()
+                -> step.obtainChildren(buildAmbiance(),
+                    ServiceStepV3Parameters.builder()
+                        .serviceRef(ParameterField.createExpressionField(true, "<+env.variables.vara>", null, true))
+                        .envRef(ParameterField.createValueField("envId"))
+                        .childrenNodeIds(new ArrayList<>())
+                        .build(),
+                    null))
+        .withMessageContaining(
+            "Expression (<+env.variables.vara>) given for service ref could not be resolved. [Hint]: environment variables expression should not be used as service ref.");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(
+            ()
+                -> step.obtainChildren(buildAmbiance(),
+                    ServiceStepV3Parameters.builder()
+                        .serviceRef(ParameterField.createValueField("serviceRef"))
+                        .envRef(ParameterField.createExpressionField(true, "<+serviceVariables.vara>", null, true))
+                        .childrenNodeIds(new ArrayList<>())
+                        .build(),
+                    null))
+        .withMessageContaining(
+            "Expression (<+serviceVariables.vara>) given for environment ref could not be resolved. [Hint]: service variables expression should not be used as environment ref.");
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(
+            ()
+                -> step.obtainChildren(buildAmbiance(),
+                    ServiceStepV3Parameters.builder()
+                        .serviceRef(ParameterField.createValueField("serviceRef"))
+                        .envRef(ParameterField.createValueField("envId"))
+                        .envGroupRef(ParameterField.createExpressionField(true, "<+serviceVariables.vara>", null, true))
+                        .childrenNodeIds(new ArrayList<>())
+                        .build(),
+                    null))
+        .withMessageContaining(
+            "Expression (<+serviceVariables.vara>) given for environment group ref could not be resolved. [Hint]: service variables expression should not be used as environment group ref.");
+
+    assertThatExceptionOfType(UnresolvedExpressionsException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField("serviceRef"))
+                                .envRefs(Arrays.asList(
+                                    ParameterField.createExpressionField(true, "<+serviceVariables.vara>", null, true),
+                                    ParameterField.createExpressionField(true, "<+serviceVariables.varb>", null, true)))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining(
+            "Unresolved expressions: <+serviceVariables.vara>, <+serviceVariables.varb>. Expression (<+serviceVariables.vara>, <+serviceVariables.varb>) given for environment refs could not be resolved. [Hint]: service variables expression should not be used as environment refs.");
   }
 
   @Test
