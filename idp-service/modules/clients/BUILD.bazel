@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//970-ng-commons:module",
         "//999-annotations:module",
+        "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
         "@maven//:com_google_inject_guice",
     ],
 )

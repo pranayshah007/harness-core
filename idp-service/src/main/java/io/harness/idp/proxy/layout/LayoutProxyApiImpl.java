@@ -16,9 +16,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
+import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,17 +36,17 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response createLayout(String harnessAccount) {
+  public Response createLayout(@Valid LayoutRequest body, String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.createLayout(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response deleteLayout(String harnessAccount) {
+  public Response deleteLayout(@Valid LayoutRequest body, String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(
-        String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
+        body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();
   }
 
