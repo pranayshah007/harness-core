@@ -521,10 +521,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.FAILED).stepOutcome(stepOutcome);
       if (k8sTaskExecutionResponse.getErrorMessage() != null) {
         stepResponseBuilder.failureInfo(
-            FailureInfo.newBuilder()
-                .setErrorMessage(emptyIfNull(ExceptionUtils.getMessage(exceptionManager.processException(
-                    new CILiteEngineException(k8sTaskExecutionResponse.getErrorMessage())))))
-                .build());
+            FailureInfo.newBuilder().setErrorMessage(k8sTaskExecutionResponse.getErrorMessage()).build());
       }
       return stepResponseBuilder.build();
     }
