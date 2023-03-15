@@ -87,7 +87,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DeploymentStageVariableCreator extends AbstractStageVariableCreator<DeploymentStageNode> {
   private static final String SIDECARS_PREFIX = "artifacts.sidecars";
   private static final String PRIMARY = "primary";
-  private static final String SERVICE_CONFIG_EXPRESSION = "stage.spec.serviceConfig";
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceOverrideService serviceOverrideService;
@@ -192,18 +191,6 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return responseMap;
   }
 
-  @Override
-  public VariableCreationResponse createVariablesForParentNodeV2(
-      VariableCreationContext ctx, DeploymentStageNode config) {
-    VariableCreationResponse response = super.createVariablesForParentNodeV2(ctx, config);
-    if (config.getDeploymentStageConfig().getDeploymentType() != null && response.getYamlExtraProperties() != null) {
-      // remove serviceConfig expression in case of service v2
-      response.getYamlExtraProperties().values().forEach(yamlExtraProperties
-          -> yamlExtraProperties.getPropertiesList().removeIf(
-              yamlProperties -> SERVICE_CONFIG_EXPRESSION.equals(yamlProperties.getLocalName())));
-    }
-    return response;
-  }
   private LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesPipelineV2Yaml(
       VariableCreationContext ctx, DeploymentStageNode config) {
     LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
