@@ -2743,3 +2743,5 @@
 10000517:io.harness.delegate.task.aws.lambda.AwsLambdaJenkinsArtifactConfig
 10000518:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactoryArtifactConfig
 10000519:io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig
+10000520:io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG
+10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG

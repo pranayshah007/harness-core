@@ -122,6 +122,7 @@ import io.harness.cdng.creator.plan.steps.TasCommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasRollingRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRouteMappingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
@@ -216,6 +217,7 @@ import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRouteMappingStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
@@ -467,6 +469,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasRollbackStepPlanCreator());
     planCreators.add(new TasRollingDeployStepPlanCreator());
     planCreators.add(new TasRollingRollbackStepPlanCreator());
+    planCreators.add(new TasRouteMappingStepPlanCreator());
 
     planCreators.add(new K8sDryRunManifestStepPlanCreator());
 
@@ -612,6 +615,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasRollbackStepVariableCreator());
     variableCreators.add(new TasRollingDeployStepVariableCreator());
     variableCreators.add(new TasRollingRollbackStepVariableCreator());
+    variableCreators.add(new TasRouteMappingStepVariableCreator());
 
     variableCreators.add(new K8sDryRunManifestStepVariableCreator());
 
@@ -1298,6 +1302,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
+    StepInfo tasRouteMapping =
+        StepInfo.newBuilder()
+            .setName("Route Mapping")
+            .setType(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
     StepInfo terraformCloudRun = StepInfo.newBuilder()
                                      .setName("Terraform Cloud Run")
                                      .setType(StepSpecTypeConstants.TERRAFORM_CLOUD_RUN)
@@ -1429,6 +1441,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(awsSamRollback);
     stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
+    stepInfos.add(tasRouteMapping);
     return stepInfos;
   }
 }
