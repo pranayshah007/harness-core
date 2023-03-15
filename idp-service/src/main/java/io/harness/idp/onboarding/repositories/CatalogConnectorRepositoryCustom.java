@@ -9,14 +9,6 @@ package io.harness.idp.onboarding.repositories;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.entities.CatalogConnector;
-
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.IDP)
-public interface CatalogConnectorRepositoryCustom {
-  CatalogConnector update(Criteria criteria, Update update);
-
-  boolean delete(Criteria criteria);
-}
+public interface CatalogConnectorRepositoryCustom {}

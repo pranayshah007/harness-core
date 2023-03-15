@@ -28,6 +28,7 @@ import io.harness.batch.processing.dao.intfc.ECSServiceDao;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
+import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
@@ -59,11 +60,18 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private RecommendationsIgnoreListService ignoreListService;
   @InjectMocks private AwsECSServiceRecommendationTasklet tasklet;
 
+  private static final String AWS_ACCOUNT_ID = "awsAccountId";
   private static final String CLUSTER_NAME = "clusterName";
   private static final String CLUSTER_ID = "clusterId";
   private static final String SERVICE_ARN = "accountId/serviceName";
   private static final Double CPU_UNITS = 1024.0;
   private static final Double MEMORY_MB = 1024.0;
+  private static final CECluster CE_CLUSTER = CECluster.builder()
+                                                  .clusterName(CLUSTER_NAME)
+                                                  .infraAccountId(AWS_ACCOUNT_ID)
+                                                  .region("us-east-1")
+                                                  .accountId("accountId")
+                                                  .build();
 
   @Test
   @Owner(developers = TRUNAPUSHPA)
@@ -85,9 +93,9 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testExecuteNoClusters() throws Exception {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(ceClusterDao.getClusterIdNameMapping(any())).thenReturn(Collections.emptyMap());
+    when(ceClusterDao.getClusterIdMapping(any())).thenReturn(Collections.emptyMap());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
-    verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
+    verify(ceClusterDao, times(1)).getClusterIdMapping(any());
   }
 
   @Test
@@ -95,11 +103,11 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testExecuteNoUtilData() throws Exception {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(ceClusterDao.getClusterIdNameMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CLUSTER_NAME));
+    when(ceClusterDao.getClusterIdMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CE_CLUSTER));
     when(utilizationDataService.getUtilizationDataForECSClusters(any(), any(), any(), any()))
         .thenReturn(Collections.emptyMap());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
-    verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
+    verify(ceClusterDao, times(1)).getClusterIdMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());
   }
 
@@ -108,13 +116,13 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testNoServiceInfoPresent() throws Exception {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(ceClusterDao.getClusterIdNameMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CLUSTER_NAME));
+    when(ceClusterDao.getClusterIdMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CE_CLUSTER));
     when(utilizationDataService.getUtilizationDataForECSClusters(any(), any(), any(), any()))
         .thenReturn(
             Collections.singletonMap(new ClusterIdAndServiceArn(CLUSTER_ID, SERVICE_ARN), Collections.emptyList()));
     when(ecsServiceDao.fetchServices(any(), any())).thenReturn(Collections.emptyMap());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
-    verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
+    verify(ceClusterDao, times(1)).getClusterIdMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());
     verify(ecsServiceDao, times(1)).fetchServices(any(), any());
     verify(ecsRecommendationDAO, times(0)).savePartialRecommendation(any());
@@ -126,7 +134,7 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testNoPartialHistograms() throws Exception {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(ceClusterDao.getClusterIdNameMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CLUSTER_NAME));
+    when(ceClusterDao.getClusterIdMapping(any())).thenReturn(Collections.singletonMap(CLUSTER_ID, CE_CLUSTER));
     when(utilizationDataService.getUtilizationDataForECSClusters(any(), any(), any(), any()))
         .thenReturn(
             Collections.singletonMap(new ClusterIdAndServiceArn(CLUSTER_ID, SERVICE_ARN), Collections.emptyList()));
@@ -142,20 +150,20 @@ public class AwsECSServiceRecommendationTaskletTest extends BaseTaskletTest {
         .thenReturn(ECSServiceRecommendation.builder().uuid("uuid").build());
     doNothing()
         .when(ecsRecommendationDAO)
-        .upsertCeRecommendation(
-            anyString(), anyString(), anyString(), anyString(), anyDouble(), anyDouble(), anyBoolean(), any());
+        .upsertCeRecommendation(anyString(), anyString(), anyString(), anyString(), anyString(), anyDouble(),
+            anyDouble(), anyBoolean(), any());
     doNothing()
         .when(ignoreListService)
         .updateECSRecommendationState(anyString(), anyString(), anyString(), anyString());
     assertThat(tasklet.execute(null, chunkContext)).isNull();
-    verify(ceClusterDao, times(1)).getClusterIdNameMapping(any());
+    verify(ceClusterDao, times(1)).getClusterIdMapping(any());
     verify(utilizationDataService, times(1)).getUtilizationDataForECSClusters(any(), any(), any(), any());
     verify(ecsServiceDao, times(1)).fetchServices(any(), any());
     verify(ecsRecommendationDAO, times(1)).savePartialRecommendation(any());
     verify(ecsRecommendationDAO, times(1)).saveRecommendation(any());
     verify(ecsRecommendationDAO, times(1))
-        .upsertCeRecommendation(
-            anyString(), anyString(), anyString(), anyString(), anyDouble(), anyDouble(), anyBoolean(), any());
+        .upsertCeRecommendation(anyString(), anyString(), anyString(), anyString(), anyString(), anyDouble(),
+            anyDouble(), anyBoolean(), any());
   }
 
   private Cost cost() {

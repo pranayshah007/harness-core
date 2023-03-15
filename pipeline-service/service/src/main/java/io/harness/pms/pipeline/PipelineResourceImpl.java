@@ -466,7 +466,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
 
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(

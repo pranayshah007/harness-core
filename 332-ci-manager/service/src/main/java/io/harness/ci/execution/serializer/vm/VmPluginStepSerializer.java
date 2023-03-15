@@ -21,6 +21,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREF
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -49,6 +50,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -67,6 +69,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -77,10 +80,16 @@ public class VmPluginStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
+  @Inject private IACMStepsUtils iacmStepsUtils;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource) {
+    if (pluginStepInfo.getEnvVariables() != null && pluginStepInfo.getEnvVariables().getValue() != null
+        && pluginStepInfo.getEnvVariables().getValue().get(STACK_ID) != null
+        && !Objects.equals(pluginStepInfo.getEnvVariables().getValue().get(STACK_ID).getValue(), "")) {
+      return iacmStepsUtils.injectIACMInfo(ambiance, pluginStepInfo, stageInfraDetails, parameterFieldTimeout);
+    }
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVars = new HashMap<>();

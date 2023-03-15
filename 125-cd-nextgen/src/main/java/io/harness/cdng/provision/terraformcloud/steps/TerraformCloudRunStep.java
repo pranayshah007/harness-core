@@ -366,11 +366,13 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
                             .parameters(new Object[] {terraformCloudTaskParams})
                             .build();
 
+    TerraformCloudTaskType taskType = terraformCloudTaskParams.getTaskType();
     return TaskChainResponse.builder()
-        .chainEnd(terraformCloudTaskParams.getTaskType() != GET_LAST_APPLIED_RUN)
+        .chainEnd(taskType != GET_LAST_APPLIED_RUN)
         .passThroughData(TerraformCloudPassThroughData.builder().build())
         .taskRequest(TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-            getCommandUnits(runStepParameters.getSpec().getType()), TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
+            getCommandUnits(runStepParameters.getSpec().getType()),
+            format("%s : %s ", TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(), taskType.getDisplayName()),
             TaskSelectorYaml.toTaskSelector(runStepParameters.getDelegateSelectors()),
             stepHelper.getEnvironmentType(ambiance)))
         .build();

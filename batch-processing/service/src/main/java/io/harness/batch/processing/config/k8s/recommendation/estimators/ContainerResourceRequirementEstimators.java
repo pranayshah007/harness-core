@@ -7,10 +7,12 @@
 
 package io.harness.batch.processing.config.k8s.recommendation.estimators;
 
-import static io.harness.batch.processing.config.k8s.recommendation.estimators.ResourceAmountUtils.convertToReadableForm;
+import static io.harness.ccm.commons.utils.ResourceAmountUtils.convertToReadableForm;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.CPU;
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement.MEMORY;
+
+import static io.kubernetes.client.custom.Quantity.Format.DECIMAL_SI;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.K8sWorkloadRecommendationPreset;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ResourceRequirement;
@@ -51,16 +53,16 @@ public class ContainerResourceRequirementEstimators {
     return cs
         -> ResourceRequirement.builder()
                .requests(convertToReadableForm(
-                   LOWER_BOUND_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs)))
+                   LOWER_BOUND_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs), DECIMAL_SI))
                .limits(convertToReadableForm(
-                   UPPER_BOUND_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs)))
+                   UPPER_BOUND_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs), DECIMAL_SI))
                .build();
   }
 
   public static ContainerResourceRequirementEstimator guaranteedRecommender(Map<String, Long> minResources) {
     return cs -> {
       Map<String, String> resources =
-          convertToReadableForm(TARGET_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs));
+          convertToReadableForm(TARGET_ESTIMATOR.withMinResources(minResources).getResourceEstimation(cs), DECIMAL_SI);
       return ResourceRequirement.builder().requests(resources).limits(resources).build();
     };
   }
@@ -70,7 +72,7 @@ public class ContainerResourceRequirementEstimators {
     final ResourceEstimator requiredEstimator = PercentileEstimator.of(percentile, percentile);
     return cs -> {
       Map<String, String> resources =
-          convertToReadableForm(requiredEstimator.withMinResources(minResources).getResourceEstimation(cs));
+          convertToReadableForm(requiredEstimator.withMinResources(minResources).getResourceEstimation(cs), DECIMAL_SI);
       return ResourceRequirement.builder().requests(resources).limits(resources).build();
     };
   }
@@ -104,8 +106,8 @@ public class ContainerResourceRequirementEstimators {
                                              .withMinResources(minResources)
                                              .omitResources(noLimitResources);
       return ResourceRequirement.builder()
-          .requests(convertToReadableForm(requestEstimator.getResourceEstimation(cs)))
-          .limits(convertToReadableForm(limitEstimator.getResourceEstimation(cs)))
+          .requests(convertToReadableForm(requestEstimator.getResourceEstimation(cs), DECIMAL_SI))
+          .limits(convertToReadableForm(limitEstimator.getResourceEstimation(cs), DECIMAL_SI))
           .build();
     };
   }

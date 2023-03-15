@@ -32,6 +32,7 @@ import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -55,7 +56,9 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.container.ContainerTask;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -70,6 +73,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -611,5 +615,32 @@ public class MigratorUtility {
         .defaults(defaults)
         .customExpressions(expressions)
         .build();
+  }
+
+  public static Map<String, Object> getExpressions(WorkflowPhase phase, List<StepExpressionFunctor> functors) {
+    Map<String, Object> expressions = new HashMap<>();
+
+    for (StepExpressionFunctor functor : functors) {
+      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
+      expressions.put(functor.getCgExpression(), functor);
+    }
+    return expressions;
+  }
+
+  public static boolean containsEcsTask(Set<CgEntityId> containerTaskIds, Map<CgEntityId, CgEntityNode> entities) {
+    if (isEmpty(containerTaskIds)) {
+      return false;
+    }
+
+    for (CgEntityId configEntityId : containerTaskIds) {
+      CgEntityNode configNode = entities.get(configEntityId);
+      if (configNode != null) {
+        ContainerTask specification = (ContainerTask) configNode.getEntity();
+        if ("ECS".equalsIgnoreCase(specification.getDeploymentType())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

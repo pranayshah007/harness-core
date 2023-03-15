@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.LogFeedback.LogFeedbackBuilder;
 import io.harness.cvng.core.beans.LogFeedbackHistory;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.rule.Owner;
@@ -34,20 +34,20 @@ import org.junit.experimental.categories.Category;
 public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Inject private LogFeedbackService logFeedbackService;
   @Inject private VerificationTaskService verificationTaskService;
-  private ProjectParams projectParams;
+  private ProjectPathParams projectPathParams;
 
   @Before
   public void setup() {
-    projectParams = ProjectParams.builder()
-                        .projectIdentifier(UUID.randomUUID().toString())
-                        .orgIdentifier(UUID.randomUUID().toString())
-                        .accountIdentifier(UUID.randomUUID().toString())
-                        .build();
+    projectPathParams = ProjectPathParams.builder()
+                            .projectIdentifier(UUID.randomUUID().toString())
+                            .orgIdentifier(UUID.randomUUID().toString())
+                            .accountIdentifier(UUID.randomUUID().toString())
+                            .build();
     UserPrincipal userPrincipal =
-        new UserPrincipal("test", "test@harness.io", "test", projectParams.getAccountIdentifier());
+        new UserPrincipal("test", "test@harness.io", "test", projectPathParams.getAccountIdentifier());
     SecurityContextBuilder.setContext(userPrincipal);
     verificationTaskService.createDeploymentVerificationTask(
-        projectParams.getAccountIdentifier(), "", "abcd", new HashMap<>());
+        projectPathParams.getAccountIdentifier(), "", "abcd", new HashMap<>());
   }
 
   @Test
@@ -62,12 +62,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                   .description("feedback as high risk")
                                   .verificationJobInstanceId("abcd")
                                   .build();
-    LogFeedback createLogFeedback = logFeedbackService.create(projectParams, logFeedback);
+    LogFeedback createLogFeedback = logFeedbackService.create(projectPathParams, logFeedback);
 
-    LogFeedback getLogFeedback = logFeedbackService.get(projectParams, createLogFeedback.getFeedbackId());
+    LogFeedback getLogFeedback = logFeedbackService.get(projectPathParams, createLogFeedback.getFeedbackId());
 
     List<LogFeedbackHistory> logFeedbackHistoryList =
-        logFeedbackService.history(projectParams, createLogFeedback.getFeedbackId());
+        logFeedbackService.history(projectPathParams, createLogFeedback.getFeedbackId());
     assertThat(logFeedbackHistoryList.size()).isEqualTo(1);
     LogFeedbackHistory logFeedbackHistory = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory.getCreatedBy()).isEqualTo("test@harness.io");
@@ -79,7 +79,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(getLogFeedback.getEnvironmentIdentifier()).isEqualTo(logFeedback.getEnvironmentIdentifier());
     assertThat(getLogFeedback.getSampleMessage()).isEqualTo(logFeedback.getSampleMessage());
     assertThat(getLogFeedback.getCreatedBy()).isEqualTo("test");
-    assertThat(getLogFeedback.getLastUpdatedBy()).isNull();
+    assertThat(getLogFeedback.getUpdatedby()).isNull();
     assertThat(getLogFeedback.getCreatedAt()).isNotNull();
   }
 
@@ -87,11 +87,11 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testUpdateFeedbackScore_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectPathParams = ProjectPathParams.builder()
+                                              .projectIdentifier(UUID.randomUUID().toString())
+                                              .orgIdentifier(UUID.randomUUID().toString())
+                                              .accountIdentifier(UUID.randomUUID().toString())
+                                              .build();
 
     LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
                                                 .environmentIdentifier("env1")
@@ -100,13 +100,13 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                 .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
                                                 .description("feedback as high risk");
 
-    LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
+    LogFeedback logFeedback = logFeedbackService.create(projectPathParams, logFeedbackBuilder.build());
 
     LogFeedback updateLogFeedback =
         logFeedbackBuilder.feedbackScore(LogFeedback.FeedbackScore.NO_RISK_CONSIDER_FREQUENCY).build();
-    logFeedbackService.update(projectParams, logFeedback.getFeedbackId(), updateLogFeedback);
+    logFeedbackService.update(projectPathParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
-    LogFeedback updatedLogFeedback = logFeedbackService.get(projectParams, logFeedback.getFeedbackId());
+    LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
     assertThat(updatedLogFeedback.getFeedbackId()).isEqualTo(logFeedback.getFeedbackId());
     assert updateLogFeedback != null;
     assertThat(updatedLogFeedback.getFeedbackScore()).isEqualTo(updateLogFeedback.getFeedbackScore());
@@ -115,20 +115,20 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(updatedLogFeedback.getEnvironmentIdentifier()).isEqualTo(updateLogFeedback.getEnvironmentIdentifier());
     assertThat(updatedLogFeedback.getSampleMessage()).isEqualTo(updateLogFeedback.getSampleMessage());
     assertThat(updatedLogFeedback.getCreatedBy()).isEqualTo("test");
-    assertThat(updatedLogFeedback.getLastUpdatedBy()).isEqualTo("test");
+    assertThat(updatedLogFeedback.getUpdatedby()).isEqualTo("test");
     assertThat(updatedLogFeedback.getCreatedAt()).isNotNull();
-    assertThat(updatedLogFeedback.getLastUpdatedAt()).isNotNull();
+    assertThat(updatedLogFeedback.getUpdatedAt()).isNotNull();
   }
 
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testUpdateFeedbackDescription_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectPathParams = ProjectPathParams.builder()
+                                              .projectIdentifier(UUID.randomUUID().toString())
+                                              .orgIdentifier(UUID.randomUUID().toString())
+                                              .accountIdentifier(UUID.randomUUID().toString())
+                                              .build();
 
     LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
                                                 .environmentIdentifier("env1")
@@ -137,12 +137,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                 .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
                                                 .description("feedback as high risk");
 
-    LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
+    LogFeedback logFeedback = logFeedbackService.create(projectPathParams, logFeedbackBuilder.build());
 
     LogFeedback updateLogFeedback = logFeedbackBuilder.description("updated feedback").build();
-    logFeedbackService.update(projectParams, logFeedback.getFeedbackId(), updateLogFeedback);
+    logFeedbackService.update(projectPathParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
-    LogFeedback updatedLogFeedback = logFeedbackService.get(projectParams, logFeedback.getFeedbackId());
+    LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
     assertThat(updatedLogFeedback.getFeedbackId()).isEqualTo(logFeedback.getFeedbackId());
     assert updateLogFeedback != null;
     assertThat(updatedLogFeedback.getFeedbackScore()).isEqualTo(updateLogFeedback.getFeedbackScore());
@@ -156,11 +156,11 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testUpdateFeedbackSampleMessage_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectPathParams = ProjectPathParams.builder()
+                                              .projectIdentifier(UUID.randomUUID().toString())
+                                              .orgIdentifier(UUID.randomUUID().toString())
+                                              .accountIdentifier(UUID.randomUUID().toString())
+                                              .build();
 
     LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
                                                 .environmentIdentifier("env1")
@@ -169,15 +169,15 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                 .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
                                                 .description("feedback as high risk");
 
-    LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
+    LogFeedback logFeedback = logFeedbackService.create(projectPathParams, logFeedbackBuilder.build());
 
     LogFeedback updateLogFeedback = logFeedbackBuilder.sampleMessage("updated sample message").build();
-    logFeedbackService.update(projectParams, logFeedback.getFeedbackId(), updateLogFeedback);
+    logFeedbackService.update(projectPathParams, logFeedback.getFeedbackId(), updateLogFeedback);
 
-    LogFeedback updatedLogFeedback = logFeedbackService.get(projectParams, logFeedback.getFeedbackId());
+    LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
 
     List<LogFeedbackHistory> logFeedbackHistoryList =
-        logFeedbackService.history(projectParams, logFeedback.getFeedbackId());
+        logFeedbackService.history(projectPathParams, logFeedback.getFeedbackId());
     assertThat(logFeedbackHistoryList.size()).isEqualTo(2);
     LogFeedbackHistory logFeedbackHistory1 = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory1.getCreatedBy()).isEqualTo("test@harness.io");
@@ -199,11 +199,11 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testDelete_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectPathParams = ProjectPathParams.builder()
+                                              .projectIdentifier(UUID.randomUUID().toString())
+                                              .orgIdentifier(UUID.randomUUID().toString())
+                                              .accountIdentifier(UUID.randomUUID().toString())
+                                              .build();
 
     LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
                                                 .environmentIdentifier("env1")
@@ -212,12 +212,12 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                 .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
                                                 .description("feedback as high risk");
 
-    LogFeedback logFeedback = logFeedbackService.create(projectParams, logFeedbackBuilder.build());
+    LogFeedback logFeedback = logFeedbackService.create(projectPathParams, logFeedbackBuilder.build());
 
-    boolean isDeleted = logFeedbackService.delete(projectParams, logFeedback.getFeedbackId());
+    boolean isDeleted = logFeedbackService.delete(projectPathParams, logFeedback.getFeedbackId());
     assert isDeleted;
 
-    LogFeedback updatedLogFeedback = logFeedbackService.get(projectParams, logFeedback.getFeedbackId());
+    LogFeedback updatedLogFeedback = logFeedbackService.get(projectPathParams, logFeedback.getFeedbackId());
     assert updatedLogFeedback == null;
   }
 
@@ -225,11 +225,11 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testMultipleUpdateHistory_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectParams = ProjectPathParams.builder()
+                                          .projectIdentifier(UUID.randomUUID().toString())
+                                          .orgIdentifier(UUID.randomUUID().toString())
+                                          .accountIdentifier(UUID.randomUUID().toString())
+                                          .build();
 
     LogFeedbackBuilder logFeedbackBuilder = LogFeedback.builder()
                                                 .environmentIdentifier("env1")
@@ -267,11 +267,11 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testLogFeedbackList_withGet() {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .projectIdentifier(UUID.randomUUID().toString())
-                                      .orgIdentifier(UUID.randomUUID().toString())
-                                      .accountIdentifier(UUID.randomUUID().toString())
-                                      .build();
+    ProjectPathParams projectPathParams = ProjectPathParams.builder()
+                                              .projectIdentifier(UUID.randomUUID().toString())
+                                              .orgIdentifier(UUID.randomUUID().toString())
+                                              .accountIdentifier(UUID.randomUUID().toString())
+                                              .build();
 
     LogFeedbackBuilder logFeedbackBuilder1 = LogFeedback.builder()
                                                  .environmentIdentifier("env1")
@@ -279,7 +279,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                  .sampleMessage("pre-deployment - host1 log2")
                                                  .feedbackScore(LogFeedback.FeedbackScore.HIGH_RISK)
                                                  .description("feedback as high risk");
-    logFeedbackService.create(projectParams, logFeedbackBuilder1.build());
+    logFeedbackService.create(projectPathParams, logFeedbackBuilder1.build());
 
     LogFeedbackBuilder logFeedbackBuilder2 = LogFeedback.builder()
                                                  .environmentIdentifier("env1")
@@ -287,7 +287,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                  .sampleMessage("pre-deployment - host1 log1")
                                                  .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
                                                  .description("medium Risk");
-    logFeedbackService.create(projectParams, logFeedbackBuilder2.build());
+    logFeedbackService.create(projectPathParams, logFeedbackBuilder2.build());
 
     LogFeedbackBuilder logFeedbackBuilder3 = LogFeedback.builder()
                                                  .environmentIdentifier("env1")
@@ -295,7 +295,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
                                                  .sampleMessage("pre-deployment - host1 log3")
                                                  .feedbackScore(LogFeedback.FeedbackScore.MEDIUM_RISK)
                                                  .description("medium Risk");
-    logFeedbackService.create(projectParams, logFeedbackBuilder3.build());
+    logFeedbackService.create(projectPathParams, logFeedbackBuilder3.build());
 
     List<LogFeedback> logFeedbackList = logFeedbackService.list("env1", "svc1");
     assertThat(logFeedbackList.size()).isEqualTo(3);

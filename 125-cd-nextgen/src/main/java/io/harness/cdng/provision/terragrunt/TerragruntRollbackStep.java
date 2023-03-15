@@ -289,7 +289,6 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    terragruntStepHelper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Destroy");
     // no connectors/secret managers to validate
   }
 }

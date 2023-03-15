@@ -58,6 +58,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.utils.ClickHouseConstants;
 import io.harness.ccm.views.utils.ClusterTableKeys;
@@ -146,16 +147,16 @@ public class ViewsQueryBuilder {
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
-      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName,
+      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
       List<BusinessMapping> sharedCostBusinessMappings) {
     return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, aggregations, sortCriteriaList,
-        cloudProviderTableName, 0, null, sharedCostBusinessMappings);
+        cloudProviderTableName, queryParams, null, sharedCostBusinessMappings);
   }
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewAggregation> aggregations, List<QLCEViewSortCriteria> sortCriteriaList,
-      String cloudProviderTableName, int timeOffsetInDays, BusinessMapping sharedCostBusinessMapping,
+      String cloudProviderTableName, ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping,
       List<BusinessMapping> sharedCostBusinessMappings) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
@@ -193,14 +194,16 @@ public class ViewsQueryBuilder {
       decorateQueryWithTimeFilters(selectQuery, timeFilters, isClusterTable, tableIdentifier);
     }
 
-    decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier);
+    if (!queryParams.isSkipGroupBy()) {
+      decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier);
+    }
 
     if (groupByTime != null) {
-      if (timeOffsetInDays == 0) {
+      if (queryParams.getTimeOffsetInDays() == 0) {
         decorateQueryWithGroupByTime(selectQuery, groupByTime, isClusterTable, tableIdentifier, false);
       } else {
         decorateQueryWithGroupByTimeWithOffset(
-            selectQuery, groupByTime, isClusterTable, timeOffsetInDays, tableIdentifier);
+            selectQuery, groupByTime, isClusterTable, queryParams.getTimeOffsetInDays(), tableIdentifier);
       }
     }
 

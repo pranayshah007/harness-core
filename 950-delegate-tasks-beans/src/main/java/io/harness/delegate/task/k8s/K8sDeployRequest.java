@@ -68,7 +68,8 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
 
     if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
       capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator));
+          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
+          k8sInfraDelegateConfig.useSocketCapability()));
     }
 
     if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {

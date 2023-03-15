@@ -12,7 +12,6 @@ import static io.harness.beans.FeatureName.AZURE_ARTIFACTS_NG;
 import static io.harness.beans.FeatureName.BAMBOO_ARTIFACT_NG;
 import static io.harness.beans.FeatureName.CDS_TAS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_CLOUD;
-import static io.harness.beans.FeatureName.SSH_NG;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import io.harness.account.AccountClient;
@@ -31,7 +30,6 @@ public class ConnectorEnumFilter extends EnumFeatureFlagFilter {
   @Inject private AccountClient accountClient;
 
   public ConnectorEnumFilter() {
-    put(SSH_NG, Sets.newHashSet(ConnectorType.PDC));
     put(AZURE_ARTIFACTS_NG, Sets.newHashSet(ConnectorType.AZURE_ARTIFACTS));
     put(CDS_TAS_NG, Sets.newHashSet(ConnectorType.TAS));
     put(CDS_TERRAFORM_CLOUD, Sets.newHashSet(ConnectorType.TERRAFORM_CLOUD));

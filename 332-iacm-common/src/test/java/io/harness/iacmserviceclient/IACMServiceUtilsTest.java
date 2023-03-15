@@ -88,8 +88,8 @@ public class IACMServiceUtilsTest extends CategoryTest implements MockableTestMi
     when(iacmServiceClient.generateToken(eq(ACCOUNT_ID), eq(globalToken))).thenReturn(iacmServiceTokenCall);
     IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
     assertThatThrownBy(() -> iacmServiceUtils.getIACMServiceToken(ACCOUNT_ID)).isInstanceOf(GeneralException.class);
-    verify(iacmServiceTokenCall, times(1)).execute();
-    verify(iacmServiceClient, times(1)).generateToken(eq(ACCOUNT_ID), eq(globalToken));
+    verify(iacmServiceTokenCall, times(3)).execute();
+    verify(iacmServiceClient, times(3)).generateToken(eq(ACCOUNT_ID), eq(globalToken));
   }
 
   @Test

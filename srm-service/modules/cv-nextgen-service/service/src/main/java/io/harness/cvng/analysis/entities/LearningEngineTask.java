@@ -114,9 +114,9 @@ public abstract class LearningEngineTask extends VerificationTaskBase
     SERVICE_GUARD_FEEDBACK_ANALYSIS,
     BEFORE_AFTER_DEPLOYMENT_LOG,
     CANARY_DEPLOYMENT_LOG,
-
     LOG_ANALYSIS,
-    TIME_SERIES_LOAD_TEST;
+    TIME_SERIES_LOAD_TEST,
+    LOG_FEEDBACK;
 
     public static List<LearningEngineTaskType> getDeploymentTaskTypes() {
       return Arrays.asList(TIME_SERIES_CANARY, TIME_SERIES_LOAD_TEST, CANARY_LOG_ANALYSIS, TEST_LOG_ANALYSIS);

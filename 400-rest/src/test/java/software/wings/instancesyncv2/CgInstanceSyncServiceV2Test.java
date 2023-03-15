@@ -22,13 +22,11 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.AccountId;
 import io.harness.ff.FeatureFlagService;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
@@ -85,12 +83,11 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
   @InjectMocks CgInstanceSyncServiceV2 cgInstanceSyncServiceV2;
   @Mock CgInstanceSyncV2DeploymentHelperFactory handlerFactory;
-  @Mock private DelegateServiceGrpcClient delegateServiceClient;
   @Mock private CgInstanceSyncTaskDetailsService taskDetailsService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private SettingsServiceImpl cloudProviderService;
   @Mock private KryoSerializer kryoSerializer;
-
+  @Mock private PerpetualTaskService perpetualTaskService;
   @Mock private InstanceService instanceService;
   @Mock private PersistentLocker persistentLocker;
   @Mock private AcquiredLock acquiredLock;
@@ -161,13 +158,13 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
 
-    ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
 
-    verify(delegateServiceClient, times(1)).resetPerpetualTask(any(), captor.capture(), any());
+    verify(perpetualTaskService, times(1)).resetTask(any(), captor.capture(), any());
 
-    PerpetualTaskId perpetualTaskId = captor.getValue();
-    assertThat(perpetualTaskId.getId()).isEqualTo("perpetualTaskId");
+    String perpetualTaskId = captor.getValue();
+    assertThat(perpetualTaskId).isEqualTo("perpetualTaskId");
   }
 
   @Rule public ExpectedException expectedEx = ExpectedException.none();
@@ -336,9 +333,9 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     infraMapping.setComputeProviderSettingId("varID");
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
-    ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
+    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
-    verify(delegateServiceClient, times(1)).deletePerpetualTask(any(AccountId.class), captor.capture());
-    assertThat(captor.getValue().getId()).isEqualTo("perpetualTaskId");
+    verify(perpetualTaskService, times(1)).deleteTask(any(String.class), captor.capture());
+    assertThat(captor.getValue()).isEqualTo("perpetualTaskId");
   }
 }

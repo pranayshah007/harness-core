@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -33,16 +34,23 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.template.Template;
+import software.wings.beans.template.command.ShellScriptTemplate;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class ShellScriptStepMapperImpl extends StepMapper {
   @Inject SecretRefUtils secretRefUtils;
+
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;
@@ -93,8 +102,8 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context, graphNode);
+  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(context, phase, graphNode);
   }
 
   @Override
@@ -201,5 +210,35 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public boolean loopingSupported() {
     return true;
+  }
+
+  public void overrideTemplateInputs(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode,
+      NGYamlFile templateFile, JsonNode templateInputs) {
+    JsonNode envVars = templateInputs.at("/spec/environmentVariables");
+    CgEntityNode entityNode = context.getEntities().get(
+        CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(templateFile.getCgBasicInfo().getId()).build());
+    Template template = (Template) entityNode.getEntity();
+    ShellScriptTemplate scriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
+    Set<String> expressions = MigratorExpressionUtils.getExpressions(scriptTemplate);
+    Map<String, Object> custom = MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors());
+
+    Map<String, String> map = new HashMap<>();
+    for (String exp : expressions) {
+      if (exp.contains(".")) {
+        String value = (String) MigratorExpressionUtils.render(
+            context.getEntities(), context.getMigratedEntities(), "${" + exp + "}", custom);
+        String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
+        key = key.replace('.', '_');
+        map.put(key, value);
+      }
+    }
+    if (envVars instanceof ArrayNode) {
+      for (JsonNode env : envVars) {
+        String key = env.get("name").asText();
+        if (map.containsKey(key)) {
+          ((ObjectNode) env).put("value", map.get(key));
+        }
+      }
+    }
   }
 }

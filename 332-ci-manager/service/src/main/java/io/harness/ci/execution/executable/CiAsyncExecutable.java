@@ -9,17 +9,22 @@ package io.harness.ci.executable;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PolicyEvalUtils;
 
+import com.google.inject.Inject;
 import java.util.Map;
 
 // Async Executable With RBAC and postAsyncValidation
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class CiAsyncExecutable implements AsyncExecutableWithRbac<StepElementParameters> {
+  @Inject OpaServiceClient opaServiceClient;
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
@@ -34,6 +39,9 @@ public abstract class CiAsyncExecutable implements AsyncExecutableWithRbac<StepE
   // response
   public StepResponse postAsyncValidate(
       Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+    if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
+      return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
+    }
     return stepResponse;
   }
 }

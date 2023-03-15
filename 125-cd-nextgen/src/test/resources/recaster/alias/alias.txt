@@ -825,3 +825,6 @@ io.harness.cdng.bamboo.BambooBuildOutcome
 io.harness.cdng.infra.yaml.K8sAwsInfrastructure
 io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome
 io.harness.cdng.infra.beans.K8sAwsInfraMapping
+io.harness.cdng.hooks.ServiceHook
+io.harness.cdng.hooks.ServiceHookWrapper
+io.harness.cdng.hooks.ServiceHookOutcome
