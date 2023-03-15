@@ -20,6 +20,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 
@@ -75,6 +76,8 @@ public interface PMSExecutionService {
   long getCountOfExecutions(Criteria criteria);
 
   ExecutionDataResponseDTO getExecutionData(String planExecutionId);
+
+  ExecutionMetaDataResponseDetailsDTO getExecutionDataDetails(String planExecutionId);
 
   String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
