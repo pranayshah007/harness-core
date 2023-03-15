@@ -48,7 +48,7 @@ public class ElastigroupDeployStepMapperImpl extends StepMapper {
     SpotInstDeployState state = (SpotInstDeployState) getState(graphNode);
 
     ElastigroupDeployStepNode node = new ElastigroupDeployStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupDeployStepInfo elastigroupDeployStepInfo =
         ElastigroupDeployStepInfo.infoBuilder()
             .newService(getCapacity(state.getInstanceCount(), state.getInstanceUnitType()))

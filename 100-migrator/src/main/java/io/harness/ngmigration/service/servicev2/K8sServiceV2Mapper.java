@@ -40,7 +40,8 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     KubernetesServiceSpecBuilder kubernetesServiceSpec = KubernetesServiceSpec.builder();
-    List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
+    List<NGVariable> variables = MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat());
     if (primaryArtifact != null) {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }

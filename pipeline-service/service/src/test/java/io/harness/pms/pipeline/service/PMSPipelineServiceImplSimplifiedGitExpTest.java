@@ -300,14 +300,14 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, true);
 
     String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, "");
     doReturn(Optional.of(PipelineValidationEvent.builder().uuid("validationUuid").build()))
         .when(pipelineAsyncValidationService)
         .getLatestEventByFQNAndAction(fqn, Action.CRUD);
     PipelineGetResult pipelineGetResult = pipelineService.getPipelineAndAsyncValidationId(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, true);
     assertThat(pipelineGetResult.getPipelineEntity().isPresent()).isTrue();
     assertThat(pipelineGetResult.getPipelineEntity().get()).isEqualTo(pipelineEntity);
     assertThat(pipelineGetResult.getAsyncValidationUUID()).isEqualTo("validationUuid");
@@ -329,16 +329,46 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                         .build();
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineRepository)
-        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, true);
     doThrow(new InvalidYamlException("msg", null, pipelineYaml))
         .when(pipelineValidationService)
         .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
     assertThatThrownBy(()
                            -> pipelineService.getPipelineAndAsyncValidationId(
-                               accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, false))
+                               accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, true))
         .isInstanceOf(InvalidYamlException.class);
     verify(pipelineValidationService, times(1))
         .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineAndAsyncValidationIdWhenLoadingFromGit() {
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .harnessVersion("V0")
+                                        .storeType(StoreType.REMOTE)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineRepository)
+        .find(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
+
+    doReturn(PipelineValidationEvent.builder().uuid("validationUuid").build())
+        .when(pipelineAsyncValidationService)
+        .startEvent(pipelineEntity, null, Action.CRUD, false);
+    PipelineGetResult pipelineGetResult = pipelineService.getPipelineAndAsyncValidationId(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, false, false);
+    assertThat(pipelineGetResult.getPipelineEntity().isPresent()).isTrue();
+    assertThat(pipelineGetResult.getPipelineEntity().get()).isEqualTo(pipelineEntity);
+    assertThat(pipelineGetResult.getAsyncValidationUUID()).isEqualTo("validationUuid");
+    verify(pipelineValidationService, times(1))
+        .validateYamlWithUnresolvedTemplates(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml, "0");
+    verify(pipelineAsyncValidationService, times(0)).getLatestEventByFQNAndAction(any(), any());
   }
 
   @Test

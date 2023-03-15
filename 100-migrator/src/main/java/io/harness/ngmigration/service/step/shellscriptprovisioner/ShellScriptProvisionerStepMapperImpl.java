@@ -92,7 +92,7 @@ public class ShellScriptProvisionerStepMapperImpl extends StepMapper {
     ShellScriptProvisionState state = (ShellScriptProvisionState) getState(graphNode);
 
     ShellScriptProvisionStepNode node = new ShellScriptProvisionStepNode();
-    baseSetup(graphNode, node);
+    baseSetup(graphNode, node, context.getIdentifierCaseFormat());
     ShellScriptProvisionStepInfo stepInfo =
         ShellScriptProvisionStepInfo.infoBuilder()
             .environmentVariables(getVariables(context.getMigratedEntities(), state.getVariables()))

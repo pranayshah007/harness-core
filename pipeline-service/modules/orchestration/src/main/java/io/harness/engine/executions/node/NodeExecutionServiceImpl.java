@@ -903,20 +903,20 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
-      String planExecutionId, List<String> stageFQNs, List<String> requiredFields) {
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
+      String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields) {
     Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
                             .is(planExecutionId)
                             .and(NodeExecutionKeys.stageFqn)
                             .in(stageFQNs);
 
-    Query query = new Query().addCriteria(criteria);
+    Query query = query(criteria);
     if (EmptyPredicate.isNotEmpty(requiredFields)) {
       for (String requiredField : requiredFields) {
         query.fields().include(requiredField);
       }
     }
 
-    return mongoTemplate.find(query, NodeExecution.class);
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 }

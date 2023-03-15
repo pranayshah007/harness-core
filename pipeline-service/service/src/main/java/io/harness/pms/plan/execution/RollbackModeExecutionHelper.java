@@ -13,7 +13,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
@@ -23,6 +22,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -41,10 +41,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class RollbackModeExecutionHelper {
@@ -90,7 +93,7 @@ public class RollbackModeExecutionHelper {
    *   - stage:
    *       identifier: s1
    */
-  private String transformProcessedYaml(String processedYaml) {
+  String transformProcessedYaml(String processedYaml) {
     JsonNode pipelineNode;
     try {
       pipelineNode = YamlUtils.readTree(processedYaml).getNode().getCurrJsonNode();
@@ -121,13 +124,13 @@ public class RollbackModeExecutionHelper {
    * Plan nodes from `createdPlan`
    */
   public Plan transformPlanForRollbackMode(
-      Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve) {
+      Plan createdPlan, String previousExecutionId, List<String> nodeIDsToPreserve, ExecutionMode executionMode) {
     // steps 1, 2, and 3
     Map<String, Node> planNodeIDToUpdatedPlanNodes =
         buildIdentityNodes(previousExecutionId, createdPlan.getPlanNodes());
 
     // step 4
-    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes);
+    addAdvisorsToIdentityNodes(createdPlan, planNodeIDToUpdatedPlanNodes, executionMode);
 
     // steps 5 and 6
     addPreservedPlanNodes(createdPlan, nodeIDsToPreserve, planNodeIDToUpdatedPlanNodes);
@@ -147,8 +150,11 @@ public class RollbackModeExecutionHelper {
   Map<String, Node> buildIdentityNodes(String previousExecutionId, List<Node> createdPlanNodes) {
     Map<String, Node> planNodeIDToUpdatedNodes = new HashMap<>();
 
-    List<NodeExecution> nodeExecutions = getNodeExecutionsWithOnlyRequiredFields(previousExecutionId, createdPlanNodes);
-    for (NodeExecution nodeExecution : nodeExecutions) {
+    CloseableIterator<NodeExecution> nodeExecutions =
+        getNodeExecutionsWithOnlyRequiredFields(previousExecutionId, createdPlanNodes);
+
+    while (nodeExecutions.hasNext()) {
+      NodeExecution nodeExecution = nodeExecutions.next();
       Node planNode = nodeExecution.getNode();
       if (planNode.getStepType().getStepCategory() == StepCategory.STAGE) {
         continue;
@@ -160,23 +166,23 @@ public class RollbackModeExecutionHelper {
     return planNodeIDToUpdatedNodes;
   }
 
-  List<NodeExecution> getNodeExecutionsWithOnlyRequiredFields(String previousExecutionId, List<Node> createdPlanNodes) {
+  CloseableIterator<NodeExecution> getNodeExecutionsWithOnlyRequiredFields(
+      String previousExecutionId, List<Node> createdPlanNodes) {
     List<String> stageFQNs = createdPlanNodes.stream()
                                  .filter(n -> n.getStepCategory() == StepCategory.STAGE)
                                  .map(Node::getStageFqn)
                                  .collect(Collectors.toList());
-    List<String> requiredFields =
-        Arrays.asList(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
-    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(previousExecutionId, stageFQNs, requiredFields);
+    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
+        previousExecutionId, stageFQNs, NodeProjectionUtils.fieldsForIdentityNodeCreation);
   }
 
-  void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes) {
+  void addAdvisorsToIdentityNodes(
+      Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes, ExecutionMode executionMode) {
     for (Node planNode : createdPlan.getPlanNodes()) {
       if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
         continue;
       }
-      List<AdviserObtainment> adviserObtainments =
-          planNode.getAdvisorObtainmentsForExecutionMode().get(ExecutionMode.POST_EXECUTION_ROLLBACK);
+      List<AdviserObtainment> adviserObtainments = planNode.getAdvisorObtainmentsForExecutionMode().get(executionMode);
       if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
         IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
         planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(), updatedNode.withAdviserObtainments(adviserObtainments));

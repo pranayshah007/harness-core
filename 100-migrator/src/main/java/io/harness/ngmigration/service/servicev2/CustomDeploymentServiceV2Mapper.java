@@ -55,7 +55,8 @@ public class CustomDeploymentServiceV2Mapper implements ServiceV2Mapper {
                                       .getTemplateInfoConfig()
                                       .getVersionLabel())
                     .build())
-            .variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities))
+            .variables(MigratorUtility.getVariables(
+                service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()))
             .configFiles(configFiles)
             .build();
 

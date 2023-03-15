@@ -47,8 +47,8 @@ public class ElastigroupServiceV2Mapper implements ServiceV2Mapper {
     if (isNotEmpty(manifests)) {
       elastigroupServiceSpecBuilder.manifests(manifests);
     }
-    elastigroupServiceSpecBuilder.variables(
-        MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    elastigroupServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     elastigroupServiceSpecBuilder.configFiles(configFiles);
     if (isNotEmpty(startupScriptConfigurations)) {
       elastigroupServiceSpecBuilder.startupScript(startupScriptConfigurations.get(0));

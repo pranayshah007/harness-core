@@ -454,7 +454,7 @@ public class ServiceResourceV2 {
 
   @GET
   @Hidden
-  @Path("all-services")
+  @Path("/list/all-services")
   @ApiOperation(value = "Get all services list", nickname = "getAllServicesList")
   @Operation(operationId = "getAllServicesList",
       summary = "Get all services list across organizations and projects within account",

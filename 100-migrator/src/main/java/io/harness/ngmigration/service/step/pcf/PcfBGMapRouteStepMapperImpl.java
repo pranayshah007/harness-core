@@ -59,7 +59,7 @@ public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
 
     if (graphNode.isRollback()) {
       TasSwapRollbackStepNode tasSwapRollbackStepNode = new TasSwapRollbackStepNode();
-      baseSetup(state, tasSwapRollbackStepNode);
+      baseSetup(state, tasSwapRollbackStepNode, context.getIdentifierCaseFormat());
       TasSwapRollbackStepInfo tasSwapRollbackStepInfo =
           TasSwapRollbackStepInfo.infoBuilder()
               .upsizeInActiveApp(ParameterField.createValueField(state.isUpSizeInActiveApp()))
@@ -68,7 +68,7 @@ public class PcfBGMapRouteStepMapperImpl extends PcfAbstractStepMapper {
       return tasSwapRollbackStepNode;
     } else {
       TasSwapRoutesStepNode tasSwapRoutesStepNode = new TasSwapRoutesStepNode();
-      baseSetup(state, tasSwapRoutesStepNode);
+      baseSetup(state, tasSwapRoutesStepNode, context.getIdentifierCaseFormat());
       TasSwapRoutesStepInfo tasSwapRoutesStepInfo =
           TasSwapRoutesStepInfo.infoBuilder()
               .downSizeOldApplication(ParameterField.createValueField(state.isDownsizeOldApps()))

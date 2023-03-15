@@ -56,7 +56,7 @@ public class EcsServiceSetupStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsServiceSetup state = (EcsServiceSetup) getState(graphNode);
     EcsRollingDeployStepNode stepNode = new EcsRollingDeployStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     ParameterField<Boolean> sameAsAlreadyRunningInstances = ParameterField.createValueField(false);
     if ("runningInstances".equals(state.getDesiredInstanceCount())) {
       sameAsAlreadyRunningInstances = ParameterField.createValueField(true);

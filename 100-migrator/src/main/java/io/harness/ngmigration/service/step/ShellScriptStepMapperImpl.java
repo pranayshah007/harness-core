@@ -110,7 +110,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    baseSetup(graphNode, shellScriptStepNode);
+    baseSetup(graphNode, shellScriptStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
       log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
@@ -198,9 +198,12 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(ShellScriptStepFunctor::new)
@@ -220,13 +223,14 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     Template template = (Template) entityNode.getEntity();
     ShellScriptTemplate scriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
     Set<String> expressions = MigratorExpressionUtils.getExpressions(scriptTemplate);
-    Map<String, Object> custom = MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors());
+    Map<String, Object> custom =
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
 
     Map<String, String> map = new HashMap<>();
     for (String exp : expressions) {
       if (exp.contains(".")) {
-        String value = (String) MigratorExpressionUtils.render(
-            context.getEntities(), context.getMigratedEntities(), "${" + exp + "}", custom);
+        String value = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
+            "${" + exp + "}", custom, context.getIdentifierCaseFormat());
         String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
         key = key.replace('.', '_');
         map.put(key, value);
