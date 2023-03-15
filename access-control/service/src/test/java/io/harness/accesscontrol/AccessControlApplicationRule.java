@@ -182,3 +182,5 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
     return applyInjector(log, statement, frameworkMethod, target);
   }
 }
+
+// do not merge
