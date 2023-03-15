@@ -52,7 +52,7 @@ public class K8sCanaryDeployStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sCanaryDeploy state = (K8sCanaryDeploy) getState(graphNode);
     K8sCanaryStepNode k8sCanaryStepNode = new K8sCanaryStepNode();
-    baseSetup(state, k8sCanaryStepNode);
+    baseSetup(state, k8sCanaryStepNode, context.getIdentifierCaseFormat());
     InstanceSelectionBase spec;
     if (state.getInstanceUnitType().equals(InstanceUnitType.COUNT)) {
       spec = new CountInstanceSelection();

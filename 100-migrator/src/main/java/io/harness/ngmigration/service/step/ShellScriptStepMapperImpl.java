@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -33,6 +34,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Variable;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.ShellScriptTemplate;
@@ -110,7 +112,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    baseSetup(graphNode, shellScriptStepNode);
+    baseSetup(graphNode, shellScriptStepNode, context.getIdentifierCaseFormat());
 
     if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
       log.error(String.format("Trying to link a step which is not a step template - %s", graphNode.getTemplateUuid()));
@@ -198,9 +200,12 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(ShellScriptStepFunctor::new)
@@ -220,23 +225,30 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     Template template = (Template) entityNode.getEntity();
     ShellScriptTemplate scriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
     Set<String> expressions = MigratorExpressionUtils.getExpressions(scriptTemplate);
-    Map<String, Object> custom = MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors());
+    Map<String, Object> custom =
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
 
     Map<String, String> map = new HashMap<>();
     for (String exp : expressions) {
       if (exp.contains(".")) {
-        String value = (String) MigratorExpressionUtils.render(
-            context.getEntities(), context.getMigratedEntities(), "${" + exp + "}", custom);
+        String value = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
+            "${" + exp + "}", custom, context.getIdentifierCaseFormat());
         String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
         key = key.replace('.', '_');
         map.put(key, value);
       }
     }
+    Map<String, String> stepVariables = CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
+                                            .stream()
+                                            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
     if (envVars instanceof ArrayNode) {
       for (JsonNode env : envVars) {
         String key = env.get("name").asText();
         if (map.containsKey(key)) {
           ((ObjectNode) env).put("value", map.get(key));
+        }
+        if (stepVariables.containsKey(key)) {
+          ((ObjectNode) env).put("value", stepVariables.get(key));
         }
       }
     }

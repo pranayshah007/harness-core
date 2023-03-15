@@ -24,7 +24,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -91,6 +94,11 @@ public class MultiDeploymentSpawnerUtils {
     if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
       matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
     } else {
+      if (infraStructureDefinitionYaml == null || infraStructureDefinitionYaml.getIdentifier() == null) {
+        throw new InvalidRequestException(String.format(
+            "Infrastructure Definition is not provided for environment %s, Please provide infrastructure definition and try again",
+            environmentYamlV2.getEnvironmentRef().getValue()));
+      }
       matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     }
     if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
@@ -209,5 +217,16 @@ public class MultiDeploymentSpawnerUtils {
         .gitOpsClusters(ParameterField.createExpressionField(true, GIT_OPS_CLUSTERS_EXPRESSION, null, false))
         .infrastructureDefinition(ParameterField.createValueField(infraStructureDefinitionYaml))
         .build();
+  }
+
+  public int getEnvCount(List<EnvironmentMapResponse> environmentMapList) {
+    Set<String> envs = new HashSet<>();
+    for (EnvironmentMapResponse environmentMapResponse : environmentMapList) {
+      Map<String, String> envMap = environmentMapResponse.getEnvironmentsMapList();
+      if (envMap.containsKey(ENVIRONMENT_REF)) {
+        envs.add(envMap.get(ENVIRONMENT_REF));
+      }
+    }
+    return envs.size();
   }
 }

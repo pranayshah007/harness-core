@@ -55,7 +55,7 @@ public class HelmRollbackStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     HelmRollbackState state = (HelmRollbackState) getState(graphNode);
     HelmRollbackStepNode stepNode = new HelmRollbackStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     HelmRollbackStepInfo stepInfo = HelmRollbackStepInfo.infoBuilder()
                                         .helmRollbackFqn(state.getHelmReleaseNamePrefix())
                                         .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))

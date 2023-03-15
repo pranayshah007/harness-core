@@ -92,7 +92,7 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
 
     if (isNotEmpty(state.getAwsLoadBalancerConfigs())) {
       ElastigroupBGStageSetupStepNode node = new ElastigroupBGStageSetupStepNode();
-      baseSetup(state, node);
+      baseSetup(state, node, context.getIdentifierCaseFormat());
       List<LoadBalancer> loadBalancers = new ArrayList<>();
       List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs = state.getAwsLoadBalancerConfigs();
       for (LoadBalancerDetailsForBGDeployment lb : awsLoadBalancerConfigs) {
@@ -127,7 +127,7 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
       result = node;
     } else {
       ElastigroupSetupStepNode node = new ElastigroupSetupStepNode();
-      baseSetup(state, node);
+      baseSetup(state, node, context.getIdentifierCaseFormat());
       ElastigroupSetupStepInfo elastigroupSetupStepInfo =
           ElastigroupSetupStepInfo.infoBuilder()
               .name(ParameterField.createValueField(state.getElastiGroupNamePrefix()))

@@ -39,7 +39,7 @@ public class AsgBlueGreenRollbackStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     AwsAmiRollbackSwitchRoutesState state = (AwsAmiRollbackSwitchRoutesState) getState(graphNode);
     AsgBlueGreenRollbackStepNode node = new AsgBlueGreenRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     node.setAsgBlueGreenRollbackStepInfo(AsgBlueGreenRollbackStepInfo.infoBuilder().build());
     return node;
   }

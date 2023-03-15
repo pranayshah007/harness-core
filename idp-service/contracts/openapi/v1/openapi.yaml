@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: bzzh06ys7nti1
+  id: 9126byi2oelzs
 info:
   title: IDP
   version: '1.0'
@@ -302,7 +302,7 @@ paths:
         - Provision
       description: Provision IDP for given account
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
     parameters:
       - schema:
           type: string
@@ -362,13 +362,13 @@ paths:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
   /v1/onboarding/manual-import:
-    parameters: [ ]
+    parameters: []
     post:
       summary: Manually import entity to IDP
       operationId: manual-import-entity
       description: Manually import entity to IDP
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
@@ -384,7 +384,7 @@ paths:
       summary: Your GET endpoint
       responses:
         '200':
-          $ref: '#/components/responses/GeneralResponse'
+          $ref: '#/components/responses/LayoutResponse'
       operationId: get-all-layouts
       x-internal: true
       description: Get all layouts
@@ -399,8 +399,8 @@ paths:
       summary: ''
       operationId: create-layout
       responses:
-        '201':
-          $ref: '#/components/responses/GeneralResponse'
+        '200':
+          $ref: '#/components/responses/LayoutResponse'
       description: Create layout
       x-internal: true
       security:
@@ -409,6 +409,11 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - LayoutProxy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutRequest'
     delete:
       summary: ''
       operationId: delete-layout
@@ -423,12 +428,14 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - LayoutProxy
+      requestBody:
+        $ref: '#/components/requestBodies/LayoutRequest'
   '/v1/layout/{layout-identifier}':
     get:
       summary: Your GET endpoint
       responses:
         '200':
-          $ref: '#/components/responses/GeneralResponse'
+          $ref: '#/components/responses/LayoutResponse'
       operationId: get-layout
       security:
         - x-api-key: []
@@ -725,8 +732,8 @@ components:
         - identifier
         - type
       description: Connector details containing identifier and type
-    GeneralResponse:
-      title: GeneralResponse
+    LayoutResponse:
+      title: LayoutResponse
       x-stoplight:
         id: 4120n8fn8dfkx
       type: object
@@ -749,6 +756,39 @@ components:
       required:
         - yaml
         - entityName
+    LayoutRequest:
+      title: LayoutRequest
+      x-stoplight:
+        id: jfyco0hsivo6b
+      type: object
+      description: LayoutRequest
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: zvjshp9bal6kq
+        id:
+          type: string
+          x-stoplight:
+            id: vy53h9a7l4ij3
+        yaml:
+          type: string
+          x-stoplight:
+            id: vrsrw3pv5ga85
+        displayName:
+          type: string
+          x-stoplight:
+            id: iubyqrukqnryx
+        defaultYaml:
+          type: string
+          x-stoplight:
+            id: 9juzgzieo6qnl
+        type:
+          type: string
+          x-stoplight:
+            id: jb3f4rk78x16r
+    GeneralResponse:
+      $ref: '#/components/schemas/LayoutResponse'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -871,6 +911,11 @@ components:
           schema:
             $ref: '#/components/schemas/ManualImportEntityRequest'
       description: Details of entity to import manually to IDP
+    LayoutRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutRequest'
   responses:
     EnvironmentSecretResponse:
       description: Example response
@@ -922,12 +967,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
-    GeneralResponse:
-      description: General response
+    LayoutResponse:
+      description: Layout response
       content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/LayoutResponse'
         application/json:
           schema:
-            $ref: '#/components/schemas/GeneralResponse'
+            $ref: '#/components/schemas/LayoutResponse'
     NamespaceResponse:
       description: Example response
       content:

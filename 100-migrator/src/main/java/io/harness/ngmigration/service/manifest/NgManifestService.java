@@ -15,6 +15,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.HelmCommandFlagConstants;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 public interface NgManifestService {
   List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList);
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat);
 
   default List<HelmManifestCommandFlag> getCommandFlags(ApplicationManifest applicationManifest) {
     if (applicationManifest.getHelmCommandFlag() == null

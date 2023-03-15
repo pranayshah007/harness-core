@@ -7,9 +7,12 @@
 
 package io.harness.ngmigration.dto;
 
+import io.harness.ngmigration.utils.CaseFormat;
+
 import lombok.Data;
 
 @Data
 public class BulkCreateProjectsDTO {
   private String orgIdentifier;
+  private CaseFormat identifierCaseFormat;
 }

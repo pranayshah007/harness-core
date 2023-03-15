@@ -288,7 +288,10 @@ public enum NGStepType {
       StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.BAMBOO_BUILD)
   BAMBOO_BUILD(
-      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD);
+      "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD),
+  @JsonProperty(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
+  TAS_ROUTE_MAPPING(
+      "Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROUTE_MAPPING);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

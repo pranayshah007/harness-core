@@ -407,21 +407,35 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
     // inside the scm git metadata. Hence, the branch from there is the actual branch we need
     String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
-    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branchFromScm);
-    Optional<PipelineValidationEvent> optionalEvent =
-        pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
-    String validationUUID;
-    if (optionalEvent.isPresent()) {
-      validationUUID = optionalEvent.get().getUuid();
-    } else {
-      PipelineValidationEvent newEvent =
-          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
-      validationUUID = newEvent.getUuid();
-    }
+    String validationUUID = getValidationUuid(pipelineEntity, loadFromCache, branchFromScm);
     return PipelineGetResult.builder()
         .pipelineEntity(optionalPipelineEntity)
         .asyncValidationUUID(validationUUID)
         .build();
+  }
+
+  String getValidationUuid(PipelineEntity pipelineEntity, boolean loadFromCache, String branchFromScm) {
+    String validationUUID;
+    if (!loadFromCache && pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      // loadFromCache = false means user is reloading from Git. In this case, the validation data being shown can't be
+      // for an older yaml as user expects everything to be refreshed. That's why it makes sense to have a fresh
+      // validation process in this case
+      PipelineValidationEvent newEvent =
+          pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
+      validationUUID = newEvent.getUuid();
+    } else {
+      String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity, branchFromScm);
+      Optional<PipelineValidationEvent> optionalEvent =
+          pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
+      if (optionalEvent.isPresent()) {
+        validationUUID = optionalEvent.get().getUuid();
+      } else {
+        PipelineValidationEvent newEvent =
+            pipelineAsyncValidationService.startEvent(pipelineEntity, branchFromScm, Action.CRUD, loadFromCache);
+        validationUUID = newEvent.getUuid();
+      }
+    }
+    return validationUUID;
   }
 
   @Override

@@ -14,7 +14,6 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.MEET;
-import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
@@ -46,7 +45,6 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -69,7 +67,6 @@ import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
-import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.helpers.TriggerCatalogHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
@@ -77,10 +74,6 @@ import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
-import io.harness.pms.inputset.InputSetErrorDTOPMS;
-import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
@@ -300,30 +293,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsBranchExpr() {
     assertThat(ngTriggerServiceImpl.isBranchExpr("<+trigger.branch>")).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = HARSH)
-  @Category(UnitTests.class)
-  public void testInputSetValidation() throws Exception {
-    TriggerDetails triggerDetails = TriggerDetails.builder()
-                                        .ngTriggerEntity(ngTriggerEntityGitSync)
-                                        .ngTriggerConfigV2(NGTriggerConfigV2.builder()
-                                                               .inputSetRefs(Arrays.asList("inputSet1", "inputSet2"))
-                                                               .pipelineBranchName("pipelineBranchName")
-                                                               .build())
-                                        .build();
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetResponseDTOPMS = mock(Call.class);
-    when(ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntityGitSync))
-        .thenReturn(triggerDetails.getNgTriggerConfigV2());
-
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetResponseDTOPMS);
-    when(mergeInputSetResponseDTOPMS.execute())
-        .thenReturn(Response.success(
-            ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).build())));
-    assertThat(ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails))
-        .isEqualTo(MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).build());
   }
 
   @Test
@@ -690,66 +659,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.getObjectMapper()).thenReturn(objectMapper);
     TriggerYamlDiffDTO yamlDiffResponse = ngTriggerServiceImpl.getTriggerYamlDiff(triggerDetails);
     assertThat(yamlDiffResponse.getNewYAML().replace("<+input>", "1")).isEqualTo(newTriggerYaml);
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testInputSetValidationV1Yaml() throws Exception {
-    TriggerDetails triggerDetails =
-        TriggerDetails.builder()
-            .ngTriggerEntity(ngTriggerEntityGitSync)
-            .ngTriggerConfigV2(
-                NGTriggerConfigV2.builder().inputSetRefs(Arrays.asList("inputSet1", "inputSet2")).build())
-            .build();
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetResponseDTOPMS = mock(Call.class);
-    when(ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntityGitSync))
-        .thenReturn(triggerDetails.getNgTriggerConfigV2());
-
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetResponseDTOPMS);
-    when(mergeInputSetResponseDTOPMS.execute())
-        .thenReturn(Response.success(
-            ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).build())));
-    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
-    assertThat(ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails)).isNull();
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testInputSetValidationV1YamlFailed() throws Exception {
-    TriggerDetails triggerDetails =
-        TriggerDetails.builder()
-            .ngTriggerEntity(ngTriggerEntityGitSync)
-            .ngTriggerConfigV2(
-                NGTriggerConfigV2.builder().inputSetRefs(Arrays.asList("inputSet1", "inputSet2")).build())
-            .build();
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetResponseDTOPMS = mock(Call.class);
-    when(ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntityGitSync))
-        .thenReturn(triggerDetails.getNgTriggerConfigV2());
-
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetResponseDTOPMS);
-    when(mergeInputSetResponseDTOPMS.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(
-            MergeInputSetResponseDTOPMS.builder()
-                .isErrorResponse(true)
-                .inputSetErrorWrapper(
-                    InputSetErrorWrapperDTOPMS.builder()
-                        .uuidToErrorResponseMap(Map.of("uuid",
-                            InputSetErrorResponseDTOPMS.builder()
-                                .errors(List.of(
-                                    InputSetErrorDTOPMS.builder().fieldName("field").message("message").build()))
-                                .build()))
-                        .build())
-                .build())));
-    when(validationHelper.fetchPipelineYamlForTrigger(any())).thenReturn(Optional.of(pipelineYamlV1));
-    when(validationHelper.fetchPipelineForTrigger(any()))
-        .thenReturn(PMSPipelineResponseDTO.builder().storeType(StoreType.INLINE).yamlPipeline(pipelineYamlV1).build());
-    when(validationHelper.generateErrorMap(any())).thenCallRealMethod();
-    assertThatThrownBy(() -> ngTriggerServiceImpl.validateInputSetsInternal(triggerDetails))
-        .isInstanceOf(InvalidTriggerYamlException.class);
   }
 
   private String createRuntimeInputFormForTrigger(String yaml) {

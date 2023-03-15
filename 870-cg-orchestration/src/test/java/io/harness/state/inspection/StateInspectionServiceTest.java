@@ -9,6 +9,7 @@ package io.harness.state.inspection;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -45,4 +47,47 @@ public class StateInspectionServiceTest extends CgOrchestrationTestBase {
     assertThat(((DummyStateInspectionData) stateInspectionResult.getData().get("dummy")).getValue())
         .isEqualTo("dummy value");
   }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldRedactSecrets() {
+    final String uuid = generateUuid();
+    stateInspectionService.append(uuid,
+        ExpressionVariableUsage.builder()
+            .variables(List.of(ExpressionVariableUsage.Item.builder()
+                                   .expression("k8sResources.manifests")
+                                   .value(expression)
+                                   .count(0)
+                                   .build()))
+            .build());
+    StateInspection stateInspectionResult = stateInspectionService.get(uuid);
+    ExpressionVariableUsage evu =
+        (ExpressionVariableUsage) stateInspectionResult.getData().get("expressionVariableUsage");
+    assertThat(evu.getVariables().get(0).getValue().contains("***"));
+    assertThat(evu.getVariables().get(0).getValue()).isNotEqualTo(expression);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldntRedactSecrets() {
+    final String uuid = generateUuid();
+    stateInspectionService.append(uuid,
+        ExpressionVariableUsage.builder()
+            .variables(List.of(ExpressionVariableUsage.Item.builder()
+                                   .expression("dummyexpression")
+                                   .value(expression)
+                                   .count(0)
+                                   .build()))
+            .build());
+    StateInspection stateInspectionResult = stateInspectionService.get(uuid);
+    ExpressionVariableUsage evu =
+        (ExpressionVariableUsage) stateInspectionResult.getData().get("expressionVariableUsage");
+    assertThat(evu.getVariables().get(0).getValue()).doesNotContain("***");
+    assertThat(evu.getVariables().get(0).getValue()).isEqualTo(expression);
+  }
+
+  private final String expression =
+      "---\n\napiVersion: v1\nkind: Secret\nmetadata: \n name: harness-example-prod\nstringData:\n key2: value2\n";
 }

@@ -16,6 +16,7 @@ import com.google.cloud.functions.v2.ListFunctionsRequest;
 import com.google.cloud.functions.v2.ListFunctionsResponse;
 import com.google.cloud.functions.v2.OperationMetadata;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
+import com.google.longrunning.Operation;
 import com.google.protobuf.Empty;
 
 public interface GoogleCloudFunctionClient {
@@ -31,4 +32,6 @@ public interface GoogleCloudFunctionClient {
       DeleteFunctionRequest deleteFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
   ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig);
+
+  Operation getOperation(String operationName, GcpInternalConfig gcpInternalConfig);
 }

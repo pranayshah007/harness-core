@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigrationTrackReqPayload;
+import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.ngmigration.NGMigrationEntityType;
 
@@ -36,6 +37,7 @@ public class ImportDTO extends MigrationTrackReqPayload {
 
   @JsonTypeInfo(use = NAME, property = "entityType", include = EXTERNAL_PROPERTY, visible = true) private Filter filter;
   private BaseInputDTO inputs;
+  private CaseFormat identifierCaseFormat;
 
   @Parameter(
       description =

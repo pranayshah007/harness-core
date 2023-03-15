@@ -46,6 +46,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -93,7 +95,7 @@ public class GoogleFunctionsDeployWithoutTrafficStep
           googleFunctionsDeployWithoutTrafficStepParameters.getUpdateFieldMask().getValue());
     }
     return googleFunctionsHelper.queueTask(stepParameters, googleFunctionDeployWithoutTrafficRequestBuilder.build(),
-        ambiance, googleFunctionsStepPassThroughData, true);
+        ambiance, googleFunctionsStepPassThroughData, true, TaskType.GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_TASK);
   }
 
   @Override

@@ -901,4 +901,22 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       throw new InvalidRequestException("Projection fields cannot be empty in NodeExecution query.");
     }
   }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
+      String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields) {
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.stageFqn)
+                            .in(stageFQNs);
+
+    Query query = query(criteria);
+    if (EmptyPredicate.isNotEmpty(requiredFields)) {
+      for (String requiredField : requiredFields) {
+        query.fields().include(requiredField);
+      }
+    }
+
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
 }

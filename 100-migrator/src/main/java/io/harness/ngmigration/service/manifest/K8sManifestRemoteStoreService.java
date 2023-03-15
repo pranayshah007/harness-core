@@ -23,6 +23,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -45,7 +46,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     // TODO: get store from migrated connector entity
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
@@ -63,7 +64,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
         K8sManifest
             .builder()
             // TODO: There needs to be a logic to build identifier of the manifest
-            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .store(ParameterField.createValueField(
@@ -72,14 +73,14 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
                     .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
             .build();
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.K8_MANIFEST)
-                          .spec(k8sManifest)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.K8_MANIFEST)
+                                                       .spec(k8sManifest)
+                                                       .build())
+                                         .build());
   }
 
   // Note: Special case handling for ECS task services

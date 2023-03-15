@@ -105,7 +105,7 @@ public class CloudformationCreateStepMapperImpl extends BaseCloudformationProvis
 
     CloudformationCreateStackStepNode cloudformationCreateStackStepNode = new CloudformationCreateStackStepNode();
     cloudformationCreateStackStepNode.setCloudformationCreateStackStepInfo(stepInfo);
-    baseSetup(graphNode, cloudformationCreateStackStepNode);
+    baseSetup(graphNode, cloudformationCreateStackStepNode, context.getIdentifierCaseFormat());
     return cloudformationCreateStackStepNode;
   }
 

@@ -33,4 +33,6 @@ public class PipelineExecutionDetailDTO {
   ExecutionGraph executionGraph;
 
   ChildExecutionDetailDTO childGraph;
+  @Schema(hidden = true, description = "Execution details of the Rollback Stages executed under Pipeline Rollback")
+  ChildExecutionDetailDTO rollbackGraph;
 }

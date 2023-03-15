@@ -14,6 +14,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -70,6 +71,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -726,5 +729,32 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     verify(mongoTemplateMock, times(1))
         .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testFetchNodeExecutionsForGivenStageFQNs() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    for (int i = 0; i < 1200; i++) {
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+    }
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    String planExecutionId = "planId";
+    List<String> stageFQNs = Collections.singletonList("s1");
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.stageFqn)
+                            .in(stageFQNs);
+    Query query = query(criteria);
+    query.fields().include("node");
+    doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutions(query);
+    CloseableIterator<NodeExecution> fetchedIterator = nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
+        planExecutionId, stageFQNs, Collections.singletonList("node"));
+    assertThat(fetchedIterator).isEqualTo(iterator);
   }
 }

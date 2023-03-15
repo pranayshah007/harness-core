@@ -17,14 +17,11 @@ import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.core.beans.TaskInput;
 import io.harness.rule.Owner;
 
-import software.wings.beans.bash.ShellScriptParameters;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
@@ -61,11 +58,9 @@ public class K8STaskRunnerTest {
 
   private static TaskData createDummyTaskData() {
     final Map<String, String> vars = ImmutableMap.of("key1", "va1", "key2", "val2");
-
-    final var shellScriptParameters =
-        new ShellScriptParameters("actId", "some,vars", "another,secret", "my super \n scrupt", 1000, "accId", "appId",
-            "/root/not", Collections.emptyMap(), Collections.emptyMap(), vars);
-    final var objects = new Object[] {shellScriptParameters};
+    //    final var shellScriptParameters = new ShellScriptTaskParametersNG("execUd", List.of("Some", "vars"),
+    //        List.of("secret"), "my super \n script", 1000, "accId", "appId", "/root/not", vars);
+    final var objects = new Object[] {null};
     return TaskData.builder().parameters(objects).build();
   }
 }
