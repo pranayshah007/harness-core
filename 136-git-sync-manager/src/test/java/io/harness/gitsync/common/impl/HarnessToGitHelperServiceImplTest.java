@@ -29,19 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.WingsException;
-import io.harness.gitsync.BranchDetails;
-import io.harness.gitsync.ChangeType;
-import io.harness.gitsync.CreateFileRequest;
-import io.harness.gitsync.CreatePRRequest;
-import io.harness.gitsync.CreatePRResponse;
-import io.harness.gitsync.ErrorDetails;
-import io.harness.gitsync.FileInfo;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
-import io.harness.gitsync.GetRepoUrlRequest;
-import io.harness.gitsync.GitMetaData;
-import io.harness.gitsync.RepoDetails;
-import io.harness.gitsync.UpdateFileRequest;
+import io.harness.gitsync.*;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
@@ -235,6 +223,38 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
     assertThat(getFileResponse.getStatusCode()).isEqualTo(400);
     assertThat(getFileResponse.getError().getErrorMessage())
         .isEqualTo(ExceptionUtils.getMessage(getDefaultWingsException()));
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  @Ignore("testing changes") //ignore while changes are in progress
+  public void testGetFileByCommitIdWhenSCMExceptionOccurs() {
+    GetFileByCommitIdRequest getFileByCommitIdRequest = getGetFileByCommitIdRequestDefault();
+    when(scmFacilitatorService.getFileByBranch(any())).thenThrow(getInvalidCredsDefaultException());
+    GetFileResponse getFileResponse = harnessToGitHelperService.getFileByCommitId(getFileByCommitIdRequest);
+
+    assertThat(getFileResponse.getStatusCode()).isEqualTo(401);
+    assertGitErrorDetails(getFileResponse.getError(),
+            ErrorDetails.newBuilder()
+                    .setErrorMessage(errorMessage)
+                    .setHintMessage(hintMessage)
+                    .setExplanationMessage(explanationMessage)
+                    .build());
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  @Ignore("testing changes") //ignore while changes are in progress
+  public void testGetFileByCommitIdWhenWingsExceptionOccurs() {
+    GetFileByCommitIdRequest getFileByCommitIdRequest = getGetFileByCommitIdRequestDefault();
+    when(scmFacilitatorService.getFileByCommitId(any())).thenThrow(getDefaultWingsException());
+    GetFileResponse getFileResponse = harnessToGitHelperService.getFileByCommitId(getFileByCommitIdRequest);
+
+    assertThat(getFileResponse.getStatusCode()).isEqualTo(400);
+    assertThat(getFileResponse.getError().getErrorMessage())
+            .isEqualTo(ExceptionUtils.getMessage(getDefaultWingsException()));
   }
 
   @Test
@@ -471,6 +491,16 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
         .setScopeIdentifiers(scopeIdentifiers)
         .setConnectorRef(connectorRef)
         .build();
+  }
+
+  private GetFileByCommitIdRequest getGetFileByCommitIdRequestDefault() {
+    return GetFileByCommitIdRequest.newBuilder()
+            .setCommitId(commitId)
+            .setFilePath(filePath)
+            .setRepoName(repoName)
+            .setScopeIdentifiers(scopeIdentifiers)
+            .setConnectorRef(connectorRef)
+            .build();
   }
 
   private GetRepoUrlRequest getGetRepoUrlRequestDefault() {

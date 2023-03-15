@@ -29,6 +29,7 @@ import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetFileByCommitIdRequest;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceImplBase;
@@ -136,6 +137,35 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
                               .setStatusCode(HTTP_500)
                               .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
                               .build();
+      } finally {
+        logResponseTime(startTime, GitOperation.GET_FILE);
+      }
+    }
+    responseObserver.onNext(getFileResponse);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getFileByCommitId(GetFileByCommitIdRequest request, StreamObserver<GetFileResponse> responseObserver) {
+    GetFileResponse getFileResponse;
+    Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
+            ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(),
+            request.getCommitId(), request.getFilePath(), GitOperation.GET_FILE, request.getContextMapMap());
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getFile ops %s", GIT_SERVICE, request));
+      long startTime = currentTimeMillis();
+      try {
+        setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
+        getFileResponse = harnessToGitHelperService.getFileByCommitId(request);
+        log.info(String.format("%s getFile ops response : %s", GIT_SERVICE, getFileResponse));
+      } catch (Exception ex) {
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_FILE);
+        log.error(errorMessage, ex);
+        getFileResponse = GetFileResponse.newBuilder()
+                .setStatusCode(HTTP_500)
+                .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                .build();
       } finally {
         logResponseTime(startTime, GitOperation.GET_FILE);
       }

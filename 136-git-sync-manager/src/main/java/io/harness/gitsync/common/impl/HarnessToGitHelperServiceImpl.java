@@ -30,32 +30,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
-import io.harness.gitsync.BranchDetails;
-import io.harness.gitsync.CacheResponseParams;
-import io.harness.gitsync.CacheState;
-import io.harness.gitsync.ChangeType;
-import io.harness.gitsync.CreateFileRequest;
+import io.harness.gitsync.*;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
-import io.harness.gitsync.ErrorDetails;
-import io.harness.gitsync.FileGitDetails;
-import io.harness.gitsync.FileInfo;
-import io.harness.gitsync.GetBatchFilesRequest;
-import io.harness.gitsync.GetBatchFilesResponse;
-import io.harness.gitsync.GetBranchHeadCommitRequest;
-import io.harness.gitsync.GetBranchHeadCommitResponse;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
-import io.harness.gitsync.GetRepoUrlRequest;
-import io.harness.gitsync.GetRepoUrlResponse;
-import io.harness.gitsync.GitMetaData;
-import io.harness.gitsync.IsGitSimplificationEnabledRequest;
-import io.harness.gitsync.ListFilesRequest;
-import io.harness.gitsync.ListFilesResponse;
-import io.harness.gitsync.PushFileResponse;
-import io.harness.gitsync.PushInfo;
-import io.harness.gitsync.RepoDetails;
-import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
@@ -63,24 +40,7 @@ import io.harness.gitsync.common.beans.GitSyncDirection;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 import io.harness.gitsync.common.beans.ScmCacheState;
-import io.harness.gitsync.common.dtos.GitErrorMetadata;
-import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
-import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
-import io.harness.gitsync.common.dtos.ScmFileContentTypeDTO;
-import io.harness.gitsync.common.dtos.ScmFileGitDetailsDTO;
-import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
-import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.*;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.ScmExceptionUtils;
@@ -419,6 +379,33 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
           .setError(prepareErrorDetails(ex))
           .setGitMetaData(gitMetaData)
           .build();
+    }
+  }
+
+  @Override
+  public GetFileResponse getFileByCommitId(GetFileByCommitIdRequest getFileByCommitIdRequest) {
+    try {
+      gitFilePathHelper.validateFilePath(getFileByCommitIdRequest.getFilePath());
+      ScmGetFileResponseDTO scmGetFileResponseDTO =
+              scmFacilitatorService.getFileByCommitId(getGetFileByCommitIdRequestDTO(getFileByCommitIdRequest));
+      return prepareGetFileResponse(getFileByCommitIdRequest.getScopeIdentifiers(), getFileByCommitIdRequest.getRepoName(),
+              getFileByCommitIdRequest.getFilePath(), getFileByCommitIdRequest.getConnectorRef(), scmGetFileResponseDTO,
+              getFileByCommitIdRequest.getGetOnlyFileContent());
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));
+      if (scmException == null) {
+        return GetFileResponse.newBuilder()
+                .setStatusCode(ex.getCode().getStatus().getCode())
+                .setError(prepareDefaultErrorDetails(ex))
+                .setGitMetaData(gitMetaData)
+                .build();
+      }
+      return GetFileResponse.newBuilder()
+              .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+              .setError(prepareErrorDetails(ex))
+              .setGitMetaData(gitMetaData)
+              .build();
     }
   }
 
@@ -821,6 +808,20 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .useCache(getFileRequest.getCacheRequestParams().getUseCache())
         .getOnlyFileContent(getFileRequest.getGetOnlyFileContent())
         .build();
+  }
+
+  private ScmGetFileByCommitIdRequestDTO getGetFileByCommitIdRequestDTO(GetFileByCommitIdRequest getFileByCommitIdRequest) {
+    Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileByCommitIdRequest.getScopeIdentifiers());
+    gitFilePathHelper.validateFilePath(getFileByCommitIdRequest.getFilePath());
+    return ScmGetFileByCommitIdRequestDTO.builder()
+            .commitId(getFileByCommitIdRequest.getCommitId())
+            .connectorRef(getFileByCommitIdRequest.getConnectorRef())
+            .filePath(getFileByCommitIdRequest.getFilePath())
+            .repoName(getFileByCommitIdRequest.getRepoName())
+            .scope(scope)
+            .useCache(getFileByCommitIdRequest.getCacheRequestParams().getUseCache())
+            .getOnlyFileContent(getFileByCommitIdRequest.getGetOnlyFileContent())
+            .build();
   }
 
   private ScmGetBatchFilesByBranchRequestDTO getScmGetBatchFilesRequest(GetBatchFilesRequest getBatchFilesRequest) {
