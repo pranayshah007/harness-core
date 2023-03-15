@@ -113,8 +113,5 @@ public enum FeatureRestrictionName {
   TERRAGRUNT_APPLY,
   TERRAGRUNT_DESTROY,
   TERRAGRUNT_ROLLBACK,
-  BAMBOO_BUILD,
-
-  //CET Features
-  CET_AGENTS;
+  BAMBOO_BUILD;
 }
