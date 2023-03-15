@@ -61,6 +61,7 @@ import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
@@ -70,6 +71,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
 
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
@@ -617,6 +619,24 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     String executionYaml = planExecutionMetadata.get().getYaml();
 
     return ExecutionDataResponseDTO.builder().executionYaml(executionYaml).executionId(planExecutionId).build();
+  }
+
+  public ExecutionMetaDataResponseDetailsDTO getExecutionDataDetails(String planExecutionId) {
+    Optional<PlanExecutionMetadata> planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+
+    if (!planExecutionMetadata.isPresent()) {
+      throw new ResourceNotFoundException(
+          String.format("Execution with id [%s] is not present or deleted", planExecutionId));
+    }
+    PlanExecutionMetadata metadata = planExecutionMetadata.get();
+
+    return ExecutionMetaDataResponseDetailsDTO.builder()
+        .executionYaml(metadata.getYaml())
+        .planExecutionId(planExecutionId)
+        .inputYaml(metadata.getInputSetYaml())
+        .triggerPayload(metadata.getTriggerPayload())
+        .build();
   }
 
   @Override

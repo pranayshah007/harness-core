@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +34,9 @@ import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.pms.contracts.triggers.ManifestData;
+import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
@@ -41,9 +45,11 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.google.common.io.Resources;
 import com.mongodb.BasicDBList;
 import com.mongodb.client.result.UpdateResult;
@@ -379,6 +385,45 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThatThrownBy(() -> pmsExecutionService.getExecutionData(planExecutionID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadataDetails() {
+    String planExecutionID = "tempID";
+
+    PlanExecutionMetadata planExecutionMetadata =
+        PlanExecutionMetadata.builder()
+            .yaml(executionYaml)
+            .planExecutionId(planExecutionID)
+            .triggerPayload(TriggerPayload.newBuilder()
+                                .setType(Type.MANIFEST)
+                                .setManifestData(ManifestData.newBuilder().setVersion("1.0").build())
+                                .build())
+            .build();
+
+    doReturn(Optional.of(planExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionID);
+
+    ExecutionMetaDataResponseDetailsDTO executionData = pmsExecutionService.getExecutionDataDetails(planExecutionID);
+
+    assertThat(executionData.getExecutionYaml()).isEqualTo(planExecutionMetadata.getYaml());
+    assertThat(executionData.getTriggerPayload().getType()).isEqualTo(Type.MANIFEST);
+    assertThat(executionData.getTriggerPayload().getManifestData().getVersion()).isEqualTo("1.0");
+    verify(planExecutionMetadataService, times(1)).findByPlanExecutionId(planExecutionID);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadataDetailsFailure() {
+    String planExecutionID = "tempID";
+
+    assertThatThrownBy(() -> pmsExecutionService.getExecutionDataDetails(planExecutionID))
+        .isInstanceOf(ResourceNotFoundException.class)
+        .hasMessageContaining(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
   }
 
   @Test
