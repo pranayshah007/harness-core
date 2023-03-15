@@ -1978,7 +1978,8 @@ public class BuilderFactory {
   }
 
   public AnnotationDTO getAnnotationDTO() {
-    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long startTime =
+        CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond() + Duration.ofMinutes(1).toSeconds();
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
     return AnnotationDTO.builder()
         .orgIdentifier(context.getOrgIdentifier())

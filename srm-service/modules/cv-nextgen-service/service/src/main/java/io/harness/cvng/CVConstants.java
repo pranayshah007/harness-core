@@ -47,6 +47,7 @@ public interface CVConstants {
   String DATA_SOURCE_TYPE = "type";
   String SLO_SPEC = "type";
   String DOWNTIME_SPEC_TYPE = "type";
+  String SECONDARY_EVENTS_TYPE = "type";
 
   String RULE_TYPE = "type";
 

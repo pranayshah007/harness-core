@@ -72,6 +72,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.SLOT
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -149,6 +150,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
+  @Inject private AnnotationService annotationService;
   private Query<AbstractServiceLevelObjective> sloQuery;
 
   @Inject private NotificationClient notificationClient;
@@ -410,7 +412,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
     sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
-    sloHealthIndicatorService.delete(projectParams, serviceLevelObjectiveV2.getIdentifier());
+    sloHealthIndicatorService.delete(projectParams, identifier);
+    annotationService.delete(projectParams, identifier);
     notificationRuleService.delete(projectParams,
         serviceLevelObjectiveV2.getNotificationRuleRefs()
             .stream()
