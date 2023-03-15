@@ -91,6 +91,11 @@ public class MultiDeploymentSpawnerUtils {
     if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
       matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
     } else {
+      if (infraStructureDefinitionYaml == null || infraStructureDefinitionYaml.getIdentifier() == null) {
+        throw new InvalidRequestException(String.format(
+            "Infrastructure Definition is not provided for environment %s, Please provide infrastructure definition and try again",
+            environmentYamlV2.getEnvironmentRef().getValue()));
+      }
       matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     }
     if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
