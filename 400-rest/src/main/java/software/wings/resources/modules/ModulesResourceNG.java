@@ -50,7 +50,6 @@ public class ModulesResourceNG {
     modules.put(ModuleType.CI, FeatureName.CING_ENABLED);
     modules.put(ModuleType.CV, FeatureName.CVNG_ENABLED);
     modules.put(ModuleType.SRM, FeatureName.CVNG_ENABLED);
-    modules.put(ModuleType.CET, FeatureName.CVNG_ENABLED);
     return modules;
   }
 
