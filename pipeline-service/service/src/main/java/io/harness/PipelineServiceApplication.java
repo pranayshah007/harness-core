@@ -909,7 +909,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   private void registerNotificationTemplates(Injector injector) {
     ExecutorService executorService =
         injector.getInstance(Key.get(ExecutorService.class, Names.named("templateRegistrationExecutorService")));
-//    executorService.submit(injector.getInstance(NotificationTemplateRegistrar.class));
+    executorService.submit(injector.getInstance(NotificationTemplateRegistrar.class));
   }
 
   private void registerRequestContextFilter(Environment environment) {
