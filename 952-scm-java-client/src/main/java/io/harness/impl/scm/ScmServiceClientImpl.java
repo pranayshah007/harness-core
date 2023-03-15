@@ -875,7 +875,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
     CreateWebhookResponse createWebhookResponse =
         createWebhook(scmConnector, gitWebhookDetails, scmBlockingStub, existingWebhook, existingNativeEventsList);
-    ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+    ScmResponseStatusUtils.checkScmResponseStatusAndThrowExceptionForUpsertWebhook(
         createWebhookResponse.getStatus(), createWebhookResponse.getError());
     return createWebhookResponse;
   }
