@@ -43,6 +43,13 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_PROFILER}" == "true" ]]; then
+    mkdir -p /opt/cprof && wget -q -O- https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent.tar.gz \
+    | sudo tar xzv -C /opt/cprof
+    JAVA_OPTS=$JAVA_OPTS" -agentpath:/opt/cprof/profiler_java_agent.so=-cprof_service=myapp,-cprof_service_version=1.0.0 "
+    echo "Using Java Profiler"
+fi
+
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
 else

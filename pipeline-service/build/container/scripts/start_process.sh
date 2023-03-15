@@ -45,6 +45,13 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_PROFILER}" == "true" ]]; then
+    mkdir -p /opt/cprof && wget -q -O- https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent.tar.gz \
+    | sudo tar xzv -C /opt/cprof
+    JAVA_OPTS=$JAVA_OPTS" -agentpath:/opt/cprof/profiler_java_agent.so=-cprof_service=pipeline-service-$(hostname),-cprof_service_version=1.0.0 "
+    echo "Using Java Profiler"
+fi
+
 if [[ "${ENABLE_ERROR_TRACKING}" == "true" ]] ; then
     echo "Error Tracking is enabled"
     JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"
