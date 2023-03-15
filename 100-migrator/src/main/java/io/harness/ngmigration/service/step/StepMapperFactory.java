@@ -21,6 +21,11 @@ import io.harness.ngmigration.service.step.cloudformation.CloudformationCreateSt
 import io.harness.ngmigration.service.step.cloudformation.CloudformationDeleteStepMapperImpl;
 import io.harness.ngmigration.service.step.cloudformation.CloudformationRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.cv.NewRelicDeploymentMarkerStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsBGServiceSetupStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsDaemonServiceSetupStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsListenerUpdateRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsListenerUpdateStepMapperImpl;
+import io.harness.ngmigration.service.step.ecs.EcsRunTaskStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceRollbackStepMapperImpl;
 import io.harness.ngmigration.service.step.ecs.EcsServiceSetupStepMapperImpl;
 import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
@@ -81,6 +86,11 @@ import lombok.extern.slf4j.Slf4j;
 public class StepMapperFactory {
   @Inject EcsServiceSetupStepMapperImpl ecsServiceSetupStepMapper;
   @Inject EcsServiceRollbackStepMapperImpl ecsServiceRollbackStepMapper;
+  @Inject EcsBGServiceSetupStepMapperImpl ecsBGServiceSetupStepMapper;
+  @Inject EcsDaemonServiceSetupStepMapperImpl ecsDaemonServiceSetupStepMapper;
+  @Inject EcsListenerUpdateStepMapperImpl ecsListenerUpdateStepMapper;
+  @Inject EcsListenerUpdateRollbackStepMapperImpl ecsListenerUpdateRollbackStepMapper;
+  @Inject EcsRunTaskStepMapperImpl ecsRunTaskStepMapper;
   @Inject HelmDeployStepMapperImpl helmDeployStepMapper;
   @Inject HelmRollbackStepMapperImpl helmRollbackStepMapper;
   @Inject CustomFetchInstancesStepMapperImpl customFetchInstancesStepMapper;
@@ -168,6 +178,20 @@ public class StepMapperFactory {
       case "ECS_SERVICE_ROLLBACK":
       case "ECS_SERVICE_SETUP_ROLLBACK":
         return ecsServiceRollbackStepMapper;
+      case "ECS_BG_SERVICE_SETUP":
+        return ecsBGServiceSetupStepMapper;
+      case "ECS_DAEMON_SERVICE_SETUP":
+        return ecsDaemonServiceSetupStepMapper;
+      case "ECS_LISTENER_UPDATE":
+        return ecsListenerUpdateStepMapper;
+      case "ECS_LISTENER_UPDATE_ROLLBACK":
+        return ecsListenerUpdateRollbackStepMapper;
+      case "ECS_RUN_TASK":
+        return ecsRunTaskStepMapper;
+      case "ECS_ROUTE53_DNS_WEIGHT_UPDATE":
+      case "ECS_ROUTE53_DNS_WEIGHT_UPDATE_ROLLBACK":
+      case "ECS_BG_SERVICE_SETUP_ROUTE53":
+        return unsupportedStepMapper;
       case "SHELL_SCRIPT":
         return shellScriptStepMapper;
       case "K8S_DEPLOYMENT_ROLLING":
