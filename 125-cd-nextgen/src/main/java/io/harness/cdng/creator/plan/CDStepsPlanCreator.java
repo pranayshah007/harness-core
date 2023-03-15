@@ -20,6 +20,7 @@ import io.harness.plancreator.steps.GenericStepsNodePlanCreator;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -74,10 +75,11 @@ public class CDStepsPlanCreator extends GenericStepsNodePlanCreator {
 
     return planNodeBuilder
         .adviserObtainment(AdviserObtainment.newBuilder().setType(RollbackCustomAdviser.ADVISER_TYPE).build())
-        .advisorObtainmentForRollbackMode(AdviserObtainment.newBuilder()
-                                              .setType(NextStepAdviser.ADVISER_TYPE)
-                                              .setParameters(adviserParamsBytes)
-                                              .build())
+        .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK,
+            Collections.singletonList(AdviserObtainment.newBuilder()
+                                          .setType(NextStepAdviser.ADVISER_TYPE)
+                                          .setParameters(adviserParamsBytes)
+                                          .build()))
         .build();
   }
 }

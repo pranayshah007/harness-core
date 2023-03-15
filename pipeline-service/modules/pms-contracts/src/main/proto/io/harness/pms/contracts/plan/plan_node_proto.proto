@@ -37,7 +37,8 @@ message PlanNodeProto {
   string stageFqn = 18;
   string executionInputTemplate = 19;
   ExpressionMode expressionMode = 20;
-  repeated io.harness.pms.contracts.advisers.AdviserObtainment adviserObtainmentsForRollbackMode = 21;
+  map<string, io.harness.pms.contracts.advisers.AdvisorObtainmentList>
+      adviserObtainmentsForExecutionMode = 21;
 }
 
 enum ExpressionMode {

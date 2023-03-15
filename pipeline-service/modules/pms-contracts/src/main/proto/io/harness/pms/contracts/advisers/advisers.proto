@@ -9,6 +9,10 @@ package io.harness.pms.contracts.advisers;
 
 option java_multiple_files = true;
 
+message AdvisorObtainmentList {
+  repeated AdviserObtainment adviserObtainments = 1;
+}
+
 message AdviserObtainment {
   AdviserType type = 1;
   bytes parameters = 2;

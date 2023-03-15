@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
@@ -80,13 +81,7 @@ public class PlanNode implements Node {
     if (planNodeProto == null) {
       return null;
     }
-    Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(planNodeProto.getAdviserObtainmentsForRollbackModeList())) {
-      advisorObtainmentsForExecutionMode.put(
-          ExecutionMode.POST_EXECUTION_ROLLBACK, planNodeProto.getAdviserObtainmentsForRollbackModeList());
-      advisorObtainmentsForExecutionMode.put(
-          ExecutionMode.PIPELINE_ROLLBACK, planNodeProto.getAdviserObtainmentsForRollbackModeList());
-    }
+
     return PlanNode.builder()
         .uuid(planNodeProto.getUuid())
         .name(planNodeProto.getName())
@@ -97,7 +92,8 @@ public class PlanNode implements Node {
         .stepParameters(PmsStepParameters.parse(planNodeProto.getStepParameters()))
         .refObjects(planNodeProto.getRebObjectsList())
         .adviserObtainments(planNodeProto.getAdviserObtainmentsList())
-        .advisorObtainmentsForExecutionMode(advisorObtainmentsForExecutionMode)
+        .advisorObtainmentsForExecutionMode(
+            buildAdvisorObtainmentsForExecutionMode(planNodeProto.getAdviserObtainmentsForExecutionModeMap()))
         .facilitatorObtainments(planNodeProto.getFacilitatorObtainmentsList())
         .timeoutObtainments(planNodeProto.getTimeoutObtainmentsList())
         .skipCondition(planNodeProto.getSkipCondition())
@@ -110,6 +106,16 @@ public class PlanNode implements Node {
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
+  }
+
+  static Map<ExecutionMode, List<AdviserObtainment>> buildAdvisorObtainmentsForExecutionMode(
+      Map<String, AdvisorObtainmentList> advisorObtainmentsForExecutionMode) {
+    Map<ExecutionMode, List<AdviserObtainment>> result = new HashMap<>();
+    for (Map.Entry<String, AdvisorObtainmentList> entry : advisorObtainmentsForExecutionMode.entrySet()) {
+      ExecutionMode executionMode = ExecutionMode.valueOf(entry.getKey());
+      result.put(executionMode, entry.getValue().getAdviserObtainmentsList());
+    }
+    return result;
   }
 
   @Override
