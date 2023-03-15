@@ -50,4 +50,12 @@ public class NGLogCallback implements LogCallback {
       logStreamingClient.closeStream(logSuffix);
     }
   }
+
+  public String getLogBaseKey() {
+    if (this.logStreamingClient != null) {
+      LogStreamingStepClientImpl logStreamingStepClient = (LogStreamingStepClientImpl) this.logStreamingClient;
+      return logStreamingStepClient.getBaseLogKey();
+    }
+    return "";
+  }
 }

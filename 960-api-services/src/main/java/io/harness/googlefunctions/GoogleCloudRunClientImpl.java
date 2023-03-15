@@ -24,6 +24,7 @@ import com.google.cloud.run.v2.ServicesClient;
 import com.google.cloud.run.v2.UpdateServiceRequest;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.longrunning.Operation;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
@@ -99,5 +100,18 @@ public class GoogleCloudRunClientImpl implements GoogleCloudRunClient {
       googleCloudClientHelper.handleException(e);
     }
     return Revision.getDefaultInstance();
+  }
+
+  @Override
+  public Operation getOperation(String operationName, GcpInternalConfig gcpInternalConfig) {
+    try (ServicesClient client = googleCloudClientHelper.getServicesClient(gcpInternalConfig)) {
+      googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+      return client.getOperationsClient().getOperation(operationName);
+    } catch (Exception e) {
+      googleCloudClientHelper.logError(
+          CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
+      googleCloudClientHelper.handleException(e);
+    }
+    return Operation.getDefaultInstance();
   }
 }
