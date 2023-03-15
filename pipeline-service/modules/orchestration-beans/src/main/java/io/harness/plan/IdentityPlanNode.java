@@ -9,13 +9,16 @@ package io.harness.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -38,6 +41,9 @@ public class IdentityPlanNode implements Node {
   String originalNodeExecutionId;
   String serviceName;
   String executionInputTemplate;
+
+  // if present, the advisor response from the previous execution will be ignored and these advisors be be used
+  @With List<AdviserObtainment> adviserObtainments;
 
   @Override
   public String getStageFqn() {
@@ -83,12 +89,17 @@ public class IdentityPlanNode implements Node {
 
   public static IdentityPlanNode mapPlanNodeToIdentityNode(
       Node node, StepType stepType, String originalNodeExecutionUuid) {
+    return mapPlanNodeToIdentityNode(node, stepType, originalNodeExecutionUuid, false);
+  }
+
+  public static IdentityPlanNode mapPlanNodeToIdentityNode(
+      Node node, StepType stepType, String originalNodeExecutionUuid, boolean alwaysSkipGraph) {
     return IdentityPlanNode.builder()
         .uuid(node.getUuid())
         .name(node.getName())
         .identifier(node.getIdentifier())
         .group(node.getGroup())
-        .skipGraphType(node.getSkipGraphType())
+        .skipGraphType(alwaysSkipGraph ? SkipType.SKIP_NODE : node.getSkipGraphType())
         .stepType(stepType)
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
@@ -97,6 +108,7 @@ public class IdentityPlanNode implements Node {
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
   }
+
   public static IdentityPlanNode mapPlanNodeToIdentityNode(String newUuid, Node node, String nodeIdentifier,
       String nodeName, StepType stepType, String originalNodeExecutionUuid) {
     return IdentityPlanNode.builder()

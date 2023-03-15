@@ -496,7 +496,7 @@ public class ExecutionHelper {
     }
     if (executionMode.equals(ExecutionMode.POST_EXECUTION_ROLLBACK)) {
       return rollbackModeExecutionHelper.transformPlanForRollbackMode(
-          plan, previousExecutionId, Collections.emptyList());
+          plan, previousExecutionId, Collections.emptyList(), executionMode);
     }
     return plan;
   }
