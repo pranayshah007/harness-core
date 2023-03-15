@@ -597,6 +597,8 @@ public class OnboardingServiceImpl implements OnboardingService {
           return new Pair<>(catalogEntity,
               new Pair<>(catalogInfoLocationParentPath + SERVICE + SLASH_DELIMITER,
                   entityTargetParentPath + SERVICE + SLASH_DELIMITER));
+        } else {
+          throw new UnexpectedException("Entity should be off one among domain / system / component");
         }
       }
     }

@@ -55,7 +55,7 @@ public interface ServiceResourceClient {
       @Path("serviceIdentifier") String serviceIdentifier, @Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier);
 
-  @GET(SERVICE_API + "/all-services")
+  @GET(SERVICE_API + "/list/all-services")
   Call<ResponseDTO<PageResponse<ServiceResponse>>> getAllServicesList(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
