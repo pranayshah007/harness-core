@@ -10,9 +10,7 @@ package io.harness.accesscontrol.acl.api;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.ACLService;
@@ -22,19 +20,16 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignm
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.PL)
 public class ACLResourceImplTest extends AccessControlTestBase {
   private ACLResourceImpl aclResource;
-  @Mock FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
@@ -42,9 +37,8 @@ public class ACLResourceImplTest extends AccessControlTestBase {
     AccessControlPreferenceService accessControlPreferenceService = mock(AccessControlPreferenceService.class);
     PrivilegedRoleAssignmentService privilegedRoleAssignmentService = mock(PrivilegedRoleAssignmentService.class);
     ResourceAttributeProvider resourceAttributeProvider = mock(ResourceAttributeProvider.class);
-    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
-    aclResource = new ACLResourceImpl(aclService, accessControlPreferenceService, privilegedRoleAssignmentService,
-        resourceAttributeProvider, featureFlagService);
+    aclResource = new ACLResourceImpl(
+        aclService, accessControlPreferenceService, privilegedRoleAssignmentService, resourceAttributeProvider);
   }
 
   @Test

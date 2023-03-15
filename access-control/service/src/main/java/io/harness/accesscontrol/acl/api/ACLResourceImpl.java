@@ -14,7 +14,6 @@ import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.servic
 import static io.harness.accesscontrol.principals.PrincipalType.API_KEY;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
-import static io.harness.beans.FeatureName.PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.acl.ACLService;
@@ -28,10 +27,8 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessResul
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignmentService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -59,7 +56,6 @@ public class ACLResourceImpl implements ACLResource {
   private final AccessControlPreferenceService accessControlPreferenceService;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
   private final ResourceAttributeProvider resourceAttributeProvider;
-  private final FeatureFlagService featureFlagService;
 
   private Optional<String> getAccountIdentifier(List<PermissionCheckDTO> permissionCheckDTOList) {
     if (permissionCheckDTOList.isEmpty()) {
@@ -91,15 +87,10 @@ public class ACLResourceImpl implements ACLResource {
                                          .build());
     }
 
-    boolean allowDifferentPrincipalInTokenAndBody =
-        featureFlagService.isGlobalEnabled(PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY);
-
-    boolean preconditionsValid =
-        checkPreconditions(contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody);
+    boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
     boolean resourcePreconditionsValid = checkResourcePreconditions(permissionChecksDTOs);
 
-    if (serviceContextAndOnlyServicePrincipalInBody(
-            contextPrincipal, principalToCheckPermissionsFor, allowDifferentPrincipalInTokenAndBody)) {
+    if (serviceContextAndOnlyServicePrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
       return ResponseDTO.newResponse(
           AccessCheckResponseDTO.builder()
               .principal(Principal.of(SERVICE, contextPrincipal.getName()))
@@ -139,11 +130,6 @@ public class ACLResourceImpl implements ACLResource {
               .principal(principalToCheckPermissionsFor)
               .build());
     }
-    boolean useRoleAssignments = false;
-    if (accountIdentifierOptional.isPresent()) {
-      useRoleAssignments =
-          featureFlagService.isEnabled(FeatureName.PL_SIMPLIFY_ACL_CHECK, accountIdentifierOptional.get());
-    }
 
     if (notPresent(principalToCheckPermissionsFor)) {
       principalToCheckPermissionsFor =
@@ -151,10 +137,8 @@ public class ACLResourceImpl implements ACLResource {
     }
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
-    List<PermissionCheckResult> permissionCheckResults = useRoleAssignments
-        ? aclService.checkAccessUsingRoleAssignments(accountIdentifierOptional.get(), principalToCheckPermissionsFor,
-            permissionChecks, resourceAttributeProvider)
-        : aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
+    List<PermissionCheckResult> permissionCheckResults =
+        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
 
     AccessCheckResponseDTO accessCheckResponseDTO =
         AccessCheckResponseDTO.builder()
