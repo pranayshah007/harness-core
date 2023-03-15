@@ -22,6 +22,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.REGION_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 
+import com.google.common.collect.ImmutableList;
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.CCMGroupBy;
@@ -34,9 +35,11 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewIdCondition;
+import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewVisualization;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
+import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
@@ -49,6 +52,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
 import lombok.NonNull;
 
 public class PerspectiveToAnomalyQueryHelper {
@@ -233,7 +238,7 @@ public class PerspectiveToAnomalyQueryHelper {
         List<QLCEViewFilterWrapper> ruleFilters = new ArrayList<>();
         for (ViewCondition condition : rule.getViewConditions()) {
           ruleFilters.add(QLCEViewFilterWrapper.builder()
-                              .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
+                              .idFilter(mapConditionToFilter((ViewIdCondition) condition))
                               .build());
         }
         convertedRuleFilters.add(convertFilters(ruleFilters));
@@ -241,6 +246,45 @@ public class PerspectiveToAnomalyQueryHelper {
     }
 
     return convertedRuleFilters;
+  }
+
+  public QLCEViewFilter mapConditionToFilter(ViewIdCondition condition) {
+    return QLCEViewFilter.builder()
+        .field(getViewFieldInput(condition.getViewField()))
+        .operator(mapViewIdOperatorToQLCEViewFilterOperator(condition.getViewOperator()))
+        .values(getStringArray(Objects.isNull(condition.getValues()) ? ImmutableList.of("") : condition.getValues()))
+        .build();
+  }
+
+  public QLCEViewFieldInput getViewFieldInput(ViewField field) {
+    return QLCEViewFieldInput.builder()
+        .fieldId(field.getFieldId())
+        .fieldName(field.getFieldName())
+        .identifier(field.getIdentifier())
+        .identifierName(field.getIdentifier().getDisplayName())
+        .build();
+  }
+
+  public QLCEViewFilterOperator mapViewIdOperatorToQLCEViewFilterOperator(ViewIdOperator operator) {
+    QLCEViewFilterOperator qlCEViewFilterOperator = null;
+    if (operator.equals(ViewIdOperator.IN)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.IN;
+    } else if (operator.equals(ViewIdOperator.NOT_IN)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.NOT_IN;
+    } else if (operator.equals(ViewIdOperator.NOT_NULL)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.NOT_NULL;
+    } else if (operator.equals(ViewIdOperator.NULL)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.NULL;
+    } else if (operator.equals(ViewIdOperator.EQUALS)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.EQUALS;
+    } else if (operator.equals(ViewIdOperator.LIKE)) {
+      qlCEViewFilterOperator = QLCEViewFilterOperator.LIKE;
+    }
+    return qlCEViewFilterOperator;
+  }
+
+  public String[] getStringArray(List<String> values) {
+    return values.toArray(new String[values.size()]);
   }
 
   private CCMFilter combineFilters(List<CCMFilter> filters) {
@@ -291,7 +335,7 @@ public class PerspectiveToAnomalyQueryHelper {
     return defaultFilters;
   }
 
-  private CCMStringFilter buildStringFilter(CCMField field, String[] values, QLCEViewFilterOperator operator) {
+  public CCMStringFilter buildStringFilter(CCMField field, String[] values, QLCEViewFilterOperator operator) {
     return CCMStringFilter.builder()
         .field(field)
         .values(Arrays.asList(values))

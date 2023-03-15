@@ -125,7 +125,7 @@ public class AnomalyQueryBuilder {
   }
 
   @NotNull
-  private Condition applyTimeFilters(@NotNull List<CCMTimeFilter> filters, Condition condition) {
+  public Condition applyTimeFilters(@NotNull List<CCMTimeFilter> filters, Condition condition) {
     for (CCMTimeFilter filter : filters) {
       condition = condition.and(constructCondition(ANOMALIES.ANOMALYTIME, filter.getTimestamp(), filter.getOperator()));
     }
@@ -153,7 +153,7 @@ public class AnomalyQueryBuilder {
   }
 
   @NotNull
-  private Condition applyStringFilters(@NotNull List<CCMStringFilter> filters, Condition condition) {
+  public Condition applyStringFilters(@NotNull List<CCMStringFilter> filters, Condition condition) {
     for (CCMStringFilter filter : filters) {
       try {
         if (filter.getField() == ALL && filter.getOperator() == LIKE) {

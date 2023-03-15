@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.service.impl;
 
+import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
@@ -24,14 +25,30 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import io.harness.timescaledb.tables.records.AnomaliesRecord;
 import lombok.NonNull;
 import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.OrderField;
+import org.jooq.SelectFinalStep;
+import org.jooq.impl.DSL;
+
+import javax.annotation.Nullable;
+
+import static com.google.common.base.MoreObjects.firstNonNull;
+import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
+import static io.harness.timescaledb.Tables.ANOMALIES;
 
 public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService {
   @Inject CEViewService viewService;
   @Inject PerspectiveToAnomalyQueryHelper perspectiveToAnomalyQueryHelper;
   @Inject AnomalyQueryBuilder anomalyQueryBuilder;
   @Inject AnomalyDao anomalyDao;
+  @Inject private DSLContext dslContext;
+
+  private static final int RETRY_COUNT = 3;
+  private static final int SLEEP_DURATION = 100;
 
   private static final Integer DEFAULT_LIMIT = 1000;
   private static final Integer DEFAULT_OFFSET = 0;
@@ -42,6 +59,7 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
     CEView perspective = viewService.get(perspectiveId);
     List<CCMFilter> filters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
     Condition condition = anomalyQueryBuilder.applyPerspectiveRuleFilters(filters);
+    Condition newCondition = firstNonNull(condition, DSL.noCondition());
     List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
         anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT,
         date.truncatedTo(ChronoUnit.DAYS));
