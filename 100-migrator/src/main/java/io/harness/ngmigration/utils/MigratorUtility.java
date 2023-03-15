@@ -461,10 +461,21 @@ public class MigratorUtility {
 
   @Nullable
   public static NGYamlFile getYamlConfigFile(MigrationInputDTO inputDTO, byte[] content, String identifier) {
+    return getYamlFile(inputDTO, content, identifier, FileUsage.CONFIG);
+  }
+
+  @Nullable
+  public static NGYamlFile getYamlManifestFile(MigrationInputDTO inputDTO, byte[] content, String identifier) {
+    return getYamlFile(inputDTO, content, identifier, FileUsage.MANIFEST_FILE);
+  }
+
+  @Nullable
+  public static NGYamlFile getYamlFile(
+      MigrationInputDTO inputDTO, byte[] content, String identifier, FileUsage fileUsage) {
     if (isEmpty(content)) {
       return null;
     }
-    String fileUsage = FileUsage.CONFIG.name();
+
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
 
@@ -472,7 +483,7 @@ public class MigratorUtility {
         .type(NGMigrationEntityType.CONFIG_FILE)
         .yaml(FileYamlDTO.builder()
                   .identifier(identifier)
-                  .fileUsage(fileUsage)
+                  .fileUsage(fileUsage.name())
                   .name(identifier)
                   .content(new String(content))
                   .orgIdentifier(orgIdentifier)
@@ -656,5 +667,15 @@ public class MigratorUtility {
       }
     }
     return false;
+  }
+
+  public static boolean isGitFileConfigSimilar(GitFileConfig gitFileConfig1, GitFileConfig gitFileConfig2) {
+    if (gitFileConfig1 == null && gitFileConfig2 == null) {
+      return true;
+    } else if (gitFileConfig1 == null || gitFileConfig2 == null) {
+      return false;
+    } else {
+      return gitFileConfig1.equals(gitFileConfig2);
+    }
   }
 }
