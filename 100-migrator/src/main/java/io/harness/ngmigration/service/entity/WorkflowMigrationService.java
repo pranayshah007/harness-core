@@ -288,6 +288,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                             .orgIdentifier(orgIdentifier)
                                             .stages(stages)
                                             .allowStageExecutions(true)
+                                            .tags(MigratorUtility.getTags(workflow.getTagLinks()))
                                             .build())
                     .build();
       ngType = PIPELINE;
