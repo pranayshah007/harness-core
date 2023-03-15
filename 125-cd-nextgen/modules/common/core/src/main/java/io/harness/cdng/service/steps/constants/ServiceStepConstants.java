@@ -20,4 +20,9 @@ public class ServiceStepConstants {
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
+
+  public static final String SERVICE_VARIABLES_PATTERN_REGEX = "(.*<\\+serviceVariables\\..+>.*)";
+  public static final String ENV_VARIABLES_PATTERN_REGEX = "(.*<\\+env\\.variables\\..+>.*)";
+  public static final String ENV_REF = "environment ref";
+  public static final String ENV_GROUP_REF = "environment group ref";
 }

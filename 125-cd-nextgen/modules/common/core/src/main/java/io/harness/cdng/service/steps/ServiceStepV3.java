@@ -8,6 +8,10 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_GROUP_REF;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_REF;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_VARIABLES_PATTERN_REGEX;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_VARIABLES_PATTERN_REGEX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -113,8 +117,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
@@ -141,6 +147,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
+
+  private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
+  private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -219,12 +228,62 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void validate(ServiceStepV3Parameters stepParameters) {
+    validateNullCheckForRefs(stepParameters);
+    checkIfServiceRefIsExpAndThrow(stepParameters.getServiceRef());
+    checkIfEnvTypesEntityRefIsExpAndThrow(stepParameters.getEnvRef(), ENV_REF,
+        "[Hint]: service variables expression should not be used as environment ref.");
+    checkForMultiEnvRefsAreExpAndThrow(stepParameters.getEnvRefs());
+    checkIfEnvTypesEntityRefIsExpAndThrow(stepParameters.getEnvGroupRef(), ENV_GROUP_REF,
+        "[Hint]: service variables expression should not be used as environment group ref.");
+  }
+
+  private void checkIfEnvTypesEntityRefIsExpAndThrow(
+      ParameterField<String> envTypeEntityRef, String entityTypeName, String suffixErrorMessage) {
+    if (ParameterField.isNotNull(envTypeEntityRef) && envTypeEntityRef.isExpression()) {
+      String errorSuffix = StringUtils.EMPTY;
+      if (serviceVariablePattern.matcher(envTypeEntityRef.getExpressionValue()).matches()) {
+        errorSuffix = suffixErrorMessage;
+      }
+      throw new InvalidRequestException(String.format("Expression (%s) given for %s could not be resolved. ",
+                                            envTypeEntityRef.getExpressionValue(), entityTypeName)
+          + errorSuffix);
+    }
+  }
+
+  private void checkForMultiEnvRefsAreExpAndThrow(List<ParameterField<String>> envRefs) {
+    if (isNotEmpty(envRefs)) {
+      String errorSuffix = StringUtils.EMPTY;
+      List<String> envRefExpValues = new ArrayList<>();
+      for (ParameterField<String> envRef : envRefs) {
+        if (ParameterField.isNotNull(envRef) && envRef.isExpression()) {
+          envRefExpValues.add(envRef.getExpressionValue());
+          if (serviceVariablePattern.matcher(envRef.getExpressionValue()).matches()) {
+            errorSuffix = "[Hint]: service variables expression should not be used as environment refs.";
+          }
+        }
+      }
+      if (isNotEmpty(envRefExpValues)) {
+        throw new UnresolvedExpressionsException(envRefExpValues,
+            String.format("Expression (%s) given for environment refs could not be resolved. %s",
+                envRefExpValues.stream().filter(Objects::nonNull).collect(Collectors.joining(", ")), errorSuffix));
+      }
+    }
+  }
+
+  private void checkIfServiceRefIsExpAndThrow(ParameterField<String> serviceRef) {
+    if (serviceRef.isExpression()) {
+      String errorSuffix = StringUtils.EMPTY;
+      if (envVariablePattern.matcher(serviceRef.getExpressionValue()).matches()) {
+        errorSuffix = "[Hint]: environment variables expression should not be used as service ref.";
+      }
+      throw new InvalidRequestException(String.format("Expression (%s) given for service ref could not be resolved. %s",
+          serviceRef.getExpressionValue(), errorSuffix));
+    }
+  }
+
+  private void validateNullCheckForRefs(ServiceStepV3Parameters stepParameters) {
     if (ParameterField.isNull(stepParameters.getServiceRef())) {
       throw new InvalidRequestException("service ref not provided");
-    }
-
-    if (stepParameters.getServiceRef().isExpression()) {
-      throw new UnresolvedExpressionsException(Arrays.asList(stepParameters.getServiceRef().getExpressionValue()));
     }
     if (ParameterField.isNull(stepParameters.getEnvRef()) && isEmpty(stepParameters.getEnvRefs())
         && stepParameters.getEnvironmentGroupYaml() == null && stepParameters.getEnvironmentsYaml() == null) {
