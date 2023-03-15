@@ -24,7 +24,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -214,5 +217,16 @@ public class MultiDeploymentSpawnerUtils {
         .gitOpsClusters(ParameterField.createExpressionField(true, GIT_OPS_CLUSTERS_EXPRESSION, null, false))
         .infrastructureDefinition(ParameterField.createValueField(infraStructureDefinitionYaml))
         .build();
+  }
+
+  public int getEnvCount(List<EnvironmentMapResponse> environmentMapList) {
+    Set<String> envs = new HashSet<>();
+    for (EnvironmentMapResponse environmentMapResponse : environmentMapList) {
+      Map<String, String> envMap = environmentMapResponse.getEnvironmentsMapList();
+      if (envMap.containsKey(ENVIRONMENT_REF)) {
+        envs.add(envMap.get(ENVIRONMENT_REF));
+      }
+    }
+    return envs.size();
   }
 }
