@@ -63,7 +63,7 @@ public class EcsBGServiceSetupStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsBlueGreenServiceSetup state = (EcsBlueGreenServiceSetup) getState(graphNode);
     EcsBlueGreenCreateServiceStepNode stepNode = new EcsBlueGreenCreateServiceStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     EcsBlueGreenCreateServiceStepInfo stepInfo =
         EcsBlueGreenCreateServiceStepInfo.infoBuilder()
             .loadBalancer(ParameterField.createValueField(state.getLoadBalancerName()))
