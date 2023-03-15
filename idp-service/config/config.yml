@@ -72,10 +72,11 @@ backstageHttpClientConfig:
   baseUrl: http://localhost:7007/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+  enableHttpLogging: true
 
 ngManagerServiceSecret: ""
-backstageServiceSecret: ""
-idpServiceSecret: ""
+backstageServiceSecret: "dummy"
+idpServiceSecret: "dummy"
 jwtAuthSecret: ""
 jwtIdentityServiceSecret: ""
 

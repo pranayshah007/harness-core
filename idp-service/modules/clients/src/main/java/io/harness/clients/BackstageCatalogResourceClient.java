@@ -14,12 +14,16 @@ import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 @OwnedBy(IDP)
 public interface BackstageCatalogResourceClient {
   String CATALOG_API = "catalog";
+  String HARNESS_REFRESH_API = "harnessRefresh";
 
   @POST(CATALOG_API + "/locations")
   Call<ResponseDTO<Object>> createCatalogLocation(@Body BackstageCatalogLocationCreateRequest request);
+  @GET(HARNESS_REFRESH_API + "/providerRefresh")
+  Call<Object> providerRefresh();
 }
