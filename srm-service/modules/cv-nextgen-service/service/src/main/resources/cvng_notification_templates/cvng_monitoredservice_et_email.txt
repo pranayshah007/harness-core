@@ -47,7 +47,7 @@ body: "<html>
                 <div style=\"margin-bottom: 8.5px\">
                   <span style=\"color: #6b6d85\">Trigger </span>
                   <span
-                    >When new, critical and resurfaced events with the event type
+                    >When ${EVENT_STATUS} with the event type
                     (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code
                     errors.</span
                   >
