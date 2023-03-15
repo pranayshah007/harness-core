@@ -17,6 +17,7 @@ RUN microdnf update --nodocs \
     findutils \
     tar \
     gzip \
+    git \
     shadow-utils \
   && useradd -u 1001 -g 0 harness \
   && microdnf remove shadow-utils \
