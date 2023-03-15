@@ -9,7 +9,7 @@ package io.harness.ng.core.exceptionmappers;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.ng.core.Status;
-import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.ErrorDTO;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
@@ -21,8 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
   @Override
   public Response toResponse(NotFoundException exception) {
-    FailureDTO failureDTO =
-        FailureDTO.toBody(Status.FAILURE, ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION, exception.getMessage(), null);
-    return Response.status(Response.Status.NOT_FOUND).entity(failureDTO).type(MediaType.APPLICATION_JSON).build();
+    ErrorDTO errorDTO = ErrorDTO.newError(Status.ERROR, ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION, exception.getMessage());
+    return Response.status(Response.Status.NOT_FOUND).entity(errorDTO).type(MediaType.APPLICATION_JSON).build();
   }
 }

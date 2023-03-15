@@ -15,7 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.ng.core.Status;
-import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.rule.Owner;
 
 import javax.ws.rs.NotFoundException;
@@ -38,9 +38,10 @@ public class NotFoundExceptionMapperTest extends CategoryTest {
   public void testToResponse() {
     Response response = notFoundExceptionMapper.toResponse(new NotFoundException("error"));
     assertThat(response.getStatus()).isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
-    assertThat(response.getEntity()).isInstanceOf(FailureDTO.class);
-    FailureDTO failureDTO = (FailureDTO) response.getEntity();
-    assertThat(failureDTO.getStatus()).isEqualTo(Status.FAILURE);
-    assertThat(failureDTO.getCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION);
+    assertThat(response.getEntity()).isInstanceOf(ErrorDTO.class);
+    ErrorDTO errorDTO = (ErrorDTO) response.getEntity();
+    assertThat(errorDTO.getStatus()).isEqualTo(Status.ERROR);
+    assertThat(errorDTO.getCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND_EXCEPTION);
+    assertThat(errorDTO.getMessage()).isEqualTo("error");
   }
 }
