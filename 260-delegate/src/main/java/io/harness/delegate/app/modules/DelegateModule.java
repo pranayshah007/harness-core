@@ -416,6 +416,7 @@ import io.harness.delegate.task.tas.TasDataFetchTask;
 import io.harness.delegate.task.tas.TasRollbackTask;
 import io.harness.delegate.task.tas.TasRollingDeploymentTask;
 import io.harness.delegate.task.tas.TasRollingRollbackTask;
+import io.harness.delegate.task.tas.TasRouteMappingTask;
 import io.harness.delegate.task.tas.TasSwapRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -2174,6 +2175,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG)
         .toInstance(AwsLambdaPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaRollbackTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROUTE_MAPPING).toInstance(TasRouteMappingTask.class);
   }
 
   private void registerSecretManagementBindings() {

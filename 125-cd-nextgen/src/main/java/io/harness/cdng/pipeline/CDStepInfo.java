@@ -91,6 +91,7 @@ import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasRollbackStepInfo;
 import io.harness.cdng.tas.TasRollingDeployStepInfo;
 import io.harness.cdng.tas.TasRollingRollbackStepInfo;
+import io.harness.cdng.tas.TasRouteMappingStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
@@ -131,7 +132,7 @@ import io.swagger.annotations.ApiModel;
         GoogleFunctionsDeployStepInfo.class, GoogleFunctionsDeployWithoutTrafficStepInfo.class,
         GoogleFunctionsTrafficShiftStepInfo.class, GoogleFunctionsRollbackStepInfo.class, AwsSamDeployStepInfo.class,
         AwsLambdaDeployStepInfo.class, AwsSamRollbackStepInfo.class, AwsLambdaRollbackStepInfo.class,
-        BambooBuildStepInfo.class})
+        BambooBuildStepInfo.class, TasRouteMappingStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

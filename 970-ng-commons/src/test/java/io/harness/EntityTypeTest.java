@@ -231,6 +231,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(197, "GITOPS_SYNC");
     entityTypeOrdinalMapping.put(198, "BAMBOO_BUILD");
     entityTypeOrdinalMapping.put(199, "CD_SSCA_ORCHESTRATION");
+    entityTypeOrdinalMapping.put(200, "TAS_ROUTE_MAPPING");
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   }

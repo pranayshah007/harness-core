@@ -556,7 +556,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.BAMBOO_BUILD)
   BAMBOO_BUILD(ModuleType.CD, EntityTypeConstants.BAMBOO_BUILD, IdentifierRef.class, EntityYamlRootNames.BAMBOO_BUILD),
   @JsonProperty(EntityTypeConstants.CD_SSCA_ORCHESTRATION)
-  CD_SSCA_ORCHESTRATION(ModuleType.CD, EntityTypeConstants.CD_SSCA_ORCHESTRATION, IdentifierRef.class);
+  CD_SSCA_ORCHESTRATION(ModuleType.CD, EntityTypeConstants.CD_SSCA_ORCHESTRATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.TAS_ROUTE_MAPPING)
+  TAS_ROUTE_MAPPING(
+      ModuleType.CD, EntityTypeConstants.TAS_ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.TAS_ROUTE_MAPPING);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -816,6 +816,7 @@ import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
+import io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
@@ -833,6 +834,7 @@ import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
+import io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
@@ -2451,5 +2453,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsLambdaJenkinsArtifactConfig.class, 10000517);
     kryo.register(AwsLambdaArtifactoryArtifactConfig.class, 10000518);
     kryo.register(AwsLambdaCustomArtifactConfig.class, 10000519);
+    kryo.register(CfRouteMappingRequestNG.class, 10000520);
+    kryo.register(CfRouteMappingResponseNG.class, 10000521);
   }
 }

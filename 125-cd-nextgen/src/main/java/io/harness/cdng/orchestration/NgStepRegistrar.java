@@ -136,6 +136,7 @@ import io.harness.cdng.tas.TasCommandStep;
 import io.harness.cdng.tas.TasRollbackStep;
 import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingRollbackStep;
+import io.harness.cdng.tas.TasRouteMappingStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -272,6 +273,7 @@ public class NgStepRegistrar {
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
     engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
+    engineSteps.put(TasRouteMappingStep.STEP_TYPE, TasRouteMappingStep.class);
 
     engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
     engineSteps.put(GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE, GoogleFunctionsDeployWithoutTrafficStep.class);

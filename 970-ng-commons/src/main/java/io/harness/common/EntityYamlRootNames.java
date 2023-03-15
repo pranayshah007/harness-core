@@ -229,4 +229,5 @@ public class EntityYamlRootNames {
   public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
+  public static final String TAS_ROUTE_MAPPING = "TasRouteMapping";
 }
