@@ -54,7 +54,7 @@ public class K8sDeleteStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sDelete state = (K8sDelete) getState(graphNode);
     K8sDeleteStepNode k8sDeleteStepNode = new K8sDeleteStepNode();
-    baseSetup(graphNode, k8sDeleteStepNode);
+    baseSetup(graphNode, k8sDeleteStepNode, context.getIdentifierCaseFormat());
     K8sDeleteStepInfo k8sDeleteStepInfo =
         K8sDeleteStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))

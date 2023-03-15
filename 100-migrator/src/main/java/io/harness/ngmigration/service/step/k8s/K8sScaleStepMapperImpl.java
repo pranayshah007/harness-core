@@ -53,7 +53,7 @@ public class K8sScaleStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sScale state = (K8sScale) getState(graphNode);
     K8sScaleStepNode k8sScaleStepNode = new K8sScaleStepNode();
-    baseSetup(graphNode, k8sScaleStepNode);
+    baseSetup(graphNode, k8sScaleStepNode, context.getIdentifierCaseFormat());
 
     InstanceSelectionBase spec;
     if (state.getInstanceUnitType().equals(InstanceUnitType.COUNT)) {

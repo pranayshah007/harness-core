@@ -41,7 +41,7 @@ public class AsgBlueGreenSwapStepMapperImpl extends StepMapper {
     AwsAmiSwitchRoutesState state = (AwsAmiSwitchRoutesState) getState(graphNode);
 
     AsgBlueGreenSwapServiceStepNode node = new AsgBlueGreenSwapServiceStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     node.setAsgBlueGreenSwapServiceStepInfo(
         AsgBlueGreenSwapServiceStepInfo.infoBuilder()
             .downsizeOldAsg(ParameterField.createValueField(state.isDownsizeOldAsg()))

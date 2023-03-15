@@ -44,6 +44,7 @@ import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -211,7 +212,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Environment environment = (Environment) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, environment.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     List<ServiceVariable> serviceVariablesForAllServices = serviceVariableService.getServiceVariablesForEntity(
@@ -235,8 +237,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
 
-    List<ManifestConfigWrapper> manifests =
-        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities, null);
+    List<ManifestConfigWrapper> manifests = manifestMigrationService.getManifests(
+        manifestIds, inputDTO, entities, migratedEntities, null, inputDTO.getIdentifierCaseFormat());
 
     List<ConfigFileWrapper> configFiles =
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
@@ -250,7 +252,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .tags(null)
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
-                    .variables(getGlobalVariables(migratedEntities, serviceVariablesForAllServices))
+                    .variables(getGlobalVariables(
+                        migratedEntities, serviceVariablesForAllServices, inputDTO.getIdentifierCaseFormat()))
                     .ngEnvironmentGlobalOverride(
                         NGEnvironmentGlobalOverride.builder().configFiles(configFiles).manifests(manifests).build())
                     .type(PROD == environment.getEnvironmentType() ? Production : PreProduction)
@@ -284,15 +287,15 @@ public class EnvironmentMigrationService extends NgMigrationService {
     return YamlGenerationDetails.builder().yamlFileList(files).build();
   }
 
-  private List<NGVariable> getGlobalVariables(
-      Map<CgEntityId, NGYamlFile> migratedEntities, List<ServiceVariable> serviceVariablesForAllServices) {
+  private List<NGVariable> getGlobalVariables(Map<CgEntityId, NGYamlFile> migratedEntities,
+      List<ServiceVariable> serviceVariablesForAllServices, CaseFormat identifierCaseFormat) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariablesForAllServices)) {
       variables.addAll(MigratorUtility.getVariables(
           serviceVariablesForAllServices.stream()
               .filter(serviceVariable -> StringUtils.isBlank(serviceVariable.getServiceId()))
               .collect(Collectors.toList()),
-          migratedEntities));
+          migratedEntities, identifierCaseFormat));
     }
     return variables;
   }

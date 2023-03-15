@@ -54,7 +54,7 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsRollingRollbackStepNode stepNode = new EcsRollingRollbackStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     EcsRollingRollbackStepInfo stepInfo =
         EcsRollingRollbackStepInfo.infoBuilder()
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))

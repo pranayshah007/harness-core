@@ -54,7 +54,7 @@ public class AzureSlotRollbackStepMapperImpl extends StepMapper {
     AzureWebAppRollbackStepNode azureWebAppRollbackStepNode = new AzureWebAppRollbackStepNode();
     azureWebAppRollbackStepNode.setAzureWebAppRollbackStepInfo(azureWebAppRollbackStepInfo);
 
-    baseSetup(state, azureWebAppRollbackStepNode);
+    baseSetup(state, azureWebAppRollbackStepNode, context.getIdentifierCaseFormat());
 
     return azureWebAppRollbackStepNode;
   }

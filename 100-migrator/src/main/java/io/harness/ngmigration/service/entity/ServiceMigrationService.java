@@ -310,11 +310,13 @@ public class ServiceMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Service service = (Service) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
 
-    MigratorExpressionUtils.render(entities, migratedEntities, service, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        entities, migratedEntities, service, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     Set<CgEntityId> serviceDefs = graph.get(entityId)
@@ -339,8 +341,8 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
-    List<ManifestConfigWrapper> manifestConfigWrapperList =
-        manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities, service);
+    List<ManifestConfigWrapper> manifestConfigWrapperList = manifestMigrationService.getManifests(
+        manifests, inputDTO, entities, migratedEntities, service, inputDTO.getIdentifierCaseFormat());
     List<ManifestConfigWrapper> ecsServiceSpecs =
         ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities, migratedEntities);
     List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(taskDefs, inputDTO, entities);

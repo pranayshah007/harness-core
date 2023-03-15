@@ -38,7 +38,7 @@ public class K8sRollingStepMapperImpl extends StepMapper {
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sRollingStepNode k8sRollingStepNode = new K8sRollingStepNode();
-    baseSetup(graphNode, k8sRollingStepNode);
+    baseSetup(graphNode, k8sRollingStepNode, context.getIdentifierCaseFormat());
     k8sRollingStepNode.setK8sRollingStepInfo(
         K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;

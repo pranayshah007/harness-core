@@ -80,8 +80,8 @@ public class GcpSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String gcpSecretFileIdentifier =
-        String.format("migratedGcpSM_%s", MigratorUtility.generateIdentifier(gcpSecretsManagerConfig.getName()));
+    String gcpSecretFileIdentifier = String.format("migratedGcpSM_%s",
+        MigratorUtility.generateIdentifier(gcpSecretsManagerConfig.getName(), inputDTO.getIdentifierCaseFormat()));
 
     NgEntityDetail gcpEntityDetail = NgEntityDetail.builder()
                                          .identifier(gcpSecretFileIdentifier)

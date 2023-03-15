@@ -44,7 +44,7 @@ public class CustomFetchInstancesStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     InstanceFetchState state = (InstanceFetchState) getState(graphNode);
     FetchInstanceScriptStepNode fetchInstanceScriptStepNode = new FetchInstanceScriptStepNode();
-    baseSetup(graphNode, fetchInstanceScriptStepNode);
+    baseSetup(graphNode, fetchInstanceScriptStepNode, context.getIdentifierCaseFormat());
     FetchInstanceScriptStepInfo stepInfo = new FetchInstanceScriptStepInfo();
     stepInfo.setDelegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()));
     fetchInstanceScriptStepNode.setFetchInstanceScriptStepInfo(stepInfo);

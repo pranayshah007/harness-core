@@ -111,7 +111,8 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     if (StringUtils.isBlank(serviceSpecification.getServiceSpecJson())) {
       return null;
     }
-    MigratorExpressionUtils.render(entities, migratedEntities, serviceSpecification, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, serviceSpecification, inputDTO.getCustomExpressions(),
+        inputDTO.getIdentifierCaseFormat());
     byte[] fileContent = serviceSpecification.getServiceSpecJson().getBytes(StandardCharsets.UTF_8);
     CgEntityNode serviceNode = entities.get(
         CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(serviceSpecification.getServiceId()).build());
@@ -128,7 +129,8 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "EcsServiceSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "EcsServiceSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".json";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.ECS_SERVICE_SPEC)

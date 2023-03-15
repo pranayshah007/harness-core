@@ -137,7 +137,8 @@ public class ContainerTaskMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.MANIFEST_FILE.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "EcsTaskDefSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "EcsTaskDefSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".json";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.CONTAINER_TASK)

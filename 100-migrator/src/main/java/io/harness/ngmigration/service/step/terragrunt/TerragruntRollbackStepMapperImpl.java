@@ -48,7 +48,7 @@ public class TerragruntRollbackStepMapperImpl extends BaseTerragruntProvisionerM
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     TerragruntRollbackState state = (TerragruntRollbackState) getState(graphNode);
     TerragruntRollbackStepNode terragruntRollbackStepNode = new TerragruntRollbackStepNode();
-    baseSetup(graphNode, terragruntRollbackStepNode);
+    baseSetup(graphNode, terragruntRollbackStepNode, context.getIdentifierCaseFormat());
 
     TerragruntRollbackStepInfo terragruntRollbackStepInfo = new TerragruntRollbackStepInfo();
     terragruntRollbackStepInfo.setDelegateSelectors(getDelegateSelectors(state));

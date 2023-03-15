@@ -40,7 +40,7 @@ public class ElastigroupRollbackStepMapperImpl extends StepMapper {
     SpotInstRollbackState state = (SpotInstRollbackState) getState(graphNode);
 
     ElastigroupRollbackStepNode node = new ElastigroupRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupRollbackStepInfo rollbackStepInfo = ElastigroupRollbackStepInfo.infoBuilder().build();
 
     node.setElastigroupRollbackStepInfo(rollbackStepInfo);

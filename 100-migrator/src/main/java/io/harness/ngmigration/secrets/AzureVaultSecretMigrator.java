@@ -66,8 +66,8 @@ public class AzureVaultSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    String secretKey =
-        String.format("migratedAzureSecret_%s", MigratorUtility.generateIdentifier(azureVaultConfig.getName()));
+    String secretKey = String.format("migratedAzureSecret_%s",
+        MigratorUtility.generateIdentifier(azureVaultConfig.getName(), inputDTO.getIdentifierCaseFormat()));
     NgEntityDetail secretEntityDetail = NgEntityDetail.builder()
                                             .identifier(secretKey)
                                             .orgIdentifier(orgIdentifier)

@@ -33,7 +33,7 @@ public class EmptyStepMapperImpl extends StepMapper {
 
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return MigratorUtility.getWaitStepNode(graphNode.getName(), 60, true);
+    return MigratorUtility.getWaitStepNode(graphNode.getName(), 60, true, context.getIdentifierCaseFormat());
   }
 
   @Override

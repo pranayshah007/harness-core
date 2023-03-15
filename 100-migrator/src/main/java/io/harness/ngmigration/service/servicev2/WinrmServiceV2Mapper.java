@@ -43,7 +43,8 @@ public class WinrmServiceV2Mapper implements ServiceV2Mapper {
     if (primaryArtifact != null) {
       winRmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    winRmServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    winRmServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     winRmServiceSpecBuilder.configFiles(configFiles);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.WINRM)

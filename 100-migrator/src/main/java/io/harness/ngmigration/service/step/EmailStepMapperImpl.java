@@ -46,7 +46,7 @@ public class EmailStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EmailState state = (EmailState) getState(graphNode);
     EmailStepNode emailStepNode = new EmailStepNode();
-    baseSetup(graphNode, emailStepNode);
+    baseSetup(graphNode, emailStepNode, context.getIdentifierCaseFormat());
     EmailStepInfo emailStepInfo = EmailStepInfo.infoBuilder()
                                       .to(ParameterField.createValueField(state.getToAddress()))
                                       .cc(ParameterField.createValueField(state.getCcAddress()))

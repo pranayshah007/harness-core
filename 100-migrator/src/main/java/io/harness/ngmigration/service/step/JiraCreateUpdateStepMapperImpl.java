@@ -15,6 +15,7 @@ import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.JiraFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -73,9 +74,9 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
-        return buildUpdate(state);
+        return buildUpdate(state, context.getIdentifierCaseFormat());
       case CREATE_TICKET:
-        return buildCreate(state);
+        return buildCreate(state, context.getIdentifierCaseFormat());
       default:
         throw new IllegalStateException("Unsupported Approval Type");
     }
@@ -91,9 +92,9 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     return true;
   }
 
-  private JiraCreateStepNode buildCreate(JiraCreateUpdate state) {
+  private JiraCreateStepNode buildCreate(JiraCreateUpdate state, CaseFormat caseFormat) {
     JiraCreateStepNode stepNode = new JiraCreateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, caseFormat);
     JiraCreateStepInfo stepInfo = JiraCreateStepInfo.builder()
                                       .connectorRef(RUNTIME_INPUT)
                                       .projectKey(ParameterField.createValueField(state.getProject()))
@@ -129,9 +130,9 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     }
   }
 
-  private JiraUpdateStepNode buildUpdate(JiraCreateUpdate state) {
+  private JiraUpdateStepNode buildUpdate(JiraCreateUpdate state, CaseFormat caseFormat) {
     JiraUpdateStepNode stepNode = new JiraUpdateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, caseFormat);
     TransitionTo transitionTo = null;
     if (StringUtils.isNotBlank(state.getStatus())) {
       transitionTo = TransitionTo.builder().status(ParameterField.createValueField(state.getStatus())).build();
@@ -158,9 +159,12 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(JiraFunctor::new)

@@ -47,7 +47,8 @@ public class TerraformApplyStepMapperImpl extends BaseTerraformProvisionerMapper
 
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return getStepNode(context.getEntities(), context.getMigratedEntities(), graphNode);
+    return getStepNode(
+        context.getEntities(), context.getMigratedEntities(), graphNode, context.getIdentifierCaseFormat());
   }
 
   @Override

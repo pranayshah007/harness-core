@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -40,7 +41,7 @@ public class AzureAppServiceLocalStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     if (EmptyPredicate.isEmpty(yamlFileList)) {
       return new ArrayList<>();
     }
@@ -61,20 +62,20 @@ public class AzureAppServiceLocalStoreService implements NgManifestService {
 
     ValuesManifest manifest =
         ValuesManifest.builder()
-            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .store(ParameterField.createValueField(StoreConfigWrapper.builder()
                                                        .type(StoreConfigType.HARNESS)
                                                        .spec(manifestMigrationService.getHarnessStore(orderedFiles))
                                                        .build()))
             .build();
 
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.VALUES)
-                          .spec(manifest)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.VALUES)
+                                                       .spec(manifest)
+                                                       .build())
+                                         .build());
   }
 }

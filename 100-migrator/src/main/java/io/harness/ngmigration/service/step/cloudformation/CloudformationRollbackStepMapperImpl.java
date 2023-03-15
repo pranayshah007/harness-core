@@ -56,7 +56,7 @@ public class CloudformationRollbackStepMapperImpl extends BaseCloudformationProv
 
     CloudformationRollbackStepNode cloudformationRollbackStepNode = new CloudformationRollbackStepNode();
     cloudformationRollbackStepNode.setCloudformationRollbackStepInfo(cloudformationRollbackStepInfo);
-    baseSetup(graphNode, cloudformationRollbackStepNode);
+    baseSetup(graphNode, cloudformationRollbackStepNode, context.getIdentifierCaseFormat());
     return cloudformationRollbackStepNode;
   }
 

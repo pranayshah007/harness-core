@@ -55,7 +55,7 @@ public class HelmDeployStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     HelmDeployState state = (HelmDeployState) getState(graphNode);
     HelmDeployStepNode stepNode = new HelmDeployStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     HelmDeployStepInfo stepInfo = HelmDeployStepInfo.infoBuilder()
                                       .helmDeployFqn(state.getHelmReleaseNamePrefix())
                                       .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))

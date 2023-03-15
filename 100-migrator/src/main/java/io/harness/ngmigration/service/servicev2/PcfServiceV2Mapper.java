@@ -49,7 +49,8 @@ public class PcfServiceV2Mapper implements ServiceV2Mapper {
       serviceSpecBuilder.manifests(manifests);
     }
 
-    serviceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    serviceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     serviceSpecBuilder.configFiles(configFiles);
 
     return ServiceDefinition.builder().type(ServiceDefinitionType.TAS).serviceSpec(serviceSpecBuilder.build()).build();

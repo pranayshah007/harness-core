@@ -40,7 +40,8 @@ public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     NativeHelmServiceSpecBuilder helmServiceSpecBuilder = NativeHelmServiceSpec.builder();
-    List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
+    List<NGVariable> variables = MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat());
     if (primaryArtifact != null) {
       helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }

@@ -57,7 +57,7 @@ public class AzureSlotSwapMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotSwap state = (AzureWebAppSlotSwap) getState(graphNode);
     AzureWebAppSwapSlotStepNode stepNode = new AzureWebAppSwapSlotStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     AzureWebAppSwapSlotStepInfo stepInfo =
         AzureWebAppSwapSlotStepInfo.infoBuilder().targetSlot(getTargetSlot(context.getWorkflow(), graphNode)).build();
 

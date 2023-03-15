@@ -164,7 +164,8 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       if (isNotEmpty(armInfrastructureProvisioner.getTemplateBody())) {
         byte[] fileContent = armInfrastructureProvisioner.getTemplateBody().getBytes(StandardCharsets.UTF_8);
         NGYamlFile yamlConfigFile = getYamlConfigFile(inputDTO, fileContent,
-            generateFileIdentifier("infraProvisioners/" + armInfrastructureProvisioner.getName()));
+            generateFileIdentifier(
+                "infraProvisioners/" + armInfrastructureProvisioner.getName(), inputDTO.getIdentifierCaseFormat()));
         if (null != yamlConfigFile) {
           result.add(yamlConfigFile);
         }

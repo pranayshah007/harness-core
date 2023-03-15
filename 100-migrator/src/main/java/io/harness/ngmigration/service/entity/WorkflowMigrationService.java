@@ -220,7 +220,8 @@ public class WorkflowMigrationService extends NgMigrationService {
     }
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, workflow.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
@@ -267,7 +268,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     if (templateType == TemplateEntityType.PIPELINE_TEMPLATE) {
       List<StageElementWrapperConfig> stages;
       try {
-        stages = workflowHandler.asStages(entities, migratedEntities, workflow);
+        stages = workflowHandler.asStages(entities, migratedEntities, workflow, inputDTO.getIdentifierCaseFormat());
       } catch (Exception e) {
         return YamlGenerationDetails.builder()
             .yamlFileList(files)
@@ -293,7 +294,8 @@ public class WorkflowMigrationService extends NgMigrationService {
     } else {
       JsonNode templateSpec;
       try {
-        templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
+        templateSpec =
+            workflowHandler.getTemplateSpec(entities, migratedEntities, workflow, inputDTO.getIdentifierCaseFormat());
       } catch (Exception e) {
         log.error("Exception during migrating workflow ", e);
         return YamlGenerationDetails.builder()

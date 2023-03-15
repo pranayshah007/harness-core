@@ -50,7 +50,7 @@ public class TerragruntDestroyStepMapperImpl extends BaseTerragruntProvisionerMa
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     TerragruntDestroyState state = (TerragruntDestroyState) getState(graphNode);
     TerragruntDestroyStepNode terragruntDestroyStepNode = new TerragruntDestroyStepNode();
-    baseSetup(graphNode, terragruntDestroyStepNode);
+    baseSetup(graphNode, terragruntDestroyStepNode, context.getIdentifierCaseFormat());
 
     TerragruntStepConfiguration stepConfiguration = new TerragruntStepConfiguration();
     if ((Boolean) graphNode.getProperties().getOrDefault("inheritFromLast", false)) {

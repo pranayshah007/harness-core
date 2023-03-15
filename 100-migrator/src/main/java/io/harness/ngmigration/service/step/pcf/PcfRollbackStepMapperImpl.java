@@ -53,7 +53,7 @@ public class PcfRollbackStepMapperImpl extends PcfAbstractStepMapper {
     Workflow workflow = context.getWorkflow();
     if (workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType() != OrchestrationWorkflowType.BLUE_GREEN) {
       TasRollbackStepNode tasRollbackStepNode = new TasRollbackStepNode();
-      baseSetup(state, tasRollbackStepNode);
+      baseSetup(state, tasRollbackStepNode, context.getIdentifierCaseFormat());
 
       TasRollbackStepInfo tasRollbackStepInfo = TasRollbackStepInfo.infoBuilder().build();
       tasRollbackStepNode.setTasRollbackStepInfo(tasRollbackStepInfo);

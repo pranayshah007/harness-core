@@ -19,6 +19,7 @@ import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -123,7 +124,8 @@ public abstract class StepMapper {
     templateLinkConfig.setTemplateInputs(templateInputs);
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
-    templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
+    templateStepNode.setIdentifier(
+        MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()));
     templateStepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     templateStepNode.setDescription(getDescription(graphNode));
     templateStepNode.setTemplate(templateLinkConfig);
@@ -163,8 +165,8 @@ public abstract class StepMapper {
     return CollectionUtils.emptyIfNull(stepYaml.getProperties());
   }
 
-  public void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
-    stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
+  public void baseSetup(GraphNode graphNode, AbstractStepNode stepNode, CaseFormat caseFormat) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName(), caseFormat));
     stepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     stepNode.setDescription(getDescription(graphNode));
     if (stepNode instanceof PmsAbstractStepNode) {
@@ -177,8 +179,8 @@ public abstract class StepMapper {
     }
   }
 
-  public void baseSetup(State state, AbstractStepNode stepNode) {
-    stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
+  public void baseSetup(State state, AbstractStepNode stepNode, CaseFormat caseFormat) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName(), caseFormat));
     stepNode.setName(MigratorUtility.generateName(state.getName()));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
@@ -22,16 +23,9 @@ import java.util.Map;
 public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   @Inject RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
 
-  //  .failureStrategies(Collections.singletonList(
-  //      FailureStrategyConfig.builder()
-  //                        .onFailure(OnFailureConfig.builder()
-  //                                       .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
-  //      .action(StageRollbackFailureActionConfig.builder().build())
-  //      .build())
-  //      .build()))
-
-  public JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public JsonNode getTemplateSpec(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      Workflow workflow, CaseFormat caseFormat) {
+    return getDeploymentStageTemplateSpec(
+        WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow, caseFormat));
   }
 }

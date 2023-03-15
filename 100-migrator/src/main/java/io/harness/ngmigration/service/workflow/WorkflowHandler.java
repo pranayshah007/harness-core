@@ -32,6 +32,7 @@ import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -221,13 +222,13 @@ public abstract class WorkflowHandler {
         true, false, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
-  public List<StageElementWrapperConfig> asStages(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+  public List<StageElementWrapperConfig> asStages(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, CaseFormat caseFormat) {
     throw new NotImplementedException("Getting stages is only supported for multi service workflows right now");
   }
 
-  public abstract JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow);
+  public abstract JsonNode getTemplateSpec(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, CaseFormat caseFormat);
 
   List<WorkflowPhase> getPhases(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
@@ -361,7 +362,8 @@ public abstract class WorkflowHandler {
     // Handle Wait Interval
     Integer waitInterval = phaseStep.getWaitInterval();
     if (waitInterval != null && waitInterval > 0) {
-      WaitStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", waitInterval, false);
+      WaitStepNode waitStepNode =
+          MigratorUtility.getWaitStepNode("Wait", waitInterval, false, context.getIdentifierCaseFormat());
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       allSteps.add(waitStep);
@@ -369,14 +371,15 @@ public abstract class WorkflowHandler {
     allSteps.addAll(steps);
 
     return ExecutionWrapperConfig.builder()
-        .stepGroup(JsonPipelineUtils.asTree(StepGroupElementConfig.builder()
-                                                .identifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
-                                                .name(MigratorUtility.generateName(phaseStep.getName()))
-                                                .steps(allSteps)
-                                                .skipCondition(null)
-                                                .when(ParameterField.createValueField(when))
-                                                .failureStrategies(null)
-                                                .build()))
+        .stepGroup(JsonPipelineUtils.asTree(
+            StepGroupElementConfig.builder()
+                .identifier(MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                .name(MigratorUtility.generateName(phaseStep.getName()))
+                .steps(allSteps)
+                .skipCondition(null)
+                .when(ParameterField.createValueField(when))
+                .failureStrategies(null)
+                .build()))
         .build();
   }
 
@@ -386,7 +389,8 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), phaseStep,
-        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors()));
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()),
+        context.getIdentifierCaseFormat());
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -419,12 +423,14 @@ public abstract class WorkflowHandler {
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
       GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    Map<String, Object> expressions = MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors());
+    Map<String, Object> expressions =
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
     if (StringUtils.isNotBlank(skipCondition)) {
-      skipCondition = (String) MigratorExpressionUtils.render(
-          context.getEntities(), context.getMigratedEntities(), skipCondition, expressions);
+      skipCondition = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
+          skipCondition, expressions, context.getIdentifierCaseFormat());
     }
-    MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), step, expressions);
+    MigratorExpressionUtils.render(
+        context.getEntities(), context.getMigratedEntities(), step, expressions, context.getIdentifierCaseFormat());
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
@@ -450,6 +456,17 @@ public abstract class WorkflowHandler {
               .build()));
     }
     return JsonPipelineUtils.asTree(stepNode);
+  }
+
+  private Map<String, Object> getExpressions(
+      WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    Map<String, Object> expressions = new HashMap<>();
+
+    for (StepExpressionFunctor functor : functors) {
+      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      expressions.put(functor.getCgExpression(), functor);
+    }
+    return expressions;
   }
 
   public static ParameterField<String> wrapNot(String condition) {
@@ -496,13 +513,14 @@ public abstract class WorkflowHandler {
       return null;
     }
     List<ExecutionWrapperConfig> rollbackSteps = getStepGroups(context, rollbackPhase);
-    return getDeploymentStageConfig(serviceDefinitionType, stepGroups, rollbackSteps);
+    return getDeploymentStageConfig(
+        serviceDefinitionType, stepGroups, rollbackSteps, context.getIdentifierCaseFormat());
   }
 
   DeploymentStageConfig getDeploymentStageConfig(ServiceDefinitionType serviceDefinitionType,
-      List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps) {
+      List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps, CaseFormat caseFormat) {
     if (EmptyPredicate.isEmpty(steps)) {
-      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true, caseFormat);
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       steps = Collections.singletonList(waitStep);
@@ -526,7 +544,8 @@ public abstract class WorkflowHandler {
 
   DeploymentStageConfig getDeploymentStageConfig(WorkflowMigrationContext context, List<ExecutionWrapperConfig> steps,
       List<ExecutionWrapperConfig> rollbackSteps) {
-    return getDeploymentStageConfig(inferServiceDefinitionType(context), steps, rollbackSteps);
+    return getDeploymentStageConfig(
+        inferServiceDefinitionType(context), steps, rollbackSteps, context.getIdentifierCaseFormat());
   }
 
   public static ParameterField<List<FailureStrategyConfig>> getDefaultFailureStrategy() {
@@ -591,7 +610,8 @@ public abstract class WorkflowHandler {
     List<ExecutionWrapperConfig> steps = getSteps(context, phases);
 
     if (EmptyPredicate.isEmpty(steps)) {
-      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      AbstractStepNode waitStepNode =
+          MigratorUtility.getWaitStepNode("Wait", 60, true, context.getIdentifierCaseFormat());
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       steps = Collections.singletonList(waitStep);
@@ -629,7 +649,8 @@ public abstract class WorkflowHandler {
             .build();
     CustomStageNode customStageNode = new CustomStageNode();
     customStageNode.setName(phase.getName());
-    customStageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
+    customStageNode.setIdentifier(
+        MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     customStageNode.setCustomStageConfig(customStageConfig);
     customStageNode.setFailureStrategies(getDefaultFailureStrategy());
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(customStageNode)).build();
@@ -644,7 +665,7 @@ public abstract class WorkflowHandler {
     }
     DeploymentStageNode stageNode = new DeploymentStageNode();
     stageNode.setName(phase.getName());
-    stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
+    stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()));
     stageNode.setDeploymentStageConfig(stageConfig);
     stageNode.setFailureStrategies(getDefaultFailureStrategy());
     if (EmptyPredicate.isNotEmpty(phase.getVariableOverrides())) {
@@ -779,7 +800,8 @@ public abstract class WorkflowHandler {
     // Note: If there are no stages in the generated template then we add a dummy stage which has a step that is always
     // skipped
     if (EmptyPredicate.isEmpty(stages)) {
-      AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true);
+      AbstractStepNode waitStepNode =
+          MigratorUtility.getWaitStepNode("Wait", 60, true, context.getIdentifierCaseFormat());
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
       CustomStageConfig customStageConfig =
@@ -788,7 +810,8 @@ public abstract class WorkflowHandler {
               .build();
       CustomStageNode customStageNode = new CustomStageNode();
       customStageNode.setName("Always Skipped");
-      customStageNode.setIdentifier(MigratorUtility.generateIdentifier("Always Skipped"));
+      customStageNode.setIdentifier(
+          MigratorUtility.generateIdentifier("Always Skipped", context.getIdentifierCaseFormat()));
       customStageNode.setCustomStageConfig(customStageConfig);
       customStageNode.setFailureStrategies(getDefaultFailureStrategy());
       stages.add(StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(customStageNode)).build());

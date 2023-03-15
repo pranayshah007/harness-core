@@ -70,7 +70,7 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
 
     if (state.isBlueGreen()) {
       TasBGAppSetupStepNode tasBGAppSetupStepNode = new TasBGAppSetupStepNode();
-      baseSetup(state, tasBGAppSetupStepNode);
+      baseSetup(state, tasBGAppSetupStepNode, context.getIdentifierCaseFormat());
 
       TasBGAppSetupStepInfo tasBGAppSetupStepInfo =
           TasBGAppSetupStepInfo.infoBuilder()
@@ -90,7 +90,7 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
       return tasBGAppSetupStepNode;
     } else {
       TasCanaryAppSetupStepNode tasCanaryAppSetupStepNode = new TasCanaryAppSetupStepNode();
-      baseSetup(state, tasCanaryAppSetupStepNode);
+      baseSetup(state, tasCanaryAppSetupStepNode, context.getIdentifierCaseFormat());
 
       TasCanaryAppSetupStepInfo tasCanaryAppSetupStepInfo =
           TasCanaryAppSetupStepInfo.infoBuilder()

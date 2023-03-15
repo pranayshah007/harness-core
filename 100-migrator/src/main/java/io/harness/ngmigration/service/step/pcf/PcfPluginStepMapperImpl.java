@@ -56,7 +56,7 @@ public class PcfPluginStepMapperImpl extends PcfAbstractStepMapper {
     PcfPluginState state = (PcfPluginState) getState(graphNode);
 
     TasCommandStepNode tasCommandStepNode = new TasCommandStepNode();
-    baseSetup(state, tasCommandStepNode);
+    baseSetup(state, tasCommandStepNode, context.getIdentifierCaseFormat());
 
     TasCommandStepInfo tasCommandStepInfo =
         TasCommandStepInfo.infoBuilder()

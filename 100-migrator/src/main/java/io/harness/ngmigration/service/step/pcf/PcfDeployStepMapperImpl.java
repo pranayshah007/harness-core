@@ -58,7 +58,7 @@ public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     PcfDeployState state = (PcfDeployState) getState(graphNode);
     TasAppResizeStepNode tasAppResizeStepNode = new TasAppResizeStepNode();
-    baseSetup(state, tasAppResizeStepNode);
+    baseSetup(state, tasAppResizeStepNode, context.getIdentifierCaseFormat());
     TasAppResizeStepInfo tasAppResizeStepInfo =
         TasAppResizeStepInfo.infoBuilder()
             .newAppInstances(getInstanceSelectionWrapper(state.getInstanceCount(), state.getInstanceUnitType()))

@@ -46,7 +46,7 @@ public class ResourceConstraintStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     ResourceConstraintState state = (ResourceConstraintState) getState(graphNode);
     QueueStepNode queueStepNode = new QueueStepNode();
-    baseSetup(graphNode, queueStepNode);
+    baseSetup(graphNode, queueStepNode, context.getIdentifierCaseFormat());
     QueueStepInfo queueStepInfo = new QueueStepInfo();
     queueStepInfo.setKey(MigratorUtility.RUNTIME_INPUT);
     queueStepInfo.setScope(getHoldingScope(state));

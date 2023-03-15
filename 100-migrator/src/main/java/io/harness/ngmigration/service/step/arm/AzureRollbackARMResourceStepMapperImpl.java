@@ -37,7 +37,7 @@ public class AzureRollbackARMResourceStepMapperImpl extends BaseAzureARMProvisio
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureARMRollbackStepNode azureARMRollbackStepNode = new AzureARMRollbackStepNode();
-    baseSetup(graphNode, azureARMRollbackStepNode);
+    baseSetup(graphNode, azureARMRollbackStepNode, context.getIdentifierCaseFormat());
 
     AzureARMRollbackStepInfo azureARMRollbackStepInfo = new AzureARMRollbackStepInfo();
     azureARMRollbackStepInfo.setProvisionerIdentifier(getProvisionerIdentifier());

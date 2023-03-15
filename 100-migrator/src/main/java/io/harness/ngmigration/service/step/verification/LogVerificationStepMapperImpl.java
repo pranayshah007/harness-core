@@ -30,7 +30,7 @@ public class LogVerificationStepMapperImpl extends VerificationBaseService {
 
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
-    return getVerifySpec(graphNode);
+    return getVerifySpec(graphNode, context.getIdentifierCaseFormat());
   }
 
   @Override

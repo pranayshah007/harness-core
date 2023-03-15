@@ -123,7 +123,8 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.CONFIG.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "StartupScriptSpec");
+    String identifier =
+        MigratorUtility.generateManifestIdentifier(prefix + "StartupScriptSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".sh";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.AMI_STARTUP_SCRIPT)

@@ -218,12 +218,14 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
 
     // Check if name has to cleaned up
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = "";
-    MigratorExpressionUtils.render(entities, migratedEntities, template, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        entities, migratedEntities, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
 
     // Converting service commands to Template object
     List<CommandUnit> commandUnits = template.getCommand().getCommandUnits();
@@ -257,7 +259,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
               .yaml(NGTemplateConfig.builder()
                         .templateInfoConfig(NGTemplateInfoConfig.builder()
                                                 .type(ngTemplateService.getTemplateEntityType())
-                                                .identifier(MigratorUtility.generateIdentifier(identifierSource))
+                                                .identifier(MigratorUtility.generateIdentifier(
+                                                    identifierSource, inputDTO.getIdentifierCaseFormat()))
                                                 .name(name)
                                                 .description(ParameterField.createValueField(description))
                                                 .projectIdentifier(projectIdentifier)
@@ -267,7 +270,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                                                 .build())
                         .build())
               .ngEntityDetail(NgEntityDetail.builder()
-                                  .identifier(MigratorUtility.generateIdentifier(identifierSource))
+                                  .identifier(MigratorUtility.generateIdentifier(
+                                      identifierSource, inputDTO.getIdentifierCaseFormat()))
                                   .orgIdentifier(orgIdentifier)
                                   .projectIdentifier(projectIdentifier)
                                   .build())

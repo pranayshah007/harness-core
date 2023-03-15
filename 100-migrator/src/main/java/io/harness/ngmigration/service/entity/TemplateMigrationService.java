@@ -158,12 +158,14 @@ public class TemplateMigrationService extends NgMigrationService {
     MigrationContext context = MigrationContext.newInstance(inputDTO, entities, graph, migratedEntities);
     Template template = (Template) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, template.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = StringUtils.isBlank(template.getDescription()) ? "" : template.getDescription();
-    MigratorExpressionUtils.render(entities, migratedEntities, template, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        entities, migratedEntities, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
     JsonNode spec = ngTemplateService.getNgTemplateConfigSpec(context, template, orgIdentifier, projectIdentifier);

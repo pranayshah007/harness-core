@@ -50,7 +50,7 @@ public class K8sApplyStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sApplyState state = (K8sApplyState) getState(graphNode);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
-    baseSetup(state, k8sApplyStepNode);
+    baseSetup(state, k8sApplyStepNode, context.getIdentifierCaseFormat());
     K8sApplyStepInfo k8sApplyStepInfo =
         K8sApplyStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
