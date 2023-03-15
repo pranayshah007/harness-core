@@ -15,7 +15,9 @@ import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.repositories.NamespaceRepository;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 public class NamespaceServiceImpl implements NamespaceService {
@@ -46,5 +48,13 @@ public class NamespaceServiceImpl implements NamespaceService {
     NamespaceEntity dataToInsert = NamespaceEntity.builder().accountIdentifier(accountId).build();
     NamespaceEntity insertedData = namespaceRepository.save(dataToInsert);
     return insertedData;
+  }
+  @Override
+  public List<String> getAccountIds()
+  {
+    List<NamespaceEntity> namespaceEntities=namespaceRepository.findAllByIsDeleted(false);
+    List<String> accountIdsList=namespaceEntities.stream().map(entity -> entity.getAccountIdentifier()).collect(Collectors.toList());
+    return accountIdsList;
+
   }
 }

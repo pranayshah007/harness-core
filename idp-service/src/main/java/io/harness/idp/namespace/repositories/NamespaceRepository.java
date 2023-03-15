@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
@@ -22,5 +23,8 @@ public interface NamespaceRepository extends CrudRepository<NamespaceEntity, Str
 
   Optional<NamespaceEntity> findById(String id);
 
+  List<NamespaceEntity> findAllByIsDeleted(boolean deleted);
+
   NamespaceEntity save(NamespaceEntity namespaceEntity);
+
 }
