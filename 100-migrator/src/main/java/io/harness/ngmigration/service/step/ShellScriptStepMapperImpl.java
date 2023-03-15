@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -33,6 +34,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Variable;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.ShellScriptTemplate;
@@ -236,11 +238,17 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         map.put(key, value);
       }
     }
+    Map<String, String> stepVariables = CollectionUtils.emptyIfNull(graphNode.getTemplateVariables())
+                                            .stream()
+                                            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
     if (envVars instanceof ArrayNode) {
       for (JsonNode env : envVars) {
         String key = env.get("name").asText();
         if (map.containsKey(key)) {
           ((ObjectNode) env).put("value", map.get(key));
+        }
+        if (stepVariables.containsKey(key)) {
+          ((ObjectNode) env).put("value", stepVariables.get(key));
         }
       }
     }
