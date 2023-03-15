@@ -47,7 +47,7 @@ public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(graphNode);
     K8sBGSwapServicesStepNode k8sBGSwapServicesStepNode = new K8sBGSwapServicesStepNode();
-    baseSetup(graphNode, k8sBGSwapServicesStepNode);
+    baseSetup(graphNode, k8sBGSwapServicesStepNode, context.getIdentifierCaseFormat());
     K8sBGSwapServicesStepInfo stepInfo = new K8sBGSwapServicesStepInfo();
 
     stepInfo.setBlueGreenSwapServicesStepFqn(state.getService2());

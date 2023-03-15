@@ -167,7 +167,8 @@ public class ConfigFileMigrationService extends NgMigrationService {
     String fileUsage = FileUsage.CONFIG.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + configFile.getRelativeFilePath());
+    String identifier = MigratorUtility.generateManifestIdentifier(
+        prefix + configFile.getRelativeFilePath(), inputDTO.getIdentifierCaseFormat());
     String name = identifier;
     if (MigratorUtility.endsWithIgnoreCase(identifier, "yaml", "yml")) {
       name = MigratorUtility.endsWithIgnoreCase(identifier, "yaml")

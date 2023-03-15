@@ -40,7 +40,7 @@ public class AsgRollingRollbackStepMapperImpl extends StepMapper {
     AwsAmiServiceRollback state = (AwsAmiServiceRollback) getState(graphNode);
 
     AsgRollingRollbackStepNode node = new AsgRollingRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     AsgRollingRollbackStepInfo rollbackStepInfo = AsgRollingRollbackStepInfo.infoBuilder().build();
 
     node.setAsgRollingRollbackStepInfo(rollbackStepInfo);
