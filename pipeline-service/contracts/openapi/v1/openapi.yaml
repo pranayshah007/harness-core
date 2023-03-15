@@ -496,7 +496,7 @@ paths:
       - $ref: '#/components/parameters/InputSetParam'
     post:
       summary: Move InputSet YAML from inline to remote or remote to inline
-      operationId: inputSetMoveConfig
+      operationId: inputSetsMoveConfig
       description: Creates a remote entity by fetching the input set YAML from Harness or an inline entity by fetching input set YAML from a remote repository.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
