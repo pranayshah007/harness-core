@@ -44,6 +44,7 @@ public class PlanNode {
   @NonFinal @lombok.Setter String executionInputTemplate;
   @Singular List<RefObject> refObjects;
 
+  // todo: deprecate adviserObtainments and slowly move plan creators to fill advisorObtainmentsForExecutionMode
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
   @Singular(value = "advisorObtainmentForExecutionMode")
