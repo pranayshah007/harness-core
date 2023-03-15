@@ -100,6 +100,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -112,6 +113,8 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineMigrationService extends NgMigrationService {
+  private static final Pattern VARIABLE_PATTERN = Pattern.compile("[a-zA-Z_]+\\w*");
+
   @Inject private PipelineService pipelineService;
   @Inject private WorkflowMigrationService workflowMigrationService;
   @Inject private TemplateResourceClient templateResourceClient;
@@ -240,7 +243,6 @@ public class PipelineMigrationService extends NgMigrationService {
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
     List<StageElementWrapperConfig> parallelStages = null;
     List<NGVariable> pipelineVariables = getPipelineVariables(pipeline, entities);
-    // <+pipeline.variables.hello2>
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
       if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
@@ -428,6 +430,7 @@ public class PipelineMigrationService extends NgMigrationService {
         .filter(entry -> !toSkip.contains(entry.getKey()))
         .map(entry -> entry.getValue().substring(2, entry.getValue().length() - 1))
         .distinct()
+        .filter(key -> VARIABLE_PATTERN.matcher(key).matches())
         .map(val -> StringNGVariable.builder().type(NGVariableType.STRING).name(val).value(RUNTIME_FIELD).build())
         .collect(Collectors.toList());
   }
@@ -525,7 +528,9 @@ public class PipelineMigrationService extends NgMigrationService {
           String value = workflowVariables.get(key);
           if (isExpression(value)) {
             String pipelineVar = value.substring(2, value.length() - 1);
-            ((ObjectNode) node).put("value", "<+pipeline.variables." + pipelineVar + ">");
+            if (VARIABLE_PATTERN.matcher(pipelineVar).matches()) {
+              ((ObjectNode) node).put("value", "<+pipeline.variables." + pipelineVar + ">");
+            }
           }
           if (!isExpression(value) && StringUtils.isNotBlank(value)) {
             ((ObjectNode) node).put("value", value);
