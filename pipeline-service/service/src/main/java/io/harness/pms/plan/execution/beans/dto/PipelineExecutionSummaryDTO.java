@@ -60,7 +60,6 @@ public class PipelineExecutionSummaryDTO {
 
   Map<String, LinkedHashMap<String, Object>> moduleInfo;
   Map<String, GraphLayoutNodeDTO> layoutNodeMap;
-  String firstRollbackStageGraphId;
   List<String> modules;
   String startingNodeId;
 
