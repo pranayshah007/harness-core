@@ -14,6 +14,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STACK_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.TEARDOWN;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.beans.ci.vm.steps.VmPluginStep.builder;
 
 import io.harness.beans.entities.Stack;
 import io.harness.beans.entities.StackVariables;
@@ -28,6 +29,7 @@ import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
 import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.ng.core.NGAccess;
@@ -166,6 +168,8 @@ public class IACMStepsUtils {
           command = "apply";
         }
         break;
+      default:
+        command = "";
     }
 
     Map<String, String> envVars = getStackVariables(ambiance, ngAccess.getOrgIdentifier(),
@@ -176,8 +180,8 @@ public class IACMStepsUtils {
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
 
-    VmPluginStep.VmPluginStepBuilder vmPluginStepBuilder =
-        VmPluginStep.builder()
+    VmPluginStepBuilder vmPluginStepBuilder =
+        builder()
             .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
             .envVariables(envVars)
             .timeoutSecs(timeout)
