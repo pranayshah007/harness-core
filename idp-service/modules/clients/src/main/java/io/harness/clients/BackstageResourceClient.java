@@ -10,6 +10,7 @@ package io.harness.clients;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
 import javax.validation.constraints.NotEmpty;
 import retrofit2.Call;
@@ -42,10 +43,10 @@ public interface BackstageResourceClient {
       @Header("Authorization") String authorization, @Path("accountIdentifier") String accountIdentifier);
 
   @POST(LAYOUT_API)
-  Call<Object> createLayout(
-      @Header("Authorization") String authorization, @Path("accountIdentifier") String accountIdentifier);
+  Call<Object> createLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
+      @Path("accountIdentifier") String accountIdentifier);
 
-  @DELETE(LAYOUT_API)
-  Call<Object> deleteLayout(
-      @Header("Authorization") String authorization, @Path("accountIdentifier") String accountIdentifier);
+  @HTTP(method = "DELETE", path = LAYOUT_API, hasBody = true)
+  Call<Object> deleteLayout(@Body LayoutRequest body, @Header("Authorization") String authorization,
+      @Path("accountIdentifier") String accountIdentifier);
 }
