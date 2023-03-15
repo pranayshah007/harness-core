@@ -386,7 +386,7 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), phaseStep,
-        getExpressions(phase, context.getStepExpressionFunctors()));
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors()));
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -419,7 +419,7 @@ public abstract class WorkflowHandler {
   JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
       GraphNode step, String skipCondition, boolean addLoopingStrategy) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    Map<String, Object> expressions = getExpressions(phase, context.getStepExpressionFunctors());
+    Map<String, Object> expressions = MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors());
     if (StringUtils.isNotBlank(skipCondition)) {
       skipCondition = (String) MigratorExpressionUtils.render(
           context.getEntities(), context.getMigratedEntities(), skipCondition, expressions);
@@ -429,7 +429,7 @@ public abstract class WorkflowHandler {
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);
     }
-    TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(context, step);
+    TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(context, phase, step);
     if (templateStepNode != null) {
       return JsonPipelineUtils.asTree(templateStepNode);
     }
@@ -450,16 +450,6 @@ public abstract class WorkflowHandler {
               .build()));
     }
     return JsonPipelineUtils.asTree(stepNode);
-  }
-
-  private Map<String, Object> getExpressions(WorkflowPhase phase, List<StepExpressionFunctor> functors) {
-    Map<String, Object> expressions = new HashMap<>();
-
-    for (StepExpressionFunctor functor : functors) {
-      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
-      expressions.put(functor.getCgExpression(), functor);
-    }
-    return expressions;
   }
 
   public static ParameterField<String> wrapNot(String condition) {

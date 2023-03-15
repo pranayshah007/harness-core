@@ -32,10 +32,10 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.*;
 import io.harness.encryption.SecretRefData;
-import io.harness.idp.gitintegration.implementation.AzureRepoConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.BitbucketConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.GithubConnectorProcessor;
-import io.harness.idp.gitintegration.implementation.GitlabConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.AzureRepoConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.BitbucketConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
+import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -127,7 +127,7 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValue);
 
     Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
-        githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+        githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(0).getDecryptedValue());
     assertEquals(TOKEN_SECRET_IDENTIFIER, response.getSecond().get(0).getSecretIdentifier());
@@ -178,7 +178,7 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValue);
 
     Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
-        gitlabConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+        gitlabConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(0).getDecryptedValue());
     assertEquals(TOKEN_SECRET_IDENTIFIER, response.getSecond().get(0).getSecretIdentifier());
@@ -232,7 +232,7 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValue);
 
     Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
-        bitbucketConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+        bitbucketConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(0).getDecryptedValue());
     assertEquals(PWD_SECRET_IDENTIFIER, response.getSecond().get(0).getSecretIdentifier());
@@ -286,7 +286,7 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValue);
 
     Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
-        azureRepoConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+        azureRepoConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(DECRYPTED_SECRET_VALUE, response.getSecond().get(0).getDecryptedValue());
     assertEquals(TOKEN_SECRET_IDENTIFIER, response.getSecond().get(0).getSecretIdentifier());
@@ -354,7 +354,7 @@ public class GitIntegrationServiceImplTest {
         .thenReturn(decryptedSecretValueToken);
 
     Pair<ConnectorInfoDTO, List<EnvironmentSecret>> response =
-        githubConnectorProcessor.getConnectorSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
+        githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, null, null, CONNECTOR_IDENTIFIER);
 
     assertEquals(GITHUB_APP_APPLICATION_ID, response.getSecond().get(0).getDecryptedValue());
     assertEquals(null, response.getSecond().get(0).getSecretIdentifier());

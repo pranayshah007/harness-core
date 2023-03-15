@@ -9,10 +9,15 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.BudgetGroup.BudgetGroupCreateEvent;
+import io.harness.ccm.audittrails.events.BudgetGroup.BudgetGroupDeleteEvent;
+import io.harness.ccm.audittrails.events.BudgetGroup.BudgetGroupUpdateEvent;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
@@ -22,11 +27,13 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -50,7 +57,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("budgetGroups")
 @Path("budgetGroups")
@@ -71,6 +81,10 @@ import org.springframework.stereotype.Service;
 public class BudgetGroupsResource {
   @Inject private BudgetGroupService budgetGroupService;
   @Inject private CCMRbacHelper rbacHelper;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private OutboxService outboxService;
+
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @POST
   @Timed
@@ -93,7 +107,13 @@ public class BudgetGroupsResource {
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Budget Group definition") @NotNull @Valid BudgetGroup budgetGroup) {
     rbacHelper.checkBudgetEditPermission(accountId, null, null, null);
-    return ResponseDTO.newResponse(budgetGroupService.save(budgetGroup));
+    String saveBudgetGroup = budgetGroupService.save(budgetGroup);
+    BudgetGroup budgetGroupSaved = budgetGroupService.get(saveBudgetGroup, accountId);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new BudgetGroupCreateEvent(accountId, budgetGroupSaved.toDTO()));
+          return saveBudgetGroup;
+        })));
   }
 
   @GET
@@ -162,8 +182,14 @@ public class BudgetGroupsResource {
           "id") String budgetGroupId,
       @RequestBody(required = true, description = "The Budget object") @NotNull @Valid BudgetGroup budgetGroup) {
     rbacHelper.checkBudgetEditPermission(accountId, null, null, null);
+    BudgetGroup oldBudgetGroup = budgetGroupService.get(budgetGroupId, accountId);
     budgetGroupService.update(budgetGroupId, accountId, budgetGroup);
-    return ResponseDTO.newResponse("Successfully updated the Budget group");
+    BudgetGroup updatedBudgetGroup = budgetGroupService.get(budgetGroupId, accountId);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new BudgetGroupUpdateEvent(accountId, updatedBudgetGroup.toDTO(), oldBudgetGroup.toDTO()));
+          return "Successfully updated the Budget group";
+        })));
   }
 
   @DELETE
@@ -187,7 +213,16 @@ public class BudgetGroupsResource {
       @NotNull @Valid @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetGroupId) {
     rbacHelper.checkBudgetDeletePermission(accountId, null, null, null);
-    return ResponseDTO.newResponse(budgetGroupService.delete(budgetGroupId, accountId));
+    BudgetGroup budgetGroup = budgetGroupService.get(budgetGroupId, accountId);
+    boolean isBudgetGroupDeleted = budgetGroupService.delete(budgetGroupId, accountId);
+    if (isBudgetGroupDeleted) {
+      return ResponseDTO.newResponse(
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            outboxService.save(new BudgetGroupDeleteEvent(accountId, budgetGroup.toDTO()));
+            return isBudgetGroupDeleted;
+          })));
+    }
+    return ResponseDTO.newResponse(isBudgetGroupDeleted);
   }
 
   @POST

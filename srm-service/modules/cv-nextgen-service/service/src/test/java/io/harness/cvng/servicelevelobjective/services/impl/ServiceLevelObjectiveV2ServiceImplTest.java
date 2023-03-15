@@ -2316,6 +2316,31 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                    .size())
         .isEqualTo(1);
   }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testNotGetNotificationRules_withDisabled() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(false)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationRules(serviceLevelObjective)
+                   .size())
+        .isEqualTo(0);
+  }
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {
     return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
   }

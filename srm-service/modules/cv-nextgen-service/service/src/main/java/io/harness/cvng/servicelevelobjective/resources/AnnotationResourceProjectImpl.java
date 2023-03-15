@@ -8,7 +8,6 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
-import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
 import static io.harness.cvng.core.services.CVNextGenConstants.ANNOTATION_PROJECT_PATH;
 
 import io.harness.annotations.ExposeInternalException;
@@ -19,11 +18,13 @@ import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.beans.params.ResourcePathParams;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.validation.Valid;
@@ -37,6 +38,8 @@ import javax.ws.rs.Produces;
 @ExposeInternalException
 @OwnedBy(HarnessTeam.CV)
 public class AnnotationResourceProjectImpl implements AnnotationResource {
+  @Inject AnnotationService annotationService;
+
   @Override
   @Timed
   @NextGenManagerAuth
@@ -45,7 +48,7 @@ public class AnnotationResourceProjectImpl implements AnnotationResource {
   public RestResponse<AnnotationResponse> saveAnnotation(
       @Valid ProjectPathParams projectPathParams, @NotNull @Valid AnnotationDTO annotationDTO) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
-    return new RestResponse<>(AnnotationResponse.builder().build());
+    return new RestResponse<>(annotationService.create(projectParams, annotationDTO));
   }
 
   @Override
@@ -55,8 +58,7 @@ public class AnnotationResourceProjectImpl implements AnnotationResource {
   @ApiOperation(value = "updates annotation message", nickname = "updateAnnotation")
   public RestResponse<AnnotationResponse> updateAnnotation(
       @Valid ResourcePathParams resourcePathParams, @NotNull @Valid AnnotationDTO annotationDTO) {
-    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
-    return new RestResponse<>(AnnotationResponse.builder().build());
+    return new RestResponse<>(annotationService.update(resourcePathParams.getIdentifier(), annotationDTO));
   }
 
   @Override
@@ -65,7 +67,6 @@ public class AnnotationResourceProjectImpl implements AnnotationResource {
   @ExceptionMetered
   @ApiOperation(value = "delete annotation", nickname = "deleteAnnotation")
   public RestResponse<Boolean> deleteAnnotation(@Valid ResourcePathParams resourcePathParams) {
-    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
-    return new RestResponse<>(true);
+    return new RestResponse<>(annotationService.delete(resourcePathParams.getIdentifier()));
   }
 }

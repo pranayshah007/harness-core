@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
+import static io.harness.ngmigration.utils.MigratorUtility.containsEcsTask;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 
 import static software.wings.api.DeploymentType.AMI;
@@ -155,7 +156,8 @@ public class ServiceMigrationService extends NgMigrationService {
     deploymentTypeSummary.forEach((key, value) -> {
       deploymentsSummary.put(key,
           TypeSummary.builder()
-              .status(ServiceV2Factory.getServiceV2Mapper(DeploymentType.valueOf(key)).isMigrationSupported()
+              .status(
+                  ServiceV2Factory.getServiceV2Mapper(DeploymentType.valueOf(key), null, false).isMigrationSupported()
                       ? SupportStatus.SUPPORTED
                       : SupportStatus.UNSUPPORTED)
               .count(value)
@@ -351,8 +353,9 @@ public class ServiceMigrationService extends NgMigrationService {
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
 
     ServiceDefinition serviceDefinition =
-        ServiceV2Factory.getService2Mapper(service).getServiceDefinition(inputDTO, entities, graph, service,
-            migratedEntities, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
+        ServiceV2Factory.getService2Mapper(service, containsEcsTask(taskDefs, entities))
+            .getServiceDefinition(inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList,
+                configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
           .skipDetails(Collections.singletonList(NGSkipDetail.builder()

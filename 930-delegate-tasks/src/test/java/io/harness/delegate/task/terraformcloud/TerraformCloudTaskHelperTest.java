@@ -343,7 +343,7 @@ public class TerraformCloudTaskHelperTest {
 
     verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
     verify(logCallback, times(1))
-        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.FAILURE);
+        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
   @Test
@@ -449,11 +449,30 @@ public class TerraformCloudTaskHelperTest {
   }
 
   private List<PolicyCheckData> getPolicyCheckData(boolean failed) {
+    PolicyCheckData.Attributes.Result result =
+        PolicyCheckData.Attributes.Result.builder()
+            .sentinel(
+                PolicyCheckData.Attributes.Result.Sentinel.builder()
+                    .data(Map.of("",
+                        PolicyCheckData.Attributes.Result.Sentinel.PolicyData.builder()
+                            .policies(List.of(
+                                PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.builder()
+                                    .result(true)
+                                    .policy(PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.Policy
+                                                .builder()
+                                                .enforcementLevel("advisory")
+                                                .name("policy1")
+                                                .build())
+                                    .build()))
+                            .build()))
+                    .build())
+            .build();
     List<PolicyCheckData> list = new ArrayList<>();
     PolicyCheckData policyCheckData = new PolicyCheckData();
     policyCheckData.setAttributes(PolicyCheckData.Attributes.builder()
                                       .status(failed ? "hard_failed" : "passed")
                                       .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                      .result(result)
                                       .build());
     policyCheckData.setId("id1");
     policyCheckData.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
@@ -462,6 +481,7 @@ public class TerraformCloudTaskHelperTest {
     policyCheckData2.setAttributes(PolicyCheckData.Attributes.builder()
                                        .status("passed")
                                        .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                       .result(result)
                                        .build());
     policyCheckData2.setId("id2");
     policyCheckData2.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
@@ -471,6 +491,7 @@ public class TerraformCloudTaskHelperTest {
         PolicyCheckData.Attributes.builder()
             .status("passed")
             .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(false).build())
+            .result(result)
             .build());
     policyCheckData3.setId("id3");
     policyCheckData3.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));

@@ -20,6 +20,7 @@ import io.harness.app.impl.IACMYamlSchemaServiceImpl;
 import io.harness.app.intfc.IACMYamlSchemaService;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -29,8 +30,6 @@ import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
-import io.harness.ci.license.CILicenseService;
-import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.ci.validation.CIAccountValidationService;
@@ -55,11 +54,13 @@ import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licence.impl.IACMLicenseServiceImpl;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -218,7 +219,7 @@ public class IACMManagerServiceModule extends AbstractModule {
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class); // same?
     bind(AwsClient.class).to(AwsClientImpl.class); // same?
     bind(CILicenseService.class)
-        .to(CILicenseServiceImpl.class)
+        .to(IACMLicenseServiceImpl.class)
         .in(Singleton.class); // Do we need our own implementation of this?
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     // Seems that is used to sanitize stuff but dunno what
@@ -258,7 +259,8 @@ public class IACMManagerServiceModule extends AbstractModule {
         iacmManagerConfiguration.getNgManagerServiceSecret(),
         IACM_MANAGER.getServiceId())); // token generation to communicate with NG manager
     install(PersistentLockModule.getInstance());
-
+    install(new OpaClientModule(iacmManagerConfiguration.getOpaClientConfig(),
+        iacmManagerConfiguration.getPolicyManagerSecret(), IACM_MANAGER.getServiceId()));
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {

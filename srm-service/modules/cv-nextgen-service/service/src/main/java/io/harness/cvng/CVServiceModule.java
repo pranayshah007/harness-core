@@ -354,6 +354,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator.ThresholdServiceLevelIndicatorUpdatableEntity;
+import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
@@ -367,6 +368,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorServ
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
+import io.harness.cvng.servicelevelobjective.services.impl.AnnotationServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLORecordServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.CompositeSLOServiceImpl;
 import io.harness.cvng.servicelevelobjective.services.impl.GraphDataServiceImpl;
@@ -928,6 +930,7 @@ public class CVServiceModule extends AbstractModule {
     bind(GraphDataService.class).to(GraphDataServiceImpl.class);
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
+    bind(AnnotationService.class).to(AnnotationServiceImpl.class);
     install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
 

@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
-import io.harness.idp.onboarding.OnboardingModuleConfig;
+import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;

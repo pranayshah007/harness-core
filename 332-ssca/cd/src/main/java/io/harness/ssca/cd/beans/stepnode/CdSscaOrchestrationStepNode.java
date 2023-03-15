@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode")
 public class CdSscaOrchestrationStepNode extends PmsAbstractStepNode {
   @JsonProperty("type")
-  CdSscaOrchestrationStepNode.StepType type = CdSscaOrchestrationStepNode.StepType.SscaOrchestration;
+  CdSscaOrchestrationStepNode.StepType type = CdSscaOrchestrationStepNode.StepType.CdSscaOrchestration;
 
   @NotNull
   @JsonProperty("spec")
@@ -46,7 +46,7 @@ public class CdSscaOrchestrationStepNode extends PmsAbstractStepNode {
 
   @Override
   public String getType() {
-    return CdSscaOrchestrationStepNode.StepType.SscaOrchestration.name;
+    return CdSscaOrchestrationStepNode.StepType.CdSscaOrchestration.name;
   }
 
   @Override
@@ -55,7 +55,7 @@ public class CdSscaOrchestrationStepNode extends PmsAbstractStepNode {
   }
 
   enum StepType {
-    SscaOrchestration(SscaConstants.CD_SSCA_ORCHESTRATION);
+    CdSscaOrchestration(SscaConstants.CD_SSCA_ORCHESTRATION);
     @Getter String name;
     StepType(String name) {
       this.name = name;

@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.syncstep;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -15,6 +14,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
@@ -43,7 +43,5 @@ public class SyncOptions {
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   public ParameterField<Boolean> replaceResources;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  public ParameterField<String> prunePropagationPolicy;
+  @JsonProperty("prunePropagationPolicy") PrunePropagationPolicy prunePropagationPolicy;
 }
