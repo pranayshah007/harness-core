@@ -3902,6 +3902,27 @@ http_archive(
 
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
+go_repository(
+    name = "com_github_jasonlvhit_gocron",
+    importpath = "github.com/jasonlvhit/gocron",
+    sum = "h1:qTt5qF3b3srDjeOIR4Le1LfeyvoYzJlYpqvG7tJX5YU=",
+    version = "v0.0.1",
+)
+
+go_repository(
+    name = "com_github_prashantv_gostub",
+    importpath = "github.com/prashantv/gostub",
+    sum = "h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4g=",
+    version = "v1.1.0",
+)
+
+go_repository(
+    name = "org_uber_go_automaxprocs",
+    importpath = "go.uber.org/automaxprocs",
+    sum = "h1:e1YG66Lrk73dn4qhg8WFSvhF0JuFQF0ERIp4rpuV8Qk=",
+    version = "v1.5.1",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4965,7 +4986,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.42-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.43-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",

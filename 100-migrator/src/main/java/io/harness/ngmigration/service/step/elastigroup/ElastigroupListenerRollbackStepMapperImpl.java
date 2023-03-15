@@ -40,7 +40,7 @@ public class ElastigroupListenerRollbackStepMapperImpl extends StepMapper {
     SpotInstListenerUpdateRollbackState state = (SpotInstListenerUpdateRollbackState) getState(graphNode);
 
     ElastigroupRollbackStepNode node = new ElastigroupRollbackStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupRollbackStepInfo rollbackStepInfo = ElastigroupRollbackStepInfo.infoBuilder().build();
 
     node.setElastigroupRollbackStepInfo(rollbackStepInfo);
@@ -49,8 +49,7 @@ public class ElastigroupListenerRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 
   @Override

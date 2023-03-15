@@ -76,8 +76,6 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Destroy");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);

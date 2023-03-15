@@ -86,7 +86,7 @@ public class CoreDelegateResource {
       final long timeout = delegateTaskPackage.getData().getTimeout();
 
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
-      final var taskDataBytes = kryoSerializer.asDeflatedBytes(delegateTaskPackage);
+      final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
       final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var pluginDesc =
@@ -100,7 +100,7 @@ public class CoreDelegateResource {
               .setRuntime(ExecutionEnvironment.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
-                              .setUses("us.gcr.io/gcr-play/delegate-plugin:k8s")
+                              .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
                               .setResource(ResourceRequirements.newBuilder()
                                                .setMemory("128Mi")
                                                .setCpu("0.1")
@@ -147,5 +147,16 @@ public class CoreDelegateResource {
                                          .build())
                         .build())
         .build();
+  }
+
+  private String getImage(final String taskType) {
+    switch (taskType) {
+      case "K8S_COMMAND_TASK_NG":
+        return "us.gcr.io/gcr-play/delegate-plugin:k8s";
+      case "SHELL_SCRIPT_TASK_NG":
+        return "us.gcr.io/gcr-play/delegate-plugin:shell";
+      default:
+        throw new UnsupportedOperationException("Unsupported task type " + taskType);
+    }
   }
 }

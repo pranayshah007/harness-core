@@ -18,7 +18,6 @@ import io.harness.aws.v2.lambda.AwsLambdaClient;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.lambda.AwsLambdaFunctionsInfraConfig;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
@@ -37,7 +36,6 @@ import software.wings.beans.LogWeight;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import java.util.Comparator;
 import java.util.Optional;
@@ -72,7 +70,7 @@ public class AwsLambdaPrepareRollbackTaskHandler {
     AwsLambdaPrepareRollbackRequest awsLambdaPrepareRollbackRequest =
         (AwsLambdaPrepareRollbackRequest) awsLambdaCommandRequest;
 
-    LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
+    LogCallback executionLogCallback = awsLambdaTaskHelper.getLogCallback(iLogStreamingTaskClient,
         AwsLambdaCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
 
     executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
@@ -129,7 +127,7 @@ public class AwsLambdaPrepareRollbackTaskHandler {
 
         GetFunctionResponse functionResponseLatest = fetchLatestFunctionResponseForLatestFuncVersion.get();
 
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        ObjectMapper mapper = awsLambdaTaskHelper.getObjectMapper();
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 

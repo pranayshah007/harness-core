@@ -16,9 +16,9 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.validation.CIAccountValidationServiceImpl;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;

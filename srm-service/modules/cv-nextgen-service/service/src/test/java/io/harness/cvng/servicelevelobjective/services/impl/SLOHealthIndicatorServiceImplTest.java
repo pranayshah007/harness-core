@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -36,6 +35,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -51,6 +51,8 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject SLIRecordService sliRecordService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject Clock clock;
 
   private BuilderFactory builderFactory;
   private String monitoredServiceIdentifier;
@@ -84,6 +86,36 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testupsert_insertSuccess_afterSLIUpdate() {
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    SLOHealthIndicator newSLOHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+
+    assertThat(newSLOHealthIndicator.getServiceLevelObjectiveIdentifier())
+        .isEqualTo(serviceLevelObjective.getIdentifier());
+    assertThat(newSLOHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+
+    String newMonitoredServiceIdentifier = "new_identifier";
+
+    serviceLevelObjective.setMonitoredServiceIdentifier(newMonitoredServiceIdentifier);
+    sloHealthIndicatorService.upsert(serviceLevelObjective);
+    newSLOHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+
+    assertThat(newSLOHealthIndicator.getServiceLevelObjectiveIdentifier())
+        .isEqualTo(serviceLevelObjective.getIdentifier());
+    assertThat(newSLOHealthIndicator.getMonitoredServiceIdentifier())
+        .isEqualTo(serviceLevelObjective.getMonitoredServiceIdentifier());
+    assertThat(newSLOHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testupsert_insertSuccess_withDummySLIRecords() {
     ProjectParams projectParams = builderFactory.getProjectParams();
     SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
@@ -92,8 +124,8 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     String sliIndicator =
         serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliId).getUuid();
-    insertDummySLIRecords(50, 50, CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minus(1, ChronoUnit.DAYS),
-        CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minus(10, ChronoUnit.MINUTES), sliIndicator, sliId, 0);
+    insertDummySLIRecords(50, 50, clock.instant().minus(1, ChronoUnit.DAYS),
+        clock.instant().minus(10, ChronoUnit.MINUTES), sliIndicator, sliId, 0);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     SLOHealthIndicator newSLOHealthIndicator =
         sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
@@ -135,8 +167,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   private List<SLIRecordParam> getSLIRecordParams(
       Instant startTime, List<SLIRecord.SLIState> sliStates, Duration increment) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
-    for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+    for (SLIRecord.SLIState sliState : sliStates) {
       sliRecordParams.add(SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(increment)).build());
     }
     return sliRecordParams;

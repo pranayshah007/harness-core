@@ -356,6 +356,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .branch(scmGetFileByBranchRequestDTO.getBranchName())
                     .commitId(null)
                     .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                    .getOnlyFileContent(scmGetFileByBranchRequestDTO.isGetOnlyFileContent())
                     .build()),
             scmConnector);
 

@@ -16,6 +16,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -24,9 +25,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
@@ -34,6 +38,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class RuntimeInputsValidator {
   private final String DUMMY_NODE = "dummy";
+  private static final String USE_FROM_STAGE_NODE = "useFromStage";
+  private static final String STAGE_NODE = "stage";
+  private static final String CHILD_SERVICE_REF_NODE = "service.serviceRef";
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
@@ -128,6 +135,14 @@ public class RuntimeInputsValidator {
               && skipValidationIfAbsentKeySet.stream().anyMatch(fqnExp::endsWith)) {
             continue;
           }
+          // This is to handle if sourceYaml has serviceRef as input but user choose useFromStage in nodeToRefresh
+          // ServiceInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
+          Optional<FQN> nodeFQNOneOfForService =
+              isNodeToValidationKeyIsOneOfForService(nodeToValidateFqnToValueMap, key);
+          if (nodeFQNOneOfForService.isPresent()) {
+            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForService.get());
+            continue;
+          }
           return false;
         }
         // remove the subMap from nodeToValidateFqnToValueMap
@@ -149,6 +164,21 @@ public class RuntimeInputsValidator {
     }
     nodeToValidateFqnToValueMap.keySet().removeAll(toRemoveKeySet);
     return !isNotEmpty(nodeToValidateFqnToValueMap);
+  }
+
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForService(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    if (key.getExpressionFqn().endsWith(CHILD_SERVICE_REF_NODE)) {
+      List<FQNNode> fqnList = new ArrayList<>(key.getParent().getFqnList());
+      FQNNode fqnNode1 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(USE_FROM_STAGE_NODE).build();
+      FQNNode fqnNode2 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(STAGE_NODE).build();
+      fqnList.add(fqnNode1);
+      fqnList.add(fqnNode2);
+      FQN useFromStageFQN = FQN.builder().fqnList(fqnList).build();
+      if (nodeToValidateFqnToValueMap.containsKey(useFromStageFQN)) {
+        return Optional.of(useFromStageFQN);
+      }
+    }
+    return Optional.empty();
   }
 
   private String convertToYaml(Object object) {

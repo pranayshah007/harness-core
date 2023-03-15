@@ -33,5 +33,3 @@ COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
 RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
 
 USER root
-RUN microdnf install -y yum \
-&& microdnf clean all

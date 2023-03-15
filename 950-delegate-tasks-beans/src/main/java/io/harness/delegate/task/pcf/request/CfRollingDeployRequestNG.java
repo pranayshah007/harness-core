@@ -44,7 +44,7 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
-  String applicationName;
+  @Expression(ALLOW_SECRETS) String applicationName;
   TasArtifactConfig tasArtifactConfig;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;

@@ -79,7 +79,8 @@ public class K8sCliClientTest extends CategoryTest {
     K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder().resourceIds(Collections.emptyList()).build();
     boolean result = k8sCliClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
-    verify(k8sClientHelper, times(0)).createKubernetesApiClient(any(K8sInfraDelegateConfig.class));
+    verify(k8sClientHelper, times(0))
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
   }
 
   @Test

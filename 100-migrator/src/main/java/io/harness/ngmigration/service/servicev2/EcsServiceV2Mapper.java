@@ -46,7 +46,8 @@ public class EcsServiceV2Mapper implements ServiceV2Mapper {
     if (EmptyPredicate.isNotEmpty(manifests)) {
       ecsServiceSpecBuilder.manifests(manifests);
     }
-    ecsServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    ecsServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     ecsServiceSpecBuilder.configFiles(configFiles);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.ECS)

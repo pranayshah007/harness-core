@@ -89,7 +89,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig);
+        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
 
     rollbackHandlerConfig = k8sRollingRollbackRequestHandler.getRollbackHandlerConfig();
     k8sRollingRollbackDeployRequest = K8sRollingRollbackDeployRequest.builder()

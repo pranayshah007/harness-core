@@ -18,6 +18,7 @@ import io.harness.ngmigration.dto.EntityMigratedStats;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.JsonUtils;
@@ -46,19 +47,20 @@ public class UsergroupImportService {
 
   @Inject private UserGroupService userGroupService;
 
-  public SaveSummaryDTO importUserGroups(String auth, String accountId) {
+  public SaveSummaryDTO importUserGroups(String auth, String accountId, CaseFormat identifierCaseFormat) {
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId);
 
-    List<UserGroupDTO> ngUserGroups = userGroups.stream()
-                                          .map(ug
-                                              -> UserGroupDTO.builder()
-                                                     .identifier(MigratorUtility.generateIdentifier(ug.getName()))
-                                                     .name(ug.getName())
-                                                     .description(ug.getDescription())
-                                                     .users(ug.getMemberIds())
-                                                     .accountIdentifier(accountId)
-                                                     .build())
-                                          .collect(Collectors.toList());
+    List<UserGroupDTO> ngUserGroups =
+        userGroups.stream()
+            .map(ug
+                -> UserGroupDTO.builder()
+                       .identifier(MigratorUtility.generateIdentifier(ug.getName(), identifierCaseFormat))
+                       .name(ug.getName())
+                       .description(ug.getDescription())
+                       .users(ug.getMemberIds())
+                       .accountIdentifier(accountId)
+                       .build())
+            .collect(Collectors.toList());
 
     NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
     List<MigrationImportSummaryDTO> summaryDTOS =

@@ -9,6 +9,7 @@ package io.harness.idp.status.resources;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.status.service.StatusInfoService;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
@@ -31,21 +32,33 @@ public class StatusInfoApiImpl implements StatusInfoApi {
 
   @Override
   public Response getStatusInfoByType(String type, String harnessAccount) {
-    Optional<StatusInfo> statusInfo = statusInfoService.findByAccountIdentifierAndType(harnessAccount, type);
-    StatusInfoResponse statusResponse = new StatusInfoResponse();
-    if (statusInfo.isEmpty()) {
-      log.warn("Could not fetch status for accountId: {} and type: {}", harnessAccount, type);
-      return Response.status(Response.Status.NOT_FOUND).build();
+    try {
+      Optional<StatusInfo> statusInfo = statusInfoService.findByAccountIdentifierAndType(harnessAccount, type);
+      StatusInfoResponse statusResponse = new StatusInfoResponse();
+      if (statusInfo.isEmpty()) {
+        log.warn("Could not fetch status for accountId: {} and type: {}", harnessAccount, type);
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+      statusResponse.setStatus(statusInfo.get());
+      return Response.status(Response.Status.OK).entity(statusResponse).build();
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     }
-    statusResponse.setStatus(statusInfo.get());
-    return Response.status(Response.Status.OK).entity(statusResponse).build();
   }
 
   @Override
   public Response saveStatusInfoByType(String type, @Valid StatusInfoRequest body, String harnessAccount) {
-    StatusInfo statusInfo = statusInfoService.save(body.getStatus(), harnessAccount, type);
-    StatusInfoResponse statusInfoResponse = new StatusInfoResponse();
-    statusInfoResponse.setStatus(statusInfo);
-    return Response.status(Response.Status.CREATED).entity(statusInfoResponse).build();
+    try {
+      StatusInfo statusInfo = statusInfoService.save(body.getStatus(), harnessAccount, type);
+      StatusInfoResponse statusInfoResponse = new StatusInfoResponse();
+      statusInfoResponse.setStatus(statusInfo);
+      return Response.status(Response.Status.CREATED).entity(statusInfoResponse).build();
+    } catch (Exception e) {
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }

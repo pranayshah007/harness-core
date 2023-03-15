@@ -20,6 +20,7 @@ import io.harness.repositories.FrozenExecutionRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -58,5 +59,11 @@ public class FrozenExecutionServiceImpl implements FrozenExecutionService {
       log.error("Exception occurred while saving frozen execution for account: {} planExecutionId: {}", accountId,
           planExecutionId, e);
     }
+  }
+
+  public Optional<FrozenExecution> getFrozenExecution(
+      String accountId, String orgId, String projectId, String planExecutionId) {
+    return frozenExecutionRepository.findByAccountIdAndOrgIdAndProjectIdAndPlanExecutionId(
+        accountId, orgId, projectId, planExecutionId);
   }
 }

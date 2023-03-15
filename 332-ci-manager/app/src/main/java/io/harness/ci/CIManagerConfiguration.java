@@ -117,6 +117,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private String managerTarget;
   private String managerAuthority;
   private CIExecutionServiceConfig ciExecutionServiceConfig;
+  private ServiceHttpClientConfig opaClientConfig;
+  private String policyManagerSecret;
 
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;

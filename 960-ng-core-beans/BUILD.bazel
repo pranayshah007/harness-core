@@ -18,6 +18,7 @@ java_library(
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/artifact:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/beans:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/customDeployment:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dashboard:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/delegate:module",

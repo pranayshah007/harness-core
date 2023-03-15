@@ -325,13 +325,6 @@ public interface NodeExecutionService {
    */
   boolean errorOutActiveNodes(String planExecutionId);
 
-  /**
-   * Make the timeoutInstanceId for given nodeExecutionId as empty
-   * @param nodeExecutionId
-   * @return
-   */
-  boolean removeTimeoutInstances(String nodeExecutionId);
-
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
 
@@ -346,4 +339,7 @@ public interface NodeExecutionService {
 
   // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId);
+
+  CloseableIterator<NodeExecution> fetchNodeExecutionsForGivenStageFQNs(
+      String planExecutionId, List<String> stageFQNs, Collection<String> requiredFields);
 }

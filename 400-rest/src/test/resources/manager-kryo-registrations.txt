@@ -2144,6 +2144,8 @@
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
+55440:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams
+55441:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
@@ -2300,6 +2302,8 @@
 97033:io.harness.helm.HelmCliCommandType
 97034:com.amazonaws.services.ec2.model.EnclaveOptions
 97035:io.harness.k8s.model.KubernetesResource
+97036:io.harness.exception.OciHelmDockerApiException
+97037:io.harness.exception.OpenShiftClientException
 97100:io.harness.manifest.CustomSourceConfig
 97101:io.harness.servicenow.ServiceNowActionNG
 97102:io.harness.servicenow.ServiceNowFieldAllowedValueNG
@@ -2893,18 +2897,38 @@
 673602:io.harness.delegate.task.gcp.response.GcsBucketListResponse
 673603:io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException
 673604:com.google.common.util.concurrent.UncheckedTimeoutException
-680000:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskParams
-680001:io.harness.delegate.beans.terraformcloud.TerraformCloudTaskType
+680000:io.harness.delegate.task.terraformcloud.request.TerraformCloudTaskParams
+680001:io.harness.delegate.task.terraformcloud.TerraformCloudTaskType
 680002:io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse
 680003:io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse
 680004:io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams
 680005:io.harness.delegate.task.terraformcloud.response.TerraformCloudOrganizationsTaskResponse
 680006:io.harness.delegate.task.terraformcloud.response.TerraformCloudWorkspacesTaskResponse
 680007:io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit
-680008:io.harness.delegate.beans.terraformcloud.PlanType
+680008:io.harness.delegate.task.terraformcloud.PlanType
 680009:io.harness.delegate.task.terraformcloud.response.TerraformCloudRunTaskResponse
-680010:io.harness.delegate.beans.terraformcloud.RollbackType
+680010:io.harness.delegate.task.terraformcloud.RollbackType
 680011:io.harness.delegate.task.terraformcloud.response.TerraformCloudRollbackTaskResponse
+680012:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskParams
+680013:io.harness.delegate.task.terraformcloud.cleanup.TerraformCloudCleanupTaskResponse
+680014:io.harness.delegate.task.terraformcloud.response.TerraformCloudRefreshTaskResponse
+680015:io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanOnlyTaskResponse
+680016:io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndApplyTaskResponse
+680017:io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanAndDestroyTaskResponse
+680018:io.harness.delegate.task.terraformcloud.response.TerraformCloudPlanTaskResponse
+680019:io.harness.delegate.task.terraformcloud.response.TerraformCloudApplyTaskResponse
+680020:io.harness.delegate.task.terraformcloud.response.TerraformCloudGetLastAppliedTaskResponse
+680021:io.harness.delegate.task.terraformcloud.request.TerraformCloudRefreshTaskParams
+680022:io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanOnlyTaskParams
+680023:io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndApplyTaskParams
+680024:io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanAndDestroyTaskParams
+680025:io.harness.delegate.task.terraformcloud.request.TerraformCloudPlanTaskParams
+680026:io.harness.delegate.task.terraformcloud.request.TerraformCloudApplyTaskParams
+680027:io.harness.delegate.task.terraformcloud.request.TerraformCloudGetLastAppliedTaskParams
+680028:io.harness.delegate.task.terraformcloud.request.TerraformCloudGetOrganizationsTaskParams
+680029:io.harness.delegate.task.terraformcloud.request.TerraformCloudGetWorkspacesTaskParams
+680030:io.harness.delegate.task.terraformcloud.request.TerraformCloudRollbackTaskParams
+680031:io.harness.delegate.task.terraformcloud.request.TerraformCloudValidationTaskParams
 873572:io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams
 873573:io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse
 873574:io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper
@@ -2926,6 +2950,7 @@
 930009:io.harness.licensing.LicenseStatus
 930010:io.harness.cd.CDLicenseType
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
+930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
 954001:io.harness.pms.contracts.advisers.AdviserObtainment
 955000:io.harness.beans.CommitDetails
 955001:io.harness.beans.Repository
@@ -3099,6 +3124,7 @@
 10000302:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialSpecDTO
 10000303:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudTokenCredentialsDTO
 10000304:io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType
+10000305:io.harness.exception.TerraformCloudException
 
 10000401:io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability
 
@@ -3122,4 +3148,9 @@
 10000513:io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest
 10000514:io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse
 10000515:io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse
-
+10000516:io.harness.delegate.task.aws.lambda.AwsLambdaNexusArtifactConfig
+10000517:io.harness.delegate.task.aws.lambda.AwsLambdaJenkinsArtifactConfig
+10000518:io.harness.delegate.task.aws.lambda.AwsLambdaArtifactoryArtifactConfig
+10000519:io.harness.delegate.task.aws.lambda.AwsLambdaCustomArtifactConfig
+10000520:io.harness.delegate.task.pcf.request.CfRouteMappingRequestNG
+10000521:io.harness.delegate.task.pcf.response.CfRouteMappingResponseNG

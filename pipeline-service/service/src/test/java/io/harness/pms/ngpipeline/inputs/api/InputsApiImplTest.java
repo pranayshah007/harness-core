@@ -45,7 +45,6 @@ public class InputsApiImplTest extends PipelineServiceTestBase {
   @Inject PMSInputsServiceImpl pmsInputsService;
   @Inject ObjectMapper objectMapper;
   @Mock PMSPipelineService pipelineService;
-
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
   private static final String PROJ_IDENTIFIER = "projId";

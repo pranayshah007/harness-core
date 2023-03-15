@@ -2378,18 +2378,18 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-            accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps);
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, null, isGitOps, false);
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
     return DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(activeServiceInstanceInfoList, isGitOps);
   }
 
   @Override
   public InstanceGroupedOnArtifactList getInstanceGroupedOnArtifactList(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String environmentId, String displayName) {
+      String projectIdentifier, String serviceId, String environmentId, String displayName, boolean filterOnArtifact) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList =
-        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-            accountIdentifier, orgIdentifier, projectIdentifier, environmentId, serviceId, displayName, isGitOps);
+        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
+            projectIdentifier, environmentId, serviceId, displayName, isGitOps, filterOnArtifact);
     DashboardServiceHelper.sortActiveServiceInstanceInfoWithEnvTypeList(activeServiceInstanceInfoList);
     return DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList, isGitOps);
   }
@@ -2774,13 +2774,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         return res[0];
       }
     }
-    return null;
+    return displayName;
   }
 
   private String getDisplayNameFromArtifact(String artifactPath, String buildId) {
-    if (EmptyPredicate.isEmpty(buildId)) {
-      return null;
-    }
     if (EmptyPredicate.isEmpty(artifactPath)) {
       return buildId;
     }
@@ -2800,7 +2797,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     DashboardServiceHelper.constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
@@ -2829,7 +2826,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, ArtifactDeploymentDetail>> artifactDeploymentDetailsMap =
         DashboardServiceHelper.constructArtifactToLastDeploymentMap(artifactDeploymentDetails, envIds);
 
-    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(
         accountIdentifier, orgIdentifier, projectIdentifier, envIds);
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();

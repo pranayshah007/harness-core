@@ -138,7 +138,7 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
   private List<ContainerDetailsRequest> populateContainerDetailsRequest(NativeHelmDeploymentReleaseData releaseData) {
     containerBaseHelper.decryptK8sInfraDelegateConfig(releaseData.getK8sInfraDelegateConfig());
     KubernetesConfig kubernetesConfig =
-        containerBaseHelper.createKubernetesConfig(releaseData.getK8sInfraDelegateConfig());
+        containerBaseHelper.createKubernetesConfig(releaseData.getK8sInfraDelegateConfig(), null);
     LinkedHashSet<String> namespaces = releaseData.getNamespaces();
     String releaseName = releaseData.getReleaseName();
     return namespaces.stream()

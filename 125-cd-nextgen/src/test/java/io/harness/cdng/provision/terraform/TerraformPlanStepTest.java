@@ -197,6 +197,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     TerraformPlanStepParameters planStepParameters =
         TerraformStepDataGenerator.generateStepPlanFile(StoreConfigType.GITHUB, gitStoreConfigFiles, gitStoreVarFiles);
 
+    planStepParameters.getConfiguration().skipTerraformRefresh.setValue(true);
+
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
                                     .gitAuthType(GitAuthType.HTTP)
                                     .gitConnectionType(GitConnectionType.ACCOUNT)
@@ -239,6 +241,7 @@ public class TerraformPlanStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.PLAN);
     assertThat(taskParameters.getPlanName()).isEqualTo("planName");
+    assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
   }
 
   @Test
@@ -310,6 +313,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.getEncryptionConfig()).isNull();
     assertThat(taskParameters.getWorkspace()).isNull();
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
+    assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
   }
 
   @Test

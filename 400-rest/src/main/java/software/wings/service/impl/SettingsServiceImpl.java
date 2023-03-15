@@ -497,7 +497,7 @@ public class SettingsServiceImpl implements SettingsService {
     UsageRestrictions restrictionsFromUserPermissions = restrictionsAndAppEnvMap.getUsageRestrictions();
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
-    Map<String, List<Base>> appIdEnvMap = envService.getAppIdEnvMap(appsByAccountId);
+    Map<String, List<Base>> appIdEnvMap = envService.getAppIdEnvMap(appsByAccountId, accountId);
 
     Set<SettingAttribute> helmRepoSettingAttributes = new HashSet<>();
     boolean isAccountAdmin;

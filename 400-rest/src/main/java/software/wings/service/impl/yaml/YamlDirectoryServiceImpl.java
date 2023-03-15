@@ -2910,6 +2910,8 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
       return SETUP_FOLDER;
     } else if (entity instanceof ApiKeyEntry) {
       return SETUP_FOLDER;
+    } else if (entity instanceof Account) {
+      return SETUP_FOLDER;
     }
     throw new InvalidRequestException(
         "Unhandled case while obtaining yaml entity root path for entity type " + entity.getClass().getSimpleName());

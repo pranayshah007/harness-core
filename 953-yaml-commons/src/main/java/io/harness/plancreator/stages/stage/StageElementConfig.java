@@ -98,7 +98,10 @@ public class StageElementConfig {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;

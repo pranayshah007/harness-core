@@ -186,7 +186,8 @@ public interface K8sConstants {
    */
   String HARNESS_KUBE_CONFIG_PATH = "HARNESS_KUBE_CONFIG_PATH";
 
-  String CANARY_WORKLOAD_SUFFIX_NAME = "-canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME = "canary";
+  String CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR = "-" + CANARY_WORKLOAD_SUFFIX_NAME;
 
   String KUBECFG_EXEC = "exec";
   String KUBECFG_API_VERSION = "apiVersion";
@@ -196,4 +197,7 @@ public interface K8sConstants {
   String KUBECFG_INTERACTIVE_MODE = "interactiveMode";
   String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
   String KUBECFG_INSTALL_HINT = "installHint";
+
+  String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
+  String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
 }

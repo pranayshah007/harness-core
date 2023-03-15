@@ -50,6 +50,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.expressions.step.TerraformStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -381,8 +382,8 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
         .build();
   }
 
-  protected AbstractStepNode getStepNode(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  protected AbstractStepNode getStepNode(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode, CaseFormat identifierCaseFormat) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
@@ -392,7 +393,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
                                            .terraformPlanExecutionData(executionData)
                                            .build();
       TerraformPlanStepNode planStepNode = new TerraformPlanStepNode();
-      baseSetup(graphNode, planStepNode);
+      baseSetup(graphNode, planStepNode, identifierCaseFormat);
       planStepNode.setTerraformPlanStepInfo(stepInfo);
       return planStepNode;
     } else {
@@ -405,7 +406,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
                                             .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
                                             .build();
       TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
-      baseSetup(graphNode, applyStepNode);
+      baseSetup(graphNode, applyStepNode, identifierCaseFormat);
       applyStepNode.setTerraformApplyStepInfo(stepInfo);
       return applyStepNode;
     }
@@ -419,9 +420,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(TerraformStepFunctor::new)

@@ -151,6 +151,13 @@ public class GitFileConfigHelperService {
       throw new InvalidRequestException("Invalid git connector provided.", USER);
     }
 
+    if (!(settingAttribute.getValue() instanceof GitConfig)) {
+      throw new InvalidRequestException(
+          String.format("Invalid git connector provided [connectorId=%s, name=%s, type=%s]",
+              gitFileConfig.getConnectorId(), settingAttribute.getName(), settingAttribute.getValue().getType()),
+          USER);
+    }
+
     GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
     if (GitConfig.UrlType.ACCOUNT == gitConfig.getUrlType() && isBlank(gitFileConfig.getRepoName())) {
       throw new InvalidRequestException("Repository name not provided for Account level git connector.", USER);

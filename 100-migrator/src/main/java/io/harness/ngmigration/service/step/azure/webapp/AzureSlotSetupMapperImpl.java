@@ -51,7 +51,7 @@ public class AzureSlotSetupMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotSetup state = (AzureWebAppSlotSetup) getState(graphNode);
     AzureWebAppSlotDeploymentStepNode stepNode = new AzureWebAppSlotDeploymentStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     AzureWebAppSlotDeploymentStepInfo stepInfo =
         AzureWebAppSlotDeploymentStepInfo.infoBuilder()
             .webApp(ParameterField.createValueField(state.getAppService()))

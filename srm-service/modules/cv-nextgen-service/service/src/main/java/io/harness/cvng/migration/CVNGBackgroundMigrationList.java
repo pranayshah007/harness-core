@@ -49,6 +49,7 @@ import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgno
 import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
+import io.harness.cvng.migration.list.UpdateELKCVConfigToNextGenCVConfig;
 import io.harness.cvng.migration.list.UpdateRiskIntToRiskEnum;
 import io.harness.cvng.migration.list.UpdateTagsInServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.WriteServiceLevelObjectivesToV2;
@@ -126,6 +127,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(55, DeleteActivitiesNotAssociatedWithMonitoredServices.class))
         .add(Pair.of(56, CVConfigPopulateUuidForThresholds.class))
         .add(Pair.of(57, UpdateTagsInServiceLevelObjectiveV2.class))
+        .add(Pair.of(58, UpdateELKCVConfigToNextGenCVConfig.class))
         .build();
   }
 }

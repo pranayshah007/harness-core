@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
@@ -23,13 +24,9 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
 
   @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(workflow1, workflow2);
-  }
-
-  @Override
-  public JsonNode getTemplateSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow));
+  public JsonNode getTemplateSpec(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      Workflow workflow, CaseFormat caseFormat) {
+    return getDeploymentStageTemplateSpec(
+        WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow, caseFormat));
   }
 }

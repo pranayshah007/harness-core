@@ -40,6 +40,7 @@ import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -214,6 +215,7 @@ public class CDStepHelper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
@@ -571,9 +573,10 @@ public class CDStepHelper {
   }
 
   public String getFileContentAsString(Ambiance ambiance, final String scopedFilePath, long allowedBytesFileSize) {
-    return fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
-        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
-        allowedBytesFileSize);
+    return cdExpressionResolver.renderExpression(ambiance,
+        fileStoreService.getFileContentAsString(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), scopedFilePath,
+            allowedBytesFileSize));
   }
 
   private static void validateReleaseName(String name) {
@@ -982,9 +985,14 @@ public class CDStepHelper {
     return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
-  @Nonnull
   public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(
       TaskRequest taskRequest, TaskData taskData, Set<String> taskSelectors) {
+    return mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, taskSelectors, "", false);
+  }
+
+  @Nonnull
+  public DelegateTaskRequest mapTaskRequestToDelegateTaskRequest(TaskRequest taskRequest, TaskData taskData,
+      Set<String> taskSelectors, String baseLogKey, boolean shouldSkipOpenStream) {
     final SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     return DelegateTaskRequest.builder()
         .taskParameters((TaskParameters) taskData.getParameters()[0])
@@ -1001,6 +1009,8 @@ public class CDStepHelper {
         .executeOnHarnessHostedDelegates(submitTaskRequest.getExecuteOnHarnessHostedDelegates())
         .emitEvent(submitTaskRequest.getEmitEvent())
         .stageId(submitTaskRequest.getStageId())
+        .baseLogKey(baseLogKey)
+        .shouldSkipOpenStream(shouldSkipOpenStream)
         .build();
   }
 }

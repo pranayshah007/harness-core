@@ -14,10 +14,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.connector.ConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
@@ -29,8 +30,10 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
@@ -39,9 +42,8 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities) {
     ArtifactoryArtifactStream artifactoryArtifactStream = (ArtifactoryArtifactStream) artifactStream;
-    NgEntityDetail connector =
-        migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(artifactoryArtifactStream.getSettingId()).build())
-            .getNgEntityDetail();
+    NGYamlFile connector =
+        migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(artifactoryArtifactStream.getSettingId()).build());
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .spec(docker.name().equals(artifactoryArtifactStream.getRepositoryType())
@@ -62,11 +64,21 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   }
 
   private ArtifactoryRegistryArtifactConfig generateDockerConfig(
-      ArtifactoryArtifactStream artifactStream, NgEntityDetail connector) {
+      ArtifactoryArtifactStream artifactStream, NGYamlFile connector) {
+    String repoUrl = artifactStream.getDockerRepositoryServer();
+    if (StringUtils.isBlank(repoUrl)) {
+      ConnectorDTO connectorDTO = (ConnectorDTO) connector.getYaml();
+      ArtifactoryConnectorDTO artifactoryConnectorDTO =
+          (ArtifactoryConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+      String url = artifactoryConnectorDTO.getArtifactoryServerUrl();
+      repoUrl = URI.create(url).getHost();
+    }
+
     return ArtifactoryRegistryArtifactConfig.builder()
-        .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
+        .connectorRef(
+            ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector.getNgEntityDetail())))
         .repository(ParameterField.createValueField(artifactStream.getJobname()))
-        .repositoryUrl(ParameterField.createValueField(artifactStream.getDockerRepositoryServer()))
+        .repositoryUrl(ParameterField.createValueField(repoUrl))
         .artifactPath(ParameterField.createValueField(artifactStream.getImageName()))
         .repositoryFormat(ParameterField.createValueField("docker"))
         .tag(ParameterField.createValueField("<+input>"))
@@ -74,9 +86,10 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   }
 
   private ArtifactoryRegistryArtifactConfig generateGeneticConfig(
-      ArtifactoryArtifactStream artifactStream, NgEntityDetail connector) {
+      ArtifactoryArtifactStream artifactStream, NGYamlFile connector) {
     return ArtifactoryRegistryArtifactConfig.builder()
-        .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
+        .connectorRef(
+            ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector.getNgEntityDetail())))
         .repository(ParameterField.createValueField(artifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField("generic"))
         .artifactDirectory(ParameterField.createValueField(artifactStream.getArtifactPattern()))

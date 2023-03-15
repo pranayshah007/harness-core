@@ -177,10 +177,8 @@ public class IdentityNodeExecutionStrategy
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
-        ops
-        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
-        NodeProjectionUtils.fieldsForExecutionStrategy);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()

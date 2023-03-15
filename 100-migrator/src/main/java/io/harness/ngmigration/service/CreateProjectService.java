@@ -55,7 +55,7 @@ public class CreateProjectService {
 
     List<ProjectCreateResultDTO> allResults = new ArrayList<>();
     for (Application app : apps) {
-      String identifier = MigratorUtility.generateIdentifier(app.getName());
+      String identifier = MigratorUtility.generateIdentifier(app.getName(), createRequest.getIdentifierCaseFormat());
       String name = MigratorUtility.generateName(app.getName());
       Response<ResponseDTO<ProjectResponse>> resp =
           ngClient

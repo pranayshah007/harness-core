@@ -217,9 +217,11 @@ public class InfraMigrationService extends NgMigrationService {
   public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(entities, migratedEntities, infra, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(
+        entities, migratedEntities, infra, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
@@ -230,7 +232,8 @@ public class InfraMigrationService extends NgMigrationService {
                                        .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
                                        .collect(Collectors.toSet());
     List<ElastigroupConfiguration> elastigroupConfigurations =
-        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(
+            infraSpecIds, inputDTO, entities, migratedEntities);
 
     Infrastructure infraSpec =
         infraDefMapper.getSpec(inputDTO, infra, migratedEntities, entities, elastigroupConfigurations);

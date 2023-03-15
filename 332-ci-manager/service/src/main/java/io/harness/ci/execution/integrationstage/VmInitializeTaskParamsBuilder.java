@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -36,6 +37,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -44,13 +46,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.beans.yaml.extended.platform.V1.Arch;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.license.CILicenseService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
@@ -90,7 +90,14 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -213,6 +220,12 @@ public class VmInitializeTaskParamsBuilder {
 
     envVars.putAll(stoEnvVars);
     envVars.putAll(commonEnvVars);
+
+    Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
+    if (caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false)) {
+      Map<String, String> cacheEnvVars = vmInitializeUtils.getCacheEnvironmentVariable();
+      envVars.putAll(cacheEnvVars);
+    }
 
     // Order of precedence is Pipeline -> Stage -> Step
     // First pipeline variables will be put in the map, then stage and then step variables

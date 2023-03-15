@@ -29,6 +29,7 @@ import io.harness.filters.WithConnectorRef;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
 
 @OwnedBy(CDP)
 @JsonTypeInfo(use = NAME, property = "runType", include = EXTERNAL_PROPERTY, visible = true)
@@ -41,8 +42,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = TerraformCloudApplySpec.class, name = APPLY),
 })
 public abstract class TerraformCloudRunExecutionSpec implements WithConnectorRef {
-  public abstract TerraformCloudRunType getType();
-  public abstract TerraformCloudRunSpecParameters getSpecParams();
+  @ApiModelProperty(hidden = true) public abstract TerraformCloudRunType getType();
+  @ApiModelProperty(hidden = true) public abstract TerraformCloudRunSpecParameters getSpecParams();
   public void validateParams() {
     getSpecParams().validate();
   }

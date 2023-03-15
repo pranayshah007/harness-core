@@ -666,7 +666,7 @@ public class CIExecutionConfigService {
         return vmImageConfig.getArtifactoryUpload();
       case GIT_CLONE:
         return vmImageConfig.getGitClone();
-      case IACM_TERRAFORM_PLAN:
+      case IACM_TERRAFORM:
         return vmImageConfig.getIacmTerraform();
       case SSCA_ORCHESTRATION:
         return vmImageConfig.getSscaOrchestration();

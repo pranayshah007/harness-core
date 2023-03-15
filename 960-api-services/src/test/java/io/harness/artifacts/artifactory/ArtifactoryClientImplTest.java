@@ -180,7 +180,7 @@ public class ArtifactoryClientImplTest {
                                   + "}")));
 
     List<BuildDetailsInternal> response = artifactoryClient.getArtifactsDetails(
-        artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000);
+        artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name());
 
     assertThat(response.size()).isEqualTo(4);
     List<String> dockerPullCommands =
@@ -210,7 +210,7 @@ public class ArtifactoryClientImplTest {
 
     assertThatThrownBy(()
                            -> artifactoryClient.getArtifactsDetails(
-                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name()))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
@@ -245,7 +245,7 @@ public class ArtifactoryClientImplTest {
 
     assertThatThrownBy(()
                            -> artifactoryClient.getArtifactsDetails(
-                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name()))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class);
@@ -278,7 +278,7 @@ public class ArtifactoryClientImplTest {
 
     assertThatThrownBy(()
                            -> artifactoryClient.getArtifactsDetails(
-                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name()))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)

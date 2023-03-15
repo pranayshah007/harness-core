@@ -14,19 +14,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -52,7 +48,6 @@ import org.slf4j.LoggerFactory;
 public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
   @Mock private ExecutorService executorService;
   @Mock private TimeoutEngine timeoutEngine;
-  @Mock private NodeExecutionService nodeExecutionService;
 
   @Inject @InjectMocks private TimeoutInstanceRemover timeoutInstanceRemover;
 
@@ -65,7 +60,7 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
 
     timeoutInstanceRemover.onNodeStatusUpdate(nodeUpdateInfo);
 
-    verifyZeroInteractions(timeoutEngine, nodeExecutionService);
+    verifyZeroInteractions(timeoutEngine);
   }
 
   @Test
@@ -77,7 +72,7 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
 
     timeoutInstanceRemover.onNodeStatusUpdate(nodeUpdateInfo);
 
-    verifyZeroInteractions(timeoutEngine, nodeExecutionService);
+    verifyZeroInteractions(timeoutEngine);
   }
 
   @Test
@@ -94,7 +89,6 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
 
     doNothing().when(timeoutEngine).deleteTimeouts(anyList());
-    when(nodeExecutionService.removeTimeoutInstances(anyString())).thenReturn(true);
 
     Logger logger = (Logger) LoggerFactory.getLogger(TimeoutInstanceRemover.class);
     ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
@@ -110,39 +104,6 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
             tuple(String.format("Timeout instances %s are removed successfully", timeoutInstanceIds), Level.INFO));
 
     verify(timeoutEngine).deleteTimeouts(any());
-    verify(nodeExecutionService).removeTimeoutInstances(any());
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestOnNodeStatusUpdateWithFalse() {
-    List<String> timeoutInstanceIds = ImmutableList.of(generateUuid());
-    NodeExecution nodeExecution = NodeExecution.builder()
-                                      .uuid(generateUuid())
-                                      .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
-                                      .status(Status.SUCCEEDED)
-                                      .timeoutInstanceIds(timeoutInstanceIds)
-                                      .build();
-    NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
-
-    doNothing().when(timeoutEngine).deleteTimeouts(anyList());
-    when(nodeExecutionService.removeTimeoutInstances(anyString())).thenReturn(false);
-
-    Logger logger = (Logger) LoggerFactory.getLogger(TimeoutInstanceRemover.class);
-    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-    listAppender.start();
-
-    logger.addAppender(listAppender);
-
-    timeoutInstanceRemover.onNodeStatusUpdate(nodeUpdateInfo);
-
-    assertThat(listAppender.list)
-        .extracting(ILoggingEvent::getFormattedMessage, ILoggingEvent::getLevel)
-        .containsExactly(tuple("Failed to delete timeout instances " + timeoutInstanceIds, Level.ERROR));
-
-    verify(timeoutEngine).deleteTimeouts(any());
-    verify(nodeExecutionService).removeTimeoutInstances(any());
   }
 
   @Test
@@ -159,7 +120,6 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
 
     doAnswer(invocation -> { throw new Exception(); }).when(timeoutEngine).deleteTimeouts(anyList());
-    when(nodeExecutionService.removeTimeoutInstances(anyString())).thenReturn(true);
 
     Logger logger = (Logger) LoggerFactory.getLogger(TimeoutInstanceRemover.class);
     ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
@@ -174,7 +134,6 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
         .containsExactly(tuple("Failed to delete timeout instances " + timeoutInstanceIds, Level.ERROR));
 
     verify(timeoutEngine).deleteTimeouts(any());
-    verify(nodeExecutionService, never()).removeTimeoutInstances(any());
   }
 
   @Test

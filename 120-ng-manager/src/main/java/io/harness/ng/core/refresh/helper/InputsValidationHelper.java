@@ -139,8 +139,16 @@ public class InputsValidationHelper {
   void validateServiceInputs(
       YamlNode entityNode, EntityRefreshContext context, InputsValidationResponse errorNodeSummary) {
     JsonNode serviceNode = entityNode.getCurrJsonNode();
-    String serviceRef = serviceNode.get(YamlTypes.SERVICE_REF).asText();
+    String serviceRef =
+        serviceNode.get(YamlTypes.SERVICE_REF) != null ? serviceNode.get(YamlTypes.SERVICE_REF).asText() : null;
     JsonNode serviceInputs = serviceNode.get(YamlTypes.SERVICE_INPUTS);
+    if (serviceNode.get(YamlTypes.SERVICE_REF) == null) {
+      if (serviceInputs != null) {
+        errorNodeSummary.setValid(false);
+      }
+      return;
+    }
+
     if (NGExpressionUtils.isRuntimeField(serviceRef)) {
       if (serviceInputs.isObject()
           || (serviceInputs.isValueNode() && !NGExpressionUtils.matchesInputSetPattern(serviceInputs.asText()))) {

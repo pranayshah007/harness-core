@@ -43,6 +43,10 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_WORK_DIR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.TI_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.TI_SERVICE_TOKEN_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_DIR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -559,6 +563,13 @@ public class K8InitializeTaskUtils {
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     envVars.put(HARNESS_LOG_PREFIX_VARIABLE, logPrefix);
+    return envVars;
+  }
+
+  public Map<String, String> getCacheEnvironmentVariable() {
+    Map<String, String> envVars = new HashMap<>();
+    envVars.put(GOLANG_CACHE_ENV_NAME, GOLANG_CACHE_DIR);
+    envVars.put(GRADLE_CACHE_ENV_NAME, GRADLE_CACHE_DIR);
     return envVars;
   }
 

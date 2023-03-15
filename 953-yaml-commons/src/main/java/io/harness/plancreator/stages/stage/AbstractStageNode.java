@@ -79,7 +79,11 @@ public abstract class AbstractStageNode {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
+  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
+  @VariableExpression(skipVariableExpression = true)
+  @JsonProperty("strategy")
+  ParameterField<StrategyConfig> strategy;
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();

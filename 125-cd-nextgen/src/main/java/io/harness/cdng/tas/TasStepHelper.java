@@ -745,7 +745,7 @@ public class TasStepHelper {
     }
   }
 
-  private ManifestsOutcome resolveManifestsOutcome(Ambiance ambiance) {
+  public ManifestsOutcome resolveManifestsOutcome(Ambiance ambiance) {
     OptionalOutcome manifestsOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
 
@@ -761,7 +761,7 @@ public class TasStepHelper {
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
-  private void filterManifestOutcomesByType(
+  public void filterManifestOutcomesByType(
       TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
       throw new InvalidRequestException("Manifests are mandatory for TAS step.", USER);

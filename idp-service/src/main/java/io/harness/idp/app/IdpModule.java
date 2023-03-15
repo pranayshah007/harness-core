@@ -14,12 +14,16 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.client.NgConnectorManagerClientModule;
+import io.harness.clients.BackstageResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
+import io.harness.git.GitClientV2;
+import io.harness.git.GitClientV2Impl;
 import io.harness.idp.config.service.AppConfigService;
 import io.harness.idp.config.service.AppConfigServiceImpl;
 import io.harness.idp.events.EventsFrameworkModule;
 import io.harness.idp.events.eventlisteners.eventhandler.EntityCrudStreamListener;
-import io.harness.idp.gitintegration.factory.ConnectorProcessorFactory;
+import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -28,10 +32,15 @@ import io.harness.idp.namespace.resource.AccountInfoApiImpl;
 import io.harness.idp.namespace.resource.NamespaceApiImpl;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.idp.namespace.service.NamespaceServiceImpl;
+import io.harness.idp.onboarding.config.OnboardingModuleConfig;
+import io.harness.idp.onboarding.resources.OnboardingResourceApiImpl;
+import io.harness.idp.onboarding.services.OnboardingService;
+import io.harness.idp.onboarding.services.impl.OnboardingServiceImpl;
 import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
+import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
 import io.harness.idp.secret.resources.EnvironmentSecretApiImpl;
 import io.harness.idp.secret.service.EnvironmentSecretService;
 import io.harness.idp.secret.service.EnvironmentSecretServiceImpl;
@@ -50,16 +59,22 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.organization.OrganizationClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
+import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
+import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
@@ -166,11 +181,21 @@ public class IdpModule extends AbstractModule {
     install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
-        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId(), ClientMode.PRIVILEGED));
     install(new TokenClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(AccessControlClientModule.getInstance(
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
+    install(
+        new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
+    install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new BackstageResourceClientModule(
+        appConfig.getBackstageHttpClientConfig(), appConfig.getBackstageServiceSecret(), IDP_SERVICE.getServiceId()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
@@ -199,6 +224,10 @@ public class IdpModule extends AbstractModule {
     bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
     bind(ProvisionApi.class).to(ProvisionApiImpl.class);
     bind(ProvisionService.class).to(ProvisionServiceImpl.class);
+    bind(OnboardingResourceApi.class).to(OnboardingResourceApiImpl.class);
+    bind(OnboardingService.class).to(OnboardingServiceImpl.class);
+    bind(GitClientV2.class).to(GitClientV2Impl.class);
+    bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
   }
 
   @Provides
@@ -209,6 +238,13 @@ public class IdpModule extends AbstractModule {
 
   private void registerRequiredBindings() {
     requireBinding(HPersistence.class);
+  }
+
+  @Provides
+  @Singleton
+  @Named("onboardingModuleConfig")
+  public OnboardingModuleConfig onboardingModuleConfig() {
+    return this.appConfig.getOnboardingModuleConfig();
   }
 
   @Provides
@@ -237,5 +273,12 @@ public class IdpModule extends AbstractModule {
   @Named(PROVISION_MODULE_CONFIG)
   public ProvisionModuleConfig provisionModuleConfig() {
     return this.appConfig.getProvisionModuleConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("backstageServiceSecret")
+  public String backstageServiceSecret() {
+    return this.appConfig.getBackstageServiceSecret();
   }
 }

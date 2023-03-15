@@ -53,7 +53,7 @@ public class CloudformationDeleteStepMapperImpl extends BaseCloudformationProvis
     CloudFormationDeleteStackState state = (CloudFormationDeleteStackState) getState(graphNode);
 
     CloudformationDeleteStackStepNode cloudformationDeleteStackStepNode = new CloudformationDeleteStackStepNode();
-    baseSetup(graphNode, cloudformationDeleteStackStepNode);
+    baseSetup(graphNode, cloudformationDeleteStackStepNode, context.getIdentifierCaseFormat());
 
     CloudformationDeleteStackStepInfo cloudformationDeleteStackStepInfo =
         CloudformationDeleteStackStepInfo.infoBuilder()

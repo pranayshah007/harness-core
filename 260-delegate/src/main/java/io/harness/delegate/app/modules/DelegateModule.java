@@ -336,6 +336,7 @@ import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
 import io.harness.delegate.task.helm.OciHelmConnectivityDelegateTask;
+import io.harness.delegate.task.helm.OciHelmDockerApiListTagsDelegateTask;
 import io.harness.delegate.task.helm.OciHelmValidationHandler;
 import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
 import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
@@ -415,6 +416,7 @@ import io.harness.delegate.task.tas.TasDataFetchTask;
 import io.harness.delegate.task.tas.TasRollbackTask;
 import io.harness.delegate.task.tas.TasRollingDeploymentTask;
 import io.harness.delegate.task.tas.TasRollingRollbackTask;
+import io.harness.delegate.task.tas.TasRouteMappingTask;
 import io.harness.delegate.task.tas.TasSwapRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -426,6 +428,7 @@ import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformApplyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformDestroyTaskHandler;
 import io.harness.delegate.task.terraform.handlers.TerraformPlanTaskHandler;
+import io.harness.delegate.task.terraformcloud.TerraformCloudCleanupTaskNG;
 import io.harness.delegate.task.terraformcloud.TerraformCloudTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntApplyTaskNG;
 import io.harness.delegate.task.terragrunt.TerragruntDestroyTaskNG;
@@ -491,8 +494,6 @@ import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesContainerServiceImpl;
 import io.harness.k8s.config.K8sGlobalConfigService;
-import io.harness.kustomize.KustomizeClient;
-import io.harness.kustomize.KustomizeClientImpl;
 import io.harness.manifest.CustomManifestService;
 import io.harness.manifest.CustomManifestServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;
@@ -1205,7 +1206,6 @@ public class DelegateModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(HelmClient.class).to(HelmClientImpl.class);
     bind(TerragruntClient.class).to(TerragruntClientImpl.class);
-    bind(KustomizeClient.class).to(KustomizeClientImpl.class);
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
     bind(HelmDeployService.class).to(HelmDeployServiceImpl.class);
     bind(ContainerDeploymentDelegateHelper.class);
@@ -2014,6 +2014,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V2).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V3).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2036,6 +2037,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
+    mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
+        .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
@@ -2171,6 +2175,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG)
         .toInstance(AwsLambdaPrepareRollbackTask.class);
     mapBinder.addBinding(TaskType.AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG).toInstance(AwsLambdaRollbackTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROUTE_MAPPING).toInstance(TasRouteMappingTask.class);
   }
 
   private void registerSecretManagementBindings() {

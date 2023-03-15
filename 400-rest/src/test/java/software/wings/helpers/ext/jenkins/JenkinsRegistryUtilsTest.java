@@ -501,6 +501,7 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
         .extracting("message")
         .isEqualTo("Failure in fetching environment variables for job ");
   }
+
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
@@ -556,8 +557,8 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
     mockStatic(JenkinsClient.class);
     PowerMockito.when(JenkinsClient.getJenkinsServer(any())).thenReturn(jenkinsServer);
     when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenThrow(IOException.class);
-    assertThatThrownBy(() -> jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234"))
-        .isInstanceOf(HintException.class);
+    String consoleLogs = jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234");
+    assertThat(consoleLogs).isNullOrEmpty();
   }
 
   @Test
@@ -570,7 +571,7 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
     mockStatic(JenkinsClient.class);
     PowerMockito.when(JenkinsClient.getJenkinsServer(any())).thenThrow(URISyntaxException.class);
     when(jenkinsServer.getJenkinsConsoleLogs(any(), any(), any())).thenReturn("test log");
-    assertThatThrownBy(() -> jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234"))
-        .isInstanceOf(HintException.class);
+    String consoleLogs = jenkinsRegistryUtils.getJenkinsConsoleLogs(jenkinsInternalConfigTest, "test", "1234");
+    assertThat(consoleLogs).isNullOrEmpty();
   }
 }

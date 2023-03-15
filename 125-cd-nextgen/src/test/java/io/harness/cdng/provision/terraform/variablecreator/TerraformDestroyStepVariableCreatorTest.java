@@ -60,6 +60,7 @@ public class TerraformDestroyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Destroy.timeout",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Destroy.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Destroy.description",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Destroy.spec.configuration.skipRefreshCommand",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Destroy.when");
   }
 }
