@@ -313,7 +313,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(sb.toString(), INFO);
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
-      String prTitle = (StringUtils.isEmpty(gitOpsTaskParams.getPrTitle())) ? PR_TITLE : gitOpsTaskParams.getPrTitle();
+      String prTitle = resolvePRTitle(gitOpsTaskParams);
 
       CreatePRResponse createPRResponse =
           createPullRequest(scmConnector, newBranch, baseBranch, prTitle, gitOpsTaskParams.getAccountId());
@@ -340,6 +340,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     }
+  }
+
+  public String resolvePRTitle(NGGitOpsTaskParams ngGitOpsTaskParams) {
+    return (StringUtils.isEmpty(ngGitOpsTaskParams.getPrTitle())) ? PR_TITLE : ngGitOpsTaskParams.getPrTitle();
   }
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
