@@ -220,8 +220,12 @@ func HandlePing(s stream.Stream) http.HandlerFunc {
 // the live stream.
 func HandleTail(s stream.Stream) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		accountID := r.FormValue(accountIDParam)
 		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		logger.FromRequest(r).WithField("key", r.FormValue(key)).
+			Infoln("api: Starting to tail stream")
 
 		h := w.Header()
 		h.Set("Content-Type", "text/event-stream")
