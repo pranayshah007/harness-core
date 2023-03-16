@@ -176,6 +176,7 @@ public class PipelineServiceConfiguration extends Configuration {
 
   private PipelineServiceIteratorsConfig iteratorsConfig;
   private boolean shouldDeployWithGitSync;
+  private boolean registerNotificationTemplates;
   private GitSdkConfiguration gitSdkConfiguration;
   private DelegatePollingConfig delegatePollingConfig;
   private ThreadPoolConfig

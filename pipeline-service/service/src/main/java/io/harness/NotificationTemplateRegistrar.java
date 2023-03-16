@@ -26,11 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NotificationTemplateRegistrar implements Runnable {
   @Inject NotificationClient notificationClient;
+  @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
 
   @Override
   public void run() {
     try {
-      int timout = 1;
+      int timeout = 1;
       List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.PIPELINE_PLAIN_SLACK,
           PredefinedTemplate.PIPELINE_PLAIN_EMAIL, PredefinedTemplate.PIPELINE_PLAIN_PAGERDUTY,
           PredefinedTemplate.PIPELINE_PLAIN_MSTEAMS, PredefinedTemplate.STAGE_PLAIN_SLACK,
@@ -43,7 +44,7 @@ public class NotificationTemplateRegistrar implements Runnable {
           PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL,
           PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS,
           PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS));
-      while (true) {
+      while (pipelineServiceConfiguration.isRegisterNotificationTemplates()) {
         List<PredefinedTemplate> unprocessedTemplate = new ArrayList<>();
         for (PredefinedTemplate template : templates) {
           log.info("Registering {} with NotificationService", template);
@@ -58,9 +59,9 @@ public class NotificationTemplateRegistrar implements Runnable {
           break;
         }
 
-        Thread.sleep(timout);
+        Thread.sleep(timeout);
 
-        timout *= 10;
+        timeout *= 10;
         templates = unprocessedTemplate;
       }
     } catch (InterruptedException e) {
