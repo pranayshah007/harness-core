@@ -28,6 +28,7 @@ import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
 import io.harness.cvng.core.entities.LogFeedbackHistoryEntity.LogFeedbackHistoryEntityBuilder;
 import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
 import io.harness.security.SecurityContextBuilder;
@@ -98,6 +99,8 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
 
   @Override
   public LogFeedback create(ProjectPathParams projectParams, LogFeedback logFeedback) {
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(logFeedback.getVerificationJobInstanceId());
     UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
     logFeedback = updateSampleMessage(projectParams, logFeedback);
     logFeedback = logFeedback.toBuilder()
@@ -111,8 +114,8 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .feedbackId(logFeedback.getFeedbackId())
             .sampleMessage(logFeedback.getSampleMessage())
             .description(logFeedback.getDescription())
-            .serviceIdentifier(logFeedback.getServiceIdentifier())
-            .environmentIdentifier(logFeedback.getEnvironmentIdentifier())
+            .serviceIdentifier(verificationJobInstance.getResolvedJob().getServiceIdentifier())
+            .environmentIdentifier(verificationJobInstance.getResolvedJob().getEnvIdentifier())
             .accountIdentifier(projectParams.getAccountIdentifier())
             .orgIdentifier(projectParams.getOrgIdentifier())
             .projectIdentifier(projectParams.getProjectIdentifier())
@@ -210,7 +213,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public List<LogFeedback> list(String envIdentifier, String serviceIdentifier) {
+  public List<LogFeedback> list(String serviceIdentifier, String envIdentifier) {
     List<LogFeedbackEntity> logFeedbackEntityList =
         hPersistence.createQuery(LogFeedbackEntity.class)
             .filter(LogFeedbackEntity.LogFeedbackKeys.serviceIdentifier, serviceIdentifier)

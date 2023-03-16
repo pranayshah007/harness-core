@@ -14,7 +14,6 @@ import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogFeedbackState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -33,7 +32,7 @@ public class DeploymentLogFeedbackStateExecutor extends LogAnalysisStateExecutor
   @Inject private LogAnalysisService logAnalysisService;
 
   @Override
-  public void handleFinalStatuses(DeploymentLogAnalysisState analysisState) {
+  public void handleFinalStatuses(DeploymentLogFeedbackState analysisState) {
     logAnalysisService.logDeploymentVerificationProgress(analysisState.getInputs(), analysisState.getStatus());
   }
 
