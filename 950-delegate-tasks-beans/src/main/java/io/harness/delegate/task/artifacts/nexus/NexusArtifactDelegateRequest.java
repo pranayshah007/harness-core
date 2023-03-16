@@ -57,6 +57,8 @@ public class NexusArtifactDelegateRequest implements ArtifactSourceDelegateReque
   ArtifactSourceType sourceType;
   /** Artifact Group Id.*/
   String groupId;
+  /** Artifact Id.*/
+  String artifactId;
   /** Artifact Name.*/
   String artifactName;
   /**
