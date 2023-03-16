@@ -8,8 +8,8 @@
 package io.harness.steps.common.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,9 +38,8 @@ import io.harness.tasks.ResponseData;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
-
 import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -49,8 +48,7 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
                                                .setType(OrchestrationStepTypes.PIPELINE_SECTION)
                                                .setStepCategory(StepCategory.PIPELINE)
                                                .build();
-  @Inject
-  InterruptService interruptService;
+  @Inject InterruptService interruptService;
 
   @Inject OrchestrationService orchestrationService;
 
@@ -61,40 +59,42 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
 
     PipelineStageInfo pipelineStageInfo = ambiance.getMetadata().getPipelineStageInfo();
 
-        // This is to handle edge case in Pipeline Chaining. Parent Pipeline is aborted but Child Pipeline was not started by then. This will abort the child pipeline if there is any abort registered in parent pipeline
-        if(pipelineStageInfo.getHasParentPipeline()){
-          List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(pipelineStageInfo.getExecutionId());
-          if(isNotEmpty(interrupts)){
-            handleAbort(ambiance);
-          }
-        }
+    // This is to handle edge case in Pipeline Chaining. Parent Pipeline is aborted but Child Pipeline was not started
+    // by then. This will abort the child pipeline if there is any abort registered in parent pipeline
+    if (pipelineStageInfo.getHasParentPipeline()) {
+      List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(pipelineStageInfo.getExecutionId());
+      if (isNotEmpty(interrupts)) {
+        handleAbort(ambiance);
+      }
+    }
     final String stagesNodeId = stepParameters.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(stagesNodeId).build();
   }
 
-    private void handleAbort(Ambiance ambiance) {
-      final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
-      InterruptConfig interruptConfig = InterruptConfig.newBuilder()
-              .setIssuedBy(IssuedBy.newBuilder()
-                      .setManualIssuer(ManualIssuer.newBuilder()
-                              .setType(principal.getType().toString())
-                              .setIdentifier(principal.getName())
-                              .setEmailId(PrincipalHelper.getEmail(principal))
-                              .setUserId(PrincipalHelper.getUsername(principal))
-                              .build())
-                      .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
-                      .build())
-              .build();
+  private void handleAbort(Ambiance ambiance) {
+    final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
+    InterruptConfig interruptConfig =
+        InterruptConfig.newBuilder()
+            .setIssuedBy(IssuedBy.newBuilder()
+                             .setManualIssuer(ManualIssuer.newBuilder()
+                                                  .setType(principal.getType().toString())
+                                                  .setIdentifier(principal.getName())
+                                                  .setEmailId(PrincipalHelper.getEmail(principal))
+                                                  .setUserId(PrincipalHelper.getUsername(principal))
+                                                  .build())
+                             .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
+                             .build())
+            .build();
 
-      InterruptPackage interruptPackage = InterruptPackage.builder()
-              .interruptType(InterruptType.ABORT_ALL)
-              .planExecutionId(ambiance.getPlanExecutionId())
-              .nodeExecutionId(null)
-              .interruptConfig(interruptConfig)
-              .metadata(Collections.emptyMap())
-              .build();
-      orchestrationService.registerInterrupt(interruptPackage);
-    }
+    InterruptPackage interruptPackage = InterruptPackage.builder()
+                                            .interruptType(InterruptType.ABORT_ALL)
+                                            .planExecutionId(ambiance.getPlanExecutionId())
+                                            .nodeExecutionId(null)
+                                            .interruptConfig(interruptConfig)
+                                            .metadata(Collections.emptyMap())
+                                            .build();
+    orchestrationService.registerInterrupt(interruptPackage);
+  }
 
   @Override
   public StepResponse handleChildResponse(
