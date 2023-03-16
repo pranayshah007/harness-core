@@ -71,7 +71,6 @@ import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -145,8 +144,7 @@ import org.springframework.transaction.support.TransactionTemplate;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-//@NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
 
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
