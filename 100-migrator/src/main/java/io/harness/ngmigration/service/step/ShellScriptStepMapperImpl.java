@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -104,12 +105,14 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
-    return defaultTemplateSpecMapper(context, phase, graphNode);
+  public TemplateStepNode getTemplateSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(migrationContext, context, phase, graphNode);
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
     baseSetup(graphNode, shellScriptStepNode, context.getIdentifierCaseFormat());
@@ -217,8 +220,8 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     return true;
   }
 
-  public void overrideTemplateInputs(WorkflowMigrationContext context, WorkflowPhase phase, GraphNode graphNode,
-      NGYamlFile templateFile, JsonNode templateInputs) {
+  public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
     JsonNode envVars = templateInputs.at("/spec/environmentVariables");
     CgEntityNode entityNode = context.getEntities().get(
         CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(templateFile.getCgBasicInfo().getId()).build());
@@ -231,8 +234,8 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     Map<String, String> map = new HashMap<>();
     for (String exp : expressions) {
       if (exp.contains(".")) {
-        String value = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
-            "${" + exp + "}", custom, context.getIdentifierCaseFormat());
+        String value = (String) MigratorExpressionUtils.render(
+            migrationContext, "${" + exp + "}", custom, context.getIdentifierCaseFormat());
         String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
         key = key.replace('.', '_');
         map.put(key, value);

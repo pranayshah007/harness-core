@@ -44,6 +44,7 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -306,19 +307,26 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    Service service = (Service) entities.get(entityId).getEntity();
-    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, service.getName());
-    String identifier = MigratorUtility.generateIdentifierDefaultName(
-        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
-    String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
-    String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    Service service = (Service) migrationContext.getEntities().get(entityId).getEntity();
+    String name =
+        MigratorUtility.generateName(migrationContext.getInputDTO().getOverrides(), entityId, service.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(migrationContext.getInputDTO().getOverrides(),
+        entityId, name, migrationContext.getInputDTO().getIdentifierCaseFormat());
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, migrationContext.getInputDTO());
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, migrationContext.getInputDTO());
 
-    MigratorExpressionUtils.render(
-        entities, migratedEntities, service, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
-    Set<CgEntityId> manifests =
-        graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
+    MigratorExpressionUtils.render(migrationContext, service, migrationContext.getInputDTO().getCustomExpressions(),
+        migrationContext.getInputDTO().getIdentifierCaseFormat());
+    Set<CgEntityId> manifests = migrationContext.getGraph()
+                                    .get(entityId)
+                                    .stream()
+                                    .filter(cgEntityId -> cgEntityId.getType() == MANIFEST)
+                                    .collect(Collectors.toSet());
     Set<CgEntityId> serviceDefs = graph.get(entityId)
                                       .stream()
                                       .filter(cgEntityId -> cgEntityId.getType() == ECS_SERVICE_SPEC)
@@ -332,7 +340,8 @@ public class ServiceMigrationService extends NgMigrationService {
                                             .filter(cgEntityId -> cgEntityId.getType() == AMI_STARTUP_SCRIPT)
                                             .collect(Collectors.toSet());
     Set<CgEntityId> configFileIds =
-        entities.values()
+        migrationContext.getEntities()
+            .values()
             .stream()
             .filter(entry -> CONFIG_FILE == entry.getType())
             .map(entry -> (ConfigFile) entry.getEntity())
@@ -341,23 +350,23 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
-    List<ManifestConfigWrapper> manifestConfigWrapperList = manifestMigrationService.getManifests(
-        manifests, inputDTO, entities, migratedEntities, service, inputDTO.getIdentifierCaseFormat());
+    List<ManifestConfigWrapper> manifestConfigWrapperList =
+        manifestMigrationService.getManifests(migrationContext, manifests, service, inputDTO.getIdentifierCaseFormat());
     List<ManifestConfigWrapper> ecsServiceSpecs =
-        ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities, migratedEntities);
-    List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(taskDefs, inputDTO, entities);
+        ecsServiceSpecMigrationService.getServiceSpec(migrationContext, serviceDefs);
+    List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(migrationContext, taskDefs);
     List<StartupScriptConfiguration> startupScriptConfigurations =
-        amiStartupScriptMigrationService.getStartupScriptConfiguration(startupScriptDefs, inputDTO, entities);
+        amiStartupScriptMigrationService.getStartupScriptConfiguration(migrationContext, startupScriptDefs);
     manifestConfigWrapperList.addAll(taskDefSpecs);
     manifestConfigWrapperList.addAll(ecsServiceSpecs);
 
     List<ConfigFileWrapper> configFileWrapperList =
-        configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
+        configFileMigrationService.getConfigFiles(migrationContext, configFileIds);
 
     ServiceDefinition serviceDefinition =
         ServiceV2Factory.getService2Mapper(service, containsEcsTask(taskDefs, entities))
-            .getServiceDefinition(inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList,
-                configFileWrapperList, startupScriptConfigurations);
+            .getServiceDefinition(migrationContext, service, manifestConfigWrapperList, configFileWrapperList,
+                startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
           .skipDetails(Collections.singletonList(NGSkipDetail.builder()

@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -72,7 +73,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -229,6 +229,7 @@ public class AppMigrationService extends NgMigrationService {
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(appService.get(entityId));
   }
+
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
@@ -250,7 +251,7 @@ public class AppMigrationService extends NgMigrationService {
           ImmutableMap.<String, String>builder()
               .put("valueType", "FIXED")
               .put("fixedValue",
-                  (String) MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(), value,
+                  (String) MigratorExpressionUtils.render(MigrationContext.builder().build(), value,
                       inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat()))
               .build();
       Map<String, Object> variable =
@@ -279,8 +280,9 @@ public class AppMigrationService extends NgMigrationService {
         .build();
   }
 
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     Application application = (Application) entities.get(entityId).getEntity();
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, application.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(

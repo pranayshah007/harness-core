@@ -94,8 +94,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
-      variables.addAll(
-          MigratorUtility.getVariables(template.getVariables(), context.getInputDTO().getIdentifierCaseFormat()));
+      variables.addAll(MigratorUtility.getVariables(context, template.getVariables()));
     }
 
     List<CommandUnitWrapper> commandUnitWrappers = sshCommandTemplate.getCommandUnits()
@@ -159,8 +158,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
       MigrationContext context, String name, ScriptType scriptType, String script, String workingDir) {
     ParameterField<String> directory =
         StringUtils.isBlank(workingDir) ? ParameterField.ofNull() : ParameterField.createValueField(workingDir);
-    script = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(), script,
-        new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
+    script = (String) MigratorExpressionUtils.render(
+        context, script, new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
@@ -233,8 +232,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                         .build())
                              .collect(Collectors.toList());
     }
-    String script = (String) MigratorExpressionUtils.render(context.getEntities(), context.getMigratedEntities(),
-        execCommandUnit.getCommandString(), new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
+    String script = (String) MigratorExpressionUtils.render(
+        context, execCommandUnit.getCommandString(), new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
 
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)

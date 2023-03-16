@@ -19,6 +19,7 @@ import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -88,7 +89,8 @@ public class ShellScriptProvisionerStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     ShellScriptProvisionState state = (ShellScriptProvisionState) getState(graphNode);
 
     ShellScriptProvisionStepNode node = new ShellScriptProvisionStepNode();

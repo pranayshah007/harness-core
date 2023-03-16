@@ -28,6 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -213,8 +214,10 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   @Override
-  public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(PIPELINE)
         && inputDTO.getDefaults().get(PIPELINE).isSkipMigration()) {
       return null;
@@ -230,8 +233,7 @@ public class PipelineMigrationService extends NgMigrationService {
           .build();
     }
 
-    MigratorExpressionUtils.render(
-        entities, migratedEntities, pipeline, new HashMap<>(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, pipeline, new HashMap<>(), inputDTO.getIdentifierCaseFormat());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, pipeline.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(
         inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
@@ -263,7 +265,7 @@ public class PipelineMigrationService extends NgMigrationService {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
             stage = buildWorkflowStage(
-                pipeline.getAccountId(), stageElement, entities, migratedEntities, inputDTO.getIdentifierCaseFormat());
+                migrationContext, pipeline.getAccountId(), stageElement, inputDTO.getIdentifierCaseFormat());
           }
         } else {
           stage = buildApprovalStage(stageElement, inputDTO.getIdentifierCaseFormat());
@@ -435,8 +437,11 @@ public class PipelineMigrationService extends NgMigrationService {
         .collect(Collectors.toList());
   }
 
-  private StageElementWrapperConfig buildWorkflowStage(String accountId, PipelineStageElement stageElement,
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, CaseFormat caseFormat) {
+  private StageElementWrapperConfig buildWorkflowStage(
+      MigrationContext migrationContext, String accountId, PipelineStageElement stageElement, CaseFormat caseFormat) {
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     // TODO: Handle Skip condition
     String workflowId = stageElement.getProperties().get("workflowId").toString();
     // Throw error if the stage is using canary or multi WFs.
@@ -513,8 +518,8 @@ public class PipelineMigrationService extends NgMigrationService {
         if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disableAssertion")) {
           String assertion = (String) properties.get("disableAssertion");
           if (StringUtils.isNotBlank(assertion)) {
-            assertion = (String) MigratorExpressionUtils.render(
-                entities, migratedEntities, assertion, new HashMap<>(), caseFormat);
+            assertion =
+                (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>(), caseFormat);
             when = WorkflowHandler.wrapNot(assertion).getValue();
           }
           ObjectNode whenNode = (ObjectNode) templateInputs.get("when");

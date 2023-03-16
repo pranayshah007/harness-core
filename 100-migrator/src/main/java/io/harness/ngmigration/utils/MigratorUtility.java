@@ -27,6 +27,7 @@ import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -312,29 +313,28 @@ public class MigratorUtility {
     return "org." + identifier;
   }
 
-  public static List<NGVariable> getVariables(List<Variable> cgVariables, CaseFormat identifierCaseFormat) {
+  public static List<NGVariable> getVariables(MigrationContext migrationContext, List<Variable> cgVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(cgVariables)) {
-      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, identifierCaseFormat)));
+      cgVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static List<NGVariable> getVariables(List<ServiceVariable> serviceVariables,
-      Map<CgEntityId, NGYamlFile> migratedEntities, CaseFormat identifierCaseFormat) {
+  public static List<NGVariable> getServiceVariables(
+      MigrationContext migrationContext, List<ServiceVariable> serviceVariables) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
-      serviceVariables.forEach(
-          serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities, identifierCaseFormat)));
+      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(migrationContext, serviceVariable)));
     }
     return variables;
   }
 
-  public static NGVariable getNGVariable(Variable variable, CaseFormat identifierCaseFormat) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(MigratorExpressionUtils.render(
-          new HashMap<>(), new HashMap<>(), variable.getValue(), new HashMap<>(), identifierCaseFormat));
+      value = String.valueOf(MigratorExpressionUtils.render(migrationContext, variable.getValue(), new HashMap<>(),
+          migrationContext.getInputDTO().getIdentifierCaseFormat()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -345,20 +345,20 @@ public class MigratorUtility {
         .build();
   }
 
-  public static NGVariable getNGVariable(
-      ServiceVariable serviceVariable, Map<CgEntityId, NGYamlFile> migratedEntities, CaseFormat identifierCaseFormat) {
+  public static NGVariable getNGVariable(MigrationContext migrationContext, ServiceVariable serviceVariable) {
     if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
       return SecretNGVariable.builder()
           .type(NGVariableType.SECRET)
-          .value(ParameterField.createValueField(
-              MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+          .value(ParameterField.createValueField(MigratorUtility.getSecretRef(
+              migrationContext.getMigratedEntities(), serviceVariable.getEncryptedValue())))
           .name(StringUtils.trim(serviceVariable.getName()))
           .build();
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value = String.valueOf(MigratorExpressionUtils.render(new HashMap<>(), new HashMap<>(),
-            String.valueOf(serviceVariable.getValue()), new HashMap<>(), identifierCaseFormat));
+        value =
+            String.valueOf(MigratorExpressionUtils.render(migrationContext, String.valueOf(serviceVariable.getValue()),
+                new HashMap<>(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');

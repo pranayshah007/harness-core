@@ -17,6 +17,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.FileYamlDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -97,8 +98,7 @@ public abstract class NgMigrationService {
     return null;
   }
 
-  public abstract YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities);
+  public abstract YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId);
 
   public boolean canMigrate(CgEntityId id, CgEntityId root, boolean canMigrateAll) {
     return canMigrateAll;
@@ -143,7 +143,13 @@ public abstract class NgMigrationService {
     if (migratedEntities.containsKey(entityId)) {
       return null;
     }
-    return generateYaml(inputDTO, entities, graph, entityId, migratedEntities);
+    MigrationContext migrationContext = MigrationContext.builder()
+                                            .migratedEntities(migratedEntities)
+                                            .entities(entities)
+                                            .graph(graph)
+                                            .inputDTO(inputDTO)
+                                            .build();
+    return generateYaml(migrationContext, entityId);
   }
 
   private NgEntityDetail getNGEntityDetail(

@@ -19,6 +19,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.TanzuApplicationServiceSpec;
 import io.harness.cdng.service.beans.TanzuApplicationServiceSpec.TanzuApplicationServiceSpecBuilder;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -34,10 +35,13 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class PcfServiceV2Mapper implements ServiceV2Mapper {
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
+  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
       List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
+    Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
+    Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
+    Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
 
     TanzuApplicationServiceSpecBuilder serviceSpecBuilder = TanzuApplicationServiceSpec.builder();
@@ -49,8 +53,7 @@ public class PcfServiceV2Mapper implements ServiceV2Mapper {
       serviceSpecBuilder.manifests(manifests);
     }
 
-    serviceSpecBuilder.variables(MigratorUtility.getVariables(
-        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
+    serviceSpecBuilder.variables(MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()));
     serviceSpecBuilder.configFiles(configFiles);
 
     return ServiceDefinition.builder().type(ServiceDefinitionType.TAS).serviceSpec(serviceSpecBuilder.build()).build();

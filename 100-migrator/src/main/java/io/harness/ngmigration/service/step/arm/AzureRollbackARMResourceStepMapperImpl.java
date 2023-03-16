@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.arm;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -35,7 +36,8 @@ public class AzureRollbackARMResourceStepMapperImpl extends BaseAzureARMProvisio
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AzureARMRollbackStepNode azureARMRollbackStepNode = new AzureARMRollbackStepNode();
     baseSetup(graphNode, azureARMRollbackStepNode, context.getIdentifierCaseFormat());
 
