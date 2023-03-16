@@ -36,8 +36,9 @@ public enum ArtifactTaskType {
   GET_AZURE_PACKAGES("Get Azure Artifacts Packages"),
   GET_AZURE_FEEDS("Get Azure Artifacts Feeds"),
   GET_AMI_TAGS("Get AMI Tags"),
-  BAMBOO_BUILD("Trigger Bamboo Build"),
-  ;
+  GET_NEXUS_GROUP_IDS("Get Nexus GroupIds"),
+  GET_NEXUS_ARTIFACTIDS("Get Nexus ArtifactIds"),
+  BAMBOO_BUILD("Trigger Bamboo Build");
 
   @Getter private final String displayName;
 
