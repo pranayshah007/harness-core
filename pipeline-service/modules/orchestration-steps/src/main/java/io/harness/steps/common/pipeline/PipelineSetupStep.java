@@ -9,20 +9,37 @@ package io.harness.steps.common.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.OrchestrationService;
+import io.harness.engine.interrupts.InterruptPackage;
+import io.harness.engine.interrupts.InterruptService;
+import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
+import io.harness.pms.contracts.interrupts.InterruptConfig;
+import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.contracts.interrupts.IssuedBy;
+import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.security.PmsSecurityContextGuardUtils;
+import io.harness.security.PrincipalHelper;
+import io.harness.security.dto.Principal;
+import io.harness.serializer.ProtoUtils;
 import io.harness.tasks.ResponseData;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.inject.Inject;
 
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -31,12 +48,42 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
                                                .setType(OrchestrationStepTypes.PIPELINE_SECTION)
                                                .setStepCategory(StepCategory.PIPELINE)
                                                .build();
+  @Inject
+  InterruptService interruptService;
+
+  @Inject OrchestrationService orchestrationService;
 
   @Override
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, PipelineSetupStepParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting execution for Pipeline Step [{}]", stepParameters);
 
+    if(ambiance.getMetadata().getPipelineStageInfo().getHasParentPipeline()){
+      List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(ambiance.getMetadata().getPipelineStageInfo().getExecutionId());
+      if(isNotEmpty(interrupts)){
+        final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
+        InterruptConfig interruptConfig = InterruptConfig.newBuilder()
+                .setIssuedBy(IssuedBy.newBuilder()
+                        .setManualIssuer(ManualIssuer.newBuilder()
+                                .setType(principal.getType().toString())
+                                .setIdentifier(principal.getName())
+                                .setEmailId(PrincipalHelper.getEmail(principal))
+                                .setUserId(PrincipalHelper.getUsername(principal))
+                                .build())
+                        .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
+                        .build())
+                .build();
+
+        InterruptPackage interruptPackage = InterruptPackage.builder()
+                .interruptType(InterruptType.ABORT_ALL)
+                .planExecutionId(ambiance.getPlanExecutionId())
+                .nodeExecutionId(null)
+                .interruptConfig(interruptConfig)
+                .metadata(Collections.emptyMap())
+                .build();
+        orchestrationService.registerInterrupt(interruptPackage);
+      }
+    }
     final String stagesNodeId = stepParameters.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(stagesNodeId).build();
   }

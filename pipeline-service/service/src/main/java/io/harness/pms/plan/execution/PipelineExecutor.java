@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
+import static java.lang.Thread.sleep;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -304,6 +305,13 @@ public class PipelineExecutor {
 
     if (info != null) {
       execArgs.setMetadata(execArgs.getMetadata().toBuilder().setPipelineStageInfo(info).build());
+    }
+
+
+    try {
+      sleep(50000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
     return getPlanExecutionResponseDto(accountId, orgIdentifier, projectIdentifier, useV2, pipelineEntity, execArgs);
   }
