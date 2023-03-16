@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.stages;
 
+import io.harness.plancreator.prb.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -60,6 +61,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
     }
+    PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     return responseMap;
   }
 
