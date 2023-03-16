@@ -19,7 +19,9 @@ import io.harness.idp.namespace.repositories.NamespaceRepository;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -53,5 +55,12 @@ public class NamespaceServiceImpl implements NamespaceService {
     NamespaceEntity insertedData = namespaceRepository.save(dataToInsert);
     k8sClient.createNamespace(insertedData.getId());
     return insertedData;
+  }
+  @Override
+  public List<String> getAccountIds() {
+    List<NamespaceEntity> namespaceEntities = namespaceRepository.findAllByIsDeleted(false);
+    List<String> accountIdsList =
+        namespaceEntities.stream().map(entity -> entity.getAccountIdentifier()).collect(Collectors.toList());
+    return accountIdsList;
   }
 }
