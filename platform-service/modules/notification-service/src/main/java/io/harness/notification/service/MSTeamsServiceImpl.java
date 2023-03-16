@@ -61,7 +61,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StrSubstitutor;
-import org.apache.commons.validator.routines.UrlValidator;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -251,18 +250,9 @@ public class MSTeamsServiceImpl implements ChannelService {
     String[] parts = value.split(SPACE);
     for (int index = 0; index < parts.length; index++) {
       String formattedValue = parts[index].replaceAll(UNDERSCORE, UNDERSCORE_REPLACEMENT);
-      if (checkIfStringIsValidUrl(parts[index])) {
-        parts[index] = format("[%s](%s)", formattedValue, parts[index]);
-      } else {
-        parts[index] = formattedValue;
-      }
+      parts[index] = formattedValue;
     }
     return join(SPACE, parts);
-  }
-
-  boolean checkIfStringIsValidUrl(String value) {
-    UrlValidator urlValidator = new UrlValidator(schemes);
-    return urlValidator.isValid(value);
   }
 
   private void formatTemplateUrlAndName(Map<String, String> templateVariables) {
