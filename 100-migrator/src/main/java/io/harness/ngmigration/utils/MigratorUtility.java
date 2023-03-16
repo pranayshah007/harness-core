@@ -482,7 +482,7 @@ public class MigratorUtility {
   }
 
   @Nullable
-  public static NGYamlFile getYamlFile(
+  private static NGYamlFile getYamlFile(
       MigrationInputDTO inputDTO, byte[] content, String identifier, FileUsage fileUsage) {
     if (isEmpty(content)) {
       return null;
