@@ -38,7 +38,7 @@ import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
 import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
-import io.harness.plancreator.prb.PipelineRollbackStagePlanCreator;
+import io.harness.pms.pipelinestage.plancreator.PipelineRollbackStagePlanCreator;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.stages.parallel.v1.ParallelPlanCreatorV1;
