@@ -623,9 +623,6 @@ public enum FeatureName {
   PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
   CI_ENABLE_BARE_METAL("To enable bare metal cloud for infra", HarnessTeam.CI),
-  PL_ALLOW_DIFFERENT_SERVICE_PRINCIPAL_IN_AUTH_TOKEN_AND_BODY(
-      "Allow different Service Principal in Auth Token and Request Body. Used for Internal purpose only.",
-      HarnessTeam.PL),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS(
       "Do not add quotes to strings when a user reconciles a template, pipeline", HarnessTeam.CDC, Scope.GLOBAL),
@@ -657,7 +654,8 @@ public enum FeatureName {
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_PROPAGATE_STAGE_TEMPLATE("Allow user to propagate service in a templatized stage in pipeline", HarnessTeam.CDC),
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
-      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP);
+      "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
+  NG_CDS_NATIVE_EKS_SUPPORT("Enable native EKS support for K8s/Native Helm Infrastructures", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

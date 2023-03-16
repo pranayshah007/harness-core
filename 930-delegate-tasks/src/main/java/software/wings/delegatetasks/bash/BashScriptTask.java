@@ -12,16 +12,16 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
-import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.bash.ShellScriptTaskParametersNG;
+import software.wings.beans.bash.ShellScriptParameters;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
+import org.jose4j.lang.JoseException;
 
 @Slf4j
 public class BashScriptTask extends AbstractDelegateRunnableTask {
@@ -34,38 +34,15 @@ public class BashScriptTask extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(Object[] parameters) {
-    throw new UnsupportedOperationException("Use the other API");
+    throw new NotImplementedException("Use the other API");
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) throws IOException {
-    final ShellScriptTaskParametersNG scriptParameters = (ShellScriptTaskParametersNG) parameters;
-
-    log.info("Shell script task parameters: accountId - {}, workingDir - {}", scriptParameters.getAccountId(),
-        scriptParameters.getWorkingDirectory());
-
-    final var executeCommandResponse = bashScriptTaskHandler.handle(scriptParameters);
-
-    return ShellScriptTaskResponseNG.builder()
-        .executeCommandResponse(executeCommandResponse)
-        .status(executeCommandResponse.getStatus())
-        .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
-        .build();
-  }
-
-  private String getErrorMessage(CommandExecutionStatus status) {
-    switch (status) {
-      case QUEUED:
-        return "Shell Script execution queued.";
-      case FAILURE:
-        return "Shell Script execution failed. Please check execution logs.";
-      case RUNNING:
-        return "Shell Script execution running.";
-      case SKIPPED:
-        return "Shell Script execution skipped.";
-      case SUCCESS:
-      default:
-        return "";
-    }
+  public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
+    final ShellScriptParameters scriptParameters = (ShellScriptParameters) parameters;
+    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
+        scriptParameters.getAccountId(), scriptParameters.getAppId(), scriptParameters.getWorkingDirectory(),
+        scriptParameters.getActivityId());
+    return bashScriptTaskHandler.handle(scriptParameters);
   }
 }

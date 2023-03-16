@@ -377,7 +377,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
       }
 
       return applicationSummaries.stream()
-          .filter(applicationSummary -> applicationSummary.getName().toLowerCase().equals(prefix))
+          .filter(applicationSummary -> applicationSummary.getName().equals(prefix))
           .collect(toList());
 
     } catch (Exception e) {

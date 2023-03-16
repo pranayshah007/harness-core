@@ -27,13 +27,13 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.dto.NewRelicMetricDataRecord;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.CVConstants;
 import software.wings.service.impl.AwsHelperService;
-import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse.VerificationLoadResponse;

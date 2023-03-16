@@ -23,7 +23,6 @@ import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogFeedbackState;
 import io.harness.cvng.statemachine.services.api.DeploymentLogFeedbackStateExecutor;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -185,7 +184,7 @@ public class DeploymentLogFeedbackStateExecutorTest {
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
   public void testHandleFinalStatuses() {
-    DeploymentLogAnalysisState deploymentLogAnalysisState = DeploymentLogAnalysisState.builder().build();
+    DeploymentLogFeedbackState deploymentLogAnalysisState = DeploymentLogFeedbackState.builder().build();
     deploymentLogFeedbackStateExecutor.handleFinalStatuses(deploymentLogAnalysisState);
     Mockito.verify(logAnalysisService)
         .logDeploymentVerificationProgress(

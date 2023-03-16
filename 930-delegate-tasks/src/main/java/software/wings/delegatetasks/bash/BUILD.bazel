@@ -16,10 +16,11 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
         "//930-delegate-tasks/src/main/java/software/wings/core/executors/bash:module",
         "//950-delegate-tasks-beans:module",
-        "//960-api-services/src/main/java/io/harness/shell:module",
+        "//960-api-services:module",
         "//970-api-services-beans:module",
         "@maven//:com_google_inject_guice",
-        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:commons_lang_commons_lang",
+        "@maven//:org_bitbucket_b_c_jose4j",
     ],
 )
 

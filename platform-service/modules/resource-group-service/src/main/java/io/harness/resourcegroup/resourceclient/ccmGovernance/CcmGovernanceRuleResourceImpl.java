@@ -91,7 +91,8 @@ public class CcmGovernanceRuleResourceImpl implements Resource {
       return Collections.emptyList();
     }
 
-    List<RuleDTO> governanceRules = NGRestUtils.getResponse(governanceRuleClient.getRule(scope.getAccountIdentifier()));
+    List<RuleDTO> governanceRules =
+        NGRestUtils.getResponse(governanceRuleClient.listRule(scope.getAccountIdentifier()));
     Set<Object> validResourceIds = governanceRules.stream().map(e -> e.getUuid()).collect(Collectors.toSet());
 
     return resourceIds.stream().map(validResourceIds::contains).collect(toList());

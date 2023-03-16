@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
+import static software.wings.beans.dto.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.SplunkSavedSearch;
@@ -28,7 +28,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SyncTaskContext;
-import software.wings.service.impl.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisServiceImpl;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;

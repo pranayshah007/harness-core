@@ -7,6 +7,9 @@
 
 package io.harness.ng.core.service.dto;
 
+import io.harness.beans.IdentifierRef;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,4 +38,10 @@ public class ServiceResponseDTO {
   @JsonIgnore Long version;
   String yaml;
   @Schema(hidden = true) boolean v2Service;
+  @JsonIgnore
+  public String getFullyQualifiedIdentifier() {
+    IdentifierRef serviceIdentifierRef = FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(
+        accountId, orgIdentifier, projectIdentifier, identifier);
+    return serviceIdentifierRef.buildScopedIdentifier();
+  }
 }

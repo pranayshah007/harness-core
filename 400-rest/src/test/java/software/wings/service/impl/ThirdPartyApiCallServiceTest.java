@@ -19,10 +19,11 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 import software.wings.resources.ActivityResource;
 import software.wings.resources.DelegateAgentResource;
-import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
-import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -89,9 +90,9 @@ public class ThirdPartyApiCallServiceTest extends WingsBaseTest {
     }
     delegateResource.saveApiCallLogs(delegateId, accountId, kryoSerializer.asBytes(apiCallLogs));
 
-    RestResponse<List<ThirdPartyApiCallLog>> restResponse =
+    RestResponse<List<software.wings.service.impl.ThirdPartyApiCallLog>> restResponse =
         activityResource.listLogs(appId, stateExecutionId, 0, 0, aPageRequest().build());
-    List<ThirdPartyApiCallLog> savedApiCallLogs = restResponse.getResource();
+    List<software.wings.service.impl.ThirdPartyApiCallLog> savedApiCallLogs = restResponse.getResource();
     assertThat(savedApiCallLogs).hasSize(numOfApiCallLogs);
     for (int i = 0; i < numOfApiCallLogs; i++) {
       assertThat(savedApiCallLogs.get(i).getCreatedAt()).isEqualTo(numOfApiCallLogs - i);

@@ -55,7 +55,7 @@ public class EcsListenerUpdateRollbackStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsBGUpdateListnerRollbackState state = (EcsBGUpdateListnerRollbackState) getState(graphNode);
     EcsBlueGreenRollbackStepNode stepNode = new EcsBlueGreenRollbackStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     EcsBlueGreenRollbackStepInfo stepInfo =
         EcsBlueGreenRollbackStepInfo.infoBuilder()
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))

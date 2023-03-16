@@ -50,6 +50,7 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,22 +65,30 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GcrApiServiceImpl implements GcrApiService {
-  private static final int CONNECT_TIMEOUT = 5; // TODO:: read from config
+  private static final int TIMEOUT = 60; // TODO:: read from config
+  public static final int RETRIES = 10; // TODO:: read from config
   String ERROR_MESSAGE = "There was an error reaching the Google container registry";
   String CONNECTION_ERROR_MESSAGE = "The connector or the artifact source may not be setup correctly.";
 
-  private final Retry retry;
+  public Retry retry;
 
   public GcrApiServiceImpl() {
-    final RetryConfig config =
-        RetryConfig.custom().maxAttempts(5).intervalFunction(IntervalFunction.ofExponentialBackoff()).build();
+    final RetryConfig config = RetryConfig.custom()
+                                   .maxAttempts(RETRIES)
+                                   .intervalFunction(IntervalFunction.ofExponentialBackoff(Duration.ofSeconds(1)))
+                                   .build();
     this.retry = Retry.of("GCRRegistry", config);
+
+    // Log-on-retry added here to assist investigation of CDS-55120
+    Retry.EventPublisher retryEventPublisher = retry.getEventPublisher();
+    retryEventPublisher.onRetry(event -> log.warn("Retrying GCR API call. Event: " + event));
   }
 
   private GcrRestClient getGcrRestClient(String registryHostName) {
     String url = getUrl(registryHostName);
     OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                                    .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+                                    .readTimeout(TIMEOUT, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(url))
                                     .build();
     Retrofit retrofit = new Retrofit.Builder()
@@ -109,10 +118,19 @@ public class GcrApiServiceImpl implements GcrApiService {
       GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       throw ex;
     } catch (IOException e) {
+      log.error("getBuilds has thrown IOException for registryHostname [" + gcpConfig.getRegistryHostname()
+              + "], imageName [" + imageName + "]",
+          e);
       throw handleIOException(gcpConfig, e);
     } catch (InvalidRequestException e) {
+      log.error("getBuilds has thrown InvalidRequestException for registryHostname [" + gcpConfig.getRegistryHostname()
+              + "], imageName [" + imageName + "]",
+          e);
       throw new HintException(ExceptionUtils.getMessage(e));
     } catch (Exception e) {
+      log.error("getBuilds has thrown Exception for registryHostname [" + gcpConfig.getRegistryHostname()
+              + "], imageName [" + imageName + "]",
+          e);
       throw new HintException(ExceptionUtils.getMessage(e));
     }
   }
@@ -227,8 +245,14 @@ public class GcrApiServiceImpl implements GcrApiService {
 
       return getBuildDetailsInternal(gcrInternalConfig.getRegistryHostname(), imageName, tag);
     } catch (IOException e) {
+      log.error("verifyBuildNumber has thrown IOException for registryHostname ["
+              + gcrInternalConfig.getRegistryHostname() + "], imageName [" + imageName + "]",
+          e);
       throw handleIOException(gcrInternalConfig, e);
     } catch (Exception e) {
+      log.error("verifyBuildNumber has thrown Exception for registryHostname ["
+              + gcrInternalConfig.getRegistryHostname() + "], imageName [" + imageName + "]",
+          e);
       throw NestedExceptionUtils.hintWithExplanationException(
           ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
@@ -250,6 +274,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   }
 
   private WingsException handleIOException(GcrInternalConfig gcrInternalConfig, IOException e) {
+    log.error(
+        "GcrApiService has thrown IOException for registryHostname " + gcrInternalConfig.getRegistryHostname(), e);
     ErrorHandlingGlobalContextData globalContextData =
         GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
     if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {

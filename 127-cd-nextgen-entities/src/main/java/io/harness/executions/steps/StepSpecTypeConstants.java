@@ -77,6 +77,7 @@ public interface StepSpecTypeConstants {
   String TANZU_COMMAND = "TanzuCommand";
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
+  String TAS_ROUTE_MAPPING = "RouteMapping";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";

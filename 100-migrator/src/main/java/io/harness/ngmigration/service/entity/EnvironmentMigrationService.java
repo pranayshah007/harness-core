@@ -73,7 +73,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -249,7 +248,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .name(name)
                     .identifier(identifier)
                     .description(environment.getDescription())
-                    .tags(null)
+                    .tags(MigratorUtility.getTags(environment.getTagLinks()))
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
                     .variables(getGlobalVariables(
@@ -259,15 +258,6 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .type(PROD == environment.getEnvironmentType() ? Production : PreProduction)
                     .build())
             .build();
-
-    if (EmptyPredicate.isNotEmpty(environment.getTagLinks())) {
-      Map<String, String> tags = new HashMap<>();
-      environment.getTagLinks()
-          .stream()
-          .filter(tl -> StringUtils.isNoneBlank(tl.getKey(), tl.getValue()))
-          .forEach(tl -> tags.put(tl.getKey(), tl.getValue()));
-      environmentConfig.getNgEnvironmentInfoConfig().setTags(tags);
-    }
 
     List<NGYamlFile> files = new ArrayList<>();
     NGYamlFile ngYamlFile = NGYamlFile.builder()

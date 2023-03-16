@@ -374,7 +374,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                                  .description(service.getDescription())
                                                                  .gitOpsEnabled(false)
                                                                  .identifier(identifier)
-                                                                 .tags(new HashMap<>())
+                                                                 .tags(MigratorUtility.getTags(service.getTagLinks()))
                                                                  .useFromStage(null)
                                                                  .serviceDefinition(serviceDefinition)
                                                                  .build())

@@ -49,7 +49,7 @@ public class BootstrapBundle extends AbstractModule {
     installExecutorlibUtilities();
     install(new ExecutorKryoModule(registars));
 
-    modules.forEach(this::install);
+    modules.forEach(module -> install(module));
 
     if (!taskTypeMap.isEmpty()) {
       MapBinder<TaskType, Class<? extends DelegateRunnableTask>> mapBinder = MapBinder.newMapBinder(
