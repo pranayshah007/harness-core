@@ -11,16 +11,26 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.plan.execution.PipelineExecutor;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.EmptyStepParameters;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 
+import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +42,9 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
                                                .setStepCategory(StepCategory.STAGE)
                                                .build();
 
+  @Inject private PipelineExecutor pipelineExecutor;
+  @Inject private ExecutionSweepingOutputService sweepingOutputService;
+
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -40,15 +53,28 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
-    // todo: implement
-    return null;
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String planExecutionId = ambiance.getPlanExecutionId();
+    log.info("Starting Pipeline Rollback");
+    PlanExecution planExecution = pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, planExecutionId);
+    if (planExecution == null) {
+      throw new InvalidRequestException("Failed to start Pipeline Rollback");
+    }
+    // saving output for handleAsyncResponse
+    sweepingOutputService.consume(ambiance, PipelineRollbackStageSweepingOutput.OUTPUT_NAME,
+        PipelineRollbackStageSweepingOutput.builder().rollbackModeExecutionId(planExecution.getUuid()).build(),
+        StepCategory.STAGE.name());
+
+    return AsyncExecutableResponse.newBuilder().addCallbackIds(planExecution.getUuid()).build();
   }
 
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     // todo: implement
-    return null;
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 
   @Override
