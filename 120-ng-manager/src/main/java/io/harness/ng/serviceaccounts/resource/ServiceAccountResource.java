@@ -186,7 +186,7 @@ public class ServiceAccountResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of Service Accounts.")
       })
-  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
+  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.LIST_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<List<ServiceAccountDTO>>
   listServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -212,7 +212,7 @@ public class ServiceAccountResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Returns the paginated list of Aggregated Service Accounts.")
       })
-  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.VIEW_SERVICEACCOUNT_PERMISSION)
+  @NGAccessControlCheck(resourceType = SERVICEACCOUNT, permission = PlatformPermissions.LIST_SERVICEACCOUNT_PERMISSION)
   public ResponseDTO<PageResponse<ServiceAccountAggregateDTO>>
   listAggregatedServiceAccounts(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
                                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
