@@ -7,29 +7,24 @@
 
 package io.harness.pms.plan.execution.handlers;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.AbortedBy;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
-import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
-import io.harness.pms.contracts.interrupts.IssuedBy;
-import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -39,7 +34,6 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.bson.Document;
@@ -52,20 +46,18 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
   private final PlanExecutionService planExecutionService;
   private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
-
   private WaitNotifyEngine waitNotifyEngine;
-  private InterruptService interruptService;
-  private static final String systemUser = "systemUser";
+  private AbortInfoHelper abortInfoHelper;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
       PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
-      WaitNotifyEngine waitNotifyEngine, InterruptService interruptService) {
+      WaitNotifyEngine waitNotifyEngine, AbortInfoHelper abortInfoHelper) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
     this.eventEmitter = eventEmitter;
     this.waitNotifyEngine = waitNotifyEngine;
-    this.interruptService = interruptService;
+    this.abortInfoHelper = abortInfoHelper;
   }
 
   @Override
@@ -80,20 +72,7 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
     update.set(PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
     update.set(PlanExecutionSummaryKeys.status, status);
     if (status == ExecutionStatus.ABORTED) {
-      List<Interrupt> interruptsList = interruptService.fetchAbortAllPlanLevelInterrupt(planExecutionId);
-      if (isNotEmpty(interruptsList)) {
-        IssuedBy issuedBy = interruptsList.get(0).getInterruptConfig().getIssuedBy();
-        if (!issuedBy.hasManualIssuer()) {
-          update.set(PlanExecutionSummaryKeys.abortedBy, AbortedBy.builder().userName(systemUser).build());
-        } else {
-          ManualIssuer manualIssuer = issuedBy.getManualIssuer();
-          update.set(PlanExecutionSummaryKeys.abortedBy,
-              AbortedBy.builder()
-                  .email(issuedBy.getManualIssuer().getEmailId())
-                  .userName(manualIssuer.getUserId())
-                  .build());
-        }
-      }
+      update.set(PlanExecutionSummaryKeys.abortedBy, abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecutionId));
     }
     if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
       update.set(PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
