@@ -19,6 +19,9 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.commons.utils.TimeUtils.offsetDateTimeNow;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
+import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
+import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
@@ -31,6 +34,7 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.util.Collections.emptyList;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.clickHouse.ClickHouseService;
@@ -42,11 +46,13 @@ import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
+import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO.K8sRecommendationFilterDTOBuilder;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
@@ -57,6 +63,7 @@ import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
+import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
@@ -64,6 +71,7 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.queryconverter.SQLConverter;
 import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
 
@@ -124,6 +132,8 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private ViewParametersHelper viewParametersHelper;
+  @Inject private CCMRbacHelper rbacHelper;
+  @Inject private CEViewService ceViewService;
   @Inject @Nullable @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
   @Inject ClickHouseService clickHouseService;
   @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
@@ -142,15 +152,33 @@ public class RecommendationsOverviewQueryV2 {
       @GraphQLArgument(name = "filter", defaultValue = "{\"offset\":0,\"limit\":10, \"minSaving\":0}")
       K8sRecommendationFilterDTO filter, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
+    HashMap<String, CEView> allowedRecommendationsIdAndPerspectives =
+        listAllowedRecommendationsIdAndPerspectives(accountId);
 
     Condition condition = applyAllFilters(filter, accountId);
 
     List<RecommendationItemDTO> items =
         recommendationService.listAll(accountId, condition, filter.getOffset(), filter.getLimit());
     items = items.stream()
+                .filter(item -> allowedRecommendationsIdAndPerspectives.containsKey(item.getId()))
                 .map(item
                     -> item.getRecommendationDetails() != null
-                        ? item
+                        ? RecommendationItemDTO.builder()
+                              .id(item.getId())
+                              .clusterName(item.getClusterName())
+                              .namespace(item.getNamespace())
+                              .resourceName(item.getResourceName())
+                              .monthlyCost(item.getMonthlyCost())
+                              .monthlySaving(item.getMonthlySaving())
+                              .resourceType(item.getResourceType())
+                              .recommendationState(item.getRecommendationState())
+                              .jiraConnectorRef(item.getJiraConnectorRef())
+                              .jiraIssueKey(item.getJiraIssueKey())
+                              .jiraStatus(item.getJiraStatus())
+                              .recommendationDetails(item.getRecommendationDetails())
+                              .perspectiveId(allowedRecommendationsIdAndPerspectives.get(item.getId()).getUuid())
+                              .perspectiveName(allowedRecommendationsIdAndPerspectives.get(item.getId()).getName())
+                              .build()
                         : RecommendationItemDTO.builder()
                               .id(item.getId())
                               .resourceName(item.getResourceName())
@@ -164,6 +192,8 @@ public class RecommendationsOverviewQueryV2 {
                               .jiraConnectorRef(item.getJiraConnectorRef())
                               .jiraIssueKey(item.getJiraIssueKey())
                               .jiraStatus(item.getJiraStatus())
+                              .perspectiveId(allowedRecommendationsIdAndPerspectives.get(item.getId()).getUuid())
+                              .perspectiveName(allowedRecommendationsIdAndPerspectives.get(item.getId()).getName())
                               .build())
                 .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
@@ -174,9 +204,11 @@ public class RecommendationsOverviewQueryV2 {
       @GraphQLArgument(name = "filter", defaultValue = "{}") K8sRecommendationFilterDTO filter,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-
-    Condition condition = applyAllFilters(filter, accountId);
-
+    K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter = applyAllowedPerspectiveFilter(accountId, filter);
+    if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getPerspectiveFilters())) {
+      return null;
+    }
+    Condition condition = applyAllFilters(appliedAllowedPerspectiveFilter, accountId);
     return recommendationService.getStats(accountId, condition);
   }
 
@@ -194,17 +226,26 @@ public class RecommendationsOverviewQueryV2 {
   }
 
   @GraphQLQuery(name = "markRecommendationAsApplied", description = "Mark a recommendation as applied")
-  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId) {
+  public void markRecommendationAsApplied(@GraphQLArgument(name = "recommendationId") String recommendationId,
+      @GraphQLEnvironment final ResolutionEnvironment env) {
+    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    HashMap<String, CEView> allowedRecommendationsIdAndPerspectives =
+        listAllowedRecommendationsIdAndPerspectives(accountId);
+    if (!allowedRecommendationsIdAndPerspectives.containsKey(recommendationId)) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+    }
     recommendationService.updateRecommendationState(recommendationId, RecommendationState.APPLIED);
   }
 
   private int genericCountQuery(@NotNull final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-
     K8sRecommendationFilterDTO filter = extractRecommendationFilter(env);
-
-    Condition condition = applyAllFilters(filter, accountId);
-
+    K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter = applyAllowedPerspectiveFilter(accountId, filter);
+    if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getPerspectiveFilters())) {
+      return 0;
+    }
+    Condition condition = applyAllFilters(appliedAllowedPerspectiveFilter, accountId);
     return recommendationService.getRecommendationsCount(accountId, condition);
   }
 
@@ -220,9 +261,11 @@ public class RecommendationsOverviewQueryV2 {
       @GraphQLArgument(name = "filter", defaultValue = "{}") K8sRecommendationFilterDTO filter,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-
-    Condition condition = applyAllFilters(filter, accountId);
-
+    K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter = applyAllowedPerspectiveFilter(accountId, filter);
+    if (Lists.isNullOrEmpty(appliedAllowedPerspectiveFilter.getPerspectiveFilters())) {
+      return null;
+    }
+    Condition condition = applyAllFilters(appliedAllowedPerspectiveFilter, accountId);
     return recommendationService.getFilterStats(accountId, condition, columns, CE_RECOMMENDATIONS);
   }
 
@@ -338,7 +381,7 @@ public class RecommendationsOverviewQueryV2 {
   }
 
   @NotNull
-  private List<ViewRule> getPerspectiveRuleList(@NotNull List<QLCEViewFilterWrapper> perspectiveFilters) {
+  public List<ViewRule> getPerspectiveRuleList(@NotNull List<QLCEViewFilterWrapper> perspectiveFilters) {
     final Optional<String> perspectiveId = getPerspectiveIdFromMetadataFilter(perspectiveFilters);
 
     if (Objects.nonNull(perspectiveId) && perspectiveId.isPresent()) {
@@ -616,5 +659,106 @@ public class RecommendationsOverviewQueryV2 {
       log.error("Exception while fetching data for item: {}", item, e);
     }
     return null;
+  }
+
+  public K8sRecommendationFilterDTO applyAllowedPerspectiveFilter(
+      String accountId, K8sRecommendationFilterDTO recommendationFilterDTO) {
+    List<CEView> allowedPerspectives = getAllowedPerspectives(accountId);
+    K8sRecommendationFilterDTOBuilder recommendationFilterDTOBuilder = K8sRecommendationFilterDTO.builder();
+
+    if (!Lists.isNullOrEmpty(allowedPerspectives)) {
+      List<QLCEViewFilterWrapper> appliedPerspectiveFilter = new ArrayList<>();
+      if (!Lists.isNullOrEmpty(recommendationFilterDTO.getPerspectiveFilters())) {
+        for (QLCEViewFilterWrapper existingPerspectiveFilter : recommendationFilterDTO.getPerspectiveFilters()) {
+          if (existingPerspectiveFilter.getViewMetadataFilter() != null
+              && allowedPerspectives.contains(existingPerspectiveFilter.getViewMetadataFilter().getViewId())) {
+            appliedPerspectiveFilter.add(existingPerspectiveFilter);
+          }
+        }
+      } else {
+        for (CEView perspective : allowedPerspectives) {
+          appliedPerspectiveFilter.add(
+              QLCEViewFilterWrapper.builder()
+                  .viewMetadataFilter(
+                      QLCEViewMetadataFilter.builder().viewId(perspective.getUuid()).isPreview(false).build())
+                  .build());
+        }
+      }
+
+      return recommendationFilterDTOBuilder.ids(recommendationFilterDTO.getIds())
+          .names(recommendationFilterDTO.getNames())
+          .namespaces(recommendationFilterDTO.getNamespaces())
+          .clusterNames(recommendationFilterDTO.getClusterNames())
+          .resourceTypes(recommendationFilterDTO.getResourceTypes())
+          .recommendationStates(recommendationFilterDTO.getRecommendationStates())
+          .perspectiveFilters(appliedPerspectiveFilter)
+          .minSaving(recommendationFilterDTO.getMinSaving())
+          .minCost(recommendationFilterDTO.getMinCost())
+          .offset(recommendationFilterDTO.getOffset())
+          .limit(recommendationFilterDTO.getLimit())
+          .build();
+    }
+
+    // Setting perspective filter to be null since we dont have access to any perspective
+    return recommendationFilterDTOBuilder.ids(recommendationFilterDTO.getIds())
+        .names(recommendationFilterDTO.getNames())
+        .namespaces(recommendationFilterDTO.getNamespaces())
+        .clusterNames(recommendationFilterDTO.getClusterNames())
+        .resourceTypes(recommendationFilterDTO.getResourceTypes())
+        .recommendationStates(recommendationFilterDTO.getRecommendationStates())
+        .perspectiveFilters(null)
+        .minSaving(recommendationFilterDTO.getMinSaving())
+        .minCost(recommendationFilterDTO.getMinCost())
+        .offset(recommendationFilterDTO.getOffset())
+        .limit(recommendationFilterDTO.getLimit())
+        .build();
+  }
+
+  public HashMap<String, CEView> listAllowedRecommendationsIdAndPerspectives(String accountIdentifier) {
+    HashMap<String, CEView> recommendationAndPerspective = new HashMap<>();
+    List<CEView> allowedPerspectives = getAllowedPerspectives(accountIdentifier);
+    if (allowedPerspectives.size() > 0) {
+      for (CEView perspective : allowedPerspectives) {
+        Condition condition = getRbacPerspectiveIndividualCondition(
+            Collections.singletonList(
+                QLCEViewFilterWrapper.builder()
+                    .viewMetadataFilter(
+                        QLCEViewMetadataFilter.builder().viewId(perspective.getUuid()).isPreview(false).build())
+                    .build()),
+            accountIdentifier);
+        List<RecommendationItemDTO> recommendationItemDTOs =
+            recommendationService.listAll(accountIdentifier, condition, 0L, Long.MAX_VALUE);
+        recommendationItemDTOs.forEach(
+            recommendationItemDTO -> recommendationAndPerspective.put(recommendationItemDTO.getId(), perspective));
+      }
+    }
+    return recommendationAndPerspective;
+  }
+
+  public List<CEView> getAllowedPerspectives(String accountIdentifier) {
+    List<CEView> perspectives = ceViewService.getAllViews(accountIdentifier);
+    Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountIdentifier, null, null,
+        perspectives.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
+
+    if ((allowedFolderIds == null || allowedFolderIds.size() < 1)
+        && (perspectives != null && perspectives.size() > 0)) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, PERSPECTIVE_VIEW, RESOURCE_FOLDER), WingsException.USER, null);
+    }
+
+    List<CEView> allowedPerspectives = new ArrayList<>();
+    if (allowedFolderIds != null && perspectives != null) {
+      allowedPerspectives = perspectives.stream()
+                                .filter(ceView -> allowedFolderIds.contains(ceView.getFolderId()))
+                                .collect(Collectors.toList());
+    }
+    return allowedPerspectives;
+  }
+
+  private Condition getRbacPerspectiveIndividualCondition(
+      List<QLCEViewFilterWrapper> perspectiveFilters, @NotNull String accountId) {
+    Condition condition = getValidRecommendationFilter();
+    final Condition perspectiveCondition = getPerspectiveCondition(perspectiveFilters, accountId);
+    return condition.and(perspectiveCondition);
   }
 }

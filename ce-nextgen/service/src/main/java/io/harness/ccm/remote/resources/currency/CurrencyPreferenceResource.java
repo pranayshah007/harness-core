@@ -153,7 +153,6 @@ public class CurrencyPreferenceResource {
       @NotNull @Valid @QueryParam(SOURCE_CURRENCY_KEY) @Parameter(
           required = true, description = "Source currency") Currency sourceCurrency) {
     // Right now, this API we are using only in node-pool recommendation page.
-    ccmRbacHelper.checkRecommendationsViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(currencyPreferenceService.getDestinationCurrencyConversionFactor(
         accountId, cloudServiceProvider, sourceCurrency));
   }
