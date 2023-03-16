@@ -52,4 +52,5 @@ public interface InterruptService {
    * @param planExecutionIds
    */
   void deleteAllInterrupts(Set<String> planExecutionIds);
+  List<Interrupt> fetchAbortAllPlanLevelInterrupt(String planExecutionId);
 }

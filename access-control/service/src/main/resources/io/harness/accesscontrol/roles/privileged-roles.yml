@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 19
+version: 20
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -53,6 +53,7 @@ roles:
       - sto_scan_view
       - sto_testtarget_view
       - sto_exemption_view
+      - sto_ticket_view
       - ccm_overview_view
       - ccm_perspective_view
       - ccm_budget_view

@@ -11,10 +11,12 @@ import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.model.LayoutRequest;
 
@@ -28,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
+@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class LayoutProxyApiImpl implements LayoutProxyApi {
   static final String BEARER_TOKEN_FORMAT = "Bearer %s";
@@ -36,7 +39,7 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response createLayout(@Valid LayoutRequest body, String harnessAccount) {
+  public Response createLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.createLayout(
         body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();
@@ -44,7 +47,7 @@ public class LayoutProxyApiImpl implements LayoutProxyApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response deleteLayout(@Valid LayoutRequest body, String harnessAccount) {
+  public Response deleteLayout(@Valid LayoutRequest body, @AccountIdentifier String harnessAccount) {
     Object entity = getGeneralResponse(backstageResourceClient.deleteLayout(
         body, String.format(BEARER_TOKEN_FORMAT, backstageServiceSecret), harnessAccount));
     return Response.ok(entity).build();

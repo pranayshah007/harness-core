@@ -65,6 +65,7 @@ import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsD
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.security.PrincipalHelper;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.serializer.JsonUtils;
@@ -545,6 +546,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                              .setManualIssuer(ManualIssuer.newBuilder()
                                                   .setType(principal.getType().toString())
                                                   .setIdentifier(principal.getName())
+                                                  .setEmailId(PrincipalHelper.getEmail(principal))
+                                                  .setUserId(PrincipalHelper.getUsername(principal))
                                                   .build())
                              .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
                              .build())

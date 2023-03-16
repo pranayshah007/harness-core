@@ -44,7 +44,7 @@ import lombok.experimental.FieldNameConstants;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @StoreIn(DbAliases.CVNG)
-@Entity(value = "annotations")
+@Entity(value = "annotations", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
 public class Annotation

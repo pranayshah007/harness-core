@@ -19,7 +19,6 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//957-cg-beans:module",
         "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog:module",
-        "//957-cg-beans/src/main/java/software/wings/verification:module",
         "//959-file-service-commons/src/main/java/io/harness/delegate/beans:module",
         "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
         "@maven//:com_google_inject_guice",

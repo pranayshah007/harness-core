@@ -186,6 +186,6 @@ public class InfrastructureMapperTest {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
         .withMessageContaining(
-            "Found mismatch in following fields between yaml and requested value respectively: {InfraStructureDefinition Name=[my_infra_name, name1], InfrastructureDefinition Identifier=[my_infra_id, id1]}");
+            "For the infrastructure [name: name1, identifier: id1], Found mismatch in following fields between yaml and requested value respectively: {InfraStructureDefinition Name=[my_infra_name, name1], InfrastructureDefinition Identifier=[my_infra_id, id1]}");
   }
 }

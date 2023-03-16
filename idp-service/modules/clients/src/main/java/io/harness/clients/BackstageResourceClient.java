@@ -15,8 +15,8 @@ import io.harness.spec.server.idp.v1.model.LayoutRequest;
 import javax.validation.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.HTTP;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -28,7 +28,8 @@ public interface BackstageResourceClient {
 
   @POST(CATALOG_API + "/locations")
   Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,
-      @Header("Authorization") String authorization, @Body BackstageCatalogLocationCreateRequest request);
+      @Header("Authorization") String authorization,
+      @Body io.harness.clients.BackstageCatalogLocationCreateRequest request);
 
   @GET(LAYOUT_API)
   Call<Object> getAllLayouts(

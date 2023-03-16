@@ -10,10 +10,10 @@ package io.harness.delegate.service;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
+import software.wings.beans.dto.CVActivityLog;
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.delegatetasks.DelegateLogService;
-import software.wings.verification.CVActivityLog;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import com.google.inject.Inject;
 import java.time.Instant;

@@ -9,7 +9,6 @@ package software.wings.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.encoding.EncodingUtils.deCompressString;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.GoogleDataStoreAware.readBlob;
@@ -23,7 +22,6 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.delegate.beans.ThirdPartyApiCallLogDetails;
 import io.harness.exception.WingsException;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -35,6 +33,8 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.UuidAware;
 import io.harness.serializer.JsonUtils;
+
+import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -51,7 +51,6 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -113,71 +112,6 @@ public class ThirdPartyApiCallLog implements GoogleDataStoreAware, CreatedAtAwar
   @SchemaIgnore
   @FdTtlIndex
   private Date validUntil = Date.from(OffsetDateTime.now().plusWeeks(2).toInstant());
-
-  public ThirdPartyApiCallLog copy() {
-    return ThirdPartyApiCallLog.builder()
-        .stateExecutionId(stateExecutionId)
-        .accountId(accountId)
-        .delegateId(delegateId)
-        .delegateTaskId(delegateTaskId)
-        .request(new ArrayList<>())
-        .response(new ArrayList<>())
-        .title(title)
-        .build();
-  }
-
-  public void addFieldToResponse(int statusCode, Object response, FieldType fieldType) {
-    if (this.response == null) {
-      this.response = new ArrayList<>();
-    }
-    String jsonResponse = getResponseToLog(response, fieldType);
-    this.response.add(ThirdPartyApiCallField.builder()
-                          .type(FieldType.NUMBER)
-                          .name(STATUS_CODE)
-                          .value(Integer.toString(statusCode))
-                          .build());
-    this.response.add(
-        ThirdPartyApiCallField.builder()
-            .type(fieldType)
-            .name(RESPONSE_BODY)
-            .value(jsonResponse.substring(
-                0, jsonResponse.length() < MAX_JSON_RESPONSE_LENGTH ? jsonResponse.length() : MAX_JSON_RESPONSE_LENGTH))
-            .build());
-  }
-
-  private String getResponseToLog(Object response, FieldType fieldType) {
-    if (fieldType == null) {
-      return response.toString();
-    }
-
-    switch (fieldType) {
-      case JSON:
-        try {
-          if (response instanceof String) {
-            return response.toString();
-          }
-          return JsonUtils.asJson(response);
-        } catch (Exception e) {
-          return response.toString();
-        }
-      default:
-        return response.toString();
-    }
-  }
-
-  public void addFieldToRequest(ThirdPartyApiCallField field) {
-    if (request == null) {
-      request = new ArrayList<>();
-    }
-    request.add(field);
-  }
-
-  public static ThirdPartyApiCallLog createApiCallLog(String accountId, String stateExecutionId) {
-    return ThirdPartyApiCallLog.builder()
-        .accountId(accountId)
-        .stateExecutionId(isEmpty(stateExecutionId) ? NO_STATE_EXECUTION_ID : stateExecutionId)
-        .build();
-  }
 
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
@@ -254,16 +188,6 @@ public class ThirdPartyApiCallLog implements GoogleDataStoreAware, CreatedAtAwar
     return apiCallLog;
   }
 
-  @Data
-  @Builder
-  public static class ThirdPartyApiCallField {
-    private String name;
-    private String value;
-    @Default private FieldType type = FieldType.TEXT;
-  }
-
-  public enum FieldType { JSON, XML, NUMBER, URL, TEXT, TIMESTAMP }
-
   public ExecutionStatus getStatus() {
     /*
      In an unexpected scenario where the response is an empty list of fields,
@@ -284,15 +208,19 @@ public class ThirdPartyApiCallLog implements GoogleDataStoreAware, CreatedAtAwar
     return ExecutionStatus.SUCCESS;
   }
 
-  public static ThirdPartyApiCallLog fromDetails(ThirdPartyApiCallLogDetails details) {
-    if (details == null) {
-      return null;
-    }
+  public static ThirdPartyApiCallLog fromDto(software.wings.beans.dto.ThirdPartyApiCallLog dto) {
     return ThirdPartyApiCallLog.builder()
-        .accountId(details.getAccountId())
-        .delegateId(details.getDelegateId())
-        .delegateTaskId(details.getDelegateTaskId())
-        .stateExecutionId(details.getStateExecutionId())
+        .stateExecutionId(dto.getStateExecutionId())
+        .accountId(dto.getAccountId())
+        .delegateId(dto.getDelegateId())
+        .delegateTaskId(dto.getDelegateTaskId())
+        .title(dto.getTitle())
+        .request(dto.getRequest())
+        .response(dto.getResponse())
+        .requestTimeStamp(dto.getRequestTimeStamp())
+        .responseTimeStamp(dto.getRequestTimeStamp())
+        .createdAt(dto.getCreatedAt())
+        .uuid(dto.getUuid())
         .build();
   }
 }

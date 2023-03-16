@@ -22,9 +22,7 @@ import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.infrastructure.Host;
 import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.ngmigration.NGMigrationEntity;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
-import software.wings.verification.CVActivityLog;
 
 import java.util.Set;
 
@@ -38,9 +36,7 @@ public class CgOrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(TerraGroupProvisioners.class);
     set.add(SweepingOutput.class);
     set.add(NGMigrationEntity.class);
-    set.add(ThirdPartyApiCallLog.class);
     set.add(MigratedEntityMapping.class);
-    set.add(CVActivityLog.class);
     set.add(Host.class);
     set.add(MigrationAsyncTracker.class);
   }

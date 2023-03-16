@@ -28,6 +28,7 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_GET_WORKSPACE;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_OVERRIDE_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.COULD_NOT_UPLOAD_FILE;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.ERROR_PLAN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Explanation.RELATIONSHIP_DATA_EMPTY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_PLAN;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Hints.PLEASE_CHECK_POLICY;
@@ -49,6 +50,8 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionCon
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_OVERRIDE_POLICY;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_APPLY_LOGS;
 import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.ERROR_STREAMING_PLAN_LOGS;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudExceptionConstants.Message.FAILED_TO_PLAN;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 import static io.harness.terraformcloud.model.ApplyData.Attributes.Status.CANCELED;
@@ -125,7 +128,6 @@ public class TerraformCloudTaskHelper {
   private static final String OUTPUT_FORMAT = "\"%s\" : { \"value\" : %s, \"sensitive\" : %s }";
   private static final String HARD_FAILED = "hard_failed";
   private static final String SOFT_FAILED = "soft_failed";
-  private static final String ADVISORY_FAILED = "advisory_failed";
   private static final int CHUNK_SIZE = 100000;
   @Inject TerraformCloudClient terraformCloudClient;
   @Inject DelegateFileManagerBase delegateFileManager;
@@ -260,12 +262,19 @@ public class TerraformCloudTaskHelper {
       PlanData plan = terraformCloudClient.getPlan(url, token, planId).getData();
       // stream plan logs
       streamLogs(logCallback, plan.getAttributes().getLogReadUrl());
-      logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(format(PLEASE_CHECK_RUN, runId),
           format(COULD_NOT_GET_PLAN, planId), new TerraformCloudException(ERROR_STREAMING_PLAN_LOGS, e));
     }
-    return getRun(url, token, runId);
+
+    runData = getRun(url, token, runId);
+    if (runData.getAttributes().getStatus() == RunStatus.ERRORED) {
+      logCallback.saveExecutionLog(FAILED_TO_PLAN, ERROR, CommandExecutionStatus.FAILURE);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format(PLEASE_CHECK_RUN, runId), ERROR_PLAN, new TerraformCloudException(FAILED_TO_PLAN));
+    }
+    logCallback.saveExecutionLog("Plan finished", INFO, CommandExecutionStatus.SUCCESS);
+    return runData;
   }
 
   public void streamApplyLogs(String url, String token, RunData runData, LogCallback logCallback) {
@@ -416,7 +425,8 @@ public class TerraformCloudTaskHelper {
     List<PolicyCheckData> policyCheckData = getPolicyCheckData(url, token, runId);
     while (true) {
       for (PolicyCheckData policyCheck : policyCheckData) {
-        if (policyCheck.getLinks().hasNonNull("output") && !completedPolicies.contains(policyCheck.getId())) {
+        if (policyCheck.getLinks() != null && policyCheck.getLinks().hasNonNull("output")
+            && !completedPolicies.contains(policyCheck.getId())) {
           String policyCheckOutput;
           try {
             policyCheckOutput = terraformCloudClient.getPolicyCheckOutput(url, token, policyCheck.getId());
@@ -491,9 +501,7 @@ public class TerraformCloudTaskHelper {
     if (attributes != null) {
       String status = attributes.getStatus();
       if (status != null) {
-        LogColor logColor = (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED) || status.equals(ADVISORY_FAILED))
-            ? LogColor.Red
-            : LogColor.Green;
+        LogColor logColor = (status.equals(HARD_FAILED) || status.equals(SOFT_FAILED)) ? LogColor.Red : LogColor.Green;
         logCallback.saveExecutionLog(
             color(format("Policy check [%s]", status), logColor, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
         PolicyCheckData.Attributes.Result result = attributes.getResult();

@@ -11,7 +11,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
+import io.harness.cvng.servicelevelobjective.beans.AnnotationInstance;
+import io.harness.cvng.servicelevelobjective.beans.AnnotationInstanceDetails;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.Annotation.AnnotationKeys;
@@ -24,10 +29,14 @@ import io.harness.persistence.HPersistence;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class AnnotationServiceImpl implements AnnotationService {
   @Inject private HPersistence hPersistence;
@@ -61,6 +70,55 @@ public class AnnotationServiceImpl implements AnnotationService {
   }
 
   @Override
+  public List<SecondaryEventsResponse> getAllInstancesGrouped(
+      ProjectParams projectParams, long startTime, long endTime, String sloIdentifier) {
+    List<AnnotationInstance> allInstances = getAllInstances(projectParams, startTime, endTime, sloIdentifier);
+    Map<Pair<Long, Long>, List<AnnotationInstance>> timeToIdentifiersMap = allInstances.stream().collect(
+        Collectors.groupingBy(instance -> new ImmutablePair<>(instance.getStartTime(), instance.getEndTime())));
+    return timeToIdentifiersMap.entrySet()
+        .stream()
+        .map(entry
+            -> SecondaryEventsResponse.builder()
+                   .type(SecondaryEventsType.ANNOTATION)
+                   .startTime(entry.getKey().getLeft())
+                   .endTime(entry.getKey().getRight())
+                   .identifiers(entry.getValue().stream().map(AnnotationInstance::getUuid).collect(Collectors.toList()))
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public SecondaryEventDetailsResponse getThreadDetails(List<String> annotationIds) {
+    List<Annotation> annotations = hPersistence.createQuery(Annotation.class)
+                                       .field(AnnotationKeys.uuid)
+                                       .in(annotationIds)
+                                       .order(Sort.ascending(AnnotationKeys.createdAt))
+                                       .asList();
+
+    Map<Pair<Long, Long>, List<Annotation>> timeToIdentifiersMap = annotations.stream().collect(
+        Collectors.groupingBy(instance -> new ImmutablePair<>(instance.getStartTime(), instance.getEndTime())));
+    if (timeToIdentifiersMap.size() != 1) {
+      throw new InvalidRequestException("All the messages should be of the same thread");
+    }
+
+    List<AnnotationInstance> annotationInstances = annotations.stream()
+                                                       .map(annotation
+                                                           -> AnnotationInstance.builder()
+                                                                  .uuid(annotation.getUuid())
+                                                                  .message(annotation.getMessage())
+                                                                  .createdAt(annotation.getCreatedAt())
+                                                                  .createdBy(annotation.getCreatedBy().getEmail())
+                                                                  .build())
+                                                       .collect(Collectors.toList());
+    return SecondaryEventDetailsResponse.builder()
+        .type(SecondaryEventsType.ANNOTATION)
+        .startTime(annotations.get(0).getStartTime())
+        .endTime(annotations.get(0).getEndTime())
+        .details(AnnotationInstanceDetails.builder().annotations(annotationInstances).build())
+        .build();
+  }
+
+  @Override
   public AnnotationResponse update(String annotationId, AnnotationDTO annotationDTO) {
     Annotation annotation = checkIfAnnotationPresent(annotationId);
     validateUpdate(annotation, annotationDTO);
@@ -79,6 +137,15 @@ public class AnnotationServiceImpl implements AnnotationService {
   public boolean delete(String annotationId) {
     checkIfAnnotationPresent(annotationId);
     return hPersistence.delete(Annotation.class, annotationId);
+  }
+
+  @Override
+  public void delete(ProjectParams projectParams, String sloIdentifier) {
+    hPersistence.delete(hPersistence.createQuery(Annotation.class)
+                            .filter(AnnotationKeys.accountId, projectParams.getAccountIdentifier())
+                            .filter(AnnotationKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                            .filter(AnnotationKeys.projectIdentifier, projectParams.getProjectIdentifier())
+                            .filter(AnnotationKeys.sloIdentifier, sloIdentifier));
   }
 
   private Annotation checkIfAnnotationPresent(String annotationId) {
@@ -110,6 +177,37 @@ public class AnnotationServiceImpl implements AnnotationService {
     Preconditions.checkArgument(
         annotationDTO.getStartTime() <= annotationDTO.getEndTime(), "Start time should be greater than the end time.");
     checkIfStartTimeIsUnique(projectParams, annotationDTO);
+  }
+
+  private List<AnnotationInstance> getAllInstances(
+      ProjectParams projectParams, long startTime, long endTime, String sloIdentifier) {
+    Query<Annotation> query = hPersistence.createQuery(Annotation.class)
+                                  .filter(AnnotationKeys.accountId, projectParams.getAccountIdentifier())
+                                  .filter(AnnotationKeys.sloIdentifier, sloIdentifier)
+                                  .field(AnnotationKeys.startTime)
+                                  .lessThanOrEq(endTime)
+                                  .field(AnnotationKeys.endTime)
+                                  .greaterThanOrEq(startTime)
+                                  .order(Sort.ascending(AnnotationKeys.createdAt));
+    if (isNotEmpty(projectParams.getOrgIdentifier())) {
+      query.filter(AnnotationKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (isNotEmpty(projectParams.getProjectIdentifier())) {
+      query.filter(AnnotationKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+
+    return query.asList()
+        .stream()
+        .map(annotation
+            -> AnnotationInstance.builder()
+                   .uuid(annotation.getUuid())
+                   .message(annotation.getMessage())
+                   .startTime(annotation.getStartTime())
+                   .endTime(annotation.getEndTime())
+                   .createdBy(annotation.getCreatedBy().getEmail())
+                   .createdAt(annotation.getCreatedAt())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private void validateUpdate(Annotation annotation, AnnotationDTO updatedAnnotationDTO) {
