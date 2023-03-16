@@ -21,6 +21,8 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.PipelineExecutor;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.EmptyStepParameters;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -31,6 +33,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -42,6 +45,7 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
 
   @Inject private PipelineExecutor pipelineExecutor;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
+  @Inject private PmsExecutionSummaryService executionSummaryService;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -60,6 +64,9 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
     if (planExecution == null) {
       throw new InvalidRequestException("Failed to start Pipeline Rollback");
     }
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.rollbackModeExecutionId, planExecution.getUuid());
+    executionSummaryService.update(planExecutionId, update);
     // saving output for handleAsyncResponse
     sweepingOutputService.consume(ambiance, PipelineRollbackStageSweepingOutput.OUTPUT_NAME,
         PipelineRollbackStageSweepingOutput.builder().rollbackModeExecutionId(planExecution.getUuid()).build(),
