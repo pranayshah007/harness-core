@@ -458,6 +458,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
+    registerOasSpecFirstResource(environment);
     registerManagedBeans(environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
@@ -517,6 +518,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
+  }
+
+  private void registerOasSpecFirstResource(Environment environment){
+    environment.jersey().register(new OasSpecFirstYamlResource());
   }
 
   private void registerQueueListeners(Injector injector) {
