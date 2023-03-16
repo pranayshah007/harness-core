@@ -21,11 +21,9 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 
 import io.fabric8.utils.Pair;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@Builder
 @Slf4j
 public class PipelineAsyncValidationHandler implements Runnable {
   private final PipelineValidationEvent validationEvent;
@@ -33,6 +31,16 @@ public class PipelineAsyncValidationHandler implements Runnable {
   private final PipelineAsyncValidationService validationService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
+
+  public PipelineAsyncValidationHandler(PipelineValidationEvent validationEvent, boolean loadFromCache,
+      PipelineAsyncValidationService validationService, PMSPipelineTemplateHelper pipelineTemplateHelper,
+      PipelineGovernanceService pipelineGovernanceService) {
+    this.validationEvent = validationEvent;
+    this.loadFromCache = loadFromCache;
+    this.validationService = validationService;
+    this.pipelineTemplateHelper = pipelineTemplateHelper;
+    this.pipelineGovernanceService = pipelineGovernanceService;
+  }
 
   @Override
   public void run() {

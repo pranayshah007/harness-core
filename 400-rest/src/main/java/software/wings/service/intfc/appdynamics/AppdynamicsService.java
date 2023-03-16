@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.service.impl.ThirdPartyApiCallLog;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.appdynamics.AppdynamicsSetupTestNodeData;
 import software.wings.service.impl.appdynamics.AppdynamicsTier;

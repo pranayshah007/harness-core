@@ -18,9 +18,9 @@ import io.harness.VerificationIntegrationBase;
 import io.harness.category.element.DeprecatedIntegrationTests;
 import io.harness.rule.Owner;
 
+import software.wings.beans.dto.CVActivityLog.LogLevel;
 import software.wings.service.intfc.verification.CVActivityLogService;
 import software.wings.verification.CVActivityLog;
-import software.wings.verification.CVActivityLog.LogLevel;
 
 import com.google.inject.Inject;
 import java.util.List;
