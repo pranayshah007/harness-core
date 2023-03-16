@@ -44,6 +44,8 @@ import io.harness.ngmigration.service.step.k8s.K8sRollingStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sScaleStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sSwapServiceSelectorsStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sTrafficSplitStepMapperImpl;
+import io.harness.ngmigration.service.step.lambda.LambdaRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.lambda.LambdaStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfBGMapRouteStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.pcf.PcfPluginStepMapperImpl;
@@ -165,6 +167,8 @@ public class StepMapperFactory {
   @Inject AsgBlueGreenSwapStepMapperImpl asgBlueGreenSwapStepMapper;
   @Inject AsgBlueGreenRollbackStepMapperImpl asgBlueGreenRollbackStepMapper;
   @Inject ShellScriptProvisionerStepMapperImpl shellScriptProvisionerStepMapper;
+  @Inject LambdaStepMapperImpl lambdaStepMapper;
+  @Inject LambdaRollbackStepMapperImpl lambdaRollbackStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -349,6 +353,10 @@ public class StepMapperFactory {
         return unsupportedStepMapper;
       case "SHELL_SCRIPT_PROVISION":
         return shellScriptProvisionerStepMapper;
+      case "AWS_LAMBDA_STATE":
+        return lambdaStepMapper;
+      case "AWS_LAMBDA_ROLLBACK":
+        return lambdaRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }
