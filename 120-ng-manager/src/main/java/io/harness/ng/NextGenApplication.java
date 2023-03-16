@@ -520,7 +520,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(openApiResource);
   }
 
-  private void registerOasSpecFirstResource(Environment environment){
+  private void registerOasSpecFirstResource(Environment environment) {
     environment.jersey().register(new OasSpecFirstYamlResource());
   }
 

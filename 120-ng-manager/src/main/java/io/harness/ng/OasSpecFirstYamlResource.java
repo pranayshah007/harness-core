@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
 public class OasSpecFirstYamlResource {
   public static final String NG_MANAGER_PATH = "./120-ng-manager/contracts/openapi/v1/openapi.yaml";
   public static final String CONNECTORS_PATH = "./440-connector-nextgen/contracts/openapi/v1/openapi.yaml";
-  public static final String COMMONS_PATH = "970-ng-commons/contracts/openapi/v1/openapi.yaml";
+  public static final String COMMONS_PATH = "./970-ng-commons/contracts/openapi/v1/openapi.yaml";
 
   @GET
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
