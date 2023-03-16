@@ -17,5 +17,5 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface AppConfigRepository extends CrudRepository<AppConfigEntity, String>, AppConfigRepositoryCustom {
-  Optional<AppConfigEntity> findByAccountIdentifierAndPluginName(String accountIdentifier, String pluginName);
+  Optional<AppConfigEntity> findByAccountIdentifierAndPluginId(String accountIdentifier, String pluginName);
 }

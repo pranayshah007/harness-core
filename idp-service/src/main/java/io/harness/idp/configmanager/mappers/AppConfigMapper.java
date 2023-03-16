@@ -18,9 +18,9 @@ import lombok.experimental.UtilityClass;
 public class AppConfigMapper {
   public AppConfig toDTO(AppConfigEntity appConfigEntity) {
     AppConfig appConfig = new AppConfig();
-    appConfig.setPluginName(appConfigEntity.getPluginName());
+    appConfig.setPluginId(appConfigEntity.getPluginId());
     appConfig.setConfigs(appConfigEntity.getConfigs());
-    appConfig.isEnabled(appConfigEntity.getIsEnabled());
+    appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setEnabledDisabledAt(appConfigEntity.getEnabledDisabledAt());
     appConfig.setCreatedAt(appConfigEntity.getCreatedAt());
     appConfig.setLastModifiedAt(appConfigEntity.getLastModifiedAt());
@@ -30,9 +30,9 @@ public class AppConfigMapper {
   public AppConfigEntity fromDTO(AppConfig appConfig, String accountIdentifier) {
     return AppConfigEntity.builder()
         .accountIdentifier(accountIdentifier)
-        .pluginName(appConfig.getPluginName())
+        .pluginId(appConfig.getPluginId())
         .configs(appConfig.getConfigs())
-        .isEnabled(appConfig.isIsEnabled())
+        .enabled(appConfig.isEnabled())
         .build();
   }
 }

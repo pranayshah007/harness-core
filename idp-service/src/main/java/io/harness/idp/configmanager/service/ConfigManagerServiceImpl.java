@@ -23,16 +23,17 @@ import lombok.AllArgsConstructor;
 public class ConfigManagerServiceImpl implements ConfigManagerService {
   private AppConfigRepository appConfigRepository;
 
-  private static String PLUGIN_CONFIG_NOT_FOUND = "Plugin configs for plugin - %s is not present for account - %s";
-  private static String PLUGIN_SAVE_UNSUCCESSFUL =
+  private static final String PLUGIN_CONFIG_NOT_FOUND =
+      "Plugin configs for plugin - %s is not present for account - %s";
+  private static final String PLUGIN_SAVE_UNSUCCESSFUL =
       "Plugin config saving is unsuccessful for plugin - % in account - %s";
 
   @Override
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginName) {
+  public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
     Optional<AppConfigEntity> pluginConfig =
-        appConfigRepository.findByAccountIdentifierAndPluginName(accountIdentifier, pluginName);
+        appConfigRepository.findByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
     if (pluginConfig.isEmpty()) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, pluginName, accountIdentifier));
+      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, pluginId, accountIdentifier));
     }
     return pluginConfig.map(AppConfigMapper::toDTO).get();
   }
@@ -43,9 +44,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setEnabledDisabledAt(System.currentTimeMillis());
     AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
-    if (insertedData == null) {
-      throw new InvalidRequestException(format(PLUGIN_SAVE_UNSUCCESSFUL, appConfig.getPluginName(), accountIdentifier));
-    }
     return AppConfigMapper.toDTO(insertedData);
   }
 
@@ -55,13 +53,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity);
     if (updatedData == null) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getPluginName(), accountIdentifier));
+      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getPluginId(), accountIdentifier));
     }
     return AppConfigMapper.toDTO(updatedData);
   }
 
   @Override
-  public AppConfig updatePluginEnablement(String accountIdentifier, String pluginName, Boolean isEnabled) {
+  public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled) {
     AppConfigEntity updatedData = appConfigRepository.updatePluginEnablement(accountIdentifier, pluginName, isEnabled);
     if (updatedData == null) {
       throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, pluginName, accountIdentifier));

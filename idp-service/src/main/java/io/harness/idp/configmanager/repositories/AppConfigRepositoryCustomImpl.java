@@ -24,7 +24,7 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
 
   @Override
   public AppConfigEntity updateConfig(AppConfigEntity appConfigEntity) {
-    Criteria criteria = getCriteriaForPlugin(appConfigEntity.getAccountIdentifier(), appConfigEntity.getPluginName());
+    Criteria criteria = getCriteriaForPlugin(appConfigEntity.getAccountIdentifier(), appConfigEntity.getPluginId());
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(AppConfigEntityKeys.configs, appConfigEntity.getConfigs());
@@ -34,21 +34,20 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
   }
 
   @Override
-  public AppConfigEntity updatePluginEnablement(String accountIdentifier, String pluginName, Boolean isEnabled) {
-    Criteria criteria = getCriteriaForPlugin(accountIdentifier, pluginName);
+  public AppConfigEntity updatePluginEnablement(String accountIdentifier, String pluginId, Boolean enabled) {
+    Criteria criteria = getCriteriaForPlugin(accountIdentifier, pluginId);
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(AppConfigEntityKeys.isEnabled, isEnabled);
+    update.set(AppConfigEntityKeys.enabled, enabled);
     update.set(AppConfigEntityKeys.enabledDisabledAt, System.currentTimeMillis());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, AppConfigEntity.class);
   }
 
-  private Criteria getCriteriaForPlugin(String accountIdentifier, String pluginName) {
-    Criteria criteria = Criteria.where(AppConfigEntityKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(AppConfigEntityKeys.pluginName)
-                            .is(pluginName);
-    return criteria;
+  private Criteria getCriteriaForPlugin(String accountIdentifier, String pluginId) {
+    return Criteria.where(AppConfigEntityKeys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(AppConfigEntityKeys.pluginId)
+        .is(pluginId);
   }
 }

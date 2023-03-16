@@ -11,11 +11,11 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
 public interface ConfigManagerService {
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginName);
+  public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
   public AppConfig savePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
 
   public AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
 
-  public AppConfig updatePluginEnablement(String accountIdentifier, String pluginName, Boolean isEnabled);
+  public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
 }

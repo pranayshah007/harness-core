@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -38,20 +39,20 @@ public class AppConfigEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_plugin_name")
+                 .name("unique_account_plugin_id")
                  .unique(true)
                  .field(AppConfigEntityKeys.accountIdentifier)
-                 .field(AppConfigEntityKeys.pluginName)
+                 .field(AppConfigEntityKeys.pluginId)
                  .build())
         .build();
   }
 
   @Id @org.mongodb.morphia.annotations.Id private String id;
-  private String accountIdentifier;
-  private String pluginName;
-  private String configs;
-  private Boolean isEnabled;
+  @NotNull private String accountIdentifier;
+  @NotNull private String pluginId;
+  @NotNull private String configs;
+  @NotNull private Boolean enabled;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
-  Long enabledDisabledAt;
+  @NotNull Long enabledDisabledAt;
 }

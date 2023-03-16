@@ -71,7 +71,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.ServiceResourceClientModule;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
-import io.harness.spec.server.idp.v1.AppconfigApi;
+import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.EnvironmentSecretApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
@@ -223,7 +223,7 @@ public class IdpModule extends AbstractModule {
     bind(MessageListener.class).annotatedWith(Names.named(ENTITY_CRUD)).to(EntityCrudStreamListener.class);
     bind(ConnectorProcessorFactory.class);
     bind(NamespaceApi.class).to(NamespaceApiImpl.class);
-    bind(AppconfigApi.class).to(AppConfigApiImpl.class);
+    bind(AppConfigApi.class).to(AppConfigApiImpl.class);
     bind(AccountInfoApi.class).to(AccountInfoApiImpl.class);
     bind(ProvisionApi.class).to(ProvisionApiImpl.class);
     bind(ProvisionService.class).to(ProvisionServiceImpl.class);
