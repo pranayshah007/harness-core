@@ -640,9 +640,6 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     cloudProviderTableName = viewBillingServiceHelper.getUpdatedCloudProviderTableName(
         filters, null, aggregateFunction, "", cloudProviderTableName, queryParams.isClusterQuery());
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters = AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery));
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
@@ -652,21 +649,21 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
     boolean addSharedCostFromGroupBy = !businessMappingIds.contains(businessMappingId);
 
-    SelectQuery query = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy,
-        aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
-
     List<QLCEViewTimeFilter> trendTimeFilters = viewsQueryHelper.getTrendFilters(timeFilters);
-    SelectQuery prevTrendStatsQuery = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, trendTimeFilters,
-        groupBy, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    List<QLCEViewFilterWrapper> filtersForPrevPeriod = viewsQueryHelper.getUpdatedFiltersForPrevPeriod(filters);
+
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    SelectQuery prevTrendStatsQuery = viewBillingServiceHelper.getQuery(filtersForPrevPeriod, groupBy,
+        aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
 
     Instant trendStartInstant =
         Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(trendTimeFilters, AFTER).getValue().longValue());
 
     double sharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(filters, groupBy, aggregateFunction,
         Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
-    double prevSharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(
-        viewsQueryHelper.getUpdatedFiltersForPrevPeriod(filters), groupBy, aggregateFunction, Collections.emptyList(),
-        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    double prevSharedCostFromRulesAndFilters = getTotalSharedCostFromFilters(filtersForPrevPeriod, groupBy,
+        aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
 
     List<String> fields = getSelectedFields(filters, groupBy, aggregateFunction);
     ViewCostData costData = getViewTrendStatsCostData(
@@ -842,11 +839,6 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
   public ViewCostData getCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
     String cloudProviderTableName = ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE;
-    boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters =
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
-    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
     if (Lists.isNullOrEmpty(groupBy)) {
       Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
       if (viewMetadataFilter.isPresent()) {
@@ -870,8 +862,8 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
         viewParametersHelper.getSharedCostBusinessMappings(businessMappingIds);
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
     boolean addSharedCostFromGroupBy = !businessMappingIds.contains(businessMappingId);
-    SelectQuery query = viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy,
-        aggregateFunction, viewRuleList, cloudProviderTableName, queryParams, sharedCostBusinessMappings);
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        cloudProviderTableName, queryParams, sharedCostBusinessMappings);
     List<String> fields = getSelectedFields(filters, groupBy, aggregateFunction);
     double sharedCostFromFiltersAndRules = getTotalSharedCostFromFilters(filters, groupBy, aggregateFunction,
         Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings);
@@ -903,13 +895,9 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
   public List<ValueDataPoint> getActualCostGroupedByPeriod(List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams) {
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
-    List<QLCEViewFilter> idFilters =
-        viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
-    List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
 
-    SelectQuery query =
-        viewBillingServiceHelper.getTrendStatsQuery(filters, idFilters, timeFilters, groupBy, aggregateFunction,
-            new ArrayList<>(), ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, queryParams, Collections.emptyList());
+    SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
+        ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, queryParams, Collections.emptyList());
     ResultSet resultSet = null;
     try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
          Statement statement = connection.createStatement()) {
