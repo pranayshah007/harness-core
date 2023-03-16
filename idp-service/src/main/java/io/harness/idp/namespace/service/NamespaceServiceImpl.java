@@ -9,20 +9,26 @@ package io.harness.idp.namespace.service;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.beans.entity.NamespaceEntity;
 import io.harness.idp.namespace.mappers.NamespaceMapper;
 import io.harness.idp.namespace.repositories.NamespaceRepository;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
+import com.google.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
+import lombok.AllArgsConstructor;
 
+@OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class NamespaceServiceImpl implements NamespaceService {
-  @Inject private NamespaceRepository namespaceRepository;
+  private NamespaceRepository namespaceRepository;
   private static final String IDP_NOT_ENABLED = "IDP has not been set up for account [%s]";
   private static final String IDP_NAMESPACE_NOT_LINKED = "Namespace - [%s] is not linked to any account";
-
+  private K8sClient k8sClient;
   @Override
   public NamespaceInfo getNamespaceForAccountIdentifier(String accountId) {
     Optional<NamespaceEntity> namespaceName = namespaceRepository.findByAccountIdentifier(accountId);
@@ -45,6 +51,7 @@ public class NamespaceServiceImpl implements NamespaceService {
   public NamespaceEntity saveAccountIdNamespace(String accountId) {
     NamespaceEntity dataToInsert = NamespaceEntity.builder().accountIdentifier(accountId).build();
     NamespaceEntity insertedData = namespaceRepository.save(dataToInsert);
+    k8sClient.createNamespace(insertedData.getId());
     return insertedData;
   }
 }
