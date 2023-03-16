@@ -20,21 +20,18 @@ import software.wings.beans.SettingAttribute;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.analysis.ElkValidationType;
 
-import java.util.Collections;
+import com.google.common.collect.Lists;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 public class ElkConnectorImpl implements BaseConnector {
   @Override
-  public boolean isConnectorSupported(SettingAttribute settingAttribute) {
-    return true;
-  }
-
-  @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {
-    return Collections.singletonList(((ElkConfig) settingAttribute.getValue()).getEncryptedPassword());
+    ElkConfig config = (ElkConfig) settingAttribute.getValue();
+    return Lists.newArrayList(config.getEncryptedPassword());
   }
 
   @Override
@@ -48,17 +45,17 @@ public class ElkConnectorImpl implements BaseConnector {
     ElkConfig elkConfig = (ElkConfig) settingAttribute.getValue();
     ELKConnectorDTOBuilder dtoBuilder =
         ELKConnectorDTO.builder().url(elkConfig.getElkUrl()).delegateSelectors(new HashSet<>());
-
     if (ElkValidationType.TOKEN.equals(elkConfig.getValidationType())) {
       dtoBuilder.authType(ELKAuthType.API_CLIENT_TOKEN);
       dtoBuilder.apiKeyId(elkConfig.getUsername());
       dtoBuilder.apiKeyRef(MigratorUtility.getSecretRef(migratedEntities, elkConfig.getEncryptedPassword()));
-    } else {
+    } else if (StringUtils.isNotEmpty(elkConfig.getEncryptedPassword())) {
       dtoBuilder.authType(ELKAuthType.USERNAME_PASSWORD);
       dtoBuilder.passwordRef(MigratorUtility.getSecretRef(migratedEntities, elkConfig.getEncryptedPassword()));
       dtoBuilder.username(elkConfig.getUsername());
+    } else {
+      dtoBuilder.authType(ELKAuthType.NONE);
     }
-
     return dtoBuilder.build();
   }
 }
