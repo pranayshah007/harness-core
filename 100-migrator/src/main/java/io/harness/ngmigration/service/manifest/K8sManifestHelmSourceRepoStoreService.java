@@ -20,6 +20,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -43,7 +44,7 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
     if (connector == null) {
@@ -63,7 +64,7 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
     gitStore.setFolderPath(ParameterField.createValueField(dirPath));
     HelmChartManifest helmChartManifest =
         HelmChartManifest.builder()
-            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .helmVersion(service.getHelmVersion())
@@ -73,13 +74,13 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
 
     helmChartManifest.setCommandFlags(getCommandFlags(applicationManifest));
 
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.HELM_CHART)
-                          .spec(helmChartManifest)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.HELM_CHART)
+                                                       .spec(helmChartManifest)
+                                                       .build())
+                                         .build());
   }
 }

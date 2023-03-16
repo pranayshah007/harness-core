@@ -42,7 +42,7 @@ public enum ProvisionerType {
   AZURE_BLUEPRINT("Blueprint"),
   SHELL_SCRIPT_PROVISIONER("Script"),
   TERRAGRUNT("Terragrunt"),
-  TERRAFORM_CLOUD("Terraform cloud");
+  TERRAFORM_CLOUD("TerraformCloud");
 
   private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(
       TERRAFORM, CLOUD_FORMATION, AZURE_ARM, AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER, TERRAGRUNT, TERRAFORM_CLOUD);

@@ -46,7 +46,7 @@ public class K8sBlueGreenDeployStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(graphNode);
     K8sBlueGreenStepNode stepNode = new K8sBlueGreenStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     K8sBlueGreenStepInfo stepInfo =
         K8sBlueGreenStepInfo.infoBuilder()
             .pruningEnabled(ParameterField.createValueField(false))

@@ -47,7 +47,7 @@ public class K8sTrafficSplitStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sTrafficSplitState state = (K8sTrafficSplitState) getState(graphNode);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
-    baseSetup(state, k8sApplyStepNode);
+    baseSetup(state, k8sApplyStepNode, context.getIdentifierCaseFormat());
     K8sApplyStepInfo k8sApplyStepInfo =
         K8sApplyStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))

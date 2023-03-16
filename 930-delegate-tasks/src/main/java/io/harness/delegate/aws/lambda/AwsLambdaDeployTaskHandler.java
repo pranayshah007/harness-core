@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.lambda.AwsLambda;
 import io.harness.delegate.task.aws.lambda.AwsLambdaTaskHelper;
 import io.harness.delegate.task.aws.lambda.request.AwsLambdaCommandRequest;
@@ -47,15 +46,15 @@ public class AwsLambdaDeployTaskHandler {
 
   public AwsLambdaDeployResponse executeTaskInternal(AwsLambdaCommandRequest awsLambdaCommandRequest,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
-    if (!(awsLambdaCommandRequest instanceof AwsLambdaCommandRequest)) {
+    if (!(awsLambdaCommandRequest instanceof AwsLambdaDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("awsLambdaCommandRequest",
           "Must be instance of "
-              + "AwsLambdaCommandRequest"));
+              + "AwsLambdaDeployRequest"));
     }
 
     AwsLambdaDeployRequest awsLambdaDeployRequest = (AwsLambdaDeployRequest) awsLambdaCommandRequest;
 
-    LogCallback executionLogCallback = new NGDelegateLogCallback(
+    LogCallback executionLogCallback = awsLambdaTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AwsLambdaCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {

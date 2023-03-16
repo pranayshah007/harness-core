@@ -19,6 +19,7 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.entity.ManifestMigrationService;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.yaml.ParameterField;
@@ -40,7 +41,7 @@ public class TanzuManifestRemoteStoreService implements NgManifestService {
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
-      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
+      ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
     NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
     if (connector == null) {
@@ -49,7 +50,7 @@ public class TanzuManifestRemoteStoreService implements NgManifestService {
 
     TasManifest tasManifest =
         TasManifest.builder()
-            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+            .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .cfCliVersion(CfCliVersionNG.V7)
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder()
@@ -57,13 +58,13 @@ public class TanzuManifestRemoteStoreService implements NgManifestService {
                     .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
             .build();
-    return Collections.singletonList(
-        ManifestConfigWrapper.builder()
-            .manifest(ManifestConfig.builder()
-                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                          .type(ManifestConfigType.TAS_MANIFEST)
-                          .spec(tasManifest)
-                          .build())
-            .build());
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(MigratorUtility.generateIdentifier(
+                                                           applicationManifest.getUuid(), identifierCaseFormat))
+                                                       .type(ManifestConfigType.TAS_MANIFEST)
+                                                       .spec(tasManifest)
+                                                       .build())
+                                         .build());
   }
 }

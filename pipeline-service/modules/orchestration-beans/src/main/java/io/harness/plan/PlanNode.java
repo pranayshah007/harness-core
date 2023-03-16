@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.SkipType;
@@ -22,6 +23,7 @@ import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Singular;
@@ -52,6 +54,7 @@ public class PlanNode implements Node {
 
   // Hooks
   @Singular List<AdviserObtainment> adviserObtainments;
+  Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<TimeoutObtainment> timeoutObtainments;
 

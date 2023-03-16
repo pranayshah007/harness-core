@@ -79,12 +79,12 @@ public interface ServiceV2Mapper {
               if (isNotEmpty(artifactSource.getSources())) {
                 return artifactSource.getSources();
               } else {
-                return Collections.singletonList(
-                    ArtifactSource.builder()
-                        .sourceType(artifactSource.getSourceType())
-                        .identifier(MigratorUtility.generateIdentifier(artifactStream.getName()))
-                        .spec(artifactSource.getSpec())
-                        .build());
+                return Collections.singletonList(ArtifactSource.builder()
+                                                     .sourceType(artifactSource.getSourceType())
+                                                     .identifier(MigratorUtility.generateIdentifier(
+                                                         artifactStream.getName(), inputDTO.getIdentifierCaseFormat()))
+                                                     .spec(artifactSource.getSpec())
+                                                     .build());
               }
             })
             .flatMap(List::stream)

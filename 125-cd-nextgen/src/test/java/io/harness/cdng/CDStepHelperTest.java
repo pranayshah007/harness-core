@@ -1167,6 +1167,7 @@ public class CDStepHelperTest extends CategoryTest {
                        .executeOnHarnessHostedDelegates(true)
                        .stageId("stage_1")
                        .emitEvent(true)
+                       .baseLogKey("")
                        .executionTimeout(Duration.ofNanos(100000000))
                        .build());
   }

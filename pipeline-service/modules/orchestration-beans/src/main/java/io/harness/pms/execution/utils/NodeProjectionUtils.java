@@ -100,4 +100,7 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
       NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
+
+  public static final Set<String> fieldsForIdentityNodeCreation =
+      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
 }

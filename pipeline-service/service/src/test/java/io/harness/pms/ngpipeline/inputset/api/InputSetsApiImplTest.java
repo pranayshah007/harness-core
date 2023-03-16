@@ -258,7 +258,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
         .when(pmsInputSetService)
         .moveConfig(any(), any(), any(), any(), any());
     Response response =
-        inputSetsApiImpl.inputSetMoveConfig(org, project, inputSet, inputSetMoveConfigRequestBody, account);
+        inputSetsApiImpl.inputSetsMoveConfig(org, project, inputSet, inputSetMoveConfigRequestBody, account);
     InputSetMoveConfigResponseBody responseBody = (InputSetMoveConfigResponseBody) response.getEntity();
     assertEquals(inputSet, responseBody.getInputSetIdentifier());
   }

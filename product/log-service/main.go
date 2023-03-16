@@ -12,6 +12,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/cli"
 
 	_ "github.com/joho/godotenv/autoload"
+	_ "go.uber.org/automaxprocs"
 )
 
 func main() {
@@ -27,5 +28,6 @@ func main() {
 			fmt.Printf("Stack Trace thread dump= %s\n", stack[:length])
 		}
 	}()
+
 	cli.Command()
 }

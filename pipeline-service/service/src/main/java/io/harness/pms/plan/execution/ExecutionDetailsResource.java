@@ -41,6 +41,7 @@ import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
@@ -362,6 +363,29 @@ public class ExecutionDetailsResource {
       @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
           description = "ExecutionId of the execution for which we want to get Metadata") String planExecutionId) {
     ExecutionDataResponseDTO executionDetailsResponseDTO = pmsExecutionService.getExecutionData(planExecutionId);
+    return ResponseDTO.newResponse(executionDetailsResponseDTO);
+  }
+
+  @GET
+  @Path("/{planExecutionId}/metadata/details")
+  @ApiOperation(value = "Get plan metadata details of an execution", nickname = "getExecutionDataDetails")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getExecutionDataDetails",
+      summary = "Get execution metadata details of a pipeline execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns plan metadata details of a execution")
+      })
+  @Hidden
+  public ResponseDTO<ExecutionMetaDataResponseDetailsDTO>
+  getExecutionsDetails(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to get Metadata") String planExecutionId) {
+    ExecutionMetaDataResponseDetailsDTO executionDetailsResponseDTO =
+        pmsExecutionService.getExecutionDataDetails(planExecutionId);
     return ResponseDTO.newResponse(executionDetailsResponseDTO);
   }
 

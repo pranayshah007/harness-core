@@ -43,7 +43,7 @@ public class BarrierStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     BarrierState state = (BarrierState) getState(graphNode);
     BarrierStepNode barrierStepNode = new BarrierStepNode();
-    baseSetup(graphNode, barrierStepNode);
+    baseSetup(graphNode, barrierStepNode, context.getIdentifierCaseFormat());
     BarrierStepInfo barrierStepInfo =
         BarrierStepInfo.builder().name(state.getName()).identifier(state.getIdentifier()).build();
     barrierStepNode.setBarrierStepInfo(barrierStepInfo);

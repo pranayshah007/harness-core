@@ -101,8 +101,8 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   public YamlGenerationDetails generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(
-        entities, migratedEntities, infrastructureDefinition, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(entities, migratedEntities, infrastructureDefinition,
+        inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
     NGYamlFile yamlFile = getYamlFile(infrastructureDefinition, inputDTO);
     if (yamlFile == null) {
       return null;
@@ -128,7 +128,8 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
     String fileUsage = FileUsage.CONFIG.name();
     String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
-    String identifier = MigratorUtility.generateManifestIdentifier(prefix + "ElastigroupConfigurationSpec");
+    String identifier = MigratorUtility.generateManifestIdentifier(
+        prefix + "ElastigroupConfigurationSpec", inputDTO.getIdentifierCaseFormat());
     String name = identifier + ".json";
     return NGYamlFile.builder()
         .type(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION)
@@ -178,8 +179,8 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) configNode.getEntity();
-        MigratorExpressionUtils.render(
-            entities, migratedEntities, infrastructureDefinition, inputDTO.getCustomExpressions());
+        MigratorExpressionUtils.render(entities, migratedEntities, infrastructureDefinition,
+            inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
         NGYamlFile file = getYamlFile(infrastructureDefinition, inputDTO);
         if (file != null) {
           elastigroupConfigurations.add(getConfigFileWrapper(file));

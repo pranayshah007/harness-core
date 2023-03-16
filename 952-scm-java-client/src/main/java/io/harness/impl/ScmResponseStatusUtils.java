@@ -45,6 +45,24 @@ public class ScmResponseStatusUtils {
     }
   }
 
+  public void checkScmResponseStatusAndThrowExceptionForUpsertWebhook(int statusCode, String errorMsg) {
+    if (statusCode >= 300) {
+      ErrorCode errorCode = convertScmStatusCodeToErrorCodeForUpsertWebhook(statusCode);
+      if (errorCode == ErrorCode.UNEXPECTED) {
+        log.error("Encountered new status code: [{}] with message: [{}] from scm", statusCode, errorMsg);
+        throw new UnexpectedException("Unexpected error occurred while doing scm operation");
+      } else if (errorCode == ErrorCode.SCM_NOT_FOUND_ERROR) {
+        throw NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.INVALID_CREDENTIALS,
+            SCMExceptionExplanations.UNABLE_TO_PUSH_TO_REPO_WITH_USER_CREDENTIALS, new ScmException(errorCode));
+      }
+      if (isNotEmpty(errorMsg)) {
+        throw new ExplanationException(errorMsg, new ScmException(errorCode));
+      } else {
+        throw new ScmException(errorCode);
+      }
+    }
+  }
+
   public ErrorCode convertScmStatusCodeToErrorCode(int statusCode) {
     switch (statusCode) {
       case 304:
@@ -65,6 +83,28 @@ public class ScmResponseStatusUtils {
     }
   }
 
+  public ErrorCode convertScmStatusCodeToErrorCodeForUpsertWebhook(int statusCode) {
+    switch (statusCode) {
+      case 304:
+        return ErrorCode.SCM_NOT_MODIFIED;
+      case 404:
+        return ErrorCode.SCM_NOT_FOUND_ERROR;
+      case 409:
+        return ErrorCode.SCM_CONFLICT_ERROR;
+      case 422:
+        return ErrorCode.SCM_UNPROCESSABLE_ENTITY;
+      case 401:
+        return ErrorCode.SCM_UNAUTHORIZED;
+      case 403:
+        return ErrorCode.SCM_FORBIDDEN;
+      case 400:
+        return ErrorCode.SCM_BAD_REQUEST;
+      case 500:
+        return ErrorCode.SCM_INTERNAL_SERVER_ERROR;
+      default:
+        return ErrorCode.UNEXPECTED;
+    }
+  }
   public String formatErrorMessage(int statusCode) {
     switch (statusCode) {
       case 401:

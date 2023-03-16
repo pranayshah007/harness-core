@@ -188,7 +188,7 @@ public class TriggerImportService implements ImportService {
     }
     NGTriggerConfigV2 triggerConfig =
         NGTriggerConfigV2.builder()
-            .identifier(MigratorUtility.generateIdentifier(trigger.getName()))
+            .identifier(MigratorUtility.generateIdentifier(trigger.getName(), inputDTO.getIdentifierCaseFormat()))
             .orgIdentifier(inputDTO.getOrgIdentifier())
             .projectIdentifier(inputDTO.getProjectIdentifier())
             .description(trigger.getDescription())

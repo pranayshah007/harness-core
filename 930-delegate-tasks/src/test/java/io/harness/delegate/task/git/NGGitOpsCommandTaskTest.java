@@ -53,6 +53,8 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   private JSONObject existingFile;
   private JSONObject variableInputJSON;
   private Map<String, String> variableInputMap;
+  private static final String DEFAULT_PR_TITLE = "Harness: Updating config overrides";
+  private static final String CUSTOM_PR_TITLE = "Custom PR Title Support Verified.";
 
   private void setUpForHierarchical() {
     Map<Object, Object> tmp1 = new HashMap<>();
@@ -184,5 +186,21 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
         + "  }\n"
         + "}";
     assertThat(result).isEqualTo(expectedResult);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testResolvePRTitleDefault() {
+    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().build());
+    assertThat(result).isEqualTo(DEFAULT_PR_TITLE);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testResolvePRTitleCustom() {
+    String result = ngGitOpsCommandTask.resolvePRTitle(NGGitOpsTaskParams.builder().prTitle(CUSTOM_PR_TITLE).build());
+    assertThat(result).isEqualTo(CUSTOM_PR_TITLE);
   }
 }

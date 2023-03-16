@@ -41,7 +41,7 @@ public class ElastigroupSwapRouteStepMapperImpl extends StepMapper {
     SpotInstListenerUpdateState state = (SpotInstListenerUpdateState) getState(graphNode);
 
     ElastigroupSwapRouteStepNode node = new ElastigroupSwapRouteStepNode();
-    baseSetup(state, node);
+    baseSetup(state, node, context.getIdentifierCaseFormat());
     ElastigroupSwapRouteStepInfo elastigroupDeployStepInfo =
         ElastigroupSwapRouteStepInfo.infoBuilder()
             .downsizeOldElastigroup(ParameterField.createValueField(state.isDownsizeOldElastiGroup()))

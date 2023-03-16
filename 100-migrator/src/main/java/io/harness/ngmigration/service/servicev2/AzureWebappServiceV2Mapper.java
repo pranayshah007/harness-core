@@ -57,7 +57,8 @@ public class AzureWebappServiceV2Mapper implements ServiceV2Mapper {
     if (primaryArtifact != null) {
       webAppServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    webAppServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    webAppServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     webAppServiceSpecBuilder.configFiles(configFiles);
     webAppServiceSpecBuilder.startupCommand(getStartupCommand(startupScriptConfigurations));
     webAppServiceSpecBuilder.applicationSettings(getApplicationSettings(manifests));
