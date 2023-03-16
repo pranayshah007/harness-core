@@ -101,6 +101,11 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.status)
                  .field(StateExecutionInstanceKeys.stateType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_createdAt")
+                 .field(StateExecutionInstanceKeys.appId)
+                 .field(StateExecutionInstanceKeys.createdAt)
+                 .build())
         .build();
   }
   @Id private String uuid;
