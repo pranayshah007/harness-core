@@ -16,8 +16,8 @@ public class QueryConstructor {
       + "resource.type=(\"k8s_container\" OR \"global\")\n"
       + "labels.app=\"delegate\"\n"
       + "timestamp >= \"%s\" AND timestamp <= \"%s\"\n"
-      + "jsonPayload.harness.taskId=%s\n"
-      + "jsonPayload.harness.accountId=%s";
+      + "jsonPayload.harness.taskId=\"%s\"\n"
+      + "jsonPayload.harness.accountId=\"%s\"";
 
   public static String getTasksLogQuery(String accountId, List<String> taskIds, long start, long end) {
     Instant endTime = Instant.ofEpochSecond(end);
