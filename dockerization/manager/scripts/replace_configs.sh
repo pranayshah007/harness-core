@@ -827,7 +827,7 @@ fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.redisLockConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
-  export REDIS_ENV_NAMESPACE; yq -i '.redisDelegateConfig.nettyThreads=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
+  export REDIS_NETTY_THREADS; yq -i '.redisDelegateConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.redisAtmosphereConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 
