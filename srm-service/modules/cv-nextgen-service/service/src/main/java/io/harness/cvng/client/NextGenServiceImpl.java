@@ -249,7 +249,7 @@ public class NextGenServiceImpl implements NextGenService {
         projectParams.getProjectIdentifier(), serviceIdentifiers)
         .forEach(serviceResponse
             -> serviceIdNameMap.put(
-                serviceResponse.getService().getIdentifier(), serviceResponse.getService().getName()));
+                serviceResponse.getService().getFullyQualifiedIdentifier(), serviceResponse.getService().getName()));
     return serviceIdNameMap;
   }
 
@@ -259,8 +259,8 @@ public class NextGenServiceImpl implements NextGenService {
     listEnvironment(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
         projectParams.getProjectIdentifier(), environmentIdentifiers)
         .forEach(environmentResponse
-            -> environmentIdNameMap.put(
-                environmentResponse.getEnvironment().getIdentifier(), environmentResponse.getEnvironment().getName()));
+            -> environmentIdNameMap.put(environmentResponse.getEnvironment().getFullyQualifiedIdentifier(),
+                environmentResponse.getEnvironment().getName()));
     return environmentIdNameMap;
   }
 
