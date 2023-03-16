@@ -461,7 +461,81 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - LayoutProxy
+  /v1/plugin-toggle:
+    post:
+      summary: ''
+      operationId: toggle-plugin-for-account
+      responses:
+        '200':
+          $ref: '#/components/responses/AppConfigResponse'
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+        - $ref: '#/components/parameters/PluginName'
+        - $ref: '#/components/parameters/Enabled'
+      security:
+        - x-api-key: []
+      tags:
+        - AppConfig
     parameters: []
+  /v1/app-config:
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/AppConfigResponse'
+      operationId: get-plugin-app-Config
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+        - $ref: '#/components/parameters/PluginName'
+      tags:
+        - AppConfig
+    post:
+      summary: ''
+      operationId: insert-plugin-app-config
+      responses:
+        '200':
+          $ref: '#/components/responses/AppConfigResponse'
+      security:
+        - x-api-key: []
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      requestBody:
+        $ref: '#/components/requestBodies/AppConfigRequest'
+      x-internal: true
+      tags:
+        - AppConfig
+    parameters: []
+    put:
+      summary: ''
+      operationId: update-plugin-configs
+      responses:
+        '200':
+          $ref: '#/components/responses/AppConfigResponse'
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Harness-Account
+          description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/AppConfigRequest'
+      x-internal: true
+      tags:
+        - AppConfig
 components:
   schemas:
     EnvironmentSecret:
@@ -789,6 +863,67 @@ components:
             id: jb3f4rk78x16r
     GeneralResponse:
       $ref: '#/components/schemas/LayoutResponse'
+    AppConfig:
+      title: AppConfig
+      x-stoplight:
+        id: lxr5mwvtpsibp
+      type: object
+      x-examples:
+        Example 1:
+          pluginName: string
+          configs: string
+          isEnabled: true
+          createat: -9223372036854776000
+          updated: -9223372036854776000
+          accountIdentifier: string
+      properties:
+        pluginId:
+          type: string
+          x-stoplight:
+            id: 4c46nx9p25z4g
+        configs:
+          type: string
+          x-stoplight:
+            id: c376cmcok0i1w
+        enabled:
+          type: boolean
+          x-stoplight:
+            id: 5k0msvhe7qhhd
+        enabledDisabledAt:
+          type: integer
+          x-stoplight:
+            id: 2kot35661my5o
+          format: int64
+        createdAt:
+          type: integer
+          x-stoplight:
+            id: 55sswchn2dgls
+          format: int64
+        lastModifiedAt:
+          type: integer
+          x-stoplight:
+            id: gjoqaxs5xj4g5
+          format: int64
+    AppConfigRequest:
+      title: AppConfigRequest
+      x-stoplight:
+        id: xohgavxbwlfjc
+      type: object
+      properties:
+        appConfig:
+          $ref: '#/components/schemas/AppConfig'
+          x-stoplight:
+            id: mvm9nhd3eenq6
+    AppConfigResponse:
+      title: AppConfigResponse
+      x-stoplight:
+        id: bu5i92md2mome
+      type: object
+      properties:
+        appConfig:
+          $ref: '#/components/schemas/AppConfig'
+          x-stoplight:
+            id: 7rhhzvrxp6grz
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -862,6 +997,20 @@ components:
       schema:
         type: string
       description: Layout Identifier
+    PluginName:
+      name: PluginId
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 'Plugin name for filtering '
+    Enabled:
+      name: Enabled
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: flag for checking enablement/disablement
   requestBodies:
     EnvironmentSecretRequest:
       content:
@@ -916,6 +1065,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/LayoutRequest'
+    AppConfigRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppConfigRequest'
   responses:
     EnvironmentSecretResponse:
       description: Example response
@@ -1017,15 +1171,31 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ImportEntitiesResponse'
+    AppConfigResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AppConfigResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
+        multipart/form-data:
+          schema:
+            type: object
+            properties: {}
+        text/html:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
       type: apiKey
       in: header
 tags:
-  - name: EnvironmentSecret
-    description: Mapping of Environment Variables to Secrets
+  - name: AppConfig
   - name: BackstagePermissions
-    description: Backstage Permissions
+  - name: EnvironmentSecret
   - name: LayoutProxy
-    description: Layout Proxy
