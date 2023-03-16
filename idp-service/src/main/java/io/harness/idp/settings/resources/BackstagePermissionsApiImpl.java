@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.settings.service.BackstagePermissionsService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.model.BackstagePermissions;
 import io.harness.spec.server.idp.v1.model.BackstagePermissionsRequest;
@@ -29,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class BackstagePermissionsApiImpl implements BackstagePermissionsApi {
   private BackstagePermissionsService backstagePermissionsService;
