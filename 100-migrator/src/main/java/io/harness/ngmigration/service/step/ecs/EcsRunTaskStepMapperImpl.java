@@ -27,6 +27,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -76,7 +77,7 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsRunTaskDeploy state = (EcsRunTaskDeploy) getState(graphNode);
     EcsRunTaskStepNode stepNode = new EcsRunTaskStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     EcsRunTaskStepInfo stepInfo =
         EcsRunTaskStepInfo.infoBuilder()
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
@@ -92,8 +93,9 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
     if ("Inline".equals(state.getAddTaskDefinition())) {
       // inline
       List<String> fileNames = new ArrayList<>();
-      fileNames.add(
-          "/" + getParameterFileName(context.getWorkflow().getName(), state.getName(), RUN_TASK_DEFINITION_JSON));
+      fileNames.add("/"
+          + getParameterFileName(context.getWorkflow().getName(), state.getName(), RUN_TASK_DEFINITION_JSON,
+              context.getIdentifierCaseFormat()));
       return StoreConfigWrapper.builder()
           .type(StoreConfigType.HARNESS)
           .spec(HarnessStore.builder().files(ParameterField.createValueField(fileNames)).build())
@@ -121,8 +123,9 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
 
   private StoreConfigWrapper getRunTaskRequestDefinition(EcsRunTaskDeploy state, WorkflowMigrationContext context) {
     List<String> fileNames = new ArrayList<>();
-    fileNames.add(
-        "/" + getParameterFileName(context.getWorkflow().getName(), state.getName(), RUN_TASK_REQUEST_DEFINITION_JSON));
+    fileNames.add("/"
+        + getParameterFileName(context.getWorkflow().getName(), state.getName(), RUN_TASK_REQUEST_DEFINITION_JSON,
+            context.getIdentifierCaseFormat()));
     return StoreConfigWrapper.builder()
         .type(StoreConfigType.HARNESS)
         .spec(HarnessStore.builder().files(ParameterField.createValueField(fileNames)).build())
@@ -135,8 +138,8 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
     EcsRunTaskDeploy state = (EcsRunTaskDeploy) getState(graphNode);
     if ("Inline".equals(state.getAddTaskDefinition()) && isNotEmpty(state.getTaskDefinitionJson())) {
       byte[] fileContent = state.getTaskDefinitionJson().getBytes(StandardCharsets.UTF_8);
-      NGYamlFile yamlConfigFile = getYamlManifestFile(
-          inputDTO, fileContent, getParameterFileName(name, state.getName(), RUN_TASK_DEFINITION_JSON));
+      NGYamlFile yamlConfigFile = getYamlManifestFile(inputDTO, fileContent,
+          getParameterFileName(name, state.getName(), RUN_TASK_DEFINITION_JSON, inputDTO.getIdentifierCaseFormat()));
       if (null != yamlConfigFile) {
         result.add(yamlConfigFile);
       }
@@ -144,8 +147,9 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
 
     // Always create one empty file for EcsRunTaskRequest Definition
     byte[] fileContent = " ".getBytes();
-    NGYamlFile yamlConfigFile = getYamlManifestFile(
-        inputDTO, fileContent, getParameterFileName(name, state.getName(), RUN_TASK_REQUEST_DEFINITION_JSON));
+    NGYamlFile yamlConfigFile = getYamlManifestFile(inputDTO, fileContent,
+        getParameterFileName(
+            name, state.getName(), RUN_TASK_REQUEST_DEFINITION_JSON, inputDTO.getIdentifierCaseFormat()));
     if (null != yamlConfigFile) {
       result.add(yamlConfigFile);
     }
@@ -154,9 +158,10 @@ public class EcsRunTaskStepMapperImpl extends StepMapper {
   }
 
   @NotNull
-  private static String getParameterFileName(String workflowName, String stateName, String suffix) {
+  private static String getParameterFileName(
+      String workflowName, String stateName, String suffix, CaseFormat caseFormat) {
     String fileName = workflowName + "/" + stateName + "/" + suffix;
-    return generateFileIdentifier(fileName);
+    return generateFileIdentifier(fileName, caseFormat);
   }
 
   @Override

@@ -652,4 +652,7 @@ public class GitClientHelper {
     }
     return sshURL;
   }
+  public static String convertToHttps(String url) {
+    return url.replace("http://", "https://");
+  }
 }

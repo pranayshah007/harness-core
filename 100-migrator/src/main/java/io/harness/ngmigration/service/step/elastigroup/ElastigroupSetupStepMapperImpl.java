@@ -23,6 +23,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.cdng.elastigroup.LoadBalancerType;
+import io.harness.data.structure.CompareUtils;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.SupportStatus;
@@ -40,6 +41,9 @@ import software.wings.sm.states.spotinst.SpotInstServiceSetup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class ElastigroupSetupStepMapperImpl extends StepMapper {
   @Override
@@ -150,8 +154,46 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    SpotInstServiceSetup state1 = (SpotInstServiceSetup) getState(stepYaml1);
+    SpotInstServiceSetup state2 = (SpotInstServiceSetup) getState(stepYaml2);
+    return CompareUtils.compareObjects(state1.getCurrentRunningCount(), state2.getCurrentRunningCount())
+        && state1.isUseCurrentRunningCount() == state2.isUseCurrentRunningCount()
+        && StringUtils.equals(state1.getMaxInstances(), state2.getMaxInstances())
+        && StringUtils.equals(state1.getMinInstances(), state2.getMinInstances())
+        && StringUtils.equals(state1.getTargetInstances(), state2.getTargetInstances())
+        && StringUtils.equals(state1.getElastiGroupNamePrefix(), state2.getElastiGroupNamePrefix())
+        && compareLb(state1.getAwsLoadBalancerConfigs(), state2.getAwsLoadBalancerConfigs());
+  }
+
+  private boolean compareLb(List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs,
+      List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs1) {
+    if (awsLoadBalancerConfigs == null && awsLoadBalancerConfigs1 == null) {
+      return true;
+    }
+    if (awsLoadBalancerConfigs == null || awsLoadBalancerConfigs1 == null) {
+      return false;
+    }
+    if (awsLoadBalancerConfigs.size() != awsLoadBalancerConfigs1.size()) {
+      return false;
+    }
+
+    Set<LoadBalancerDetailsForBGDeployment> lb1 = getMappedLb(awsLoadBalancerConfigs1);
+    Set<LoadBalancerDetailsForBGDeployment> lb2 = getMappedLb(awsLoadBalancerConfigs);
+    return lb1.equals(lb2);
+  }
+
+  private Set<LoadBalancerDetailsForBGDeployment> getMappedLb(
+      List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs1) {
+    return awsLoadBalancerConfigs1.stream()
+        .map(config
+            -> LoadBalancerDetailsForBGDeployment.builder()
+                   .loadBalancerName(config.getLoadBalancerName())
+                   .prodListenerPort(config.getProdListenerPort())
+                   .prodRuleArn(config.getProdRuleArn())
+                   .stageListenerArn(config.getStageListenerArn())
+                   .stageListenerPort(config.getStageListenerPort())
+                   .build())
+        .collect(Collectors.toSet());
   }
 
   @Override

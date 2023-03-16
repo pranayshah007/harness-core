@@ -447,13 +447,17 @@ public class GovernanceRuleResource {
   public ResponseDTO<RuleList>
   listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO) {
+      @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO,
+      @Parameter(description = "Search by Rule name pattern") @QueryParam("RuleNamePattern") String ruleNamePattern) {
     rbacHelper.checkRuleViewPermission(accountId, null, null);
     GovernanceRuleFilter query;
     if (listDTO == null) {
       query = GovernanceRuleFilter.builder().build();
     } else {
       query = listDTO.getGovernanceRuleFilter();
+    }
+    if (ruleNamePattern != null) {
+      query.setSearch(ruleNamePattern);
     }
     query.setAccountId(accountId);
     return ResponseDTO.newResponse(governanceRuleService.list(query));

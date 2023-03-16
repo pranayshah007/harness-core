@@ -45,6 +45,7 @@ import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.hooks.ServiceHookAction;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
@@ -65,6 +66,7 @@ import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
@@ -92,6 +94,7 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -188,6 +191,8 @@ public class ServiceResourceV2 {
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "List of Service Identifiers for the entities, maximum size of list is 1000.";
   private static final int MAX_LIMIT = 1000;
+  private static final Set<String> allowedServiceSpecs =
+      ImmutableSet.of(ServiceSpecType.NATIVE_HELM, ServiceSpecType.KUBERNETES);
 
   @GET
   @Path("{serviceIdentifier}")
@@ -857,6 +862,24 @@ public class ServiceResourceV2 {
       }
     }
     return ResponseDTO.newResponse(k8sCmdFlags);
+  }
+
+  @GET
+  @Path("/hooks/actions")
+  @ApiOperation(value = "Get Available Service Hook Actions", nickname = "hookActions")
+  @Operation(operationId = "hookActions", summary = "Retrieving the list of actions available for service hooks",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of actions available for service hooks")
+      })
+  public ResponseDTO<Set<ServiceHookAction>>
+  getServiceHookActions(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    if (allowedServiceSpecs.contains(serviceSpecType)) {
+      return ResponseDTO.newResponse(Set.of(ServiceHookAction.values()));
+    }
+    throw new InvalidRequestException(
+        format("Service with type: [%s] does not support service hooks", serviceSpecType));
   }
 
   @Hidden

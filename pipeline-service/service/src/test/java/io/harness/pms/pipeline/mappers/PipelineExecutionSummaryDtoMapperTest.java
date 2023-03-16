@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.AbortedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
@@ -338,6 +339,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testToDtoForParentStageInfo() {
+    AbortedBy abortedBy = AbortedBy.builder().userName("user1").email("email").build();
     PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                                                 .accountId(accountId)
                                                                 .orgIdentifier(orgId)
@@ -345,11 +347,13 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .pipelineIdentifier(pipelineId)
                                                                 .runSequence(1)
                                                                 .planExecutionId(planId)
+                                                                .abortedBy(abortedBy)
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO).isNotNull();
     assertThat(executionSummaryDTO.getParentStageInfo()).isNull();
+    assertEquals(executionSummaryDTO.getAbortedBy(), abortedBy);
     PipelineStageInfo pipelineStageInfo = PipelineStageInfo.newBuilder()
                                               .setHasParentPipeline(true)
                                               .setExecutionId("executionId")

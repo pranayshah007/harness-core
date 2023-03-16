@@ -375,8 +375,8 @@ public class IntegrationStageUtils {
           || prWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (prWebhookEvent.getRepository().getHttpURL().equals(url)
-          || prWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (prWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || prWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     } else if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
@@ -386,8 +386,8 @@ public class IntegrationStageUtils {
           || branchWebhookEvent.getRepository().getHttpURL() == null) {
         return false;
       }
-      if (branchWebhookEvent.getRepository().getHttpURL().equals(url)
-          || branchWebhookEvent.getRepository().getSshURL().equals(url)) {
+      if (branchWebhookEvent.getRepository().getHttpURL().equalsIgnoreCase(url)
+          || branchWebhookEvent.getRepository().getSshURL().equalsIgnoreCase(url)) {
         return true;
       }
     }
@@ -464,30 +464,34 @@ public class IntegrationStageUtils {
       return null;
     }
 
+    String url = "";
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType =
           gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
-      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+      url = getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
+
+    url = GitClientHelper.convertToHttps(url);
+    return url;
   }
 
   private static ManualExecutionSource handleManualExecution(

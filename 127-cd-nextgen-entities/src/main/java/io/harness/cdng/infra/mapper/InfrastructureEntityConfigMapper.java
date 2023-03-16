@@ -124,8 +124,9 @@ public class InfrastructureEntityConfigMapper {
               fromYaml.getInfrastructureDefinitionConfig().getType().toString(), requestedEntity.getType().toString()));
     }
     if (isNotEmpty(mismatchedEntries)) {
-      throw new InvalidRequestException(
-          "Found mismatch in following fields between yaml and requested value respectively: " + mismatchedEntries);
+      throw new InvalidRequestException(String.format(
+          "For the infrastructure [name: %s, identifier: %s], Found mismatch in following fields between yaml and requested value respectively: %s",
+          requestedEntity.getName(), requestedEntity.getIdentifier(), mismatchedEntries));
     }
   }
 }

@@ -10,10 +10,7 @@ package io.harness.engine.pms.audits.events;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.plan.TriggerType;
-import io.harness.pms.contracts.plan.TriggeredBy;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
@@ -22,25 +19,21 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PipelineStartEvent extends NodeExecutionEvent {
-  private TriggerType triggerType;
-  private TriggeredBy triggeredBy;
+  private TriggeredInfo triggeredInfo;
   private long startTs;
 
   @Builder
   public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, TriggerType triggerType, TriggeredBy triggeredBy,
-      Long startTs) {
+      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, Long startTs) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
-    this.triggerType = triggerType;
-    this.triggeredBy = triggeredBy;
+    this.triggeredInfo = triggeredInfo;
     this.startTs = startTs;
   }
 
   @JsonIgnore
   @Override
   public String getEventType() {
-    return NodeExecutionOutboxEvents.PIPELINE_START;
+    return NodeExecutionOutboxEventConstants.PIPELINE_START;
   }
 }

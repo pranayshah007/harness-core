@@ -122,6 +122,8 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.url>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.artifactPath", "<+ARTIFACT_PLACEHOLDER.artifactPath>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.bucketName", "<+ARTIFACT_PLACEHOLDER.metadata.bucketName>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions
@@ -146,9 +148,10 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor());
 
     // Secrets
-    context.put("secrets", new SecretMigratorFunctor(secretRefMap));
+    context.put("secrets", new SecretMigratorFunctor(secretRefMap, identifierCaseFormat));
 
     // App
     context.put("app.defaults", new AppVariablesMigratorFunctor(identifierCaseFormat));

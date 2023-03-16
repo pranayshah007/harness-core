@@ -52,6 +52,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
+import software.wings.beans.HarnessTagLink;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
@@ -677,5 +678,14 @@ public class MigratorUtility {
     } else {
       return gitFileConfig1.equals(gitFileConfig2);
     }
+  }
+
+  public static Map<String, String> getTags(List<HarnessTagLink> tagLinks) {
+    if (EmptyPredicate.isEmpty(tagLinks)) {
+      return Collections.emptyMap();
+    }
+    return tagLinks.stream()
+        .filter(tl -> StringUtils.isNoneBlank(tl.getKey(), tl.getValue()))
+        .collect(Collectors.toMap(HarnessTagLink::getKey, HarnessTagLink::getValue));
   }
 }

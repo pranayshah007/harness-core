@@ -24,5 +24,5 @@ public interface LogFeedbackService {
 
   List<LogFeedbackHistory> history(ProjectPathParams projectParams, String feedbackId);
 
-  List<LogFeedback> list(String envIdentifier, String serviceIdentifier);
+  List<LogFeedback> list(String serviceIdentifier, String envIdentifier);
 }

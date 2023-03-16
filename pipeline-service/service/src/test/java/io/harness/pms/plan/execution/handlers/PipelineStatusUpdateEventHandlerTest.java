@@ -28,6 +28,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
@@ -52,12 +53,13 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
   @Mock private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock private OrchestrationEventEmitter eventEmitter;
   @Mock private WaitNotifyEngine waitNotifyEngine;
+  @Mock private AbortInfoHelper abortInfoHelper;
   private PipelineStatusUpdateEventHandler pipelineStatusUpdateEventHandler;
 
   @Before
   public void setUp() throws Exception {
     pipelineStatusUpdateEventHandler = new PipelineStatusUpdateEventHandler(
-        planExecutionService, pmsExecutionSummaryRepository, eventEmitter, waitNotifyEngine);
+        planExecutionService, pmsExecutionSummaryRepository, eventEmitter, waitNotifyEngine, abortInfoHelper);
   }
 
   @Test

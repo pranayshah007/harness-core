@@ -17,6 +17,7 @@ import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_ME
 import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
 import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT;
+import static io.harness.idp.onboarding.utils.Constants.RELATIVE_TO_CURRENT_PATH;
 import static io.harness.idp.onboarding.utils.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.SLASH_DELIMITER;
 import static io.harness.idp.onboarding.utils.Constants.SOURCE_FORMAT;
@@ -113,6 +114,9 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject @Named("PRIVILEGED") OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") ProjectClient projectClient;
   @Inject ServiceResourceClient serviceResourceClient;
+  @Inject HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
+  @Inject HarnessProjectToBackstageSystem harnessProjectToBackstageSystem;
+  @Inject HarnessServiceToBackstageComponent harnessServiceToBackstageComponent;
   @Inject ConnectorProcessorFactory connectorProcessorFactory;
   @Inject CatalogConnectorRepository catalogConnectorRepository;
   @Inject BackstageResourceClient backstageResourceClient;
@@ -217,9 +221,6 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     String entityTargetParentPath = catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
         + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER;
-    String orgEntityTargetPath = entityTargetParentPath + ORGANIZATION + SLASH_DELIMITER;
-    String projectEntityTargetPath = entityTargetParentPath + PROJECT + SLASH_DELIMITER;
-    String serviceEntityTargetPath = entityTargetParentPath + SERVICE + SLASH_DELIMITER;
 
     Pair<BackstageCatalogEntity, Pair<String, String>> backstageCatalogEntityInitial = getFirstAmongAll(
         catalogInfoLocationParentPath, entityTargetParentPath, catalogDomains, catalogSystems, catalogComponents);
@@ -227,31 +228,26 @@ public class OnboardingServiceImpl implements OnboardingService {
     List<String> filesToPush =
         writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
             backstageCatalogEntityInitial.getSecond().getFirst());
-    String target = prepareEntitiesTarget(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
-        backstageCatalogEntityInitial.getSecond().getSecond())
-                        .get(0);
     connectorProcessor.performPushOperation(
         accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore, entitiesFolderPath, filesToPush);
-    registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, target);
-    log.info(
-        "Finished operation of yaml generation, pushing to source, registering in backstage for one initial entity");
+    log.info("Finished operation of yaml generation, pushing to source for one initial entity");
 
     log.info("Starting async operations for remaining entities import");
     new Thread(() -> {
-      List<String> locationTargets = new ArrayList<>(Collections.singleton(target));
+      List<String> locationTargets = new ArrayList<>();
 
       List<String> targets;
 
       filesToPush.addAll(writeEntityAsYamlInFile(catalogDomains, orgYamlPath));
-      targets = prepareEntitiesTarget(catalogDomains, orgEntityTargetPath);
+      targets = prepareEntitiesTarget(catalogDomains, RELATIVE_TO_CURRENT_PATH + ORGANIZATION + SLASH_DELIMITER);
       locationTargets.addAll(targets);
 
       filesToPush.addAll(writeEntityAsYamlInFile(catalogSystems, projectYamlPath));
-      targets = prepareEntitiesTarget(catalogSystems, projectEntityTargetPath);
+      targets = prepareEntitiesTarget(catalogSystems, RELATIVE_TO_CURRENT_PATH + PROJECT + SLASH_DELIMITER);
       locationTargets.addAll(targets);
 
       filesToPush.addAll(writeEntityAsYamlInFile(catalogComponents, serviceYamlPath));
-      targets = prepareEntitiesTarget(catalogComponents, serviceEntityTargetPath);
+      targets = prepareEntitiesTarget(catalogComponents, RELATIVE_TO_CURRENT_PATH + SERVICE + SLASH_DELIMITER);
       locationTargets.addAll(targets);
 
       BackstageCatalogLocationEntity backstageCatalogLocationEntity =
@@ -368,19 +364,21 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private List<BackstageCatalogComponentEntity> harnessServiceToBackstageComponent(
       List<ServiceResponseDTO> serviceResponseDTOList) {
-    HarnessServiceToBackstageComponent harnessServiceToBackstageComponent =
+    HarnessServiceToBackstageComponent harnessServiceToBackstageComponentMapper =
         (HarnessServiceToBackstageComponent) getMapperByType(SERVICE);
-    return serviceResponseDTOList.stream().map(harnessServiceToBackstageComponent::map).collect(Collectors.toList());
+    return serviceResponseDTOList.stream()
+        .map(harnessServiceToBackstageComponentMapper::map)
+        .collect(Collectors.toList());
   }
 
   private HarnessEntityToBackstageEntity<?, ? extends BackstageCatalogEntity> getMapperByType(String type) {
     switch (type) {
       case ORGANIZATION:
-        return new HarnessOrgToBackstageDomain();
+        return harnessOrgToBackstageDomain;
       case PROJECT:
-        return new HarnessProjectToBackstageSystem();
+        return harnessProjectToBackstageSystem;
       case SERVICE:
-        return new HarnessServiceToBackstageComponent();
+        return harnessServiceToBackstageComponent;
       default:
         throw new UnsupportedOperationException(type + " type not supported for harness to backstage entity mapping");
     }
