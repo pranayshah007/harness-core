@@ -31,10 +31,10 @@ import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.helpers.ext.apm.APMRestClient;
-import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AzureLogAnalyticsConnectionDetails;
 import software.wings.service.impl.analysis.CustomLogDataCollectionInfo;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;

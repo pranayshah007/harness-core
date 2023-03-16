@@ -26,6 +26,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import software.wings.beans.dto.CVActivityLog.LogLevel;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -105,6 +107,4 @@ public class CVActivityLog implements PersistentEntity, UuidAware, CreatedAtAwar
 
     return doneColoring(ansiLog);
   }
-
-  public enum LogLevel { INFO, WARN, ERROR }
 }

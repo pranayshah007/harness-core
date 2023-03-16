@@ -618,7 +618,7 @@
 5374:software.wings.delegatetasks.BambooTask.BambooExecutionResponse
 5375:software.wings.beans.HttpStateExecutionResponse
 5376:software.wings.service.impl.elk.ElkLogFetchRequest
-5377:software.wings.service.impl.ThirdPartyApiCallLog
+5377:software.wings.beans.dto.ThirdPartyApiCallLog
 5378:software.wings.beans.Variable
 5379:software.wings.beans.VariableType
 5380:software.wings.service.impl.aws.model.AwsRequest
@@ -2181,8 +2181,8 @@
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
 70004:io.harness.accesscontrol.NGAccessDeniedException
-71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
-71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
+71100:software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField
+71101:software.wings.beans.dto.ThirdPartyApiCallLog.FieldType
 71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
