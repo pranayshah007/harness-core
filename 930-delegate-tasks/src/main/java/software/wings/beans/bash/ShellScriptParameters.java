@@ -8,15 +8,18 @@
 package software.wings.beans.bash;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.shell.ScriptType.BASH;
 
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -24,19 +27,37 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
-  private final boolean executeOnDelegate;
+public class ShellScriptParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
+  private final String commandUnit = "Execute";
+  private final ScriptType scriptType = BASH;
+  private final String activityId;
+  private final String outputVars;
+  private final String secretOutputVars;
   @Expression(ALLOW_SECRETS) private final String script;
-  private final List<String> outputVars;
+  private final long sshTimeOut;
   private final String accountId;
-  private final String executionId;
+  private final String appId;
   private final String workingDirectory;
-  @Expression(ALLOW_SECRETS) private final Map<String, String> environmentVariables;
-  private final List<String> secretOutputVars;
-  private final ScriptType scriptType;
+  private final Map<String, String> serviceVariables;
+  private final Map<String, String> safeDisplayServiceVariables;
+  private final Map<String, String> environment;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(final ExpressionEvaluator maskingEvaluator) {
     return new ArrayList<>();
+  }
+
+  public Map<String, String> getResolvedEnvironmentVariables() {
+    final Map<String, String> resolvedEnvironment = new HashMap<>();
+
+    if (environment != null) {
+      resolvedEnvironment.putAll(environment);
+    }
+
+    if (serviceVariables != null) {
+      resolvedEnvironment.putAll(serviceVariables);
+    }
+
+    return resolvedEnvironment;
   }
 }
