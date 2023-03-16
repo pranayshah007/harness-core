@@ -234,8 +234,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     Map<String, String> map = new HashMap<>();
     for (String exp : expressions) {
       if (exp.contains(".")) {
-        String value = (String) MigratorExpressionUtils.render(
-            migrationContext, "${" + exp + "}", custom, context.getIdentifierCaseFormat());
+        String value = (String) MigratorExpressionUtils.render(migrationContext, "${" + exp + "}", custom);
         String key = exp.startsWith("context.") ? exp.replaceFirst("context\\.", "") : exp;
         key = key.replace('.', '_');
         map.put(key, value);

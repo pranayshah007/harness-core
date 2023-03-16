@@ -103,8 +103,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, inputDTO.getCustomExpressions(),
-        inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, inputDTO.getCustomExpressions());
     NGYamlFile yamlFile = getYamlFile(infrastructureDefinition, inputDTO);
     if (yamlFile == null) {
       return null;
@@ -182,8 +181,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
       CgEntityNode configNode = entities.get(configEntityId);
       if (configNode != null) {
         InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) configNode.getEntity();
-        MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, inputDTO.getCustomExpressions(),
-            inputDTO.getIdentifierCaseFormat());
+        MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, inputDTO.getCustomExpressions());
         NGYamlFile file = getYamlFile(infrastructureDefinition, inputDTO);
         if (file != null) {
           elastigroupConfigurations.add(getConfigFileWrapper(file));

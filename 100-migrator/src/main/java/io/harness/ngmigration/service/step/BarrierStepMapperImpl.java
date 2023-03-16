@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -46,8 +48,7 @@ public class BarrierStepMapperImpl extends StepMapper {
     BarrierState state = (BarrierState) getState(graphNode);
     BarrierStepNode barrierStepNode = new BarrierStepNode();
     baseSetup(graphNode, barrierStepNode, context.getIdentifierCaseFormat());
-    BarrierStepInfo barrierStepInfo =
-        BarrierStepInfo.builder().name(state.getName()).identifier(state.getIdentifier()).build();
+    BarrierStepInfo barrierStepInfo = BarrierStepInfo.builder().name(state.getName()).identifier(RUNTIME_INPUT).build();
     barrierStepNode.setBarrierStepInfo(barrierStepInfo);
     return barrierStepNode;
   }

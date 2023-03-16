@@ -233,7 +233,7 @@ public class PipelineMigrationService extends NgMigrationService {
           .build();
     }
 
-    MigratorExpressionUtils.render(migrationContext, pipeline, new HashMap<>(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, pipeline, new HashMap<>());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, pipeline.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(
         inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
@@ -518,8 +518,7 @@ public class PipelineMigrationService extends NgMigrationService {
         if (EmptyPredicate.isNotEmpty(properties) && properties.containsKey("disableAssertion")) {
           String assertion = (String) properties.get("disableAssertion");
           if (StringUtils.isNotBlank(assertion)) {
-            assertion =
-                (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>(), caseFormat);
+            assertion = (String) MigratorExpressionUtils.render(migrationContext, assertion, new HashMap<>());
             when = WorkflowHandler.wrapNot(assertion).getValue();
           }
           ObjectNode whenNode = (ObjectNode) templateInputs.get("when");

@@ -158,8 +158,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
       MigrationContext context, String name, ScriptType scriptType, String script, String workingDir) {
     ParameterField<String> directory =
         StringUtils.isBlank(workingDir) ? ParameterField.ofNull() : ParameterField.createValueField(workingDir);
-    script = (String) MigratorExpressionUtils.render(
-        context, script, new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
+    script = (String) MigratorExpressionUtils.render(context, script, new HashMap<>());
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)
         .name(name)
@@ -232,8 +231,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                         .build())
                              .collect(Collectors.toList());
     }
-    String script = (String) MigratorExpressionUtils.render(
-        context, execCommandUnit.getCommandString(), new HashMap<>(), context.getInputDTO().getIdentifierCaseFormat());
+    String script =
+        (String) MigratorExpressionUtils.render(context, execCommandUnit.getCommandString(), new HashMap<>());
 
     return CommandUnitWrapper.builder()
         .type(CommandUnitSpecType.SCRIPT)

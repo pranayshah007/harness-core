@@ -102,9 +102,8 @@ public class ContainerTaskMigrationService extends NgMigrationService {
   @Override
   public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
     ContainerTask serviceSpecification = (ContainerTask) migrationContext.getEntities().get(entityId).getEntity();
-    MigratorExpressionUtils.render(migrationContext, serviceSpecification,
-        migrationContext.getInputDTO().getCustomExpressions(),
-        migrationContext.getInputDTO().getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(
+        migrationContext, serviceSpecification, migrationContext.getInputDTO().getCustomExpressions());
     NGYamlFile yamlFile = getYamlFile(migrationContext, serviceSpecification);
     if (yamlFile == null) {
       return null;
