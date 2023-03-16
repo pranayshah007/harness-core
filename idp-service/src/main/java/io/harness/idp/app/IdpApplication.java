@@ -18,6 +18,7 @@ import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
 import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
+import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.maintenance.MaintenanceController;
@@ -120,6 +121,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     List<Module> modules = new ArrayList<>();
     modules.add(new IdpModule(configuration));
     Injector injector = Guice.createInjector(modules);
+    ConfigManagerService configManagerService = injector.getInstance(ConfigManagerService.class);
+    List<String> configs = configManagerService.getAllEnabledPluginConfigs("testaccountid1");
+//    System.out.println("******"+configs);
+    System.out.println("********"+configManagerService.mergeAppConfigs(configs));
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);

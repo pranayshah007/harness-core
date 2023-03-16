@@ -10,6 +10,9 @@ import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 
+import java.util.List;
+import java.util.Map;
+
 public interface ConfigManagerService {
   public AppConfig getPluginConfig(String accountIdentifier, String pluginId);
 
@@ -18,4 +21,10 @@ public interface ConfigManagerService {
   public AppConfig updatePluginConfig(AppConfigRequest appConfigRequest, String accountIdentifier);
 
   public AppConfig togglePlugin(String accountIdentifier, String pluginName, Boolean isEnabled);
+
+  public Map getPluginEnablementForAccount(String accountIdentifier);
+
+  public List<String> getAllEnabledPluginConfigs(String accountIdentifier);
+
+  public String mergeAppConfigs(List<String> configs) throws Exception;
 }
