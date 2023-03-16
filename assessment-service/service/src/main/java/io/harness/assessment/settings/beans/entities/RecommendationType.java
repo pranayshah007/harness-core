@@ -5,6 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.assessment.entities;
+package io.harness.assessment.settings.beans.entities;
 
-public class Assessment {}
+public enum RecommendationType { QUESTION_LEVEL, SECTION_LEVEL, ASSESSMENT_LEVEL }
