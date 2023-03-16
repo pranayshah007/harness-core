@@ -11,12 +11,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//:lombok",
-        "//950-delegate-tasks-beans:module",
-        "//980-commons/src/main/java/io/harness/exception:module",
-        "//980-commons/src/main/java/io/harness/exception/exceptionmanager:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_google_inject_guice",
+        "//950-delegate-tasks-beans:module",  # TODO: This is 200Mb alone, needs to be broken down
+        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "@maven//:com_esotericsoftware_kryo",
     ],
 )
 
