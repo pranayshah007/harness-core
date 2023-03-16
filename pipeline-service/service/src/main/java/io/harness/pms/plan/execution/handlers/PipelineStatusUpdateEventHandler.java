@@ -7,7 +7,6 @@
 
 package io.harness.pms.plan.execution.handlers;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
@@ -26,6 +25,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -82,12 +82,16 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
     if (status == ExecutionStatus.ABORTED) {
       List<Interrupt> interruptsList = interruptService.fetchAbortAllPlanLevelInterrupt(planExecutionId);
       if (isNotEmpty(interruptsList)) {
-        ManualIssuer manualIssuer = interruptsList.get(0).getInterruptConfig().getIssuedBy().getManualIssuer();
-        if (isEmpty(manualIssuer.getUserId())) {
+        IssuedBy issuedBy = interruptsList.get(0).getInterruptConfig().getIssuedBy();
+        if (!issuedBy.hasManualIssuer()) {
           update.set(PlanExecutionSummaryKeys.abortedBy, AbortedBy.builder().userName(systemUser).build());
         } else {
+          ManualIssuer manualIssuer = issuedBy.getManualIssuer();
           update.set(PlanExecutionSummaryKeys.abortedBy,
-              AbortedBy.builder().email(manualIssuer.getEmailId()).userName(manualIssuer.getUserId()).build());
+              AbortedBy.builder()
+                  .email(issuedBy.getManualIssuer().getEmailId())
+                  .userName(manualIssuer.getUserId())
+                  .build());
         }
       }
     }
