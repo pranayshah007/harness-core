@@ -19,6 +19,9 @@ public class Constants {
   public static final String ORGANIZATION = "Organization";
   public static final String PROJECT = "Project";
   public static final String SERVICE = "Service";
+  public static final String BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL = "harness.io/project-url";
+  public static final String BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID = "harness.io/cd-serviceId";
+  public static final String PROJECT_URL = "projectUrl";
   public static final String PIPE_DELIMITER = "|";
   public static final String ENTITY_UNKNOWN_OWNER = "Unknown";
   public static final String ENTITY_UNKNOWN_LIFECYCLE = "Unknown";

@@ -114,6 +114,9 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject @Named("PRIVILEGED") OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") ProjectClient projectClient;
   @Inject ServiceResourceClient serviceResourceClient;
+  @Inject HarnessOrgToBackstageDomain harnessOrgToBackstageDomain;
+  @Inject HarnessProjectToBackstageSystem harnessProjectToBackstageSystem;
+  @Inject HarnessServiceToBackstageComponent harnessServiceToBackstageComponent;
   @Inject ConnectorProcessorFactory connectorProcessorFactory;
   @Inject CatalogConnectorRepository catalogConnectorRepository;
   @Inject BackstageResourceClient backstageResourceClient;
@@ -361,19 +364,21 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private List<BackstageCatalogComponentEntity> harnessServiceToBackstageComponent(
       List<ServiceResponseDTO> serviceResponseDTOList) {
-    HarnessServiceToBackstageComponent harnessServiceToBackstageComponent =
+    HarnessServiceToBackstageComponent harnessServiceToBackstageComponentMapper =
         (HarnessServiceToBackstageComponent) getMapperByType(SERVICE);
-    return serviceResponseDTOList.stream().map(harnessServiceToBackstageComponent::map).collect(Collectors.toList());
+    return serviceResponseDTOList.stream()
+        .map(harnessServiceToBackstageComponentMapper::map)
+        .collect(Collectors.toList());
   }
 
   private HarnessEntityToBackstageEntity<?, ? extends BackstageCatalogEntity> getMapperByType(String type) {
     switch (type) {
       case ORGANIZATION:
-        return new HarnessOrgToBackstageDomain();
+        return harnessOrgToBackstageDomain;
       case PROJECT:
-        return new HarnessProjectToBackstageSystem();
+        return harnessProjectToBackstageSystem;
       case SERVICE:
-        return new HarnessServiceToBackstageComponent();
+        return harnessServiceToBackstageComponent;
       default:
         throw new UnsupportedOperationException(type + " type not supported for harness to backstage entity mapping");
     }

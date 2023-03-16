@@ -96,6 +96,8 @@ onboardingModuleConfig:
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
+  harnessCiCdAnnotation:
+    projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
 
 accessControlClient:
   enableAccessControl: false
