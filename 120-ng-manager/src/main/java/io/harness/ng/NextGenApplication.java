@@ -998,6 +998,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                 || resourceInfoAndRequest.getValue().getUriInfo().getAbsolutePath().getPath().endsWith("/swagger")
                 || resourceInfoAndRequest.getValue().getUriInfo().getAbsolutePath().getPath().endsWith("/swagger.json")
                 || resourceInfoAndRequest.getValue().getUriInfo().getAbsolutePath().getPath().endsWith("/openapi.json")
+                || resourceInfoAndRequest.getValue().getUriInfo().getAbsolutePath().getPath().endsWith("/openapi.yaml")
                 || resourceInfoAndRequest.getValue().getUriInfo().getAbsolutePath().getPath().endsWith(
                     "/swagger.yaml"));
   }
