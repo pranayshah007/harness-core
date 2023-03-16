@@ -35,6 +35,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
@@ -300,8 +301,8 @@ public class PipelineExecutorTest extends CategoryTest {
         .get(originalExecutionId);
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(
-            originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId, projectId);
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
+            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))

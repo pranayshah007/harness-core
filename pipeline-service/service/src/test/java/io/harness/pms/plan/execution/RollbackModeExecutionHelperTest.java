@@ -91,7 +91,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     ExecutionTriggerInfo newTriggerInfo =
         ExecutionTriggerInfo.newBuilder().setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("ds").build()).build();
     ExecutionMetadata newMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(
-        oldExecutionMetadata, newId, newTriggerInfo, account, org, project);
+        oldExecutionMetadata, newId, newTriggerInfo, account, org, project, ExecutionMode.POST_EXECUTION_ROLLBACK);
     assertThat(newMetadata.getExecutionUuid()).isEqualTo(newId);
     assertThat(newMetadata.getTriggerInfo()).isEqualTo(newTriggerInfo);
     assertThat(newMetadata.getRunSequence()).isEqualTo(newRunSeq);
