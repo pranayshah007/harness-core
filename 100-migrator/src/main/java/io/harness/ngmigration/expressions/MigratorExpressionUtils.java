@@ -148,6 +148,7 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor());
 
     // Secrets
     context.put("secrets", new SecretMigratorFunctor(secretRefMap, identifierCaseFormat));
