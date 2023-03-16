@@ -113,8 +113,7 @@ public class EcsServiceSpecMigrationService extends NgMigrationService {
     if (StringUtils.isBlank(serviceSpecification.getServiceSpecJson())) {
       return null;
     }
-    MigratorExpressionUtils.render(
-        migrationContext, serviceSpecification, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, serviceSpecification, inputDTO.getCustomExpressions());
     byte[] fileContent = serviceSpecification.getServiceSpecJson().getBytes(StandardCharsets.UTF_8);
     CgEntityNode serviceNode = entities.get(
         CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(serviceSpecification.getServiceId()).build());

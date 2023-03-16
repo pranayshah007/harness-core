@@ -152,6 +152,10 @@ public abstract class StepMapper {
         timeoutString = t + "s";
       }
     }
+    Object str = properties.getOrDefault("stateTimeoutInMinutes", null);
+    if ((str instanceof Integer || str instanceof String) && StringUtils.isNotBlank(String.valueOf(str))) {
+      timeoutString = str + "m";
+    }
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 

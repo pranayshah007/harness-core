@@ -247,8 +247,8 @@ public class ManifestMigrationService extends NgMigrationService {
                 ? identifier.substring(0, identifier.length() - 4) + ".yaml"
                 : identifier.substring(0, identifier.length() - 3) + ".yml";
           }
-          String content = (String) MigratorExpressionUtils.render(migrationContext, manifestFile.getFileContent(),
-              inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+          String content = (String) MigratorExpressionUtils.render(
+              migrationContext, manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -303,8 +303,7 @@ public class ManifestMigrationService extends NgMigrationService {
       if (null != applicationManifest && null == service && isNotEmpty(applicationManifest.getServiceId())) {
         service = serviceResourceService.get(applicationManifest.getAppId(), applicationManifest.getServiceId());
       }
-      MigratorExpressionUtils.render(
-          migrationContext, applicationManifest, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+      MigratorExpressionUtils.render(migrationContext, applicationManifest, inputDTO.getCustomExpressions());
       BaseProvidedInput manifestInput =
           inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;

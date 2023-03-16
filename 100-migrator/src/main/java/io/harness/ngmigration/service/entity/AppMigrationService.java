@@ -233,6 +233,12 @@ public class AppMigrationService extends NgMigrationService {
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    MigrationContext migrationContext = MigrationContext.builder()
+                                            .entities(Collections.emptyMap())
+                                            .migratedEntities(Collections.emptyMap())
+                                            .graph(Collections.emptyMap())
+                                            .inputDTO(inputDTO)
+                                            .build();
     Application application = appService.getApplicationWithDefaults(yamlFile.getCgBasicInfo().getAppId());
 
     if (EmptyPredicate.isEmpty(application.getDefaults())) {
@@ -251,8 +257,7 @@ public class AppMigrationService extends NgMigrationService {
           ImmutableMap.<String, String>builder()
               .put("valueType", "FIXED")
               .put("fixedValue",
-                  (String) MigratorExpressionUtils.render(MigrationContext.builder().build(), value,
-                      inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat()))
+                  (String) MigratorExpressionUtils.render(migrationContext, value, inputDTO.getCustomExpressions()))
               .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()

@@ -147,8 +147,7 @@ public class SecretManagerTemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = StringUtils.isBlank(template.getDescription()) ? "" : template.getDescription();
-    MigratorExpressionUtils.render(
-        migrationContext, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, template, inputDTO.getCustomExpressions());
 
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
     JsonNode spec =

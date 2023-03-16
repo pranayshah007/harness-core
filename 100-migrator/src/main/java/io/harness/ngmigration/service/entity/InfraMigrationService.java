@@ -220,8 +220,7 @@ public class InfraMigrationService extends NgMigrationService {
     MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     InfrastructureDefinition infra = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(
-        migrationContext, infra, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, infra, inputDTO.getCustomExpressions());
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, infra.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(
         inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());

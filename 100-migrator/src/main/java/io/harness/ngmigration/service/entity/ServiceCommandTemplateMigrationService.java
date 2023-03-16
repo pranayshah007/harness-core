@@ -225,8 +225,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = "";
-    MigratorExpressionUtils.render(
-        migrationContext, template, inputDTO.getCustomExpressions(), inputDTO.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, template, inputDTO.getCustomExpressions());
 
     // Converting service commands to Template object
     List<CommandUnit> commandUnits = template.getCommand().getCommandUnits();

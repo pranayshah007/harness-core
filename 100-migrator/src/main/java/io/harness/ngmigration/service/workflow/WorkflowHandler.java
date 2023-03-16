@@ -388,8 +388,7 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     MigratorExpressionUtils.render(migrationContext, phaseStep,
-        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()),
-        context.getIdentifierCaseFormat());
+        MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()));
     List<StepSkipStrategy> cgSkipConditions = phaseStep.getStepSkipStrategies();
     Map<String, String> skipStrategies = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(cgSkipConditions)
@@ -425,10 +424,9 @@ public abstract class WorkflowHandler {
     Map<String, Object> expressions =
         MigratorUtility.getExpressions(phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat());
     if (StringUtils.isNotBlank(skipCondition)) {
-      skipCondition = (String) MigratorExpressionUtils.render(
-          migrationContext, skipCondition, expressions, context.getIdentifierCaseFormat());
+      skipCondition = (String) MigratorExpressionUtils.render(migrationContext, skipCondition, expressions);
     }
-    MigratorExpressionUtils.render(migrationContext, step, expressions, context.getIdentifierCaseFormat());
+    MigratorExpressionUtils.render(migrationContext, step, expressions);
     List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
     if (isNotEmpty(expressionFunctors)) {
       context.getStepExpressionFunctors().addAll(expressionFunctors);

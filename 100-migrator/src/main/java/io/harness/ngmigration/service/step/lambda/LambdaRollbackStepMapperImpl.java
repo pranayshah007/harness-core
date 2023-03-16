@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step.lambda;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepInfo;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -36,7 +37,8 @@ public class LambdaRollbackStepMapperImpl extends StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     AwsLambdaRollback state = (AwsLambdaRollback) getState(graphNode);
     AwsLambdaRollbackStepNode node = new AwsLambdaRollbackStepNode();
     baseSetup(state, node, context.getIdentifierCaseFormat());

@@ -101,7 +101,6 @@ public class MigratorUtility {
   private static final String[] schemes = {"https", "http"};
 
   private static final int APPLICATION = 0;
-
   private static final int SECRET_MANAGER_TEMPLATE = 1;
   private static final int SECRET_MANAGER = 2;
   private static final int SECRET = 5;
@@ -123,6 +122,7 @@ public class MigratorUtility {
   private static final int PIPELINE = 100;
 
   private static final int TRIGGER = 150;
+  private static final int USER_GROUP = -1;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
@@ -146,6 +146,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
           .put(NGMigrationEntityType.TRIGGER, TRIGGER)
+          .put(NGMigrationEntityType.USER_GROUP, USER_GROUP)
           .build();
 
   private MigratorUtility() {}
@@ -300,6 +301,18 @@ public class MigratorUtility {
     return getIdentifierWithScope(detail);
   }
 
+  public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
+    String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    switch (scope) {
+      case ACCOUNT:
+        return "account." + identifier;
+      case ORG:
+        return "org." + identifier;
+      default:
+        return identifier;
+    }
+  }
+
   public static String getIdentifierWithScope(NgEntityDetail entityDetail) {
     String orgId = entityDetail.getOrgIdentifier();
     String projectId = entityDetail.getProjectIdentifier();
@@ -333,8 +346,7 @@ public class MigratorUtility {
   public static NGVariable getNGVariable(MigrationContext migrationContext, Variable variable) {
     String value = "<+input>";
     if (EmptyPredicate.isNotEmpty(variable.getValue())) {
-      value = String.valueOf(MigratorExpressionUtils.render(migrationContext, variable.getValue(), new HashMap<>(),
-          migrationContext.getInputDTO().getIdentifierCaseFormat()));
+      value = String.valueOf(MigratorExpressionUtils.render(migrationContext, variable.getValue(), new HashMap<>()));
     }
     String name = variable.getName();
     name = name.replace('-', '_');
@@ -356,9 +368,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value =
-            String.valueOf(MigratorExpressionUtils.render(migrationContext, String.valueOf(serviceVariable.getValue()),
-                new HashMap<>(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
+        value = String.valueOf(MigratorExpressionUtils.render(
+            migrationContext, String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       String name = StringUtils.trim(serviceVariable.getName());
       name = name.replace('-', '_');
