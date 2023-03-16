@@ -23,6 +23,7 @@ import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
@@ -58,34 +59,41 @@ public class PipelineSetupStep implements ChildExecutable<PipelineSetupStepParam
       Ambiance ambiance, PipelineSetupStepParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting execution for Pipeline Step [{}]", stepParameters);
 
-    if(ambiance.getMetadata().getPipelineStageInfo().getHasParentPipeline()){
-      List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(ambiance.getMetadata().getPipelineStageInfo().getExecutionId());
-      if(isNotEmpty(interrupts)){
-        final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
-        InterruptConfig interruptConfig = InterruptConfig.newBuilder()
-                .setIssuedBy(IssuedBy.newBuilder()
-                        .setManualIssuer(ManualIssuer.newBuilder()
-                                .setType(principal.getType().toString())
-                                .setIdentifier(principal.getName())
-                                .setEmailId(PrincipalHelper.getEmail(principal))
-                                .setUserId(PrincipalHelper.getUsername(principal))
-                                .build())
-                        .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
-                        .build())
-                .build();
+    PipelineStageInfo pipelineStageInfo = ambiance.getMetadata().getPipelineStageInfo();
 
-        InterruptPackage interruptPackage = InterruptPackage.builder()
-                .interruptType(InterruptType.ABORT_ALL)
-                .planExecutionId(ambiance.getPlanExecutionId())
-                .nodeExecutionId(null)
-                .interruptConfig(interruptConfig)
-                .metadata(Collections.emptyMap())
-                .build();
-        orchestrationService.registerInterrupt(interruptPackage);
+    // This is to handle edge case in Pipeline Chaining. Parent Pipeline is aborted but Child Pipeline was not started by then. This will abort the child pipeline if there is any abort registered in parent pipeline
+    if(pipelineStageInfo.getHasParentPipeline()){
+      List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(pipelineStageInfo.getExecutionId());
+      if(isNotEmpty(interrupts)){
+        handleAbort(ambiance);
       }
     }
     final String stagesNodeId = stepParameters.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(stagesNodeId).build();
+  }
+
+  private void handleAbort(Ambiance ambiance) {
+    final Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
+    InterruptConfig interruptConfig = InterruptConfig.newBuilder()
+            .setIssuedBy(IssuedBy.newBuilder()
+                    .setManualIssuer(ManualIssuer.newBuilder()
+                            .setType(principal.getType().toString())
+                            .setIdentifier(principal.getName())
+                            .setEmailId(PrincipalHelper.getEmail(principal))
+                            .setUserId(PrincipalHelper.getUsername(principal))
+                            .build())
+                    .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
+                    .build())
+            .build();
+
+    InterruptPackage interruptPackage = InterruptPackage.builder()
+            .interruptType(InterruptType.ABORT_ALL)
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .nodeExecutionId(null)
+            .interruptConfig(interruptConfig)
+            .metadata(Collections.emptyMap())
+            .build();
+    orchestrationService.registerInterrupt(interruptPackage);
   }
 
   @Override
