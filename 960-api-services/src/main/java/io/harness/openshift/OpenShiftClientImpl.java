@@ -28,15 +28,15 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nonnull;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 public class OpenShiftClientImpl implements OpenShiftClient {
   @Inject CliHelper cliHelper;
 
+  @NotNull
   @Override
-  @Nonnull
-  public CliResponse process(@NotEmpty String ocBinaryPath, @NotEmpty String templateFilePath,
-      List<String> paramsFilePaths, @NotEmpty String manifestFilesDirectoryPath, LogCallback executionLogCallback) {
+  public String generateOcCommand(String ocBinaryPath, String templateFilePath, List<String> paramsFilePaths) {
     StringBuilder processCommand = new StringBuilder(
         PROCESS_COMMAND.replace(OC_BINARY_PATH, ocBinaryPath).replace(TEMPLATE_FILE_PATH, templateFilePath));
 
@@ -45,9 +45,25 @@ public class OpenShiftClientImpl implements OpenShiftClient {
         processCommand.append(" --param-file ").append(paramsFilePath);
       }
     }
+
+    return processCommand.toString();
+  }
+
+  @Override
+  @Nonnull
+  public CliResponse process(@NotEmpty String ocBinaryPath, @NotEmpty String templateFilePath,
+      List<String> paramsFilePaths, @NotEmpty String manifestFilesDirectoryPath, LogCallback executionLogCallback) {
+    return process(generateOcCommand(ocBinaryPath, templateFilePath, paramsFilePaths), manifestFilesDirectoryPath,
+        executionLogCallback);
+  }
+
+  @NotNull
+  @Override
+  public CliResponse process(
+      String processCommand, String manifestFilesDirectoryPath, LogCallback executionLogCallback) {
     try {
-      return cliHelper.executeCliCommand(processCommand.toString(), COMMAND_TIMEOUT, Collections.emptyMap(),
-          manifestFilesDirectoryPath, executionLogCallback);
+      return cliHelper.executeCliCommand(
+          processCommand, COMMAND_TIMEOUT, Collections.emptyMap(), manifestFilesDirectoryPath, executionLogCallback);
     } catch (IOException e) {
       throw new InvalidRequestException(
           "IO Failure occurred while running oc process. " + e.getMessage(), e, WingsException.USER);

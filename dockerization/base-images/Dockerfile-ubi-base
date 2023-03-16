@@ -17,7 +17,7 @@ FROM redhat/ubi8-minimal:8.7
 CMD ["/bin/sh"]
 RUN microdnf install curl libstdc++.i686 make bash unzip hostname tar gzip procps
 
-RUN curl -L https://github.com/mikefarah/yq/releases/download/v4.30.6/yq_linux_amd64 -o /usr/bin/yq && chmod +x /usr/bin/yq
+RUN curl -L https://github.com/mikefarah/yq/releases/download/v4.31.2/yq_linux_amd64 -o /usr/bin/yq && chmod +x /usr/bin/yq
 
 RUN set -x \
     && mkdir -p /opt/harness/plugins \

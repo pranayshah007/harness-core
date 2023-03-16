@@ -42,7 +42,8 @@ public class SshServiceV2Mapper implements ServiceV2Mapper {
     if (primaryArtifact != null) {
       sshServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
-    sshServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    sshServiceSpecBuilder.variables(MigratorUtility.getVariables(
+        service.getServiceVariables(), migratedEntities, inputDTO.getIdentifierCaseFormat()));
     sshServiceSpecBuilder.configFiles(configFiles);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.SSH)

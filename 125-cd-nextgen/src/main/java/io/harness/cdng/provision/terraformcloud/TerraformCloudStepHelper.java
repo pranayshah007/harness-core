@@ -15,7 +15,6 @@ import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APP
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
-import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_ONLY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;

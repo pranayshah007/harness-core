@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: bzzh06ys7nti1
+  id: 9126byi2oelzs
 info:
   title: IDP
   version: '1.0'
@@ -25,8 +25,6 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Sort'
-      requestBody:
-        $ref: '#/components/requestBodies/EnvironmentSecretRequest'
       security:
         - x-api-key: []
       x-internal: true
@@ -304,27 +302,21 @@ paths:
         - Provision
       description: Provision IDP for given account
       security:
-        - x-api-key: [ ]
+        - x-api-key: []
     parameters:
       - schema:
           type: string
         name: accountIdentifier
         in: path
         required: true
-  '/v1/account/{accountIdentifier}/onboarding/access-check':
-    parameters:
-      - name: accountIdentifier
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Identifier field of the account the resource is scoped to
+  /v1/onboarding/access-check:
+    parameters: []
     get:
       summary: Check if User is allowed to perform IDP onboarding workflow
       responses:
         '200':
           $ref: '#/components/responses/OnboardingAccessCheckResponse'
-      operationId: onboarding-access-check-v1
+      operationId: onboarding-access-check
       description: Check if User is allowed to perform IDP onboarding workflow
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -332,9 +324,8 @@ paths:
         - x-api-key: []
       tags:
         - OnboardingResource
-  '/v1/account/{accountIdentifier}/onboarding/harness-entities':
-    parameters:
-      - $ref: '#/components/parameters/AccountIdentifier'
+  /v1/onboarding/harness-entities:
+    parameters: []
     get:
       summary: Get Harness Entities
       tags:
@@ -342,7 +333,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/HarnessEntitiesResponse'
-      operationId: get-harness-entities-v1
+      operationId: get-harness-entities
       description: Get Harness Entities
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -353,12 +344,11 @@ paths:
         - $ref: '#/components/parameters/SearchTerm'
       security:
         - x-api-key: []
-  '/v1/account/{accountIdentifier}/onboarding/import-harness-entities':
-    parameters:
-      - $ref: '#/components/parameters/AccountIdentifier'
+  /v1/onboarding/import-harness-entities:
+    parameters: []
     post:
       summary: Import Harness Entities to IDP
-      operationId: import-harness-entities-v1
+      operationId: import-harness-entities
       description: Import Harness Entities to IDP
       security:
         - x-api-key: []
@@ -371,6 +361,107 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ImportEntitiesResponse'
+  /v1/onboarding/manual-import:
+    parameters: []
+    post:
+      summary: Manually import entity to IDP
+      operationId: manual-import-entity
+      description: Manually import entity to IDP
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ManualImportEntityRequest'
+      tags:
+        - OnboardingResource
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportEntitiesResponse'
+      x-internal: true
+  /v1/layout:
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/LayoutResponse'
+      operationId: get-all-layouts
+      x-internal: true
+      description: Get all layouts
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LayoutProxy
+    parameters: []
+    post:
+      summary: ''
+      operationId: create-layout
+      responses:
+        '200':
+          $ref: '#/components/responses/LayoutResponse'
+      description: Create layout
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LayoutProxy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutRequest'
+    delete:
+      summary: ''
+      operationId: delete-layout
+      responses:
+        '204':
+          description: No Content
+      description: Delete layout
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LayoutProxy
+      requestBody:
+        $ref: '#/components/requestBodies/LayoutRequest'
+  '/v1/layout/{layout-identifier}':
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/LayoutResponse'
+      operationId: get-layout
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LayoutProxy
+      description: Get Layout
+    parameters:
+      - $ref: '#/components/parameters/LayoutIdentifier'
+  /v1/layout/health:
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          $ref: '#/components/responses/GeneralResponse'
+      operationId: get-layout-health
+      description: Get Layout Health
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - LayoutProxy
+    parameters: []
 components:
   schemas:
     EnvironmentSecret:
@@ -506,9 +597,13 @@ components:
           $ref: '#/components/schemas/CatalogConnectorInfo'
         entities:
           type: array
-          minItems: 1
+          minItems: 0
           items:
             $ref: '#/components/schemas/EntitiesForImport'
+        allImport:
+          type: boolean
+          x-stoplight:
+            id: dsm3fnlholwsp
       required:
         - catalogConnectorInfo
         - entities
@@ -637,6 +732,63 @@ components:
         - identifier
         - type
       description: Connector details containing identifier and type
+    LayoutResponse:
+      title: LayoutResponse
+      x-stoplight:
+        id: 4120n8fn8dfkx
+      type: object
+    ManualImportEntityRequest:
+      title: ManualImportEntityRequest
+      x-stoplight:
+        id: ssbm06g65ld8t
+      type: object
+      description: Details of entity to import manually to IDP
+      properties:
+        yaml:
+          type: string
+          x-stoplight:
+            id: g8wygfate3kph
+          description: yaml in form on json
+        entityName:
+          type: string
+          x-stoplight:
+            id: 2axpvz6rwf0ds
+      required:
+        - yaml
+        - entityName
+    LayoutRequest:
+      title: LayoutRequest
+      x-stoplight:
+        id: jfyco0hsivo6b
+      type: object
+      description: LayoutRequest
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: zvjshp9bal6kq
+        id:
+          type: string
+          x-stoplight:
+            id: vy53h9a7l4ij3
+        yaml:
+          type: string
+          x-stoplight:
+            id: vrsrw3pv5ga85
+        displayName:
+          type: string
+          x-stoplight:
+            id: iubyqrukqnryx
+        defaultYaml:
+          type: string
+          x-stoplight:
+            id: 9juzgzieo6qnl
+        type:
+          type: string
+          x-stoplight:
+            id: jb3f4rk78x16r
+    GeneralResponse:
+      $ref: '#/components/schemas/LayoutResponse'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -703,6 +855,13 @@ components:
       schema:
         type: string
       description: This would be used to filter resources having attributes matching the search term.
+    LayoutIdentifier:
+      name: layout-identifier
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Layout Identifier
   requestBodies:
     EnvironmentSecretRequest:
       content:
@@ -738,12 +897,25 @@ components:
           schema:
             $ref: '#/components/schemas/StatusInfoRequest'
     ImportHarnessEntitiesRequest:
+      required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ImportHarnessEntitiesRequest'
           examples: {}
       description: Details of Harness Entities and Catalog Location info
+    ManualImportEntityRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ManualImportEntityRequest'
+      description: Details of entity to import manually to IDP
+    LayoutRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutRequest'
   responses:
     EnvironmentSecretResponse:
       description: Example response
@@ -795,6 +967,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/StatusInfoResponse'
+    LayoutResponse:
+      description: Layout response
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/LayoutResponse'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LayoutResponse'
     NamespaceResponse:
       description: Example response
       content:
@@ -846,3 +1027,5 @@ tags:
     description: Mapping of Environment Variables to Secrets
   - name: BackstagePermissions
     description: Backstage Permissions
+  - name: LayoutProxy
+    description: Layout Proxy

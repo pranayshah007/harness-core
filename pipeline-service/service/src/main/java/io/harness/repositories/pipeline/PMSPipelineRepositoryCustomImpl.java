@@ -210,7 +210,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       return Optional.of(savedEntity);
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
-      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepoURL());
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
 
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(

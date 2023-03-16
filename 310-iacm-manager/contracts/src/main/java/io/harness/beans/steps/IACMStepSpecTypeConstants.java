@@ -9,6 +9,7 @@ package io.harness.beans.steps;
 
 public interface IACMStepSpecTypeConstants {
   String IACM_STAGE = "IACM";
+  String IACM_STAGE_V1 = "iacm";
   String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
   String IACM_TEMPLATE = "IACMTemplate";
 }

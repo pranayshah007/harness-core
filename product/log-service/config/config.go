@@ -11,7 +11,7 @@ import (
 
 // Config provides the system configuration.
 type Config struct {
-	Debug bool `envconfig:"LOG_SERVICE_DEBUG"`
+	Debug bool `envconfig:"LOG_SERVICE_DEBUG_MODE"`
 	Trace bool `envconfig:"LOG_SERVICE_TRACE"`
 
 	Auth struct {

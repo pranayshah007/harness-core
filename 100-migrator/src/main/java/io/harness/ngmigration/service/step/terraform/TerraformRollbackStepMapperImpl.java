@@ -48,7 +48,7 @@ public class TerraformRollbackStepMapperImpl extends BaseTerraformProvisionerMap
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     TerraformRollbackState state = (TerraformRollbackState) getState(graphNode);
     TerraformRollbackStepNode terraformRollbackStepNode = new TerraformRollbackStepNode();
-    baseSetup(graphNode, terraformRollbackStepNode);
+    baseSetup(graphNode, terraformRollbackStepNode, context.getIdentifierCaseFormat());
 
     TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
     terraformRollbackStepInfo.setDelegateSelectors(getDelegateSelectors(state));

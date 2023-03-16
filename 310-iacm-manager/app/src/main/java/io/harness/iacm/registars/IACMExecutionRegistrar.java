@@ -8,13 +8,16 @@
 package io.harness.iacm.registars;
 
 import io.harness.ci.states.ActionStep;
+import io.harness.ci.states.BackgroundStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
+import io.harness.ci.states.GitCloneStep;
 import io.harness.ci.states.IACMStep;
 import io.harness.ci.states.InitializeTaskStep;
 import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.states.PluginStep;
 import io.harness.ci.states.RunStep;
+import io.harness.ci.states.RunTestsStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
@@ -35,6 +38,7 @@ public class IACMExecutionRegistrar {
 
     return iacmSteps;
   }
+
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
@@ -51,6 +55,12 @@ public class IACMExecutionRegistrar {
     engineSteps.putAll(addIACMEngineSteps());
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
+
+    engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
+    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
+    engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
+    engineSteps.put(RunTestsStep.STEP_TYPE, RunTestsStep.class);
+    engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
     return engineSteps;
   }
 }

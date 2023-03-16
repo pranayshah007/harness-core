@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraformcloud.steps;
 
 import static io.harness.cdng.provision.terraformcloud.outcome.TerraformCloudRunOutcome.OUTCOME_NAME;
+import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.ROLLBACK;
 
 import static java.lang.String.format;
 
@@ -155,7 +156,7 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
         List.of(TerraformCloudCommandUnit.FETCH_LAST_APPLIED_RUN.getDisplayName(),
             TerraformCloudCommandUnit.PLAN.getDisplayName(), TerraformCloudCommandUnit.POLICY_CHECK.getDisplayName(),
             TerraformCloudCommandUnit.APPLY.getDisplayName()),
-        TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(),
+        format("%s : %s", TaskType.TERRAFORM_CLOUD_TASK_NG.getDisplayName(), ROLLBACK.getDisplayName()),
         TaskSelectorYaml.toTaskSelector(rollbackStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

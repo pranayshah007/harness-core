@@ -9,6 +9,7 @@ package io.harness.ngmigration.expressions;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.functors.ExpressionFunctor;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 
 import java.util.HashMap;
@@ -16,8 +17,10 @@ import java.util.Map;
 
 public class SecretMigratorFunctor implements ExpressionFunctor {
   private Map<String, String> nameToIdentifier;
+  private CaseFormat caseFormat;
 
-  public SecretMigratorFunctor(Map<String, String> nameToIdentifier) {
+  public SecretMigratorFunctor(Map<String, String> nameToIdentifier, CaseFormat caseFormat) {
+    this.caseFormat = caseFormat;
     if (EmptyPredicate.isEmpty(nameToIdentifier)) {
       this.nameToIdentifier = new HashMap<>();
     } else {
@@ -26,7 +29,7 @@ public class SecretMigratorFunctor implements ExpressionFunctor {
   }
 
   public Object getValue(String secretName) {
-    String secretIdentifier = MigratorUtility.generateIdentifier(secretName);
+    String secretIdentifier = MigratorUtility.generateIdentifier(secretName, this.caseFormat);
     if (nameToIdentifier.containsKey(secretName)) {
       secretIdentifier = nameToIdentifier.get(secretName);
     }

@@ -224,10 +224,7 @@ public class NgUserServiceImpl implements NgUserService {
           userIds.addAll(userFilter.getIdentifiers());
         }
         if (userFilter.getEmails() != null) {
-          userIds.addAll(getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
-                             .stream()
-                             .map(UserMetadataDTO::getUuid)
-                             .collect(toList()));
+          userIds.addAll(getUserIdsByEmails(new ArrayList<>(userFilter.getEmails())));
         }
         userMembershipCriteria.and(UserMembershipKeys.userId).in(userIds);
       }
@@ -347,7 +344,7 @@ public class NgUserServiceImpl implements NgUserService {
   @Override
   public List<UserMetadataDTO> listUsersHavingRole(Scope scope, String roleIdentifier) {
     if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(scope.getAccountIdentifier()))) {
-      return getUserMetadata(new ArrayList<>(listUserIds(scope)));
+      return listUsers(scope);
     }
     PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
         getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
@@ -515,18 +512,20 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<UserMetadataDTO> getUserMetadata(List<String> userIds) {
-    return userMetadataRepository.findAll(Criteria.where(UserMembershipKeys.userId).in(userIds), Pageable.unpaged())
+    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.userId).in(userIds), Pageable.ofSize(50000))
         .map(UserMetadataMapper::toDTO)
         .stream()
         .collect(toList());
   }
 
   @Override
-  public List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds) {
-    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.email).in(emailIds), Pageable.unpaged())
-        .map(UserMetadataMapper::toDTO)
-        .stream()
-        .collect(toList());
+  public CloseableIterator<UserMetadata> streamUserMetadata(List<String> userIds) {
+    return userMetadataRepository.stream(Criteria.where(UserMetadataKeys.userId).in(userIds));
+  }
+
+  @Override
+  public List<String> getUserIdsByEmails(List<String> emailIds) {
+    return userMetadataRepository.findAllIds(Criteria.where(UserMetadataKeys.email).in(emailIds));
   }
 
   @Override

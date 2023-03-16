@@ -41,6 +41,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -137,7 +139,8 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
 
     return googleFunctionsHelper
         .queueTask(stepParameters, googleFunctionTrafficShiftRequest, ambiance,
-            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true,
+            TaskType.GOOGLE_FUNCTION_TRAFFIC_SHIFT_TASK)
         .getTaskRequest();
   }
 

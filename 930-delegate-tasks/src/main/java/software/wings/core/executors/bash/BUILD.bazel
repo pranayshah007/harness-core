@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-api-services:module",
+        "//960-api-services/src/main/java/io/harness/shell:module",
         "//970-api-services-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",

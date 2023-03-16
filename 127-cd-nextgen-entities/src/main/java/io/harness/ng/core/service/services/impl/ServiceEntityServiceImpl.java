@@ -27,7 +27,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -554,20 +553,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     List<String> orgLevelIdentifiers = new ArrayList<>();
     List<String> accountLevelIdentifiers = new ArrayList<>();
 
-    for (String serviceIdentifier : serviceRefs) {
-      if (isNotEmpty(serviceIdentifier) && !EngineExpressionEvaluator.hasExpressions(serviceIdentifier)) {
-        IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
-            serviceIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
-
-        if (Scope.PROJECT.equals(identifierRef.getScope())) {
-          projectLevelIdentifiers.add(identifierRef.getIdentifier());
-        } else if (Scope.ORG.equals(identifierRef.getScope())) {
-          orgLevelIdentifiers.add(identifierRef.getIdentifier());
-        } else if (Scope.ACCOUNT.equals(identifierRef.getScope())) {
-          accountLevelIdentifiers.add(identifierRef.getIdentifier());
-        }
-      }
-    }
+    ServiceFilterHelper.populateIdentifiersOfEachLevel(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs,
+        projectLevelIdentifiers, orgLevelIdentifiers, accountLevelIdentifiers);
 
     if (isNotEmpty(projectLevelIdentifiers)) {
       Criteria projectCriteria = Criteria.where(ServiceEntityKeys.accountId)

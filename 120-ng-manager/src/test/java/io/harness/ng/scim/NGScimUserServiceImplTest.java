@@ -17,7 +17,7 @@ import static io.harness.NGConstants.LOCATION;
 import static io.harness.NGConstants.RESOURCE_TYPE;
 import static io.harness.NGConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.PL_JPMC_SCIM_REQUIREMENTS;
+import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PRATEEK;
@@ -190,7 +190,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -247,7 +247,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -298,7 +298,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.of(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -358,7 +358,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -413,7 +413,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -471,7 +471,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(false);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(false);
     when(userGroupService.getUserGroupsForUser(any(), any())).thenReturn(null);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
@@ -530,7 +530,7 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.empty());
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_JPMC_SCIM_REQUIREMENTS)).thenReturn(true);
+    when(ngFeatureFlagHelperService.isEnabled(account.getUuid(), PL_NEW_SCIM_STANDARDS)).thenReturn(true);
     when(userGroupService.getUserGroupsForUser(any(), any())).thenReturn(userGroups);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 

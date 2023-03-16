@@ -175,6 +175,7 @@ public class NgUserServiceImplTest extends CategoryTest {
     final ArgumentCaptor<Criteria> userMetadataCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     when(userMembershipRepository.findAllUserIds(any(), any())).thenReturn(PageTestUtils.getPage(userIds, 1));
     when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(userMetadata, 1));
+    when(userMetadataRepository.findAllIds(any())).thenReturn(List.of("ug3"));
 
     UserFilter userFilter = UserFilter.builder()
                                 .emails(Sets.newHashSet("ug3@harness.io"))
@@ -183,7 +184,8 @@ public class NgUserServiceImplTest extends CategoryTest {
     ngUserService.listUsers(scope, pageRequest, userFilter);
 
     verify(userMembershipRepository, times(1)).findAllUserIds(userMembershipCriteriaArgumentCaptor.capture(), any());
-    verify(userMetadataRepository, times(2)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(1)).findAll(userMetadataCriteriaArgumentCaptor.capture(), any());
+    verify(userMetadataRepository, times(1)).findAllIds(userMetadataCriteriaArgumentCaptor.capture());
 
     Criteria userMembershipCriteria = userMembershipCriteriaArgumentCaptor.getValue();
     assertNotNull(userMembershipCriteria);

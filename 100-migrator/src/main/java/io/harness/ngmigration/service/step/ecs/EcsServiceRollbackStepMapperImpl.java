@@ -54,10 +54,9 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
   @Override
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EcsRollingRollbackStepNode stepNode = new EcsRollingRollbackStepNode();
-    baseSetup(graphNode, stepNode);
+    baseSetup(graphNode, stepNode, context.getIdentifierCaseFormat());
     EcsRollingRollbackStepInfo stepInfo =
         EcsRollingRollbackStepInfo.infoBuilder()
-            .ecsRollingRollbackFnq("<+input>")
             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
             .build();
     stepNode.setEcsRollingRollbackStepInfo(stepInfo);
@@ -66,7 +65,6 @@ public class EcsServiceRollbackStepMapperImpl extends StepMapper {
 
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
-    // @deepak: Please re-evaluate
-    return false;
+    return true;
   }
 }

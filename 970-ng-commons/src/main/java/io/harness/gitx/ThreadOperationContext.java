@@ -13,13 +13,14 @@ import io.harness.context.GlobalContextData;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.Wither;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ThreadOperationContext implements GlobalContextData {
   public static final String THREAD_OPERATION_CONTEXT = "THREAD_OPERATION_CONTEXT";
-  USER_FLOW userFlow;
+  @Wither USER_FLOW userFlow;
 
   @Override
   public String getKey() {

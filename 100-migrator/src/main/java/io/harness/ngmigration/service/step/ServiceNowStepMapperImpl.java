@@ -15,6 +15,7 @@ import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.ServiceNowFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -82,11 +83,11 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     switch (params.getAction()) {
       case CREATE:
-        return buildCreate(state);
+        return buildCreate(state, context.getIdentifierCaseFormat());
       case UPDATE:
-        return buildUpdate(state);
+        return buildUpdate(state, context.getIdentifierCaseFormat());
       case IMPORT_SET:
-        return buildImportSet(state);
+        return buildImportSet(state, context.getIdentifierCaseFormat());
       default:
         throw new IllegalStateException("Unsupported service now action");
     }
@@ -110,19 +111,22 @@ public class ServiceNowStepMapperImpl extends StepMapper {
         .stream()
         .map(exp
             -> StepOutput.builder()
-                   .stageIdentifier(MigratorUtility.generateIdentifier(phase.getName()))
-                   .stepIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()))
-                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(ServiceNowFunctor::new)
         .collect(Collectors.toList());
   }
 
-  private ServiceNowCreateStepNode buildCreate(ServiceNowCreateUpdateState state) {
+  private ServiceNowCreateStepNode buildCreate(ServiceNowCreateUpdateState state, CaseFormat caseFormat) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowCreateStepNode stepNode = new ServiceNowCreateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, caseFormat);
     ServiceNowCreateStepInfo stepInfo = ServiceNowCreateStepInfo.builder()
                                             .connectorRef(RUNTIME_INPUT)
                                             .ticketType(ParameterField.createValueField(params.getTicketType()))
@@ -158,10 +162,10 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     return ngFields;
   }
 
-  private ServiceNowUpdateStepNode buildUpdate(ServiceNowCreateUpdateState state) {
+  private ServiceNowUpdateStepNode buildUpdate(ServiceNowCreateUpdateState state, CaseFormat caseFormat) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowUpdateStepNode stepNode = new ServiceNowUpdateStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, caseFormat);
     ServiceNowUpdateStepInfo stepInfo = ServiceNowUpdateStepInfo.builder()
                                             .connectorRef(RUNTIME_INPUT)
                                             .delegateSelectors(ParameterField.createValueField(Collections.emptyList()))
@@ -175,10 +179,10 @@ public class ServiceNowStepMapperImpl extends StepMapper {
     return stepNode;
   }
 
-  private ServiceNowImportSetStepNode buildImportSet(ServiceNowCreateUpdateState state) {
+  private ServiceNowImportSetStepNode buildImportSet(ServiceNowCreateUpdateState state, CaseFormat caseFormat) {
     ServiceNowCreateUpdateParams params = state.getServiceNowCreateUpdateParams();
     ServiceNowImportSetStepNode stepNode = new ServiceNowImportSetStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, caseFormat);
     ImportDataSpecWrapper importDataSpecWrapper = new ImportDataSpecWrapper();
     importDataSpecWrapper.setType(ImportDataSpecType.JSON);
     JsonImportDataSpec jsonImportDataSpec =

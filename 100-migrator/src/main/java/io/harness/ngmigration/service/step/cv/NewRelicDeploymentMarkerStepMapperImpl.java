@@ -118,7 +118,7 @@ public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
     String url = String.format(URL_FORMAT, baseUrl, applicationId);
 
     HttpStepNode httpStepNode = new HttpStepNode();
-    baseSetup(graphNode, httpStepNode);
+    baseSetup(graphNode, httpStepNode, context.getIdentifierCaseFormat());
 
     HttpStepInfo httpStepInfo = HttpStepInfo.infoBuilder()
                                     .url(ParameterField.createValueField(url))

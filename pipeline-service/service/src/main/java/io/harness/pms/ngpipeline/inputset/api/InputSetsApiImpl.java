@@ -172,7 +172,7 @@ public class InputSetsApiImpl implements InputSetsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  public Response inputSetMoveConfig(
+  public Response inputSetsMoveConfig(
       String org, String project, String inputSet, @Valid InputSetMoveConfigRequestBody requestBody, String account) {
     if (requestBody == null) {
       throw new InvalidRequestException("InputSet MoveConfig request body must not be null.");

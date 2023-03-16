@@ -24,4 +24,5 @@ public class ViewQueryParams {
   int timeOffsetInDays; // time offset in case of budget timeSeries query
   boolean skipRoundOff;
   boolean skipDefaultGroupBy;
+  boolean skipGroupBy; // Skipping groupBy for total cost queries
 }

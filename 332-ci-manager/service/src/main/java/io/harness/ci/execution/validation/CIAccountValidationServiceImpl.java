@@ -8,8 +8,8 @@
 package io.harness.ci.validation;
 
 import io.harness.account.AccountClient;
+import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.license.CILicenseService;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;

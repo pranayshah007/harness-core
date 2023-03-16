@@ -42,4 +42,6 @@ public class DelegateTaskRequest {
 
   private boolean emitEvent;
   private String stageId;
+  private String baseLogKey;
+  private boolean shouldSkipOpenStream;
 }

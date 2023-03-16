@@ -77,8 +77,6 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    helper.checkIfTerragruntFeatureIsEnabled(ambiance, "Terragrunt Apply");
-
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);

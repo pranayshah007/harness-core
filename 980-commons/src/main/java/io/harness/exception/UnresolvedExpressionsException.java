@@ -34,6 +34,12 @@ public class UnresolvedExpressionsException extends WingsException {
     super.param(EXPRESSIONS_ARG, prepareExpressionsString(expressions));
   }
 
+  public UnresolvedExpressionsException(List<String> expressions, String hintMessage) {
+    super(String.format("Unresolved expressions: %s. %s", prepareExpressionsString(expressions), hintMessage), null,
+        UNRESOLVED_EXPRESSIONS_ERROR, Level.ERROR, null, null);
+    super.param(EXPRESSIONS_ARG, prepareExpressionsString(expressions));
+  }
+
   public UnresolvedExpressionsException(String key, List<String> expressions) {
     super(String.format("Unresolved expressions: %s", prepareExpressionsAndFieldsString(key, expressions)), null,
         UNRESOLVED_EXPRESSIONS_ERROR, Level.ERROR, null, null);

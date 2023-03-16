@@ -51,7 +51,7 @@ public class AzureSlotShiftTrafficMapperImpl extends StepMapper {
   public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     AzureWebAppSlotShiftTraffic state = (AzureWebAppSlotShiftTraffic) getState(graphNode);
     AzureWebAppTrafficShiftStepNode stepNode = new AzureWebAppTrafficShiftStepNode();
-    baseSetup(state, stepNode);
+    baseSetup(state, stepNode, context.getIdentifierCaseFormat());
     AzureWebAppTrafficShiftStepInfo stepInfo =
         AzureWebAppTrafficShiftStepInfo.infoBuilder()
             .traffic(ParameterField.createValueField(state.getTrafficWeightExpr()))

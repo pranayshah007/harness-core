@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.anySet;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -214,6 +215,9 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
         .submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
+    doCallRealMethod()
+        .when(cdStepHelper)
+        .mapTaskRequestToDelegateTaskRequest(any(), any(), anySet(), anyString(), anyBoolean());
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class))
         .when(expressionResolver)
@@ -307,15 +311,10 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
     AsyncExecutableResponse response = step.executeAsync(ambiance, stepParameters, inputPackage, null);
 
-    verify(mockSweepingOutputService).consume(any(Ambiance.class), anyString(), captor.capture(), eq(""));
-    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+    verify(expressionResolver, never()).updateExpressions(any(Ambiance.class), any());
     verify(delegateGrpcClientWrapper, never()).submitAsyncTaskV2(any(DelegateTaskRequest.class), any(Duration.class));
 
-    ArtifactsStepV2SweepingOutput output = captor.getValue();
-
-    assertThat(output.getArtifactConfigMap()).isEmpty();
-    assertThat(output.getPrimaryArtifactTaskId()).isNull();
-    assertThat(response.getCallbackIdsCount()).isEqualTo(0);
+    assertThat(response.getCallbackIdsCount()).isZero();
   }
 
   @Test

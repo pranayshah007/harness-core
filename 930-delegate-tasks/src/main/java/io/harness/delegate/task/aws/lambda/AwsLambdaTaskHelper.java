@@ -51,6 +51,9 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.AwsLambdaException;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
@@ -161,6 +164,15 @@ public class AwsLambdaTaskHelper {
 
   long TIMEOUT_IN_SECONDS = 60 * 60L;
   long WAIT_SLEEP_IN_SECONDS = 10L;
+
+  public ObjectMapper getObjectMapper() {
+    return new ObjectMapper(new YAMLFactory());
+  }
+
+  public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
+      boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
+    return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
+  }
 
   public CreateFunctionResponse deployFunction(AwsLambdaInfraConfig awsLambdaInfraConfig,
       AwsLambdaArtifactConfig awsLambdaArtifactConfig, String awsLambdaManifestContent,

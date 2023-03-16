@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionExpansion;
 import io.harness.execution.PmsNodeExecution;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -29,6 +30,7 @@ public class OrchestrationBeansContractMorphiaRegistrar implements MorphiaRegist
     set.add(NodeExecution.class);
     set.add(PlanExecution.class);
     set.add(PmsNodeExecution.class);
+    set.add(PlanExecutionExpansion.class);
   }
 
   @Override

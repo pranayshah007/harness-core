@@ -759,7 +759,7 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(planCreatorMergeService, times(1))
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
-    verify(rollbackModeExecutionHelper, times(0)).transformPlanForRollbackMode(any(), anyString(), any());
+    verify(rollbackModeExecutionHelper, times(0)).transformPlanForRollbackMode(any(), anyString(), any(), any());
   }
 
   @Test
@@ -789,7 +789,7 @@ public class ExecutionHelperTest extends CategoryTest {
                                                     .build();
     doReturn(plan)
         .when(rollbackModeExecutionHelper)
-        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList());
+        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
     doReturn(planExecution)
         .when(orchestrationService)
         .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
@@ -799,7 +799,8 @@ public class ExecutionHelperTest extends CategoryTest {
     verify(planCreatorMergeService, times(1))
         .createPlanVersioned(accountId, orgId, projectId, PipelineVersion.V0, executionMetadata, planExecutionMetadata);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
-    verify(rollbackModeExecutionHelper, times(1)).transformPlanForRollbackMode(plan, "prevId", Collections.emptyList());
+    verify(rollbackModeExecutionHelper, times(1))
+        .transformPlanForRollbackMode(plan, "prevId", Collections.emptyList(), ExecutionMode.POST_EXECUTION_ROLLBACK);
   }
 
   @Test

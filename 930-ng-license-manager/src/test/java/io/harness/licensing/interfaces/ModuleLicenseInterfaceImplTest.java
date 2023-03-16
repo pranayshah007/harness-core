@@ -25,6 +25,7 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
@@ -33,6 +34,7 @@ import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
+import io.harness.licensing.interfaces.clients.local.IACMLocalClient;
 import io.harness.licensing.interfaces.clients.local.SRMLocalClient;
 import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.rule.Owner;
@@ -534,6 +536,70 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .build();
     SRMModuleLicenseDTO dto =
         (SRMModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.SRM);
+    dto.setStartTime(0L);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartEnterpriseTrialOnIACM() {
+    when(clientMap.get(ModuleType.IACM)).thenReturn(new IACMLocalClient());
+    ModuleLicenseDTO expectedDTO = IACMModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(100)
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.IACM)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.ENTERPRISE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    IACMModuleLicenseDTO dto = (IACMModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.IACM);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartTeamTrialOnIACM() {
+    when(clientMap.get(ModuleType.IACM)).thenReturn(new IACMLocalClient());
+    ModuleLicenseDTO expectedDTO = IACMModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(200)
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.IACM)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.TEAM)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    IACMModuleLicenseDTO dto = (IACMModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.IACM);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testStartFreeLicenseOnIACM() {
+    when(clientMap.get(ModuleType.IACM)).thenReturn(new IACMLocalClient());
+    ModuleLicenseDTO expectedDTO = IACMModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(Integer.valueOf(UNLIMITED))
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.IACM)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .edition(Edition.FREE)
+                                       .startTime(0)
+                                       .expiryTime(Long.MAX_VALUE)
+                                       .build();
+    IACMModuleLicenseDTO dto =
+        (IACMModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.IACM);
     dto.setStartTime(0L);
     assertThat(dto).isEqualTo(expectedDTO);
   }

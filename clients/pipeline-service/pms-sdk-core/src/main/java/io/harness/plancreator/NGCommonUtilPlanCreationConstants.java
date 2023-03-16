@@ -31,7 +31,6 @@ public class NGCommonUtilPlanCreationConstants {
   public final String EXECUTION_NODE_IDENTIFIER = "execution";
   public final String ROLLBACK_NODE_NAME = "(Rollback)";
   public final String ROLLBACK_STAGE_UUID_SUFFIX = "_rollbackStage";
-  public final String ROLLBACK_STAGE_NODE_NAME = "(Rollback Stage)";
   public final String INFRA_ROLLBACK_NODE_NAME = "Infrastructure (Rollback)";
   public final String INFRA_ROLLBACK_NODE_IDENTIFIER = "infraRollbackSteps";
   public final String ROLLBACK_STEPS_NODE_ID_SUFFIX = "_rollbackSteps";
