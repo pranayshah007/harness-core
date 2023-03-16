@@ -166,6 +166,7 @@ public class TriggerExecutionHelper {
       String targetIdentifier = ngTriggerEntity.getTargetIdentifier();
 
       ByteString gitSyncBranchContextByteString;
+      String branch = null;
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         pipelineEntityToExecute = pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(),
@@ -177,6 +178,7 @@ public class TriggerExecutionHelper {
                   + ", For Trigger: " + ngTriggerEntity.getIdentifier() + " does not exist.",
               USER);
         }
+        branch = pipelineEntityToExecute.get().getBranch();
         final GitEntityInfo branchInfo = GitEntityInfo.builder()
                                              .branch(pipelineEntityToExecute.get().getBranch())
                                              .yamlGitConfigId(pipelineEntityToExecute.get().getYamlGitConfigRef())
@@ -189,7 +191,6 @@ public class TriggerExecutionHelper {
             new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
         SourcePrincipalContextBuilder.setSourcePrincipal(
             new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
-        String branch = null;
         if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
           if (isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
             branch = resolveBranchExpression(
@@ -334,9 +335,8 @@ public class TriggerExecutionHelper {
 
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
-        String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
-            true);
+        String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
+            pipelineEntity, pipelineYamlWithTemplateRef, true, branch);
 
         planExecutionMetadataBuilder.yaml(pipelineYaml);
         planExecutionMetadataBuilder.processedYaml(processedYaml);
