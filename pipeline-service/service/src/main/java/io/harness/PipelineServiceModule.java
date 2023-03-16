@@ -727,6 +727,21 @@ public class PipelineServiceModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("JsonExpansionExecutorService-%d").build());
   }
 
+  /**
+   * To be used for async validations of Pipelines. Because pipeline fetch calls can be frequent, max pool size needs to
+   * be high
+   */
+  @Provides
+  @Singleton
+  @Named("PipelineAsyncValidationExecutorService")
+  public Executor pipelineAsyncValidationExecutorService() {
+    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("TelemetrySenderExecutor")
